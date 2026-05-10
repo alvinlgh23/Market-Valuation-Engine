@@ -547,7 +547,7 @@ def momentum_structure(heat):
         return "Correction / Base-Building ⚠"
 
     parabolic = (
-        (vertical is not None and vertical > 0.10)
+        (vertical is not None and vertical > 0.10 and ((six_month is not None and six_month > 0.25) or (dist_200 is not None and dist_200 > 0.20)))
         or (dist_200 is not None and dist_200 > 0.30)
         or (ticker_rsi is not None and ticker_rsi > 72)
     )
@@ -555,6 +555,8 @@ def momentum_structure(heat):
         return "Parabolic Acceleration Detected ⚠"
     if dist_200 is not None and dist_200 > 0.15:
         return "Strong Uptrend, Not Fully Parabolic"
+    if three_month is not None and three_month > 0 and dist_200 is not None and dist_200 > 0.10:
+        return "Moderate Momentum Recovery"
     if three_month is not None and three_month > 0:
         return "Constructive Momentum"
     return "Momentum Cooling / Base-Building"
@@ -571,6 +573,8 @@ def momentum_stage(heat):
         return "Late Momentum Phase"
     if (six_month is not None and six_month > 0.35) or (dist_200 is not None and dist_200 > 0.20):
         return "Mid-to-Late Momentum Phase"
+    if three_month is not None and three_month > 0 and dist_200 is not None and dist_200 > 0.10:
+        return "Early-to-Mid Momentum Repair Phase"
     if six_month is not None and six_month > 0.10:
         return "Early-to-Mid Momentum Phase"
     if three_month is not None and three_month > 0:
@@ -579,6 +583,8 @@ def momentum_stage(heat):
 
 
 def valuation_risk_label(heat):
+    if heat.get("forward_pe") is not None and heat["forward_pe"] < 0:
+        return "Moderate Valuation Risk"
     score = heat.get("valuation_heat", 0)
     if score >= 60:
         return "Extreme Valuation Risk"
@@ -599,7 +605,7 @@ def chase_risk_label(heat):
     if momentum >= 55:
         return "High Chase Risk"
     if momentum >= 25:
-        return "Elevated Chase Risk"
+        return "Moderate Chase Risk"
     return "Chase Risk Not Excessive"
 
 
@@ -642,6 +648,7 @@ def narrative_classification(quality, heat, rel_strength, pe_score):
         or (dist_200 is not None and dist_200 < 0)
         or (rel_strength is not None and rel_strength < 0.05)
     )
+    unstable_earnings_base = forward_pe is not None and forward_pe < 0
 
     if accel is not None and accel > 0.25 and rel_strength is not None and rel_strength > 0.10 and pe_score >= 55:
         return {
@@ -653,6 +660,36 @@ def narrative_classification(quality, heat, rel_strength, pe_score):
             ],
             "interpretation": [
                 "The company is participating in an active narrative with improving fundamentals and market confirmation.",
+            ],
+        }
+
+    if accel is not None and accel > 0.20 and unstable_earnings_base and market_weak:
+        return {
+            "label": "Controversial / Uncertain ⚠",
+            "drivers": [
+                "strong user and revenue growth",
+                "improving platform monetization",
+                "weak institutional conviction",
+                "unresolved long-term platform narrative",
+            ],
+            "interpretation": [
+                "The company continues to show operational growth,",
+                "but market confidence in long-term strategic relevance remains unstable.",
+                "",
+                "The stock is currently trading more as a controversial narrative asset",
+                "than a fully validated institutional-quality platform.",
+            ],
+            "market_interpretation": [
+                f"{quality.get('ticker', 'The company')} is no longer being treated as a straightforward",
+                "high-growth platform leader by the market.",
+                "",
+                "The company continues to demonstrate user engagement",
+                "and monetization progress, but institutional capital",
+                "has not fully validated the long-term strategic narrative.",
+                "",
+                "The stock currently trades more as a controversial",
+                "future-platform speculation rather than a fully trusted",
+                "institutional compounder.",
             ],
         }
 
@@ -729,11 +766,18 @@ def narrative_classification(quality, heat, rel_strength, pe_score):
 
 def overheat_assessment(narrative):
     heat = narrative["heat"]
+    quality = narrative.get("quality", {})
     cooling = (
         (heat.get("six_month") is not None and heat["six_month"] < 0)
         or (heat.get("dist_200") is not None and heat["dist_200"] < 0)
     )
     classification = narrative.get("classification", {})
+    if classification.get("label") == "Controversial / Uncertain ⚠":
+        return [
+            "Operational metrics remain resilient,",
+            "but market behavior suggests ongoing uncertainty around",
+            "long-term narrative durability and institutional conviction.",
+        ]
     if classification.get("label") in {"Weakening Mature Platform ⚠", "Stable Mature 🟡"}:
         return classification.get("interpretation", [])
     if cooling and (narrative["score"] >= 55 or narrative.get("earnings_acceleration", 0) > 0.15):
@@ -752,6 +796,11 @@ def overheat_assessment(narrative):
             "but positioning appears increasingly crowded.",
         ]
     if heat["momentum_heat"] >= 25:
+        if quality.get("score", 0) >= 75 and is_number(quality.get("fcf")) and quality["fcf"] > 0 and heat.get("valuation_heat", 0) >= 40:
+            return [
+                "The company remains financially high-quality with strong cash-flow support,",
+                "but valuation risk is elevated and momentum is only moderately recovering.",
+            ]
         return [
             "Narrative remains fundamentally supported,",
             "but entry discipline matters as momentum is warming.",
@@ -779,7 +828,10 @@ def print_overheat_analysis(narrative):
     print(signed_pct(heat.get("six_month")) + " (6M)")
     print()
     print("Forward PE Expansion:")
-    if prior_pe and heat.get("forward_pe"):
+    if heat.get("forward_pe") is not None and heat["forward_pe"] < 0:
+        print("Current forward PE: Negative / unstable earnings base")
+        print("Valuation rerating proxy: High uncertainty")
+    elif prior_pe and heat.get("forward_pe"):
         print(f"{fmt(prior_pe, 1)}x -> {fmt(heat['forward_pe'], 1)}x")
     elif heat.get("forward_pe"):
         print(f"Current forward PE: {fmt(heat['forward_pe'], 1)}x")
@@ -798,14 +850,24 @@ def print_overheat_analysis(narrative):
         print(line)
     print()
     print("Current Stage:")
-    print(momentum_stage(heat))
+    if narrative.get("classification", {}).get("label") == "Controversial / Uncertain ⚠":
+        print("Narrative Repricing / Identity Uncertainty Phase ⚠")
+    else:
+        print(momentum_stage(heat))
     print()
     print("Risk:")
-    print(f"⚠ {valuation_risk_label(heat)}")
-    print(f"⚠ {chase_risk_label(heat)}")
-    weakness = momentum_weakness_label(heat)
-    if weakness:
-        print(f"⚠ {weakness}")
+    if narrative.get("classification", {}).get("label") == "Controversial / Uncertain ⚠":
+        print("⚠ Narrative Credibility Risk")
+        print("⚠ Institutional Conviction Uncertainty")
+        weakness = momentum_weakness_label(heat)
+        if weakness:
+            print(f"⚠ {weakness}")
+    else:
+        print(f"⚠ {valuation_risk_label(heat)}")
+        print(f"⚠ {chase_risk_label(heat)}")
+        weakness = momentum_weakness_label(heat)
+        if weakness:
+            print(f"⚠ {weakness}")
 
 
 def sector_positioning(key, sector_row=None):
@@ -1111,6 +1173,15 @@ def print_company_command(ticker):
     print(f"Momentum Heat: {intensity_label(heat['momentum_heat'], high='Elevated', extreme='Extreme')}")
     print()
     print_overheat_analysis(narrative)
+    market_interpretation = narrative.get("classification", {}).get("market_interpretation")
+    if market_interpretation:
+        print()
+        print("=================================================")
+        print("MARKET INTERPRETATION")
+        print("=================================================")
+        print()
+        for line in market_interpretation:
+            print(line)
 
 
 def print_conclusion_command():
