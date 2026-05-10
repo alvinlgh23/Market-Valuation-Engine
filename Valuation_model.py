@@ -32,6 +32,7 @@ import yfinance as yf
 
 
 SECTOR_ETFS = {
+    # Core GICS sector ETFs
     "SMH": "Semiconductors",
     "XLK": "Technology",
     "XLY": "Consumer Discretionary",
@@ -44,6 +45,24 @@ SECTOR_ETFS = {
     "XLU": "Utilities",
     "XLP": "Consumer Staples",
     "XLRE": "Real Estate",
+    # Major industry / thematic ETFs
+    "IGV": "Software",
+    "CIBR": "Cybersecurity",
+    "XBI": "Biotech",
+    "KRE": "Regional Banks",
+    "KBE": "Banks",
+    "ITB": "Homebuilders",
+    "XRT": "Retail",
+    "IYT": "Transports",
+    "ITA": "Aerospace & Defense",
+    "JETS": "Airlines",
+    "URA": "Uranium / Nuclear",
+    "TAN": "Solar",
+    "ICLN": "Clean Energy",
+    "COPX": "Copper Miners",
+    "SLV": "Silver",
+    "DBA": "Agriculture",
+    "KWEB": "China Internet",
     "IBIT": "Bitcoin / Crypto",
     "GLD": "Gold",
     "DBC": "Broad Commodities",
@@ -56,6 +75,33 @@ SECTOR_ALIASES = {
     "ai-infrastructure": "SMH",
     "tech": "XLK",
     "technology": "XLK",
+    "software": "IGV",
+    "saas": "IGV",
+    "cyber": "CIBR",
+    "cybersecurity": "CIBR",
+    "biotech": "XBI",
+    "regional-banks": "KRE",
+    "regionalbanks": "KRE",
+    "banks": "KBE",
+    "banking": "KBE",
+    "homebuilders": "ITB",
+    "housing": "ITB",
+    "retail": "XRT",
+    "transport": "IYT",
+    "transports": "IYT",
+    "aerospace": "ITA",
+    "defense": "ITA",
+    "airlines": "JETS",
+    "uranium": "URA",
+    "nuclear": "URA",
+    "solar": "TAN",
+    "clean-energy": "ICLN",
+    "cleanenergy": "ICLN",
+    "copper": "COPX",
+    "silver": "SLV",
+    "agriculture": "DBA",
+    "china-internet": "KWEB",
+    "china": "KWEB",
     "crypto": "IBIT",
     "bitcoin": "IBIT",
     "energy": "XLE",
@@ -82,6 +128,23 @@ SECTOR_CANDIDATES = {
     "XLI": ["GE", "CAT", "RTX", "UNP", "HON", "ETN", "DE", "BA", "LMT", "UPS"],
     "XLB": ["LIN", "SHW", "FCX", "NEM", "ECL", "APD", "CTVA", "DOW", "NUE", "MLM"],
     "XLRE": ["PLD", "AMT", "EQIX", "WELL", "SPG", "O", "DLR", "PSA", "CCI", "CBRE"],
+    "IGV": ["MSFT", "ORCL", "CRM", "ADBE", "NOW", "INTU", "SNOW", "DDOG", "MDB", "TEAM"],
+    "CIBR": ["PANW", "CRWD", "FTNT", "ZS", "OKTA", "NET", "S", "CHKP", "CYBR", "TENB"],
+    "XBI": ["VRTX", "REGN", "ALNY", "BMRN", "INCY", "EXAS", "TECH", "SRPT", "HALO", "IONS"],
+    "KRE": ["FITB", "HBAN", "RF", "KEY", "CFG", "TFC", "MTB", "CMA", "WAL", "ZION"],
+    "KBE": ["JPM", "BAC", "WFC", "C", "GS", "MS", "USB", "PNC", "BK", "SCHW"],
+    "ITB": ["DHI", "LEN", "PHM", "NVR", "TOL", "KBH", "MTH", "BLDR", "LOW", "HD"],
+    "XRT": ["AMZN", "WMT", "COST", "TGT", "TJX", "ROST", "BBY", "ANF", "GPS", "BURL"],
+    "IYT": ["UNP", "UPS", "FDX", "CSX", "NSC", "ODFL", "JBHT", "CHRW", "EXPD", "XPO"],
+    "ITA": ["RTX", "LMT", "NOC", "GD", "BA", "TXT", "HWM", "TDG", "LHX", "HII"],
+    "JETS": ["DAL", "UAL", "AAL", "LUV", "ALK", "JBLU", "SAVE", "RYAAY", "CPA", "SKYW"],
+    "URA": ["CCJ", "CEG", "VST", "UEC", "UUUU", "LEU", "NXE", "DNN", "SMR", "BWXT"],
+    "TAN": ["FSLR", "ENPH", "SEDG", "RUN", "NXT", "ARRY", "SHLS", "CSIQ", "JKS", "DQ"],
+    "ICLN": ["FSLR", "ENPH", "PLUG", "BE", "NXT", "RUN", "ORA", "CWEN", "AY", "NEE"],
+    "COPX": ["FCX", "SCCO", "TECK", "BHP", "RIO", "VALE", "ERO", "HBM", "IVPAF", "LUNMF"],
+    "SLV": ["PAAS", "AG", "HL", "WPM", "SILV", "MAG", "FSM", "EXK", "CDE", "SSRM"],
+    "DBA": ["ADM", "BG", "MOS", "CF", "NTR", "DE", "CTVA", "TSN", "CALM", "FMC"],
+    "KWEB": ["BABA", "PDD", "JD", "BIDU", "TME", "NTES", "BILI", "BEKE", "TAL", "VIPS"],
     "DBC": ["XOM", "CVX", "FCX", "NEM", "AA", "MOS", "CF", "TECK", "VALE", "RIO"],
     "GLD": ["NEM", "GOLD", "AEM", "WPM", "FNV", "KGC", "PAAS", "AGI", "GFI", "HMY"],
 }
@@ -98,6 +161,23 @@ SECTOR_THEME_NAMES = {
     "XLI": "Industrials",
     "XLB": "Materials",
     "XLRE": "Real Estate",
+    "IGV": "Software / SaaS",
+    "CIBR": "Cybersecurity",
+    "XBI": "Biotech",
+    "KRE": "Regional Banks",
+    "KBE": "Banks",
+    "ITB": "Homebuilders / Housing",
+    "XRT": "Retail",
+    "IYT": "Transports",
+    "ITA": "Aerospace & Defense",
+    "JETS": "Airlines",
+    "URA": "Uranium / Nuclear Power",
+    "TAN": "Solar",
+    "ICLN": "Clean Energy",
+    "COPX": "Copper / Electrification",
+    "SLV": "Silver",
+    "DBA": "Agriculture",
+    "KWEB": "China Internet",
     "DBC": "Commodities",
     "GLD": "Gold / Miners",
 }
@@ -1094,12 +1174,13 @@ def print_macro_command():
         print(item)
 
 
-def print_sectors_command():
+def print_sectors_command(show_all=False):
     rows = compute_sectors()
     print("Top Relative Strength Sectors:")
     print()
-    for idx, row in enumerate(rows[:3], 1):
-        print(f"{idx}. {row['name']} {emoji_for_sector(row['name'])}")
+    limit = len(rows) if show_all else 3
+    for idx, row in enumerate(rows[:limit], 1):
+        print(f"{idx}. {row['name']} {emoji_for_sector(row['name'])}  ({signed_pct(row['rel_6m'])} 6M vs SPY)")
 
 
 def print_sector_command(raw_sector):
@@ -1305,6 +1386,7 @@ def print_usage():
     print("  python model.py                 # or: python Valuation_model.py")
     print("  python model.py full            # hottest sector + hottest company")
     print("  python model.py sectors         # sector leaderboard")
+    print("  python model.py sectors all     # full sector leaderboard")
     print("  python model.py sector semis    # specific sector condition")
     print("  python model.py theme utilities # alias for sector")
     print("  python model.py company NVDA    # specific company condition")
@@ -1344,7 +1426,7 @@ def run_menu():
     if choice in {"1", "macro"}:
         print_macro_command()
     elif choice in {"2", "sectors"}:
-        print_sectors_command()
+        print_sectors_command(show_all=len(args) >= 2 and args[1].lower() == "all")
     elif choice in {"3", "sector", "theme", "sector-condition", "check-sector"}:
         sector = args[1] if len(args) >= 2 else prompt_value("Sector", "semis")
         print_sector_command(sector)
@@ -1372,7 +1454,7 @@ def run_cli(args):
     if command in {"1", "macro"}:
         print_macro_command()
     elif command in {"2", "sectors"}:
-        print_sectors_command()
+        print_sectors_command(show_all=len(args) >= 2 and args[1].lower() == "all")
     elif command in {"3", "sector", "theme", "sector-condition", "check-sector"}:
         sector = args[1] if len(args) >= 2 else "semis"
         print_sector_command(sector)

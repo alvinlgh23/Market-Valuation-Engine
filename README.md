@@ -44,6 +44,7 @@ python model.py full
 python model.py macro
 python model.py 1
 python model.py sectors
+python model.py sectors all
 python model.py 2
 python model.py sector semis
 python model.py theme utilities
