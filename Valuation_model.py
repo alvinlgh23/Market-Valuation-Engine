@@ -73,7 +73,7 @@ SECTOR_ALIASES = {
 SECTOR_CANDIDATES = {
     "SMH": ["MU", "WDC", "SNDK", "AVGO", "NVDA", "AMD", "TSM", "ASML", "LRCX", "KLAC", "AMAT", "MRVL"],
     "XLK": ["MSFT", "AAPL", "NVDA", "AVGO", "ORCL", "CRM", "ADBE", "AMD", "NOW", "PANW"],
-    "IBIT": ["COIN", "MSTR", "MARA", "RIOT", "CLSK", "IREN", "HOOD", "SQ", "CME", "IBIT"],
+    "IBIT": ["COIN", "MSTR", "MARA", "RIOT", "CLSK", "IREN", "HOOD", "XYZ", "CME", "IBIT"],
     "XLE": ["XOM", "CVX", "COP", "SLB", "EOG", "MPC", "VLO", "PSX", "OXY", "HAL"],
     "XLU": ["NEE", "SO", "DUK", "CEG", "VST", "AEP", "SRE", "D", "EXC", "PEG"],
     "XLP": ["WMT", "COST", "PG", "KO", "PEP", "PM", "MDLZ", "CL", "MO", "KMB"],
@@ -111,6 +111,10 @@ ASSET_PROXIES = {
     "DBC": "Commodities",
     "TLT": "Long duration bonds",
     "UUP": "US dollar",
+}
+
+TICKER_ALIASES = {
+    "SQ": "XYZ",
 }
 
 MANUAL_MACRO_INDICATORS = [
@@ -151,6 +155,10 @@ def safe(info, *keys, default=None):
         if value is not None:
             return value
     return default
+
+
+def resolve_ticker(ticker):
+    return TICKER_ALIASES.get(ticker.upper(), ticker.upper())
 
 
 def is_number(value):
@@ -378,6 +386,7 @@ def compute_sectors():
 def company_quality_rows(tickers):
     rows = []
     for ticker in tickers:
+        ticker = resolve_ticker(ticker)
         t = yf.Ticker(ticker)
         try:
             info = t.info
@@ -394,6 +403,8 @@ def company_quality_rows(tickers):
         debt = safe(info, "totalDebt", default=0)
         accel = revenue_acceleration(t)
         margin_expansion = operating_margin_expansion(t)
+        op_margin = op_margin if op_margin is not None else latest_operating_margin(t)
+        fcf = fcf if fcf is not None else trailing_free_cash_flow(t)
 
         growth_score = (
             score_from_change(rev_growth, True, 0.25) * 0.45
@@ -431,6 +442,7 @@ def company_quality_rows(tickers):
 def heat_rows(tickers):
     rows = []
     for ticker in tickers:
+        ticker = resolve_ticker(ticker)
         t = yf.Ticker(ticker)
         try:
             info = t.info
@@ -527,8 +539,12 @@ def implied_prior_forward_pe(heat):
 def momentum_structure(heat):
     vertical = heat.get("vertical")
     three_month = heat.get("three_month")
+    six_month = heat.get("six_month")
     dist_200 = heat.get("dist_200")
     ticker_rsi = heat.get("rsi")
+
+    if (six_month is not None and six_month < 0) or (dist_200 is not None and dist_200 < 0):
+        return "Correction / Base-Building ⚠"
 
     parabolic = (
         (vertical is not None and vertical > 0.10)
@@ -579,12 +595,136 @@ def chase_risk_label(heat):
     momentum = heat.get("momentum_heat", 0)
 
     if (six_month is not None and six_month < 0) or (dist_200 is not None and dist_200 < 0):
-        return "Low-to-Moderate Chase Risk"
+        return "Low Chase Risk"
     if momentum >= 55:
         return "High Chase Risk"
     if momentum >= 25:
         return "Elevated Chase Risk"
     return "Chase Risk Not Excessive"
+
+
+def momentum_weakness_label(heat):
+    six_month = heat.get("six_month")
+    dist_200 = heat.get("dist_200")
+    three_month = heat.get("three_month")
+
+    weak_points = 0
+    if six_month is not None and six_month < 0:
+        weak_points += 1
+    if dist_200 is not None and dist_200 < 0:
+        weak_points += 1
+    if three_month is not None and three_month < 0:
+        weak_points += 1
+
+    if weak_points >= 2:
+        return "Moderate Momentum Weakness"
+    if weak_points == 1:
+        return "Mild Momentum Weakness"
+    return None
+
+
+def narrative_classification(quality, heat, rel_strength, pe_score):
+    accel = quality.get("accel")
+    fcf = quality.get("fcf")
+    margin_expansion = quality.get("margin_expansion")
+    six_month = heat.get("six_month")
+    dist_200 = heat.get("dist_200")
+    forward_pe = heat.get("forward_pe")
+
+    stable_fcf = is_number(fcf) and fcf > 0
+    mature_profile = (
+        (accel is not None and accel < 0.10)
+        and stable_fcf
+        and (forward_pe is not None and forward_pe < 18)
+    )
+    market_weak = (
+        (six_month is not None and six_month < 0)
+        or (dist_200 is not None and dist_200 < 0)
+        or (rel_strength is not None and rel_strength < 0.05)
+    )
+
+    if accel is not None and accel > 0.25 and rel_strength is not None and rel_strength > 0.10 and pe_score >= 55:
+        return {
+            "label": "Accelerating 🚀",
+            "drivers": [
+                "earnings acceleration",
+                "sector / stock outperformance",
+                "institutional rerating interest",
+            ],
+            "interpretation": [
+                "The company is participating in an active narrative with improving fundamentals and market confirmation.",
+            ],
+        }
+
+    if mature_profile and market_weak:
+        return {
+            "label": "Weakening Mature Platform ⚠",
+            "drivers": [
+                "stable free cash flow",
+                "mature business profile",
+                "slowing strategic relevance",
+                "limited institutional rerating interest",
+            ],
+            "interpretation": [
+                "The company remains financially stable,",
+                "but current market behavior suggests declining narrative leadership.",
+            ],
+        }
+
+    if stable_fcf and accel is not None and accel >= 0.10 and market_weak:
+        return {
+            "label": "Fundamentally Supported, Market Momentum Weakening",
+            "drivers": [
+                "positive earnings acceleration",
+                "cash-flow support",
+                "weak relative strength",
+            ],
+            "interpretation": [
+                "Fundamentals remain supported, but market momentum has weakened.",
+                "The stock needs confirmation before the narrative can be treated as active again.",
+            ],
+        }
+
+    if stable_fcf and (accel is None or accel < 0.10):
+        return {
+            "label": "Stable Mature 🟡",
+            "drivers": [
+                "stable free cash flow",
+                "mature growth profile",
+                "limited rerating evidence",
+            ],
+            "interpretation": [
+                "The business remains financially stable,",
+                "but the market is not assigning strong narrative leadership.",
+            ],
+        }
+
+    if quality.get("score", 50) < 60 and rel_strength is not None and rel_strength > 0:
+        return {
+            "label": "Market Momentum Improving, Fundamentals Mixed",
+            "drivers": [
+                "improving relative strength",
+                "mixed financial quality",
+                "limited cash-flow confirmation",
+            ],
+            "interpretation": [
+                "The market is showing interest,",
+                "but fundamentals are not yet strong enough to confirm durable narrative leadership.",
+            ],
+        }
+
+    return {
+        "label": "Developing / Neutral",
+        "drivers": [
+            "mixed earnings acceleration",
+            "limited relative strength confirmation",
+            "unclear institutional rerating interest",
+        ],
+        "interpretation": [
+            "The narrative is still developing,",
+            "and market confirmation is not decisive yet.",
+        ],
+    }
 
 
 def overheat_assessment(narrative):
@@ -593,10 +733,13 @@ def overheat_assessment(narrative):
         (heat.get("six_month") is not None and heat["six_month"] < 0)
         or (heat.get("dist_200") is not None and heat["dist_200"] < 0)
     )
-    if cooling and narrative["score"] >= 55:
+    classification = narrative.get("classification", {})
+    if classification.get("label") in {"Weakening Mature Platform ⚠", "Stable Mature 🟡"}:
+        return classification.get("interpretation", [])
+    if cooling and (narrative["score"] >= 55 or narrative.get("earnings_acceleration", 0) > 0.15):
         return [
-            "Fundamentals remain strong, but the stock is no longer in active chase mode.",
-            "The main risk is valuation compression if growth expectations weaken.",
+            "Fundamentals remain strong, but market momentum has weakened.",
+            "The stock is not in active chase mode; current risk is more about growth expectations and broader tech weakness than overheating.",
         ]
     if cooling:
         return [
@@ -660,6 +803,9 @@ def print_overheat_analysis(narrative):
     print("Risk:")
     print(f"⚠ {valuation_risk_label(heat)}")
     print(f"⚠ {chase_risk_label(heat)}")
+    weakness = momentum_weakness_label(heat)
+    if weakness:
+        print(f"⚠ {weakness}")
 
 
 def sector_positioning(key, sector_row=None):
@@ -805,7 +951,7 @@ def print_sector_positioning_analysis(positioning):
 
 
 def narrative_strength(ticker):
-    ticker = ticker.upper()
+    ticker = resolve_ticker(ticker)
     quality = company_quality_rows([ticker])[0]
     heat = heat_rows([ticker])[0]
     rel_strength = relative_change(ticker, "SPY", 63)
@@ -814,16 +960,16 @@ def narrative_strength(ticker):
     earnings_score = score_from_change(earnings_accel, True, 0.15)
     pe_score = pe_expansion_score(heat)
     total = rs_score * 0.45 + earnings_score * 0.35 + pe_score * 0.20
+    quality_score = quality.get("score", 50)
+    if quality_score < 60:
+        total = min(total, 59)
     if rel_strength is not None and rel_strength < 0:
         total = min(total, 69)
     if heat.get("six_month") is not None and heat["six_month"] < 0:
         total = min(total, 69)
 
-    label = intensity_label(total, extreme="Extreme")
-    if (rel_strength is not None and rel_strength < 0) and earnings_score >= 60:
-        label = "Fundamentally Supported, Market Momentum Weakening"
-    elif heat.get("six_month") is not None and heat["six_month"] < 0 and earnings_score >= 60:
-        label = "Fundamentally Supported, Market Momentum Weakening"
+    classification = narrative_classification(quality, heat, rel_strength, pe_score)
+    label = classification["label"]
 
     return {
         "ticker": ticker,
@@ -834,17 +980,21 @@ def narrative_strength(ticker):
         "earnings_acceleration": earnings_accel,
         "earnings_score": earnings_score,
         "pe_score": pe_score,
+        "classification": classification,
         "quality": quality,
         "heat": heat,
     }
 
 
 def print_narrative_evidence(narrative):
-    print(f"Narrative Strength: {narrative['label']}{' 🚀' if narrative['score'] >= 75 else ''}")
+    print(f"Narrative Strength: {narrative['label']}")
     print("Driven by:")
-    print(f"- Earnings acceleration ({pct(narrative['earnings_acceleration'])})")
-    print(f"- Sector / stock outperformance ({pct(narrative['relative_strength'])} vs SPY)")
-    print(f"- Institutional rerating ({intensity_label(narrative['pe_score'])} valuation expansion proxy)")
+    for driver in narrative["classification"]["drivers"]:
+        print(f"- {driver}")
+    print()
+    print("Interpretation:")
+    for line in narrative["classification"]["interpretation"]:
+        print(line)
 
 
 def sector_key(raw):
@@ -925,7 +1075,7 @@ def print_sector_command(raw_sector):
 
 
 def print_risk_command(ticker):
-    ticker = ticker.upper()
+    ticker = resolve_ticker(ticker)
     narrative = narrative_strength(ticker)
     row = narrative["heat"]
 
@@ -937,14 +1087,18 @@ def print_risk_command(ticker):
 
 
 def print_company_command(ticker):
-    ticker = ticker.upper()
+    requested_ticker = ticker.upper()
+    ticker = resolve_ticker(ticker)
     narrative = narrative_strength(ticker)
     quality = narrative["quality"]
     heat = narrative["heat"]
 
     print("SPECIFIC COMPANY CONDITION REPORT")
     print()
-    print(f"Company: {ticker}")
+    if ticker != requested_ticker:
+        print(f"Company: {ticker} (alias for {requested_ticker})")
+    else:
+        print(f"Company: {ticker}")
     print()
     print(f"Revenue acceleration: {pct(quality['accel'])}")
     print(f"Margin expansion: {pct(quality['margin_expansion'])}")
@@ -1344,15 +1498,62 @@ def operating_margin_expansion(ticker_obj):
         income = ticker_obj.quarterly_income_stmt
         if income is None or income.empty:
             return None
-        if "Total Revenue" not in income.index or "Operating Income" not in income.index:
+        if "Total Revenue" not in income.index:
+            return None
+        margin_row = None
+        for candidate in ["Operating Income", "Pretax Income", "Net Income"]:
+            if candidate in income.index:
+                margin_row = candidate
+                break
+        if margin_row is None:
             return None
         revenue = income.loc["Total Revenue"].dropna()
-        operating_income = income.loc["Operating Income"].dropna()
-        if len(revenue) < 5 or len(operating_income) < 5:
+        margin_income = income.loc[margin_row].dropna()
+        if len(revenue) < 5 or len(margin_income) < 5:
             return None
-        latest_margin = float(operating_income.iloc[0]) / float(revenue.iloc[0])
-        prior_year_margin = float(operating_income.iloc[4]) / float(revenue.iloc[4])
+        latest_margin = float(margin_income.iloc[0]) / float(revenue.iloc[0])
+        prior_year_margin = float(margin_income.iloc[4]) / float(revenue.iloc[4])
         return latest_margin - prior_year_margin
+    except Exception:
+        return None
+
+
+def latest_operating_margin(ticker_obj):
+    try:
+        income = ticker_obj.quarterly_income_stmt
+        if income is None or income.empty:
+            return None
+        if "Total Revenue" not in income.index:
+            return None
+        margin_row = None
+        for candidate in ["Operating Income", "Pretax Income", "Net Income"]:
+            if candidate in income.index:
+                margin_row = candidate
+                break
+        if margin_row is None:
+            return None
+        revenue = income.loc["Total Revenue"].dropna()
+        margin_income = income.loc[margin_row].dropna()
+        if len(revenue) < 1 or len(margin_income) < 1 or float(revenue.iloc[0]) == 0:
+            return None
+        return float(margin_income.iloc[0]) / float(revenue.iloc[0])
+    except Exception:
+        return None
+
+
+def trailing_free_cash_flow(ticker_obj):
+    try:
+        cashflow = ticker_obj.quarterly_cashflow
+        if cashflow is None or cashflow.empty or "Free Cash Flow" not in cashflow.index:
+            cashflow = ticker_obj.cashflow
+        if cashflow is None or cashflow.empty or "Free Cash Flow" not in cashflow.index:
+            return None
+        fcf = cashflow.loc["Free Cash Flow"].dropna()
+        if len(fcf) == 0:
+            return None
+        if len(fcf) >= 4:
+            return float(fcf.iloc[:4].sum())
+        return float(fcf.iloc[0])
     except Exception:
         return None
 
