@@ -104,6 +104,12 @@ SECTOR_ALIASES = {
     "china": "KWEB",
     "crypto": "IBIT",
     "bitcoin": "IBIT",
+    "consumer-discretionary": "XLY",
+    "consumerdiscretionary": "XLY",
+    "discretionary": "XLY",
+    "communication": "XLC",
+    "communication-services": "XLC",
+    "communications": "XLC",
     "energy": "XLE",
     "utilities": "XLU",
     "defensives": "XLP",
@@ -119,6 +125,8 @@ SECTOR_ALIASES = {
 SECTOR_CANDIDATES = {
     "SMH": ["MU", "WDC", "SNDK", "AVGO", "NVDA", "AMD", "TSM", "ASML", "LRCX", "KLAC", "AMAT", "MRVL"],
     "XLK": ["MSFT", "AAPL", "NVDA", "AVGO", "ORCL", "CRM", "ADBE", "AMD", "NOW", "PANW"],
+    "XLY": ["AMZN", "TSLA", "HD", "MCD", "LOW", "BKNG", "TJX", "SBUX", "NKE", "ORLY"],
+    "XLC": ["META", "GOOGL", "NFLX", "TMUS", "DIS", "SPOT", "VZ", "T", "CMCSA", "CHTR"],
     "IBIT": ["COIN", "MSTR", "MARA", "RIOT", "CLSK", "IREN", "HOOD", "XYZ", "CME", "IBIT"],
     "XLE": ["XOM", "CVX", "COP", "SLB", "EOG", "MPC", "VLO", "PSX", "OXY", "HAL"],
     "XLU": ["NEE", "SO", "DUK", "CEG", "VST", "AEP", "SRE", "D", "EXC", "PEG"],
@@ -129,9 +137,9 @@ SECTOR_CANDIDATES = {
     "XLB": ["LIN", "SHW", "FCX", "NEM", "ECL", "APD", "CTVA", "DOW", "NUE", "MLM"],
     "XLRE": ["PLD", "AMT", "EQIX", "WELL", "SPG", "O", "DLR", "PSA", "CCI", "CBRE"],
     "IGV": ["MSFT", "ORCL", "CRM", "ADBE", "NOW", "INTU", "SNOW", "DDOG", "MDB", "TEAM"],
-    "CIBR": ["PANW", "CRWD", "FTNT", "ZS", "OKTA", "NET", "S", "CHKP", "CYBR", "TENB"],
+    "CIBR": ["PANW", "CRWD", "FTNT", "ZS", "OKTA", "NET", "S", "CHKP", "VRNS", "TENB"],
     "XBI": ["VRTX", "REGN", "ALNY", "BMRN", "INCY", "EXAS", "TECH", "SRPT", "HALO", "IONS"],
-    "KRE": ["FITB", "HBAN", "RF", "KEY", "CFG", "TFC", "MTB", "CMA", "WAL", "ZION"],
+    "KRE": ["FITB", "HBAN", "RF", "KEY", "CFG", "TFC", "MTB", "FHN", "WAL", "ZION"],
     "KBE": ["JPM", "BAC", "WFC", "C", "GS", "MS", "USB", "PNC", "BK", "SCHW"],
     "ITB": ["DHI", "LEN", "PHM", "NVR", "TOL", "KBH", "MTH", "BLDR", "LOW", "HD"],
     "XRT": ["AMZN", "WMT", "COST", "TGT", "TJX", "ROST", "BBY", "ANF", "GPS", "BURL"],
@@ -142,7 +150,7 @@ SECTOR_CANDIDATES = {
     "TAN": ["FSLR", "ENPH", "SEDG", "RUN", "NXT", "ARRY", "SHLS", "CSIQ", "JKS", "DQ"],
     "ICLN": ["FSLR", "ENPH", "PLUG", "BE", "NXT", "RUN", "ORA", "CWEN", "AY", "NEE"],
     "COPX": ["FCX", "SCCO", "TECK", "BHP", "RIO", "VALE", "ERO", "HBM", "IVPAF", "LUNMF"],
-    "SLV": ["PAAS", "AG", "HL", "WPM", "SILV", "MAG", "FSM", "EXK", "CDE", "SSRM"],
+    "SLV": ["PAAS", "AG", "HL", "WPM", "SILV", "SVM", "FSM", "EXK", "CDE", "SSRM"],
     "DBA": ["ADM", "BG", "MOS", "CF", "NTR", "DE", "CTVA", "TSN", "CALM", "FMC"],
     "KWEB": ["BABA", "PDD", "JD", "BIDU", "TME", "NTES", "BILI", "BEKE", "TAL", "VIPS"],
     "DBC": ["XOM", "CVX", "FCX", "NEM", "AA", "MOS", "CF", "TECK", "VALE", "RIO"],
@@ -152,6 +160,8 @@ SECTOR_CANDIDATES = {
 SECTOR_THEME_NAMES = {
     "SMH": "Semiconductors / AI Memory",
     "XLK": "Technology / AI Software",
+    "XLY": "Consumer Discretionary",
+    "XLC": "Communication Services",
     "IBIT": "Crypto Infrastructure",
     "XLE": "Energy",
     "XLU": "Utilities / Power Demand",
@@ -1054,17 +1064,102 @@ def sector_positioning(key, sector_row=None):
     else:
         breadth_label = "Narrow"
 
+    momentum_label = momentum_structure(sector_heat)
+    broad_but_inconsistent = (
+        breadth_ratio >= 0.50
+        and (
+            (rel_6m is not None and rel_6m < 0)
+            or momentum_label.startswith("Correction")
+            or (current_sector_pe is not None and prior_sector_pe is not None and current_sector_pe < prior_sector_pe)
+        )
+    )
+    if broad_but_inconsistent:
+        breadth_label = "Broad but Inconsistent ⚠"
+
     crowded = (
         breadth_ratio >= 0.65
         and (
             (rel_6m is not None and rel_6m > 0.20)
             or (dist_200 is not None and dist_200 > 0.20)
-            or momentum_structure(sector_heat).startswith("Parabolic")
+            or momentum_label.startswith("Parabolic")
         )
     )
     warming = breadth_ratio >= 0.45 or (rel_6m is not None and rel_6m > 0.10)
 
-    if crowded:
+    narrative_structure = None
+    market_interpretation = None
+
+    if key == "IBIT" and broad_but_inconsistent:
+        stage = "Narrative Consolidation / Rebuilding Phase ⚠"
+        risk = [
+            "⚠ High Narrative Volatility",
+            "⚠ Speculative Momentum Sensitivity",
+            "⚠ Inconsistent Institutional Conviction",
+        ]
+        assessment = [
+            "Current sector behavior suggests speculative rebuilding",
+            "rather than aggressive institutional accumulation.",
+            "",
+            "While capital continues to participate selectively,",
+            "relative weakness versus SPY and ongoing valuation compression",
+            "indicate that institutional conviction remains inconsistent.",
+            "",
+            "The sector is currently trading more as a high-beta",
+            "narrative-sensitive asset class than a stable structural compounder.",
+        ]
+        narrative_structure = {
+            "strength": "Speculative Rebuilding ⚠",
+            "drivers": [
+                "persistent Bitcoin / crypto adoption narrative",
+                "ETF-related institutional participation",
+                "recovering digital-asset liquidity conditions",
+                "inconsistent sector-wide momentum confirmation",
+            ],
+            "interpretation": [
+                "The crypto infrastructure narrative remains active,",
+                "but market behavior suggests consolidation and rebuilding",
+                "rather than a fully validated institutional momentum phase.",
+                "",
+                "Sector leadership remains highly sensitive to:",
+                "• Bitcoin price action",
+                "• liquidity conditions",
+                "• macro risk appetite",
+                "• regulatory developments",
+            ],
+        }
+        market_interpretation = [
+            "Crypto infrastructure remains one of the market's",
+            "most narrative-sensitive sectors.",
+            "",
+            "The long-term digital asset narrative remains alive,",
+            "but the market has not yet fully transitioned back into",
+            "a broad euphoric expansion phase.",
+            "",
+            "Current behavior is more consistent with:",
+            "• consolidation",
+            "• speculative rebuilding",
+            "• selective institutional participation",
+            "",
+            "rather than:",
+            "• full-cycle momentum expansion",
+            "• broad institutional crowding",
+            "• aggressive thematic overheating",
+        ]
+    elif broad_but_inconsistent:
+        stage = "Sector Consolidation / Uneven Participation Phase ⚠"
+        risk = [
+            "⚠ Inconsistent Institutional Conviction",
+            "⚠ Selective Momentum Risk",
+            "⚠ Crowding signal not fully confirmed",
+        ]
+        assessment = [
+            "Participation is broad, but sector confirmation is inconsistent.",
+            "Relative strength, valuation trend, or momentum structure does not yet support a clean overcrowding call.",
+            "",
+            "This looks more like uneven sector rebuilding",
+            "than aggressive institutional accumulation.",
+        ]
+    elif crowded:
         stage = "Late Sector Momentum Phase ⚠"
         risk = "Elevated thematic overcrowding risk"
         assessment = [
@@ -1094,10 +1189,12 @@ def sector_positioning(key, sector_row=None):
         "prior_sector_pe": prior_sector_pe,
         "breadth_label": breadth_label,
         "breadth_tickers": breadth_rows,
-        "momentum_structure": "Parabolic Sector-Wide Acceleration" if momentum_structure(sector_heat).startswith("Parabolic") else momentum_structure(sector_heat),
+        "momentum_structure": "Parabolic Sector-Wide Acceleration" if momentum_label.startswith("Parabolic") else momentum_label,
+        "narrative_structure": narrative_structure,
         "assessment": assessment,
         "stage": stage,
         "risk": risk,
+        "market_interpretation": market_interpretation,
     }
 
 
@@ -1129,6 +1226,27 @@ def print_sector_positioning_analysis(positioning):
     print("Momentum Structure:")
     print(positioning["momentum_structure"])
     print()
+    if positioning.get("narrative_structure"):
+        narrative = positioning["narrative_structure"]
+        print("=================================================")
+        print("NARRATIVE STRUCTURE")
+        print("=================================================")
+        print()
+        print("Narrative Strength:")
+        print(narrative["strength"])
+        print()
+        print("Driven by:")
+        for driver in narrative["drivers"]:
+            print(f"- {driver}")
+        print()
+        print("Interpretation:")
+        for line in narrative["interpretation"]:
+            print(line)
+        print()
+        print("=================================================")
+        print("POSITIONING / CAPITAL FLOW ANALYSIS")
+        print("=================================================")
+        print()
     print("Assessment:")
     for line in positioning["assessment"]:
         print(line)
@@ -1137,7 +1255,20 @@ def print_sector_positioning_analysis(positioning):
     print(positioning["stage"])
     print()
     print("Risk:")
-    print(positioning["risk"])
+    risk = positioning["risk"]
+    if isinstance(risk, list):
+        for line in risk:
+            print(line)
+    else:
+        print(risk)
+    if positioning.get("market_interpretation"):
+        print()
+        print("=================================================")
+        print("MARKET INTERPRETATION")
+        print("=================================================")
+        print()
+        for line in positioning["market_interpretation"]:
+            print(line)
 
 
 def narrative_strength(ticker):
@@ -1224,11 +1355,14 @@ def print_macro_command():
 
 def print_sectors_command(show_all=False):
     rows = compute_sectors()
-    print("Top Relative Strength Sectors:")
+    print("Sector Rotation Leaderboard:")
     print()
     limit = len(rows) if show_all else 3
     for idx, row in enumerate(rows[:limit], 1):
-        print(f"{idx}. {row['name']} {emoji_for_sector(row['name'])}  ({signed_pct(row['rel_6m'])} 6M vs SPY)")
+        print(
+            f"{idx}. {row['name']} {emoji_for_sector(row['name'])}  "
+            f"(1M {signed_pct(row['rel_1m'])}, 3M {signed_pct(row['rel_3m'])}, 6M {signed_pct(row['rel_6m'])} vs SPY)"
+        )
 
 
 def print_sector_command(raw_sector):
@@ -1383,7 +1517,7 @@ def print_full_command():
     print("DXY Rising" if macro["dxy_3m"] and macro["dxy_3m"] > 0 else "DXY Falling / Stable")
     print()
 
-    print("Top Relative Strength Sectors:")
+    print("Top Sector Rotation Leaders:")
     for idx, row in enumerate(sectors[:3], 1):
         print(f"{idx}. {row['name']} {emoji_for_sector(row['name'])}")
     print()
