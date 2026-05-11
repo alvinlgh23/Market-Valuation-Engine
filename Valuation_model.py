@@ -713,11 +713,28 @@ def narrative_classification(quality, heat, rel_strength, pe_score):
     accel = quality.get("accel")
     fcf = quality.get("fcf")
     margin_expansion = quality.get("margin_expansion")
+    quality_score = quality.get("score", 50)
     six_month = heat.get("six_month")
     dist_200 = heat.get("dist_200")
     forward_pe = heat.get("forward_pe")
 
     stable_fcf = is_number(fcf) and fcf > 0
+    limited_fundamental_confirmation = (
+        quality_score < 65
+        or (accel is not None and accel < 0)
+        or not stable_fcf
+        or (is_number(fcf) and fcf < 100_000_000)
+    )
+    aggressive_speculative_momentum = (
+        (six_month is not None and six_month > 0.80)
+        or (dist_200 is not None and dist_200 > 0.60)
+        or (heat.get("momentum_heat", 0) >= 60)
+    )
+    rapid_valuation_expansion = (
+        pe_score >= 55
+        or (forward_pe is not None and forward_pe > 60)
+        or heat.get("valuation_heat", 0) >= 55
+    )
     mature_profile = (
         (accel is not None and accel < 0.10)
         and stable_fcf
@@ -729,6 +746,23 @@ def narrative_classification(quality, heat, rel_strength, pe_score):
         or (rel_strength is not None and rel_strength < 0.05)
     )
     unstable_earnings_base = forward_pe is not None and forward_pe < 0
+
+    if aggressive_speculative_momentum and limited_fundamental_confirmation and rapid_valuation_expansion:
+        return {
+            "label": "Speculative Narrative Momentum 🚀⚠",
+            "drivers": [
+                "aggressive speculative momentum",
+                "AI / infrastructure narrative exposure",
+                "rapid valuation expansion",
+                "limited fundamental confirmation",
+            ],
+            "interpretation": [
+                "Market behavior suggests speculative narrative-driven positioning",
+                "rather than fundamentally validated institutional accumulation.",
+                "",
+                "Price action is significantly outperforming underlying business fundamentals.",
+            ],
+        }
 
     if accel is not None and accel > 0.25 and rel_strength is not None and rel_strength > 0.10 and pe_score >= 55:
         return {
@@ -852,6 +886,14 @@ def overheat_assessment(narrative):
         or (heat.get("dist_200") is not None and heat["dist_200"] < 0)
     )
     classification = narrative.get("classification", {})
+    if classification.get("label") == "Speculative Narrative Momentum 🚀⚠":
+        return [
+            "Current momentum appears heavily narrative-driven,",
+            "with limited financial confirmation supporting the magnitude of the rerating.",
+            "",
+            "The stock is behaving more like a speculative thematic vehicle",
+            "than a stable institutional-quality compounder.",
+        ]
     if classification.get("label") == "Controversial / Uncertain ⚠":
         return [
             "Operational metrics remain resilient,",
@@ -930,13 +972,19 @@ def print_overheat_analysis(narrative):
         print(line)
     print()
     print("Current Stage:")
-    if narrative.get("classification", {}).get("label") == "Controversial / Uncertain ⚠":
+    if narrative.get("classification", {}).get("label") == "Speculative Narrative Momentum 🚀⚠":
+        print("Speculative Momentum Expansion Phase 🚀⚠")
+    elif narrative.get("classification", {}).get("label") == "Controversial / Uncertain ⚠":
         print("Narrative Repricing / Identity Uncertainty Phase ⚠")
     else:
         print(momentum_stage(heat))
     print()
     print("Risk:")
-    if narrative.get("classification", {}).get("label") == "Controversial / Uncertain ⚠":
+    if narrative.get("classification", {}).get("label") == "Speculative Narrative Momentum 🚀⚠":
+        print("⚠ Extreme Narrative Volatility Risk")
+        print("⚠ High Chase Risk")
+        print("⚠ Weak Fundamental Confirmation")
+    elif narrative.get("classification", {}).get("label") == "Controversial / Uncertain ⚠":
         print("⚠ Narrative Credibility Risk")
         print("⚠ Institutional Conviction Uncertainty")
         weakness = momentum_weakness_label(heat)
