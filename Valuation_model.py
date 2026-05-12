@@ -64,6 +64,8 @@ SECTOR_ETFS = {
     "DBA": "Agriculture",
     "KWEB": "China Internet",
     "IBIT": "Bitcoin / Crypto",
+    "QTUM": "Quantum Computing",
+    "UFO": "Space / Satellite Infrastructure",
     "GLD": "Gold",
     "DBC": "Broad Commodities",
 }
@@ -104,6 +106,14 @@ SECTOR_ALIASES = {
     "china": "KWEB",
     "crypto": "IBIT",
     "bitcoin": "IBIT",
+    "quantum": "QTUM",
+    "quantum-computing": "QTUM",
+    "quantumcomputing": "QTUM",
+    "space": "UFO",
+    "space-sector": "UFO",
+    "satellite": "UFO",
+    "satellites": "UFO",
+    "rklb": "UFO",
     "consumer-discretionary": "XLY",
     "consumerdiscretionary": "XLY",
     "discretionary": "XLY",
@@ -128,6 +138,8 @@ SECTOR_CANDIDATES = {
     "XLY": ["AMZN", "TSLA", "HD", "MCD", "LOW", "BKNG", "TJX", "SBUX", "NKE", "ORLY"],
     "XLC": ["META", "GOOGL", "NFLX", "TMUS", "DIS", "SPOT", "VZ", "T", "CMCSA", "CHTR"],
     "IBIT": ["COIN", "MSTR", "MARA", "RIOT", "CLSK", "IREN", "HOOD", "XYZ", "CME", "IBIT"],
+    "QTUM": ["IONQ", "RGTI", "QBTS", "QUBT", "ARQQ", "LAES", "IBM", "HON"],
+    "UFO": ["RKLB", "LUNR", "RDW", "PL", "ASTS", "IRDM", "GSAT", "VSAT", "BKSY", "SPIR"],
     "XLE": ["XOM", "CVX", "COP", "SLB", "EOG", "MPC", "VLO", "PSX", "OXY", "HAL"],
     "XLU": ["NEE", "SO", "DUK", "CEG", "VST", "AEP", "SRE", "D", "EXC", "PEG"],
     "XLP": ["WMT", "COST", "PG", "KO", "PEP", "PM", "MDLZ", "CL", "MO", "KMB"],
@@ -163,6 +175,8 @@ SECTOR_THEME_NAMES = {
     "XLY": "Consumer Discretionary",
     "XLC": "Communication Services",
     "IBIT": "Crypto Infrastructure",
+    "QTUM": "Quantum Computing",
+    "UFO": "Space / Satellite Infrastructure",
     "XLE": "Energy",
     "XLU": "Utilities / Power Demand",
     "XLP": "Defensives / Staples",
@@ -352,6 +366,10 @@ def emoji_for_sector(name):
     lowered = name.lower()
     if "semiconductor" in lowered or "technology" in lowered:
         return "🚀"
+    if "quantum" in lowered:
+        return "⚛"
+    if "space" in lowered or "satellite" in lowered:
+        return "🛰"
     if "utilities" in lowered:
         return "⚡"
     if "crypto" in lowered or "bitcoin" in lowered:
