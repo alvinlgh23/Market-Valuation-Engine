@@ -23,10 +23,13 @@ Usage:
 """
 
 import contextlib
+import csv
 import io
 import math
+import re
 import statistics
 import sys
+import urllib.request
 
 import yfinance as yf
 
@@ -238,6 +241,12 @@ def signed_pct(v):
     return f"{v * 100:+.2f}%" if is_number(v) else "-"
 
 
+def signed_fmt(v, decimals=1, suffix=""):
+    if not is_number(v):
+        return "-"
+    return f"{v:+.{decimals}f}{suffix}"
+
+
 def fmt(v, decimals=2, prefix="", suffix=""):
     if not is_number(v):
         return "-"
@@ -389,6 +398,206 @@ def macro_label(score):
     return "Liquidity Tightening ⚠"
 
 
+def liquidity_regime_label(score):
+    if score >= 65:
+        return "Loose"
+    if score >= 50:
+        return "Neutral"
+    if score >= 40:
+        return "Neutral-to-Tight"
+    return "Tight"
+
+
+def risk_perception_label(vix_level):
+    if vix_level is None:
+        return "Normal"
+    if vix_level < 15:
+        return "Complacent"
+    if vix_level < 22:
+        return "Normal"
+    return "Fearful"
+
+
+def carry_condition_label(usdjpy_3m, vix_level):
+    if (usdjpy_3m is not None and usdjpy_3m < -0.03) or (vix_level is not None and vix_level > 24):
+        return "Unwind Risk"
+    if usdjpy_3m is not None and usdjpy_3m > 0.02 and (vix_level is None or vix_level < 20):
+        return "Supportive"
+    return "Neutral"
+
+
+def m2_trend_label(m2_trend):
+    if m2_trend is None:
+        return "Unavailable"
+    if m2_trend > 0.005:
+        return "Expanding"
+    if m2_trend < -0.005:
+        return "Contracting"
+    return "Flat"
+
+
+def m2_backdrop_label(m2_trend):
+    trend = m2_trend_label(m2_trend)
+    if trend == "Expanding":
+        return "Supportive"
+    if trend == "Contracting":
+        return "Tightening"
+    if trend == "Flat":
+        return "Neutral"
+    return "Unavailable"
+
+
+def global_liquidity_interpretation(data):
+    m2_trend = data.get("m2_6m")
+    m2_backdrop = m2_backdrop_label(m2_trend)
+    dxy_rising = data.get("dxy_3m") is not None and data["dxy_3m"] > 0
+    yields_rising = data.get("tnx_3m") is not None and data["tnx_3m"] > 0
+    vix_low = data.get("vix_level") is not None and data["vix_level"] < 16
+    pe_high = data.get("forward_pe") is not None and data["forward_pe"] > 22
+
+    if m2_backdrop == "Supportive" and vix_low and pe_high:
+        return [
+            "Long-term liquidity is becoming more supportive, and low volatility alongside elevated market multiples suggests",
+            "liquidity may be supporting narrative-driven risk-taking.",
+            "",
+            "This should still be evaluated against valuation expansion, market breadth, and macro fragility rather than treated as a direct bullish signal.",
+        ]
+    if m2_backdrop == "Tightening" and dxy_rising and yields_rising:
+        return [
+            "Long-term liquidity is tightening while both the dollar and yields are rising.",
+            "That combination points to increasing liquidity stress and a higher hurdle for duration-sensitive risk assets.",
+        ]
+    if m2_backdrop == "Supportive":
+        return [
+            "Global liquidity remains selective in the short term when yields, the dollar, or carry conditions are restrictive,",
+            "but expanding M2 suggests the long-term liquidity backdrop is becoming more supportive for risk assets.",
+            "",
+            "Current market strength should still be evaluated against valuation expansion, market breadth, and macro fragility rather than treated as a direct bullish signal.",
+        ]
+    if m2_backdrop == "Tightening":
+        return [
+            "M2 contraction suggests the long-term liquidity backdrop is tightening.",
+            "In that environment, capital tends to be more selective and less forgiving of weak fundamentals or excessive valuation expansion.",
+        ]
+    if m2_backdrop == "Neutral":
+        return [
+            "M2 is broadly flat, so the long-term liquidity backdrop is neutral rather than strongly supportive or restrictive.",
+            "Shorter-term conditions from yields, the dollar, carry, and volatility should carry more weight in the current regime read.",
+        ]
+    return [
+        "M2 data is unavailable, so the long-term liquidity backdrop should be interpreted through rates, the dollar, carry conditions, and volatility.",
+    ]
+
+
+def fetch_fred_series(series_id):
+    url = f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}"
+    try:
+        with urllib.request.urlopen(url, timeout=8) as response:
+            text = response.read().decode("utf-8")
+        rows = []
+        for row in csv.DictReader(io.StringIO(text)):
+            value = row.get(series_id)
+            if not value or value == ".":
+                continue
+            rows.append((row.get("observation_date"), float(value)))
+        return rows
+    except Exception:
+        return []
+
+
+def fetch_ism_manufacturing_pmi():
+    fred_rows = fetch_fred_series("NAPM")
+    pmi, trend = latest_and_trend(fred_rows, 3)
+    if pmi is not None:
+        return pmi, trend, "FRED NAPM"
+
+    url = "https://go.weareism.org/ism-manufacturing-pmi"
+    try:
+        with urllib.request.urlopen(url, timeout=8) as response:
+            text = response.read().decode("utf-8", errors="ignore")
+    except Exception:
+        return None, None, "Unavailable"
+
+    pmi_match = re.search(r"Manufacturing PMI[^0-9]{0,80}([0-9]+(?:\.[0-9]+)?)\s*(?:percent|%)", text, re.IGNORECASE)
+    if not pmi_match:
+        pmi_match = re.search(r"registered\s+([0-9]+(?:\.[0-9]+)?)\s*percent", text, re.IGNORECASE)
+    current = float(pmi_match.group(1)) if pmi_match else None
+
+    previous = None
+    previous_match = re.search(r"compared to (?:the reading of |the )?([0-9]+(?:\.[0-9]+)?)\s*percent", text, re.IGNORECASE)
+    if previous_match:
+        previous = float(previous_match.group(1))
+
+    trend = current - previous if current is not None and previous is not None else None
+    return current, trend, "ISM"
+
+
+def latest_and_trend(rows, periods=3):
+    if not rows:
+        return None, None
+    latest = rows[-1][1]
+    if len(rows) <= periods:
+        return latest, None
+    return latest, latest - rows[-1 - periods][1]
+
+
+def compute_macro_fragility(macro=None):
+    macro = macro or compute_macro()
+    sentiment, sentiment_trend = latest_and_trend(fetch_fred_series("UMCSENT"), 3)
+    ism, ism_trend, ism_source = fetch_ism_manufacturing_pmi()
+    breadth = relative_change("RSP", "SPY", 63)
+
+    fragility_points = 0
+    if sentiment is not None and sentiment < 70:
+        fragility_points += 1
+    if sentiment_trend is not None and sentiment_trend < -3:
+        fragility_points += 1
+    if ism is not None and ism < 50:
+        fragility_points += 1
+    if ism_trend is not None and ism_trend < -1:
+        fragility_points += 1
+    if breadth is not None and breadth < -0.03:
+        fragility_points += 1
+    if macro.get("vix_level") is not None and macro["vix_level"] > 22:
+        fragility_points += 1
+
+    if fragility_points >= 5:
+        label = "High"
+    elif fragility_points >= 3:
+        label = "Elevated"
+    elif fragility_points >= 1:
+        label = "Moderate"
+    else:
+        label = "Low"
+
+    if label in {"Elevated", "High"} and breadth is not None and breadth < 0:
+        interpretation = [
+            "Asset prices are showing signs of divergence from real-economy conditions.",
+            "Leadership is more dependent on liquidity, mega-cap concentration, or narrative durability than broad economic confirmation.",
+        ]
+    elif label == "Moderate":
+        interpretation = [
+            "Macro fragility is present but not dominant.",
+            "Capital can still rotate into strong narratives, but breadth and real-economy confirmation should be monitored.",
+        ]
+    else:
+        interpretation = [
+            "Real-economy and market-breadth signals are not showing major stress.",
+            "Market expansion has better support from underlying conditions.",
+        ]
+
+    return {
+        "consumer_sentiment": sentiment,
+        "consumer_sentiment_trend": sentiment_trend,
+        "ism_pmi": ism,
+        "ism_pmi_trend": ism_trend,
+        "ism_source": ism_source,
+        "breadth_proxy": breadth,
+        "label": label,
+        "interpretation": interpretation,
+    }
+
+
 def preferred_environment(macro_score, dxy_3m, tnx_3m):
     if macro_score < 45 or (dxy_3m and dxy_3m > 0) or (tnx_3m and tnx_3m > 0):
         return ["Cash-flow-heavy sectors", "Defensives", "Balance-sheet strength"]
@@ -401,17 +610,23 @@ def compute_macro():
     tnx_ticker, tnx = fetch_first_history(["^TNX"], "1y")
     front_rate_ticker, front_rate = fetch_first_history(["2YY=F", "^IRX", "^FVX"], "1y")
     dxy = fetch_history("DX-Y.NYB", "1y")
+    usdjpy = fetch_history("JPY=X", "1y")
     vix = fetch_history("^VIX", "1y")
     hyg_ief = relative_change("HYG", "IEF", 63)
+    m2_rows = fetch_fred_series("M2SL")
 
     tnx_level = last_close(tnx_ticker)
     front_rate_level = last_close(front_rate_ticker)
     dxy_level = last_close("DX-Y.NYB")
+    usdjpy_level = last_close("JPY=X")
     vix_level = last_close("^VIX")
 
     tnx_3m = price_change(tnx, 63)
     front_rate_3m = price_change(front_rate, 63)
     dxy_3m = price_change(dxy, 63)
+    usdjpy_3m = price_change(usdjpy, 63)
+    m2_level, m2_point_change_6m = latest_and_trend(m2_rows, 6)
+    m2_6m = (m2_point_change_6m / (m2_level - m2_point_change_6m)) if is_number(m2_level) and is_number(m2_point_change_6m) and (m2_level - m2_point_change_6m) != 0 else None
 
     yield_curve = None
     if is_number(tnx_level) and is_number(front_rate_level) and front_rate_ticker != "^IRX":
@@ -428,12 +643,25 @@ def compute_macro():
     risk_score = (vix_score * 0.55) + (credit_score * 0.45)
     macro_score = (liquidity_score * 0.60) + (risk_score * 0.40)
 
+    spy = yf.Ticker("SPY")
     spy_info = {}
     try:
-        spy_info = yf.Ticker("SPY").info
+        spy_info = spy.info
     except Exception:
         pass
+    forward_pe_source = "forwardPE"
     forward_pe = safe(spy_info, "forwardPE")
+    if not is_number(forward_pe):
+        forward_eps = safe(spy_info, "forwardEps")
+        spy_price = last_close("SPY")
+        if is_number(forward_eps) and is_number(spy_price) and forward_eps > 0:
+            forward_pe = spy_price / forward_eps
+            forward_pe_source = "forwardEps / SPY price"
+    if not is_number(forward_pe):
+        trailing_pe = safe(spy_info, "trailingPE")
+        if is_number(trailing_pe):
+            forward_pe = trailing_pe
+            forward_pe_source = "trailingPE fallback"
     earning_yield = (1 / forward_pe) if forward_pe else None
     treasury = (tnx_level / 100) if tnx_level else None
     erp = earning_yield - treasury if earning_yield and treasury else None
@@ -447,9 +675,15 @@ def compute_macro():
         "yield_curve": yield_curve,
         "dxy_level": dxy_level,
         "dxy_3m": dxy_3m,
+        "usdjpy_level": usdjpy_level,
+        "usdjpy_3m": usdjpy_3m,
         "vix_level": vix_level,
+        "m2_level": m2_level,
+        "m2_6m": m2_6m,
         "hyg_ief": hyg_ief,
         "forward_pe": forward_pe,
+        "forward_pe_source": forward_pe_source if is_number(forward_pe) else "Unavailable",
+        "earning_yield": earning_yield,
         "erp": erp,
         "liquidity_score": liquidity_score,
         "risk_score": risk_score,
@@ -645,29 +879,18 @@ def implied_prior_forward_pe(heat):
 
 
 def momentum_structure(heat):
-    vertical = heat.get("vertical")
-    three_month = heat.get("three_month")
     six_month = heat.get("six_month")
     dist_200 = heat.get("dist_200")
-    ticker_rsi = heat.get("rsi")
 
-    if (six_month is not None and six_month < 0) or (dist_200 is not None and dist_200 < 0):
+    if six_month is not None and dist_200 is not None and six_month < 0 and dist_200 < 0:
         return "Correction / Base-Building ⚠"
-
-    parabolic = (
-        (vertical is not None and vertical > 0.10 and ((six_month is not None and six_month > 0.25) or (dist_200 is not None and dist_200 > 0.20)))
-        or (dist_200 is not None and dist_200 > 0.30)
-        or (ticker_rsi is not None and ticker_rsi > 72)
-    )
-    if parabolic:
+    if (six_month is not None and six_month > 0.80) or (dist_200 is not None and dist_200 > 0.40):
         return "Parabolic Acceleration Detected ⚠"
-    if dist_200 is not None and dist_200 > 0.15:
+    if (six_month is not None and six_month > 0.25) or (dist_200 is not None and dist_200 > 0.20):
         return "Strong Uptrend, Not Fully Parabolic"
-    if three_month is not None and three_month > 0 and dist_200 is not None and dist_200 > 0.10:
+    if six_month is not None and dist_200 is not None and six_month > 0 and dist_200 > 0:
         return "Moderate Momentum Recovery"
-    if three_month is not None and three_month > 0:
-        return "Constructive Momentum"
-    return "Momentum Cooling / Base-Building"
+    return "Mixed / Transition Phase"
 
 
 def momentum_stage(heat):
@@ -675,19 +898,17 @@ def momentum_stage(heat):
     dist_200 = heat.get("dist_200")
     three_month = heat.get("three_month")
 
-    if (six_month is not None and six_month < 0) or (dist_200 is not None and dist_200 < 0):
+    if six_month is not None and dist_200 is not None and six_month < 0 and dist_200 < 0:
         return "Cooling / Base-Building Phase"
     if (six_month is not None and six_month > 0.80) or (dist_200 is not None and dist_200 > 0.40):
         return "Late Momentum Phase"
-    if (six_month is not None and six_month > 0.35) or (dist_200 is not None and dist_200 > 0.20):
+    if (six_month is not None and six_month > 0.25) or (dist_200 is not None and dist_200 > 0.20):
         return "Mid-to-Late Momentum Phase"
-    if three_month is not None and three_month > 0 and dist_200 is not None and dist_200 > 0.10:
+    if six_month is not None and dist_200 is not None and six_month > 0 and dist_200 > 0:
         return "Early-to-Mid Momentum Repair Phase"
-    if six_month is not None and six_month > 0.10:
-        return "Early-to-Mid Momentum Phase"
     if three_month is not None and three_month > 0:
         return "Early Momentum Repair Phase"
-    return "Accumulation / Reset Phase"
+    return "Mixed / Transition Phase"
 
 
 def valuation_risk_label(heat):
@@ -707,8 +928,14 @@ def chase_risk_label(heat):
     six_month = heat.get("six_month")
     dist_200 = heat.get("dist_200")
     momentum = heat.get("momentum_heat", 0)
+    valuation = heat.get("valuation_heat", 0)
 
     if (six_month is not None and six_month < 0) or (dist_200 is not None and dist_200 < 0):
+        return "Low Chase Risk"
+    if valuation < 20 and (
+        (six_month is None or six_month < 0.15)
+        and (dist_200 is None or dist_200 < 0.15)
+    ):
         return "Low Chase Risk"
     if momentum >= 55:
         return "High Chase Risk"
@@ -737,7 +964,27 @@ def momentum_weakness_label(heat):
     return None
 
 
+AI_LEADERS = {"NVDA", "AVGO", "TSM", "ASML", "AMD", "MRVL"}
+MATURE_QUALITY = {"AAPL", "MSFT", "GOOGL", "META", "V", "MA", "COST", "BRK-B"}
+LIQUIDITY_SENSITIVE = {"COIN", "MSTR", "MARA", "RIOT", "CLSK", "IREN", "HOOD", "IBIT"}
+NARRATIVE_DECAY = {"PYPL"}
+IDENTITY_UNCERTAINTY = {"RBLX"}
+SPECULATIVE_TURNAROUND = {"INTC"}
+
+
+def narrative_template(label, drivers, interpretation, market_interpretation=None):
+    result = {
+        "label": label,
+        "drivers": drivers,
+        "interpretation": interpretation,
+    }
+    if market_interpretation:
+        result["market_interpretation"] = market_interpretation
+    return result
+
+
 def narrative_classification(quality, heat, rel_strength, pe_score):
+    ticker = quality.get("ticker", "")
     accel = quality.get("accel")
     fcf = quality.get("fcf")
     margin_expansion = quality.get("margin_expansion")
@@ -774,6 +1021,106 @@ def narrative_classification(quality, heat, rel_strength, pe_score):
         or (rel_strength is not None and rel_strength < 0.05)
     )
     unstable_earnings_base = forward_pe is not None and forward_pe < 0
+
+    if ticker in LIQUIDITY_SENSITIVE:
+        return narrative_template(
+            "Liquidity-Sensitive Narrative Asset",
+            [
+                "high sensitivity to liquidity and risk appetite",
+                "digital-asset / speculative beta exposure",
+                "narrative strength tied to macro liquidity conditions",
+            ],
+            [
+                "The company participates in an active liquidity-sensitive narrative.",
+                "Market behavior can shift quickly with Bitcoin price action, USD liquidity, rates, and risk appetite.",
+            ],
+        )
+
+    if ticker in AI_LEADERS and quality_score >= 70 and stable_fcf:
+        return narrative_template(
+            "Institutional AI Leader",
+            [
+                "AI infrastructure leadership",
+                "strong financial quality",
+                "institutional rerating support",
+                "cash-flow-backed narrative strength",
+            ],
+            [
+                "The company is being treated as a core institutional AI infrastructure leader.",
+                "Narrative strength is supported by financial quality rather than price action alone.",
+            ],
+        )
+
+    if ticker in MATURE_QUALITY and stable_fcf and quality_score >= 70:
+        return narrative_template(
+            "Mature Institutional Quality / Momentum Repair",
+            [
+                "durable free cash flow",
+                "high institutional ownership profile",
+                "mature compounder characteristics",
+                "momentum confirmation still matters",
+            ],
+            [
+                "The company remains a high-quality institutional compounder.",
+                "Current market treatment depends on whether momentum is repairing or valuation compression is still active.",
+            ],
+        )
+
+    if ticker in NARRATIVE_DECAY:
+        return narrative_template(
+            "Narrative Decay / Weakening Mature Platform",
+            [
+                "stable free cash flow",
+                "mature business profile",
+                "slowing strategic relevance",
+                "limited institutional rerating interest",
+            ],
+            [
+                "The company remains financially stable,",
+                "but current market behavior suggests declining narrative leadership.",
+            ],
+        )
+
+    if ticker in IDENTITY_UNCERTAINTY:
+        return narrative_template(
+            "Identity Uncertainty",
+            [
+                "strong user and revenue growth",
+                "improving platform monetization",
+                "weak institutional conviction",
+                "unresolved long-term platform narrative",
+            ],
+            [
+                "The company continues to show operational growth,",
+                "but market confidence in long-term strategic relevance remains unstable.",
+                "",
+                "The stock is currently trading more as a controversial narrative asset",
+                "than a fully validated institutional-quality platform.",
+            ],
+            [
+                f"{ticker} is no longer being treated as a straightforward",
+                "high-growth platform leader by the market.",
+                "",
+                "The stock currently trades more as a controversial",
+                "future-platform speculation rather than a fully trusted",
+                "institutional compounder.",
+            ],
+        )
+
+    if ticker in SPECULATIVE_TURNAROUND:
+        return narrative_template(
+            "Speculative Turnaround",
+            [
+                "legacy franchise with challenged execution",
+                "turnaround optionality",
+                "uncertain institutional conviction",
+                "narrative depends on execution proof",
+            ],
+            [
+                "The company is being treated as a turnaround candidate rather than a validated leader.",
+                "Narrative strength depends on evidence that execution, margins, and product relevance are improving.",
+            ],
+        )
 
     if aggressive_speculative_momentum and limited_fundamental_confirmation and rapid_valuation_expansion:
         return {
@@ -914,6 +1261,15 @@ def overheat_assessment(narrative):
         or (heat.get("dist_200") is not None and heat["dist_200"] < 0)
     )
     classification = narrative.get("classification", {})
+    if heat.get("valuation_heat", 0) < 20 and (
+        (heat.get("six_month") is None or heat["six_month"] < 0.10)
+        and (heat.get("dist_200") is None or heat["dist_200"] < 0.12)
+    ):
+        return [
+            "The company remains fundamentally supported,",
+            "but stock-level momentum is still in a repair phase.",
+            "This is not an active chase-risk setup.",
+        ]
     if classification.get("label") == "Speculative Narrative Momentum 🚀⚠":
         return [
             "Current momentum appears heavily narrative-driven,",
@@ -922,13 +1278,23 @@ def overheat_assessment(narrative):
             "The stock is behaving more like a speculative thematic vehicle",
             "than a stable institutional-quality compounder.",
         ]
-    if classification.get("label") == "Controversial / Uncertain ⚠":
+    if classification.get("label") in {"Controversial / Uncertain ⚠", "Identity Uncertainty"}:
         return [
             "Operational metrics remain resilient,",
             "but market behavior suggests ongoing uncertainty around",
             "long-term narrative durability and institutional conviction.",
         ]
-    if classification.get("label") in {"Weakening Mature Platform ⚠", "Stable Mature 🟡"}:
+    if classification.get("label") == "Liquidity-Sensitive Narrative Asset":
+        return [
+            "Narrative strength is closely tied to liquidity conditions and risk appetite.",
+            "Positioning risk can rise quickly when digital-asset beta and macro liquidity move together.",
+        ]
+    if classification.get("label") == "Speculative Turnaround":
+        return [
+            "Turnaround optionality is present, but institutional conviction still requires execution proof.",
+            "The main risk is that price action gets ahead of fundamental confirmation.",
+        ]
+    if classification.get("label") in {"Weakening Mature Platform ⚠", "Stable Mature 🟡", "Narrative Decay / Weakening Mature Platform"}:
         return classification.get("interpretation", [])
     if cooling and (narrative["score"] >= 55 or narrative.get("earnings_acceleration", 0) > 0.15):
         return [
@@ -1002,7 +1368,7 @@ def print_overheat_analysis(narrative):
     print("Current Stage:")
     if narrative.get("classification", {}).get("label") == "Speculative Narrative Momentum 🚀⚠":
         print("Speculative Momentum Expansion Phase 🚀⚠")
-    elif narrative.get("classification", {}).get("label") == "Controversial / Uncertain ⚠":
+    elif narrative.get("classification", {}).get("label") in {"Controversial / Uncertain ⚠", "Identity Uncertainty"}:
         print("Narrative Repricing / Identity Uncertainty Phase ⚠")
     else:
         print(momentum_stage(heat))
@@ -1012,12 +1378,20 @@ def print_overheat_analysis(narrative):
         print("⚠ Extreme Narrative Volatility Risk")
         print("⚠ High Chase Risk")
         print("⚠ Weak Fundamental Confirmation")
-    elif narrative.get("classification", {}).get("label") == "Controversial / Uncertain ⚠":
+    elif narrative.get("classification", {}).get("label") in {"Controversial / Uncertain ⚠", "Identity Uncertainty"}:
         print("⚠ Narrative Credibility Risk")
         print("⚠ Institutional Conviction Uncertainty")
         weakness = momentum_weakness_label(heat)
         if weakness:
             print(f"⚠ {weakness}")
+    elif narrative.get("classification", {}).get("label") == "Liquidity-Sensitive Narrative Asset":
+        print("⚠ Liquidity Sensitivity Risk")
+        print(f"⚠ {chase_risk_label(heat)}")
+        print("⚠ Macro Risk Appetite Dependency")
+    elif narrative.get("classification", {}).get("label") == "Speculative Turnaround":
+        print("⚠ Execution Risk")
+        print("⚠ Turnaround Validation Risk")
+        print(f"⚠ {chase_risk_label(heat)}")
     else:
         print(f"⚠ {valuation_risk_label(heat)}")
         print(f"⚠ {chase_risk_label(heat)}")
@@ -1095,19 +1469,23 @@ def sector_positioning(key, sector_row=None):
         breadth_label = "Broad but Inconsistent ⚠"
 
     crowded = (
-        breadth_ratio >= 0.65
-        and (
-            (rel_6m is not None and rel_6m > 0.20)
-            or (dist_200 is not None and dist_200 > 0.20)
-            or momentum_label.startswith("Parabolic")
-        )
+        breadth_ratio >= 0.75
+        and rel_6m is not None
+        and rel_6m > 0.30
+        and current_sector_pe is not None
+        and prior_sector_pe is not None
+        and current_sector_pe / prior_sector_pe > 1.35
+        and (momentum_label.startswith("Parabolic") or (dist_200 is not None and dist_200 > 0.30))
     )
     warming = breadth_ratio >= 0.45 or (rel_6m is not None and rel_6m > 0.10)
 
     narrative_structure = None
     market_interpretation = None
 
+    narrative_type = "Stable Institutional Rotation"
+
     if key == "IBIT" and broad_but_inconsistent:
+        narrative_type = "Speculative Rebuilding"
         stage = "Narrative Consolidation / Rebuilding Phase ⚠"
         risk = [
             "⚠ High Narrative Volatility",
@@ -1164,6 +1542,7 @@ def sector_positioning(key, sector_row=None):
             "• aggressive thematic overheating",
         ]
     elif broad_but_inconsistent:
+        narrative_type = "Speculative Rebuilding"
         stage = "Sector Consolidation / Uneven Participation Phase ⚠"
         risk = [
             "⚠ Inconsistent Institutional Conviction",
@@ -1178,6 +1557,7 @@ def sector_positioning(key, sector_row=None):
             "than aggressive institutional accumulation.",
         ]
     elif crowded:
+        narrative_type = "Crowded Momentum"
         stage = "Late Sector Momentum Phase ⚠"
         risk = "Elevated thematic overcrowding risk"
         assessment = [
@@ -1185,13 +1565,23 @@ def sector_positioning(key, sector_row=None):
             f"but the {SECTOR_ETFS.get(key, key).lower()} trade is becoming increasingly crowded.",
         ]
     elif warming:
-        stage = "Mid Sector Momentum Phase"
+        if key in {"XLU", "XLP", "XLV", "GLD"}:
+            narrative_type = "Defensive Rerating"
+        elif rel_6m is not None and rel_6m > 0.20 and momentum_label.startswith("Strong"):
+            narrative_type = "Institutional Momentum"
+        elif key in {"ICLN", "TAN", "QTUM", "UFO"}:
+            narrative_type = "Early-to-Mid Thematic Rotation"
+        else:
+            narrative_type = "Stable Institutional Rotation"
+        stage = "Early-to-Mid Sector Momentum Phase"
         risk = "Moderate thematic crowding risk"
         assessment = [
             "Institutional capital rotation is constructive,",
-            "but participation is broadening and should be monitored for crowding.",
+            "but current positioning does not yet indicate extreme thematic overcrowding.",
         ]
     else:
+        if key in {"XLU", "XLP", "XLV", "GLD"}:
+            narrative_type = "Defensive Rerating"
         stage = "Early / Selective Sector Momentum Phase"
         risk = "Thematic overcrowding risk not yet elevated"
         assessment = [
@@ -1208,6 +1598,7 @@ def sector_positioning(key, sector_row=None):
         "breadth_label": breadth_label,
         "breadth_tickers": breadth_rows,
         "momentum_structure": "Parabolic Sector-Wide Acceleration" if momentum_label.startswith("Parabolic") else momentum_label,
+        "narrative_type": narrative_type,
         "narrative_structure": narrative_structure,
         "assessment": assessment,
         "stage": stage,
@@ -1240,6 +1631,9 @@ def print_sector_positioning_analysis(positioning):
     print(positioning["breadth_label"])
     if positioning["breadth_tickers"]:
         print("(" + ", ".join(positioning["breadth_tickers"][:8]) + " all participating)")
+    print()
+    print("Sector Narrative Type:")
+    print(positioning["narrative_type"])
     print()
     print("Momentum Structure:")
     print(positioning["momentum_structure"])
@@ -1325,6 +1719,31 @@ def narrative_strength(ticker):
     }
 
 
+def financial_quality_label(quality):
+    score = quality.get("score", 50)
+    fcf = quality.get("fcf")
+    if score >= 80 and is_number(fcf) and fcf > 0:
+        return "High"
+    if score >= 65:
+        return "Solid"
+    if score >= 50:
+        return "Mixed"
+    return "Weak / Unproven"
+
+
+def momentum_positioning_label(heat):
+    structure = momentum_structure(heat)
+    if structure.startswith("Parabolic"):
+        return "Crowded / Hot"
+    if structure.startswith("Strong"):
+        return "Strong Uptrend"
+    if structure.startswith("Moderate"):
+        return "Momentum Repair"
+    if structure.startswith("Correction"):
+        return "Cooling / Base-Building"
+    return "Mixed / Transition"
+
+
 def print_narrative_evidence(narrative):
     print(f"Narrative Strength: {narrative['label']}")
     print("Driven by:")
@@ -1351,20 +1770,66 @@ def intensity_label(score, low="Low", mid="Moderate", high="High", extreme="Extr
     return low
 
 
+def print_global_liquidity_conditions(data):
+    dxy_rising = data["dxy_3m"] is not None and data["dxy_3m"] > 0
+    print("=================================================")
+    print("GLOBAL LIQUIDITY CONDITIONS")
+    print("=================================================")
+    print()
+    print(f"Liquidity Regime: {liquidity_regime_label(data['liquidity_score'])}")
+    print(f"Risk Perception: {risk_perception_label(data['vix_level'])}")
+    print(f"Carry Conditions: {carry_condition_label(data.get('usdjpy_3m'), data['vix_level'])}")
+    print()
+    print(f"US 10Y Treasury Yield: {pct(data['tnx_level'] / 100 if data['tnx_level'] else None)}")
+    print(f"DXY Trend: {'Rising' if dxy_rising else 'Falling / Stable'} ({signed_pct(data['dxy_3m'])} 3M)")
+    print(f"USDJPY / JPY Carry: {fmt(data.get('usdjpy_level'))} ({signed_pct(data.get('usdjpy_3m'))} 3M)")
+    print(f"VIX: {fmt(data['vix_level'])}")
+    print()
+    print("M2 Money Supply Trend:")
+    print(f"{m2_trend_label(data.get('m2_6m'))} ({signed_pct(data.get('m2_6m'))} 6M)")
+    print()
+    print("Long-Term Liquidity Backdrop:")
+    print(m2_backdrop_label(data.get("m2_6m")))
+    print()
+    print("Interpretation:")
+    for line in global_liquidity_interpretation(data):
+        print(line)
+    print()
+
+
+def print_macro_fragility_analysis(fragility):
+    print("=================================================")
+    print("MACRO FRAGILITY ANALYSIS")
+    print("=================================================")
+    print()
+    print(f"Macro Fragility: {fragility['label']}")
+    print()
+    print(f"Consumer Sentiment Index: {fmt(fragility['consumer_sentiment'], 1)} ({signed_fmt(fragility['consumer_sentiment_trend'], 1)} 3M point change)")
+    print(f"ISM Manufacturing PMI: {fmt(fragility['ism_pmi'], 1)} ({signed_fmt(fragility['ism_pmi_trend'], 1)} change; source: {fragility.get('ism_source', 'Unavailable')})")
+    print(f"Market Breadth Proxy (RSP vs SPY): {signed_pct(fragility['breadth_proxy'])} 3M")
+    print()
+    print("Interpretation:")
+    for line in fragility["interpretation"]:
+        print(line)
+    print()
+
+
 def print_macro_command():
     data = compute_macro()
+    fragility = compute_macro_fragility(data)
     erp_negative = data["erp"] is not None and data["erp"] < 0
-    dxy_rising = data["dxy_3m"] is not None and data["dxy_3m"] > 0
 
-    print(macro_label(data["macro_score"]))
-    print(f"10Y Yield: {pct(data['tnx_level'] / 100 if data['tnx_level'] else None)}")
-    print("DXY Rising" if dxy_rising else "DXY Falling / Stable")
+    print_global_liquidity_conditions(data)
+    print_macro_fragility_analysis(fragility)
+    print("Macro / ERP Context:")
     if data["erp"] is None:
         print("ERP Unavailable")
     elif erp_negative:
         print("ERP Negative")
     else:
         print(f"ERP Positive / Neutral ({pct(data['erp'])})")
+    if data.get("earning_yield") is not None:
+        print(f"SPY Earnings Yield: {pct(data['earning_yield'])} ({data.get('forward_pe_source', 'PE source unavailable')})")
     print()
     print("Preferred Environment:")
     for item in preferred_environment(data["macro_score"], data["dxy_3m"], data["tnx_3m"]):
@@ -1449,6 +1914,13 @@ def print_company_command(ticker):
     print(f"Quality score: {fmt(quality['score'], 1)}")
     print(f"Valuation risk: {valuation_risk_label(heat).replace(' Valuation Risk', '')}")
     print()
+    print("Intelligence Breakdown:")
+    print(f"- Financial Quality: {financial_quality_label(quality)}")
+    print(f"- Narrative Strength: {narrative['label']}")
+    print(f"- Momentum / Positioning: {momentum_positioning_label(heat)}")
+    print(f"- Valuation Risk: {valuation_risk_label(heat)}")
+    print(f"- Chase Risk: {chase_risk_label(heat)}")
+    print()
     print_narrative_evidence(narrative)
     print(f"Valuation Expansion: {intensity_label(heat['valuation_heat'], high='High', extreme='Extreme')}")
     print(f"Momentum Heat: {intensity_label(heat['momentum_heat'], high='Elevated', extreme='Extreme')}")
@@ -1513,8 +1985,59 @@ def commentary_lines(macro, leader, candidates, candidate_narrative):
     return lines
 
 
+def final_market_interpretation(macro, fragility, sectors, sector_positioning_report, candidate_narrative):
+    leader = sectors[0] if sectors else None
+    leader_text = leader["name"] if leader else "no clear sector leader"
+    sector_type = sector_positioning_report.get("narrative_type") if sector_positioning_report else "Developing"
+    liquidity = liquidity_regime_label(macro["liquidity_score"])
+    fragility_label = fragility["label"]
+    breadth = fragility.get("breadth_proxy")
+    m2_backdrop = m2_backdrop_label(macro.get("m2_6m"))
+
+    if liquidity in {"Loose", "Neutral"} and fragility_label in {"Low", "Moderate"} and breadth is not None and breadth > 0:
+        structure = "broad risk expansion with improving capital rotation"
+    elif sector_type in {"Crowded Momentum", "Institutional Momentum"} and fragility_label in {"Elevated", "High"}:
+        structure = "selective narrative-led expansion despite macro fragility"
+    elif liquidity in {"Neutral-to-Tight", "Tight"}:
+        structure = "selective rotation under cost-of-capital pressure"
+    else:
+        structure = "mixed market structure with selective leadership"
+
+    driver = (
+        "liquidity / narrative-driven"
+        if liquidity in {"Neutral-to-Tight", "Tight"} or (breadth is not None and breadth < 0) or fragility_label in {"Elevated", "High"}
+        else "broader economic expansion-supported"
+    )
+
+    if breadth is not None and breadth < 0:
+        breadth_line = "Leadership remains relatively concentrated, although selective thematic participation is expanding."
+    elif breadth is not None and breadth > 0:
+        breadth_line = "Leadership breadth is improving, with broader market participation beyond mega-cap leaders."
+    else:
+        breadth_line = "Leadership breadth is mixed, with incomplete equal-weight confirmation."
+
+    if fragility_label in {"Elevated", "High"} and m2_backdrop == "Supportive":
+        liquidity_line = (
+            "Short-term liquidity remains constrained by elevated yields and a strong dollar, "
+            "but expanding M2 suggests a more supportive long-term liquidity backdrop."
+        )
+    else:
+        liquidity_line = f"Long-term liquidity backdrop is {m2_backdrop.lower()}, based on the M2 trend."
+
+    return [
+        f"Dominant structure: {structure}.",
+        f"Capital is currently rotating most visibly toward {leader_text}.",
+        liquidity_line,
+        breadth_line,
+        f"Macro fragility is {fragility_label.lower()}, so the durability of leadership depends on whether real-economy data can confirm asset-price strength.",
+        f"This should be interpreted as a {driver} market structure, not a broad-based economic acceleration cycle or a mechanical buy/sell signal.",
+        "The framework should be read as a map of liquidity, capital flow, narrative strength, and positioning risk.",
+    ]
+
+
 def print_full_command():
     macro = compute_macro()
+    fragility = compute_macro_fragility(macro)
     sectors = compute_sectors()
     leader = sectors[0] if sectors else None
     key = leader["ticker"] if leader else "SMH"
@@ -1526,20 +2049,29 @@ def print_full_command():
 
     print("MARKET INTELLIGENCE REPORT")
     print()
-    for line in commentary_lines(macro, leader, candidates, candidate_narrative):
-        print(line)
-    print()
-    print("Macro:")
-    print(macro_label(macro["macro_score"]))
-    print(f"10Y Yield: {pct(macro['tnx_level'] / 100 if macro['tnx_level'] else None)}")
-    print("DXY Rising" if macro["dxy_3m"] and macro["dxy_3m"] > 0 else "DXY Falling / Stable")
-    print()
+    print_global_liquidity_conditions(macro)
+    print_macro_fragility_analysis(fragility)
 
+    print("=================================================")
+    print("SECTOR ROTATION ANALYSIS")
+    print("=================================================")
+    print()
     print("Top Sector Rotation Leaders:")
     for idx, row in enumerate(sectors[:3], 1):
-        print(f"{idx}. {row['name']} {emoji_for_sector(row['name'])}")
+        print(
+            f"{idx}. {row['name']} {emoji_for_sector(row['name'])} "
+            f"(1M {signed_pct(row['rel_1m'])}, 3M {signed_pct(row['rel_3m'])}, 6M {signed_pct(row['rel_6m'])} vs SPY)"
+        )
     print()
 
+    if sector_positioning_report:
+        print_sector_positioning_analysis(sector_positioning_report)
+        print()
+
+    print("=================================================")
+    print("COMPANY INTELLIGENCE REPORT")
+    print("=================================================")
+    print()
     print("Top Institutional Quality Candidates:")
     for idx, row in enumerate(candidates[:3], 1):
         print(f"{idx}. {row['ticker']}")
@@ -1554,22 +2086,12 @@ def print_full_command():
         print_overheat_analysis(candidate_narrative)
         print()
 
-    if sector_positioning_report:
-        print_sector_positioning_analysis(sector_positioning_report)
-        print()
-
-    print("Conclusion:")
-    leader_text = leader["name"] if leader else "AI infrastructure"
-    print(f"Institutional capital rotation into {leader_text} remains {'strong' if leader and leader['score'] >= 65 else 'selective'}.")
-    print(f"Macro conditions: {macro_label(macro['macro_score']).replace(' ⚠', '').replace(' 🚀', '')}")
-    if key == "SMH":
-        print("Preferred targets: Strong cash-flow semis with accelerating margins")
-    else:
-        print(f"Preferred targets: Highest-quality leaders in {leader_text}")
-    if candidate_heat:
-        print(f"Current risk: {intensity_label(candidate_heat['heat'], low='Low valuation stretch', mid='Moderate valuation stretch', high='High valuation stretch', extreme='Extreme valuation stretch')}")
-    if sector_positioning_report:
-        print(f"Theme risk: {sector_positioning_report['risk']}")
+    print("=================================================")
+    print("FINAL MARKET INTERPRETATION")
+    print("=================================================")
+    print()
+    for line in final_market_interpretation(macro, fragility, sectors, sector_positioning_report, candidate_narrative):
+        print(line)
 
 
 def print_usage():
@@ -1616,7 +2138,10 @@ def prompt_value(label, default=None):
 def run_menu():
     print_usage()
     print()
-    args = normalize_args(input("Select: "))
+    try:
+        args = normalize_args(input("Select: "))
+    except EOFError:
+        return
 
     if not args:
         return
