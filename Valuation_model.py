@@ -2704,6 +2704,293 @@ def final_market_interpretation(macro, fragility, catalysts, sectors, sector_pos
     return lines
 
 
+def regime_playbook(character):
+    playbooks = {
+        "Inflation-Sensitive Rotation": {
+            "favored": ["hard-asset exposure", "cash-flow-heavy cyclicals", "inflation-sensitive defensives"],
+            "vulnerable": ["long-duration growth without earnings support", "margin-sensitive cyclicals", "crowded disinflation trades"],
+        },
+        "Speculative Late-Cycle Momentum": {
+            "favored": ["dominant narrative leaders", "liquid momentum vehicles", "companies with clear earnings confirmation"],
+            "vulnerable": ["late entrants", "weak fundamental stories", "high-valuation names losing relative strength"],
+        },
+        "Fragile Mega-Cap Dominance": {
+            "favored": ["mega-cap quality", "balance-sheet strength", "durable free-cash-flow compounders"],
+            "vulnerable": ["small caps without credit support", "unprofitable growth", "cyclicals needing broad economic confirmation"],
+        },
+        "Concentrated Institutional Leadership": {
+            "favored": ["validated sector leaders", "strong FCF growth companies", "themes with margin expansion"],
+            "vulnerable": ["second-tier sympathy trades", "low-quality catch-up names", "crowded stocks with fading momentum"],
+        },
+        "Broad Economic Expansion": {
+            "favored": ["cyclicals with earnings acceleration", "small and mid-cap participation", "quality growth with reasonable valuation"],
+            "vulnerable": ["defensive laggards", "idiosyncratic weak balance sheets", "overcrowded prior-cycle leaders"],
+        },
+        "Liquidity-Driven Risk Expansion": {
+            "favored": ["growth equities", "high-beta leadership", "liquidity-sensitive narratives with confirmation"],
+            "vulnerable": ["cash-flow-poor momentum", "assets dependent on falling volatility", "stories vulnerable to yield spikes"],
+        },
+        "Selective Narrative Expansion": {
+            "favored": ["cash-flow-backed narratives", "sector leaders with positive relative strength", "companies with execution proof"],
+            "vulnerable": ["valuation-only reratings", "weak-breadth momentum", "long-duration assets sensitive to inflation surprises"],
+        },
+    }
+    return playbooks.get(character, {
+        "favored": ["selective growth", "strong balance sheets", "companies with earnings confirmation"],
+        "vulnerable": ["unconfirmed narratives", "weak relative strength", "crowded trades without breadth support"],
+    })
+
+
+def market_risk_map(macro, fragility, catalysts, sector_positioning_report, candidate_narrative):
+    risks = []
+    if catalysts.get("inflation_state", "").startswith(("Hot", "Sticky")):
+        risks.append(("Inflation surprise risk", "inflation is still hot or sticky"))
+    if fiscal_stress_label(macro.get("tyx_level"), macro.get("tyx_3m")) == "Elevated ⚠":
+        risks.append(("Long-duration yield pressure", "30Y yield stress is elevated"))
+    if fragility.get("breadth_proxy") is not None and fragility["breadth_proxy"] < 0:
+        risks.append(("Narrow leadership breadth", "RSP is underperforming SPY"))
+    if sector_positioning_report and sector_positioning_report.get("narrative_type") == "Crowded Momentum":
+        risks.append(("Sector overcrowding risk", "sector breadth, momentum, and rerating are extended"))
+    if candidate_narrative and candidate_narrative.get("heat", {}).get("valuation_heat", 0) >= 40:
+        risks.append(("Valuation compression risk", "the leading candidate carries elevated valuation heat"))
+    if catalysts.get("fed_sensitivity") == "High ⚠":
+        risks.append(("Fed sensitivity risk", "leadership is vulnerable to rate-expectation repricing"))
+    if fragility.get("label") in {"Elevated", "High"}:
+        risks.append(("Macro fragility risk", "real-economy confirmation is not fully aligned with asset prices"))
+
+    if not risks:
+        risks.append(("Complacency risk", "major stress signals are contained, but low volatility can mask catalyst risk"))
+    return risks[:5]
+
+
+def scenario_analysis(macro, fragility, catalysts, sector_positioning_report):
+    bullish = []
+    bearish = []
+
+    if macro.get("tnx_level") is not None:
+        bullish.append("10Y yield falls back below 4.25% or trends lower for several weeks")
+        bearish.append("10Y yield pushes above 4.75% and pressures long-duration valuations")
+    if macro.get("dxy_3m") is not None:
+        bullish.append("DXY weakens or stays flat, easing global dollar-liquidity pressure")
+        bearish.append("DXY rises more than +2% over 3M, tightening global liquidity")
+    if fragility.get("breadth_proxy") is not None:
+        bullish.append("RSP begins outperforming SPY, confirming broader participation")
+        bearish.append("RSP keeps lagging SPY, confirming concentrated leadership")
+    if sector_positioning_report:
+        bullish.append(f"{sector_positioning_report['name']} keeps relative strength while breadth broadens")
+        bearish.append(f"{sector_positioning_report['name']} loses relative strength while valuation heat remains elevated")
+    if catalysts.get("inflation_state"):
+        bullish.append("Inflation data moderates without a sharp labor-market deterioration")
+        bearish.append("Inflation re-accelerates or labor weakens enough to raise macro fragility")
+
+    return bullish[:4], bearish[:4]
+
+
+def leadership_durability(macro, fragility, catalysts, leader, sector_positioning_report, candidates, candidate_narrative):
+    score = 50
+    drivers = []
+
+    if leader and leader.get("rel_3m") is not None and leader["rel_3m"] > 0:
+        score += 10
+        drivers.append("sector relative strength is positive")
+    if leader and leader.get("rel_6m") is not None and leader["rel_6m"] > 0:
+        score += 10
+        drivers.append("sector leadership has multi-month confirmation")
+    if sector_positioning_report and sector_positioning_report.get("breadth_label") in {"Broad", "Extremely Broad ⚠"}:
+        score += 10
+        drivers.append("sector breadth is broad")
+    if candidates and candidates[0].get("score", 0) >= 70:
+        score += 10
+        drivers.append("top candidate has institutional-quality fundamentals")
+    if candidate_narrative and candidate_narrative.get("heat", {}).get("heat", 0) >= 75:
+        score -= 15
+        drivers.append("leading candidate is showing elevated heat")
+    if sector_positioning_report and sector_positioning_report.get("narrative_type") == "Crowded Momentum":
+        score -= 15
+        drivers.append("sector positioning is crowded")
+    if fragility.get("label") in {"Elevated", "High"}:
+        score -= 10
+        drivers.append("macro fragility is elevated")
+    if catalysts.get("fed_sensitivity") == "High ⚠":
+        score -= 10
+        drivers.append("Fed sensitivity is high")
+    if liquidity_regime_label(macro.get("liquidity_score", 50)) in {"Loose", "Neutral"}:
+        score += 5
+        drivers.append("liquidity regime is not restrictive")
+
+    score = clamp(score)
+    if score >= 75:
+        label = "Durable Leadership"
+    elif score >= 60:
+        label = "Constructive but Selective"
+    elif score >= 45:
+        label = "Fragile / Needs Confirmation"
+    else:
+        label = "Low Durability"
+    return score, label, drivers[:5]
+
+
+def early_rotation_candidates(sectors):
+    candidates = []
+    for row in sectors:
+        rel_1m = row.get("rel_1m")
+        rel_3m = row.get("rel_3m")
+        rel_6m = row.get("rel_6m")
+        if rel_1m is None or rel_3m is None or rel_6m is None:
+            continue
+        improving = rel_1m > 0 and rel_1m > rel_3m and rel_6m < 0.15
+        recovering = rel_1m > 0.02 and rel_3m > -0.03 and rel_6m < 0
+        controlled = row.get("score", 0) >= 50 and rel_6m < 0.25
+        if improving or recovering or controlled:
+            candidates.append(row)
+    return sorted(candidates, key=lambda row: (row.get("rel_1m") or 0, row.get("score") or 0), reverse=True)[:3]
+
+
+def crowding_quality_matrix(candidates, candidate_narrative):
+    quality = candidates[0].get("score", 50) if candidates else 50
+    heat = candidate_narrative.get("heat", {}).get("heat", 0) if candidate_narrative else 0
+    if quality >= 70 and heat < 50:
+        return "High Quality + Low Crowding = healthy accumulation profile"
+    if quality >= 70 and heat >= 70:
+        return "High Quality + High Crowding = validated leader, but chase-risk discipline matters"
+    if quality >= 70 and heat >= 50:
+        return "High Quality + Moderate Crowding = validated leader with warming positioning"
+    if quality < 70 and heat >= 70:
+        return "Low Quality + High Crowding = speculative momentum risk"
+    if quality < 70 and heat >= 50:
+        return "Low Quality + Moderate Crowding = improving momentum, but confirmation is incomplete"
+    return "Low Quality + Low Crowding = incomplete confirmation"
+
+
+def market_phase(macro, fragility, sector_positioning_report, candidate_narrative):
+    liquidity = liquidity_regime_label(macro.get("liquidity_score", 50))
+    breadth = fragility.get("breadth_proxy")
+    sector_type = sector_positioning_report.get("narrative_type") if sector_positioning_report else None
+    heat = candidate_narrative.get("heat", {}).get("heat", 0) if candidate_narrative else 0
+
+    if fragility.get("label") in {"Elevated", "High"} and breadth is not None and breadth < -0.03:
+        return "Phase 5: Distribution / Fragility"
+    if sector_type == "Crowded Momentum" or heat >= 75:
+        return "Phase 4: Crowded Momentum"
+    if breadth is not None and breadth > 0 and liquidity in {"Loose", "Neutral"}:
+        return "Phase 3: Broad Participation"
+    if sector_type in {"Institutional Momentum", "Stable Institutional Rotation", "Early-to-Mid Thematic Rotation"}:
+        return "Phase 2: Selective Leadership"
+    return "Phase 1: Liquidity Repair"
+
+
+def watchlist_profile(character, sector_positioning_report):
+    if character == "Inflation-Sensitive Rotation":
+        return ["positive free cash flow", "real-asset or commodity exposure", "pricing-power evidence", "controlled distance from 200MA"]
+    if character in {"Concentrated Institutional Leadership", "Selective Narrative Expansion"}:
+        return ["strong FCF", "positive revenue acceleration", "margin expansion", "sector relative strength improving", "not excessively extended above 200MA"]
+    if character == "Broad Economic Expansion":
+        return ["earnings acceleration", "improving breadth", "reasonable valuation", "cyclical participation", "balance-sheet resilience"]
+    if character == "Liquidity-Driven Risk Expansion":
+        return ["high-beta exposure with confirmation", "improving RS", "manageable valuation heat", "macro sensitivity clearly understood"]
+    if sector_positioning_report and sector_positioning_report.get("narrative_type") == "Defensive Rerating":
+        return ["cash-flow durability", "low leverage", "defensive earnings stability", "steady relative strength"]
+    return ["strong balance sheet", "positive relative strength", "cash-flow support", "clear narrative driver", "limited chase risk"]
+
+
+def narrative_decay_warnings(candidate_narrative, sector_positioning_report):
+    if not candidate_narrative:
+        return ["No leading candidate available for narrative-decay analysis."]
+    heat = candidate_narrative.get("heat", {})
+    quality = candidate_narrative.get("quality", {})
+    warnings = []
+    if candidate_narrative.get("relative_strength") is not None and candidate_narrative["relative_strength"] < 0:
+        warnings.append("stock is underperforming SPY despite the current narrative")
+    if heat.get("six_month") is not None and heat["six_month"] < 0:
+        warnings.append("6M price performance is negative")
+    if heat.get("dist_200") is not None and heat["dist_200"] < 0:
+        warnings.append("price remains below the 200MA")
+    if quality.get("margin_expansion") is not None and quality["margin_expansion"] < 0:
+        warnings.append("margin expansion is fading")
+    if sector_positioning_report and sector_positioning_report.get("relative_strength_6m", 0) > 0 and candidate_narrative.get("relative_strength", 0) < 0:
+        warnings.append("company is lagging while its sector is still working")
+    return warnings or ["No major narrative-decay warning is currently visible."]
+
+
+def capital_flow_story(macro, leader, sector_positioning_report, candidate_narrative):
+    leader_text = leader["name"] if leader else "the leading pocket of the market"
+    liquidity = liquidity_regime_label(macro.get("liquidity_score", 50)).lower()
+    sector_type = sector_positioning_report.get("narrative_type") if sector_positioning_report else "developing leadership"
+    candidate = candidate_narrative["ticker"] if candidate_narrative else "the strongest candidates"
+    chase = chase_risk_label(candidate_narrative["heat"]) if candidate_narrative else "unclear chase risk"
+    return (
+        f"Capital is rotating most visibly toward {leader_text}, with the sector currently behaving like {sector_type.lower()}. "
+        f"The liquidity backdrop is {liquidity}, so the market is rewarding {candidate} only to the extent that earnings quality, narrative strength, and positioning discipline remain aligned. "
+        f"Current company-level risk reads as {chase.lower()}."
+    )
+
+
+def print_intelligence_extensions(macro, fragility, catalysts, sectors, sector_positioning_report, candidates, candidate_narrative):
+    leader = sectors[0] if sectors else None
+    character = market_character_label(macro, fragility, catalysts, sector_positioning_report)
+    phase = market_phase(macro, fragility, sector_positioning_report, candidate_narrative)
+    durability_score, durability_label, durability_drivers = leadership_durability(
+        macro, fragility, catalysts, leader, sector_positioning_report, candidates, candidate_narrative
+    )
+    bullish, bearish = scenario_analysis(macro, fragility, catalysts, sector_positioning_report)
+    playbook = regime_playbook(character)
+    early = early_rotation_candidates(sectors)
+
+    print("=================================================")
+    print("MARKET INTELLIGENCE EXTENSIONS")
+    print("=================================================")
+    print()
+    print("Capital Flow Story:")
+    print(capital_flow_story(macro, leader, sector_positioning_report, candidate_narrative))
+    print()
+    print("Market Phase:")
+    print(phase)
+    print()
+    print("Leadership Durability:")
+    print(f"{durability_label} ({fmt(durability_score, 1)}/100)")
+    for driver in durability_drivers:
+        print(f"- {driver}")
+    print()
+    print("Regime Playbook:")
+    print("Usually favored:")
+    for item in playbook["favored"]:
+        print(f"- {item}")
+    print("Usually vulnerable:")
+    for item in playbook["vulnerable"]:
+        print(f"- {item}")
+    print()
+    print("Market Risk Map:")
+    for idx, (risk, reason) in enumerate(market_risk_map(macro, fragility, catalysts, sector_positioning_report, candidate_narrative), 1):
+        print(f"{idx}. {risk}: {reason}")
+    print()
+    print("Scenario Analysis:")
+    print("Bullish confirmation:")
+    for item in bullish:
+        print(f"- {item}")
+    print("Bearish invalidation:")
+    for item in bearish:
+        print(f"- {item}")
+    print()
+    print("Early Rotation Candidates:")
+    if early:
+        for row in early:
+            print(f"- {row['name']} ({row['ticker']}): 1M {signed_pct(row['rel_1m'])}, 3M {signed_pct(row['rel_3m'])}, 6M {signed_pct(row['rel_6m'])} vs SPY")
+    else:
+        print("- No clean early-rotation candidate detected.")
+    print()
+    print("Crowding vs Quality Matrix:")
+    print(crowding_quality_matrix(candidates, candidate_narrative))
+    print()
+    print("Current Watchlist Profile:")
+    for item in watchlist_profile(character, sector_positioning_report):
+        print(f"- {item}")
+    print()
+    print("Narrative Decay Warnings:")
+    for item in narrative_decay_warnings(candidate_narrative, sector_positioning_report):
+        print(f"- {item}")
+    print()
+
+
 def print_full_command():
     macro = compute_macro()
     fragility = compute_macro_fragility(macro)
@@ -2763,6 +3050,8 @@ def print_full_command():
     print()
     for line in final_market_interpretation(macro, fragility, catalysts, sectors, sector_positioning_report, candidate_narrative):
         print(line)
+    print()
+    print_intelligence_extensions(macro, fragility, catalysts, sectors, sector_positioning_report, candidates, candidate_narrative)
 
 
 def print_usage():

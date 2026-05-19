@@ -48,6 +48,17 @@ The full report should preserve these layers:
 5. Narrative Classification
 6. Positioning / Overheat Analysis
 7. Final Market Interpretation
+8. Market Intelligence Extensions:
+   - Capital Flow Story
+   - Market Phase
+   - Leadership Durability
+   - Regime Playbook
+   - Market Risk Map
+   - Scenario Analysis
+   - Early Rotation Candidates
+   - Crowding vs Quality Matrix
+   - Watchlist Profile
+   - Narrative Decay Warnings
 
 ## Approved Indicator Set
 
@@ -133,6 +144,15 @@ Short-term liquidity remains constrained by elevated yields and a strong dollar,
 but expanding M2 suggests a more supportive long-term liquidity backdrop.
 ```
 
+## Extension Layer Calibration
+
+- Market phase should describe cycle structure, not predict returns.
+- Leadership durability should reward sector relative strength, breadth, company quality, and liquidity support, while penalizing macro fragility, high Fed sensitivity, crowding, and excessive heat.
+- Early rotation candidates should be improving but not already fully extended.
+- Scenario analysis should describe what would confirm or invalidate the current read.
+- Watchlist profiles should describe setup types, not direct stock recommendations.
+- Narrative decay warnings should flag lagging relative strength, negative 6M performance, below-200MA structure, fading margin expansion, or company weakness despite sector strength.
+
 ## Validation Checklist
 
 After changes, run the smallest relevant set:
@@ -149,4 +169,3 @@ python3 model.py stock FSLR
 ```
 
 Use live-data checks when interpretation logic depends on current market data. If network-restricted commands fail, rerun with appropriate approval.
-

@@ -12,6 +12,9 @@ The model is designed to explain:
 - valuation stretch and overheating risk
 - positioning risk and chase-risk stage
 - sector-wide overcrowding risk
+- market phase and leadership durability
+- scenario confirmation / invalidation
+- early rotation candidates and narrative decay warnings
 
 ## Flow
 
@@ -32,6 +35,7 @@ Macro Environment
 3. Institutional target quality: growth, profitability, cash flow, balance sheet, and execution proxies.
 4. Chase-risk engine: valuation stretch, RSI, moving-average distance, and vertical price acceleration.
 5. Final market-structure read: a narrative output, not a buy/sell signal.
+6. Intelligence extensions: regime playbook, risk map, scenario analysis, leadership durability, watchlist profile, and narrative decay checks.
 
 ## Usage
 
@@ -66,6 +70,7 @@ Market Intelligence System
 ```
 
 Use `full` when you want the system to identify the current hottest sector and strongest candidate automatically.
+The full report also adds a capital-flow story, market phase, leadership durability score, regime playbook, market risk map, scenario analysis, early rotation candidates, crowding-versus-quality matrix, watchlist profile, and narrative decay warnings.
 Use `sector <name>` or `company <ticker>` when you want to inspect a specific sector or company regardless of whether it is currently ranked first.
 
 Some macro indicators such as Fed Funds, M2, Reverse Repo, CPI, and credit spreads need external or manual data feeds for a complete institutional-grade stack.
