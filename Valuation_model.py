@@ -253,6 +253,43 @@ def fmt(v, decimals=2, prefix="", suffix=""):
     return f"{prefix}{v:,.{decimals}f}{suffix}"
 
 
+def signed_number(v, decimals=0):
+    if not is_number(v):
+        return "-"
+    return f"{v:+,.{decimals}f}"
+
+
+def point_distance(value, threshold, decimals=2):
+    if not is_number(value) or not is_number(threshold):
+        return "-"
+    diff = value - threshold
+    direction = "above" if diff >= 0 else "below"
+    return f"{abs(diff):.{decimals}f} points {direction} threshold"
+
+
+def pct_point_distance(value, threshold):
+    if not is_number(value) or not is_number(threshold):
+        return "-"
+    diff = value - threshold
+    direction = "above" if diff >= 0 else "below"
+    return f"{abs(diff):.2f} percentage points {direction} threshold"
+
+
+def trend_distance(value):
+    if not is_number(value):
+        return "-"
+    direction = "above" if value >= 0 else "below"
+    return f"{abs(value) * 100:.2f} percentage points {direction} flat trend line"
+
+
+def trend_threshold_distance(value, threshold):
+    if not is_number(value) or not is_number(threshold):
+        return "-"
+    diff = value - threshold
+    direction = "above" if diff >= 0 else "below"
+    return f"{abs(diff) * 100:.2f} percentage points {direction} threshold"
+
+
 def divider(title=""):
     if title:
         print(f"\n{'=' * 72}")
@@ -447,14 +484,35 @@ def m2_backdrop_label(m2_trend):
     return "Unavailable"
 
 
+def fiscal_stress_label(thirty_year_level, thirty_year_3m):
+    if thirty_year_level is None:
+        return "Unavailable"
+    if thirty_year_level >= 5.0 or (thirty_year_3m is not None and thirty_year_3m > 0.08):
+        return "Elevated ⚠"
+    if thirty_year_level >= 4.5 or (thirty_year_3m is not None and thirty_year_3m > 0.03):
+        return "Moderate"
+    return "Contained"
+
+
 def global_liquidity_interpretation(data):
     m2_trend = data.get("m2_6m")
     m2_backdrop = m2_backdrop_label(m2_trend)
     dxy_rising = data.get("dxy_3m") is not None and data["dxy_3m"] > 0
     yields_rising = data.get("tnx_3m") is not None and data["tnx_3m"] > 0
+    thirty_year = data.get("tyx_level")
+    thirty_year_3m = data.get("tyx_3m")
+    fiscal_stress = fiscal_stress_label(thirty_year, thirty_year_3m)
     vix_low = data.get("vix_level") is not None and data["vix_level"] < 16
     pe_high = data.get("forward_pe") is not None and data["forward_pe"] > 22
 
+    if fiscal_stress == "Elevated ⚠":
+        return [
+            "Short-term liquidity remains constrained by elevated yields and dollar strength,",
+            "while expanding M2 may still support the broader long-term liquidity backdrop.",
+            "",
+            "However, elevated 30Y yields suggest persistent long-duration fiscal and inflation concerns,",
+            "which may structurally limit liquidity easing even if short-term Fed expectations improve.",
+        ]
     if m2_backdrop == "Supportive" and vix_low and pe_high:
         return [
             "Long-term liquidity is becoming more supportive, and low volatility alongside elevated market multiples suggests",
@@ -541,6 +599,29 @@ def latest_and_trend(rows, periods=3):
     return latest, latest - rows[-1 - periods][1]
 
 
+def latest_period_change(rows, periods=1):
+    latest, trend = latest_and_trend(rows, periods)
+    if latest is None:
+        return None, None
+    return latest, trend
+
+
+def latest_yoy(rows, periods=12):
+    if not rows or len(rows) <= periods:
+        return None, None
+    latest = rows[-1][1]
+    prior = rows[-1 - periods][1]
+    if prior == 0:
+        return None, None
+    current_yoy = latest / prior - 1
+    if len(rows) <= periods + 3:
+        return current_yoy, None
+    prior_yoy_base = rows[-1 - periods - 3][1]
+    prior_yoy_level = rows[-4][1]
+    prior_yoy = prior_yoy_level / prior_yoy_base - 1 if prior_yoy_base else None
+    return current_yoy, (current_yoy - prior_yoy) if prior_yoy is not None else None
+
+
 def compute_macro_fragility(macro=None):
     macro = macro or compute_macro()
     sentiment, sentiment_trend = latest_and_trend(fetch_fred_series("UMCSENT"), 3)
@@ -598,6 +679,110 @@ def compute_macro_fragility(macro=None):
     }
 
 
+def catalyst_state_from_inflation(cpi_yoy, core_cpi_yoy, ppi_yoy, core_cpi_trend):
+    if (core_cpi_yoy is not None and core_cpi_yoy > 0.035) or (cpi_yoy is not None and cpi_yoy > 0.035):
+        if core_cpi_trend is not None and core_cpi_trend > 0:
+            return "Hot / re-accelerating inflation ⚠"
+        return "Sticky inflation trend ⚠"
+    if (cpi_yoy is not None and cpi_yoy < 0.025) and (core_cpi_yoy is not None and core_cpi_yoy < 0.030):
+        return "Disinflationary"
+    if ppi_yoy is not None and ppi_yoy > 0.03:
+        return "Input-cost pressure rebuilding"
+    return "Moderating / mixed inflation"
+
+
+def labor_market_state(nfp_change, unemployment, unemployment_trend, claims, claims_trend):
+    if (unemployment_trend is not None and unemployment_trend > 0.20) or (claims_trend is not None and claims_trend > 50_000) or (nfp_change is not None and nfp_change < 50):
+        return "Weakening labor momentum ⚠"
+    if (nfp_change is not None and nfp_change > 100) and (unemployment_trend is None or unemployment_trend < 0.20):
+        return "Still resilient"
+    return "Mixed / cooling"
+
+
+def fed_sensitivity_label(macro, sector_positioning_report, inflation_state, labor_state):
+    liquidity = liquidity_regime_label(macro.get("liquidity_score", 50))
+    high_duration_sector = sector_positioning_report and sector_positioning_report.get("key") in {"SMH", "XLK", "IGV", "QTUM", "ICLN", "TAN", "UFO", "IBIT"}
+    valuation_expansion = False
+    if sector_positioning_report and sector_positioning_report.get("current_sector_pe") and sector_positioning_report.get("prior_sector_pe"):
+        valuation_expansion = sector_positioning_report["current_sector_pe"] / sector_positioning_report["prior_sector_pe"] > 1.20
+    if (
+        liquidity in {"Tight", "Neutral-to-Tight"}
+        and (high_duration_sector or valuation_expansion)
+        and (inflation_state.startswith("Hot") or inflation_state.startswith("Sticky") or macro.get("vix_level", 99) < 20)
+    ):
+        return "High ⚠"
+    if labor_state.startswith("Weakening") and macro.get("tnx_3m") is not None and macro["tnx_3m"] < 0:
+        return "Two-sided"
+    return "Moderate"
+
+
+def compute_macro_catalysts(macro, sector_positioning_report=None):
+    cpi_yoy, cpi_yoy_trend = latest_yoy(fetch_fred_series("CPIAUCSL"), 12)
+    core_cpi_yoy, core_cpi_yoy_trend = latest_yoy(fetch_fred_series("CPILFESL"), 12)
+    ppi_yoy, ppi_yoy_trend = latest_yoy(fetch_fred_series("PPIFIS"), 12)
+    payrolls, nfp_change = latest_period_change(fetch_fred_series("PAYEMS"), 1)
+    unemployment, unemployment_trend = latest_and_trend(fetch_fred_series("UNRATE"), 3)
+    wages_yoy, wages_yoy_trend = latest_yoy(fetch_fred_series("CES0500000003"), 12)
+    claims, claims_trend = latest_and_trend(fetch_fred_series("ICSA"), 13)
+
+    fed_future_hist = fetch_history("ZQ=F", "6mo")
+    fed_future_rate = None
+    fed_future_trend = None
+    if fed_future_hist is not None and len(fed_future_hist) > 21:
+        current_price = float(fed_future_hist["Close"].iloc[-1])
+        prior_price = float(fed_future_hist["Close"].iloc[-21])
+        fed_future_rate = 100 - current_price
+        fed_future_trend = (100 - current_price) - (100 - prior_price)
+
+    inflation_state = catalyst_state_from_inflation(cpi_yoy, core_cpi_yoy, ppi_yoy, core_cpi_yoy_trend)
+    labor_state = labor_market_state(nfp_change, unemployment, unemployment_trend, claims, claims_trend)
+    fed_sensitivity = fed_sensitivity_label(macro, sector_positioning_report, inflation_state, labor_state)
+
+    interpretation = []
+    if fed_sensitivity == "High ⚠" and (inflation_state.startswith("Hot") or inflation_state.startswith("Sticky")):
+        sector_key = sector_positioning_report.get("key") if sector_positioning_report else None
+        if sector_key in {"SMH", "XLK", "IGV", "QTUM", "ICLN", "TAN", "UFO", "IBIT"}:
+            pressure_target = "particularly across AI and high-duration growth assets"
+        else:
+            pressure_target = "particularly across richly rerated or valuation-sensitive leadership groups"
+        interpretation.extend([
+            "Current market positioning remains highly sensitive to inflation surprises and long-duration valuation compression risk.",
+            f"Any upside inflation surprise may increase valuation compression risk, long-duration yield pressure, and volatility expansion, {pressure_target}.",
+        ])
+    elif labor_state.startswith("Weakening") and macro.get("tnx_3m") is not None and macro["tnx_3m"] < 0:
+        interpretation.extend([
+            "Market conditions may become more supportive for rate-sensitive growth narratives if yields continue to fall.",
+            "However, weakening labor momentum also increases macro fragility, so the setup is supportive for duration but not necessarily broad economic risk appetite.",
+        ])
+    else:
+        interpretation.extend([
+            "Near-term macro catalysts remain important for Fed expectations and volatility risk.",
+            "The current market structure should be evaluated through how inflation and labor data affect yields, liquidity sensitivity, and narrative durability.",
+        ])
+
+    return {
+        "cpi_yoy": cpi_yoy,
+        "cpi_yoy_trend": cpi_yoy_trend,
+        "core_cpi_yoy": core_cpi_yoy,
+        "core_cpi_yoy_trend": core_cpi_yoy_trend,
+        "ppi_yoy": ppi_yoy,
+        "ppi_yoy_trend": ppi_yoy_trend,
+        "nfp_change": nfp_change,
+        "unemployment": unemployment,
+        "unemployment_trend": unemployment_trend,
+        "wages_yoy": wages_yoy,
+        "wages_yoy_trend": wages_yoy_trend,
+        "claims": claims,
+        "claims_trend": claims_trend,
+        "fed_future_rate": fed_future_rate,
+        "fed_future_trend": fed_future_trend,
+        "inflation_state": inflation_state,
+        "labor_state": labor_state,
+        "fed_sensitivity": fed_sensitivity,
+        "interpretation": interpretation,
+    }
+
+
 def preferred_environment(macro_score, dxy_3m, tnx_3m):
     if macro_score < 45 or (dxy_3m and dxy_3m > 0) or (tnx_3m and tnx_3m > 0):
         return ["Cash-flow-heavy sectors", "Defensives", "Balance-sheet strength"]
@@ -608,6 +793,7 @@ def preferred_environment(macro_score, dxy_3m, tnx_3m):
 
 def compute_macro():
     tnx_ticker, tnx = fetch_first_history(["^TNX"], "1y")
+    tyx_ticker, tyx = fetch_first_history(["^TYX"], "1y")
     front_rate_ticker, front_rate = fetch_first_history(["2YY=F", "^IRX", "^FVX"], "1y")
     dxy = fetch_history("DX-Y.NYB", "1y")
     usdjpy = fetch_history("JPY=X", "1y")
@@ -616,12 +802,14 @@ def compute_macro():
     m2_rows = fetch_fred_series("M2SL")
 
     tnx_level = last_close(tnx_ticker)
+    tyx_level = last_close(tyx_ticker)
     front_rate_level = last_close(front_rate_ticker)
     dxy_level = last_close("DX-Y.NYB")
     usdjpy_level = last_close("JPY=X")
     vix_level = last_close("^VIX")
 
     tnx_3m = price_change(tnx, 63)
+    tyx_3m = price_change(tyx, 63)
     front_rate_3m = price_change(front_rate, 63)
     dxy_3m = price_change(dxy, 63)
     usdjpy_3m = price_change(usdjpy, 63)
@@ -669,6 +857,8 @@ def compute_macro():
     return {
         "tnx_level": tnx_level,
         "tnx_3m": tnx_3m,
+        "tyx_level": tyx_level,
+        "tyx_3m": tyx_3m,
         "front_rate_ticker": front_rate_ticker,
         "front_rate_level": front_rate_level,
         "front_rate_3m": front_rate_3m,
@@ -813,10 +1003,29 @@ def heat_rows(tickers):
         valuation_heat += 20 if ev_sales and ev_sales > 12 else 10 if ev_sales and ev_sales > 7 else 0
 
         momentum_heat = 0
-        momentum_heat += 25 if ticker_rsi and ticker_rsi > 75 else 15 if ticker_rsi and ticker_rsi > 65 else 0
-        momentum_heat += 20 if dist_50 and dist_50 > 0.18 else 10 if dist_50 and dist_50 > 0.10 else 0
-        momentum_heat += 20 if dist_200 and dist_200 > 0.45 else 10 if dist_200 and dist_200 > 0.25 else 0
-        momentum_heat += 15 if vertical and vertical > 0.10 else 8 if vertical and vertical > 0.05 else 0
+        if (six_month is not None and six_month > 0.80) or (dist_200 is not None and dist_200 > 0.40):
+            momentum_heat += 60
+        elif (six_month is not None and six_month > 0.40) or (dist_200 is not None and dist_200 > 0.25):
+            momentum_heat += 45
+        elif (
+            six_month is not None
+            and dist_200 is not None
+            and six_month > 0.10
+            and dist_200 > 0
+        ):
+            momentum_heat += 30
+        elif (
+            (six_month is not None and six_month > 0)
+            or (dist_200 is not None and dist_200 > 0)
+        ):
+            momentum_heat += 15
+        momentum_heat += 12 if ticker_rsi and ticker_rsi > 75 else 8 if ticker_rsi and ticker_rsi > 65 else 0
+        momentum_heat += 10 if dist_50 and dist_50 > 0.18 else 5 if dist_50 and dist_50 > 0.10 else 0
+        momentum_heat += 8 if vertical and vertical > 0.10 else 4 if vertical and vertical > 0.05 else 0
+        if valuation_heat >= 40 and six_month is not None and six_month > 0.10:
+            momentum_heat += 5
+        if six_month is not None and six_month < 0 and dist_200 is not None and dist_200 < 0:
+            momentum_heat = min(momentum_heat, 20)
 
         heat_score = clamp(valuation_heat + momentum_heat)
         rows.append({
@@ -939,7 +1148,7 @@ def chase_risk_label(heat):
         return "Low Chase Risk"
     if momentum >= 55:
         return "High Chase Risk"
-    if momentum >= 25:
+    if momentum >= 45:
         return "Moderate Chase Risk"
     return "Chase Risk Not Excessive"
 
@@ -970,6 +1179,11 @@ LIQUIDITY_SENSITIVE = {"COIN", "MSTR", "MARA", "RIOT", "CLSK", "IREN", "HOOD", "
 NARRATIVE_DECAY = {"PYPL"}
 IDENTITY_UNCERTAINTY = {"RBLX"}
 SPECULATIVE_TURNAROUND = {"INTC"}
+EXPENSIVE_CONVICTION_GROWTH = {"PLTR"}
+HARD_ASSET_ROTATION = {
+    "NEM", "GOLD", "AEM", "WPM", "FNV", "KGC", "PAAS", "AGI", "GFI", "HMY",
+    "FCX", "SCCO", "TECK", "BHP", "RIO", "VALE", "XOM", "CVX", "COP", "CF", "MOS", "AA",
+}
 
 
 def narrative_template(label, drivers, interpretation, market_interpretation=None):
@@ -1119,6 +1333,55 @@ def narrative_classification(quality, heat, rel_strength, pe_score):
             [
                 "The company is being treated as a turnaround candidate rather than a validated leader.",
                 "Narrative strength depends on evidence that execution, margins, and product relevance are improving.",
+            ],
+        )
+
+    if ticker in EXPENSIVE_CONVICTION_GROWTH and quality_score >= 75:
+        drivers = [
+            "strong revenue and earnings acceleration",
+            "high financial quality",
+            "premium valuation structure",
+            "institutional conviction narrative",
+        ]
+        if market_weak:
+            drivers.append("market momentum currently weakening")
+        return narrative_template(
+            "Expensive Conviction Growth",
+            drivers,
+            [
+                "The company remains a high-quality conviction growth narrative,",
+                "but valuation risk is elevated and market confirmation matters.",
+                "",
+                "When relative strength weakens, the setup should be read as valuation-risk plus confirmation risk",
+                "rather than an active chase-risk structure.",
+            ],
+        )
+
+    if ticker in HARD_ASSET_ROTATION:
+        if stable_fcf and quality_score >= 55:
+            label = "Defensive Hard-Asset Rotation"
+            drivers = [
+                "hard-asset / commodity exposure",
+                "cash-flow support",
+                "inflation-sensitive positioning",
+                "institutional rotation toward real assets",
+            ]
+        else:
+            label = "Inflation-Hedge Rotation"
+            drivers = [
+                "hard-asset / commodity exposure",
+                "inflation-sensitive market leadership",
+                "cyclical capital rotation",
+                "fundamental confirmation still varies by company",
+            ]
+        return narrative_template(
+            label,
+            drivers,
+            [
+                "The market is increasingly rotating toward hard-asset exposure",
+                "as investors seek inflation-sensitive and defensive cyclical positioning.",
+                "",
+                "This is better read as a macro rotation narrative than a conventional growth-stock rerating.",
             ],
         )
 
@@ -1289,6 +1552,21 @@ def overheat_assessment(narrative):
             "Narrative strength is closely tied to liquidity conditions and risk appetite.",
             "Positioning risk can rise quickly when digital-asset beta and macro liquidity move together.",
         ]
+    if classification.get("label") == "Expensive Conviction Growth":
+        if cooling:
+            return [
+                "Fundamental quality remains strong, but market momentum has weakened.",
+                "The main risk is valuation compression if growth expectations or institutional conviction soften.",
+            ]
+        return [
+            "The company remains a conviction growth narrative with premium valuation risk.",
+            "Positioning should be interpreted through valuation discipline and continued execution confirmation.",
+        ]
+    if classification.get("label") in {"Defensive Hard-Asset Rotation", "Inflation-Hedge Rotation"}:
+        return [
+            "The stock is participating in a hard-asset rotation rather than a pure growth rerating.",
+            "Positioning risk should be interpreted through inflation sensitivity, commodity leadership, and macro fragility.",
+        ]
     if classification.get("label") == "Speculative Turnaround":
         return [
             "Turnaround optionality is present, but institutional conviction still requires execution proof.",
@@ -1388,6 +1666,17 @@ def print_overheat_analysis(narrative):
         print("⚠ Liquidity Sensitivity Risk")
         print(f"⚠ {chase_risk_label(heat)}")
         print("⚠ Macro Risk Appetite Dependency")
+    elif narrative.get("classification", {}).get("label") == "Expensive Conviction Growth":
+        print("⚠ High Valuation Risk")
+        print(f"⚠ {chase_risk_label(heat)}")
+        weakness = momentum_weakness_label(heat)
+        if weakness:
+            print(f"⚠ {weakness}")
+        print("⚠ Growth Expectation Reset Risk")
+    elif narrative.get("classification", {}).get("label") in {"Defensive Hard-Asset Rotation", "Inflation-Hedge Rotation"}:
+        print("⚠ Commodity Cycle Sensitivity")
+        print("⚠ Inflation / Real-Rate Reversal Risk")
+        print(f"⚠ {chase_risk_label(heat)}")
     elif narrative.get("classification", {}).get("label") == "Speculative Turnaround":
         print("⚠ Execution Risk")
         print("⚠ Turnaround Validation Risk")
@@ -1565,7 +1854,12 @@ def sector_positioning(key, sector_row=None):
             f"but the {SECTOR_ETFS.get(key, key).lower()} trade is becoming increasingly crowded.",
         ]
     elif warming:
-        if key in {"XLU", "XLP", "XLV", "GLD"}:
+        if key in {"GLD", "DBC", "COPX", "SLV", "DBA", "XLB", "XLE"}:
+            if rel_6m is not None and rel_6m > 0.20:
+                narrative_type = "Inflation-Hedge Rotation"
+            else:
+                narrative_type = "Defensive Hard-Asset Rotation"
+        elif key in {"XLU", "XLP", "XLV"}:
             narrative_type = "Defensive Rerating"
         elif rel_6m is not None and rel_6m > 0.20 and momentum_label.startswith("Strong"):
             narrative_type = "Institutional Momentum"
@@ -1579,8 +1873,17 @@ def sector_positioning(key, sector_row=None):
             "Institutional capital rotation is constructive,",
             "but current positioning does not yet indicate extreme thematic overcrowding.",
         ]
+        if narrative_type in {"Inflation-Hedge Rotation", "Defensive Hard-Asset Rotation"}:
+            assessment = [
+                "Capital is rotating toward hard-asset exposure",
+                "as investors seek inflation-sensitive and defensive cyclical positioning.",
+                "",
+                "This is a macro rotation structure, not simply a company-level growth rerating.",
+            ]
     else:
-        if key in {"XLU", "XLP", "XLV", "GLD"}:
+        if key in {"GLD", "DBC", "COPX", "SLV", "DBA", "XLB", "XLE"}:
+            narrative_type = "Defensive Hard-Asset Rotation"
+        elif key in {"XLU", "XLP", "XLV"}:
             narrative_type = "Defensive Rerating"
         stage = "Early / Selective Sector Momentum Phase"
         risk = "Thematic overcrowding risk not yet elevated"
@@ -1732,13 +2035,14 @@ def financial_quality_label(quality):
 
 
 def momentum_positioning_label(heat):
-    structure = momentum_structure(heat)
-    if structure.startswith("Parabolic"):
+    momentum = heat.get("momentum_heat", 0)
+    if momentum >= 75:
         return "Crowded / Hot"
-    if structure.startswith("Strong"):
+    if momentum >= 50:
         return "Strong Uptrend"
-    if structure.startswith("Moderate"):
-        return "Momentum Repair"
+    if momentum >= 25:
+        return "Healthy / Controlled Momentum"
+    structure = momentum_structure(heat)
     if structure.startswith("Correction"):
         return "Cooling / Base-Building"
     return "Mixed / Transition"
@@ -1753,6 +2057,134 @@ def print_narrative_evidence(narrative):
     print("Interpretation:")
     for line in narrative["classification"]["interpretation"]:
         print(line)
+
+
+def print_threshold_block(title, current, reference, distance, classification, interpretation):
+    print(f"{title}:")
+    print(f"Current: {current}")
+    print(f"Reference Threshold: {reference}")
+    print(f"Distance: {distance}")
+    print(f"Classification: {classification}")
+    print()
+    print("Interpretation:")
+    for line in interpretation:
+        print(line)
+    print()
+
+
+def ten_year_yield_classification(level):
+    if level is None:
+        return "Unavailable"
+    if level >= 4.50:
+        return "Tight-Liquidity Pressure ⚠"
+    if level >= 4.25:
+        return "Near Tight-Liquidity Zone ⚠"
+    return "Below Tight-Liquidity Zone"
+
+
+def thirty_year_yield_classification(level, trend):
+    stress = fiscal_stress_label(level, trend)
+    if stress == "Elevated ⚠":
+        return "Long-Term Fiscal Stress Elevated ⚠"
+    if stress == "Moderate":
+        return "Long-Term Fiscal Stress Moderate"
+    if stress == "Contained":
+        return "Long-Term Fiscal Stress Contained"
+    return "Unavailable"
+
+
+def vix_threshold_classification(vix_level):
+    if vix_level is None:
+        return "Unavailable"
+    if vix_level < 15:
+        return "Complacent Risk Perception"
+    if vix_level > 25:
+        return "Stress / Volatility Expansion ⚠"
+    return "Normal Risk Perception"
+
+
+def vix_threshold_distance(vix_level):
+    if vix_level is None:
+        return "-"
+    if vix_level < 15:
+        return f"{15 - vix_level:.1f} points below complacency threshold"
+    if vix_level > 25:
+        return f"{vix_level - 25:.1f} points above stress threshold"
+    return f"{vix_level - 15:.1f} points above complacency threshold; {25 - vix_level:.1f} points below stress threshold"
+
+
+def dxy_threshold_classification(dxy_3m):
+    if dxy_3m is None:
+        return "Unavailable"
+    if dxy_3m > 0.02:
+        return "Dollar Liquidity Tightening ⚠"
+    if dxy_3m > 0:
+        return "Dollar Firming"
+    if dxy_3m < -0.02:
+        return "Dollar Liquidity Easing"
+    return "Dollar Stable"
+
+
+def usdjpy_threshold_classification(usdjpy_3m, vix_level):
+    return f"Carry Conditions {carry_condition_label(usdjpy_3m, vix_level)}"
+
+
+def usdjpy_threshold_distance(usdjpy_3m, vix_level):
+    label = carry_condition_label(usdjpy_3m, vix_level)
+    if label == "Supportive":
+        return trend_threshold_distance(usdjpy_3m, 0.02)
+    if label == "Unwind Risk" and usdjpy_3m is not None and usdjpy_3m < -0.03:
+        return trend_threshold_distance(usdjpy_3m, -0.03)
+    if label == "Unwind Risk" and vix_level is not None and vix_level > 24:
+        return point_distance(vix_level, 24, 1)
+    if usdjpy_3m is None:
+        return "-"
+    return "Between +2.00% supportive and -3.00% unwind thresholds"
+
+
+def m2_threshold_classification(m2_6m):
+    return f"M2 Liquidity Backdrop {m2_backdrop_label(m2_6m)}"
+
+
+def m2_threshold_distance(m2_6m):
+    trend = m2_trend_label(m2_6m)
+    if trend == "Expanding":
+        return trend_threshold_distance(m2_6m, 0.005)
+    if trend == "Contracting":
+        return trend_threshold_distance(m2_6m, -0.005)
+    if trend == "Flat":
+        return "Within +/-0.50 percentage point flat range"
+    return "-"
+
+
+def consumer_sentiment_classification(sentiment):
+    if sentiment is None:
+        return "Unavailable"
+    if sentiment < 60:
+        return "Main Street Stress Elevated ⚠"
+    if sentiment < 70:
+        return "Consumer Confidence Soft"
+    return "Consumer Confidence Stable"
+
+
+def ism_classification(ism):
+    if ism is None:
+        return "Unavailable"
+    if ism < 50:
+        return "Manufacturing Contraction ⚠"
+    if ism < 52:
+        return "Manufacturing Barely Expanding"
+    return "Manufacturing Expansion"
+
+
+def breadth_classification(breadth):
+    if breadth is None:
+        return "Unavailable"
+    if breadth < -0.03:
+        return "Leadership Concentration / Weak Breadth ⚠"
+    if breadth < 0:
+        return "Slightly Concentrated Leadership"
+    return "Improving Equal-Weight Breadth"
 
 
 def sector_key(raw):
@@ -1772,6 +2204,12 @@ def intensity_label(score, low="Low", mid="Moderate", high="High", extreme="Extr
 
 def print_global_liquidity_conditions(data):
     dxy_rising = data["dxy_3m"] is not None and data["dxy_3m"] > 0
+    ten_year = data.get("tnx_level")
+    thirty_year = data.get("tyx_level")
+    vix_level = data.get("vix_level")
+    dxy_3m = data.get("dxy_3m")
+    usdjpy_3m = data.get("usdjpy_3m")
+    m2_6m = data.get("m2_6m")
     print("=================================================")
     print("GLOBAL LIQUIDITY CONDITIONS")
     print("=================================================")
@@ -1781,6 +2219,7 @@ def print_global_liquidity_conditions(data):
     print(f"Carry Conditions: {carry_condition_label(data.get('usdjpy_3m'), data['vix_level'])}")
     print()
     print(f"US 10Y Treasury Yield: {pct(data['tnx_level'] / 100 if data['tnx_level'] else None)}")
+    print(f"US 30Y Treasury Yield: {pct(data['tyx_level'] / 100 if data.get('tyx_level') else None)}")
     print(f"DXY Trend: {'Rising' if dxy_rising else 'Falling / Stable'} ({signed_pct(data['dxy_3m'])} 3M)")
     print(f"USDJPY / JPY Carry: {fmt(data.get('usdjpy_level'))} ({signed_pct(data.get('usdjpy_3m'))} 3M)")
     print(f"VIX: {fmt(data['vix_level'])}")
@@ -1791,6 +2230,77 @@ def print_global_liquidity_conditions(data):
     print("Long-Term Liquidity Backdrop:")
     print(m2_backdrop_label(data.get("m2_6m")))
     print()
+    print("Long-Term Fiscal Stress:")
+    print(fiscal_stress_label(data.get("tyx_level"), data.get("tyx_3m")))
+    print()
+    print("Threshold Diagnostics:")
+    print()
+    print_threshold_block(
+        "US 10Y Treasury Yield",
+        pct(ten_year / 100 if ten_year else None),
+        "4.50% tight-liquidity threshold",
+        pct_point_distance(ten_year, 4.50),
+        ten_year_yield_classification(ten_year),
+        [
+            "The 10Y yield anchors medium-term valuation discount pressure.",
+            "Readings near or above 4.50% keep the hurdle rate elevated, especially for long-duration growth assets.",
+        ],
+    )
+    print_threshold_block(
+        "US 30Y Treasury Yield",
+        pct(thirty_year / 100 if thirty_year else None),
+        "5.00% long-term fiscal-stress threshold",
+        pct_point_distance(thirty_year, 5.00),
+        thirty_year_yield_classification(thirty_year, data.get("tyx_3m")),
+        [
+            "The 30Y yield measures long-duration compensation for inflation, debt issuance, and fiscal sustainability risk.",
+            "Trading above the 5.00% threshold suggests structural bond-market pressure may limit how far liquidity conditions can ease.",
+        ],
+    )
+    print_threshold_block(
+        "DXY Trend",
+        f"{'Rising' if dxy_rising else 'Falling / Stable'} ({signed_pct(dxy_3m)} 3M)",
+        "0.00% 3M change; >+2.00% signals stronger dollar-liquidity pressure",
+        trend_distance(dxy_3m),
+        dxy_threshold_classification(dxy_3m),
+        [
+            "A rising dollar tightens global liquidity by increasing pressure on non-US dollar funding conditions.",
+            "The larger the positive 3M move, the more restrictive the dollar backdrop becomes for risk assets.",
+        ],
+    )
+    print_threshold_block(
+        "USDJPY / JPY Carry",
+        f"{fmt(data.get('usdjpy_level'))} ({signed_pct(usdjpy_3m)} 3M)",
+        "+2.00% 3M with VIX below 20 supports carry; -3.00% 3M or VIX above 24 signals unwind risk",
+        usdjpy_threshold_distance(usdjpy_3m, vix_level),
+        usdjpy_threshold_classification(usdjpy_3m, vix_level),
+        [
+            "USDJPY strength with contained volatility suggests carry conditions remain supportive.",
+            "A sharp USDJPY reversal or volatility spike would point to carry unwind risk and tighter liquidity conditions.",
+        ],
+    )
+    print_threshold_block(
+        "VIX",
+        fmt(vix_level),
+        "<15 complacency; >25 stress",
+        vix_threshold_distance(vix_level),
+        vix_threshold_classification(vix_level),
+        [
+            "VIX below 15 indicates complacency, while readings above 25 indicate volatility stress.",
+            "A normal reading means the market is not yet signaling panic, but volatility risk can still expand if macro catalysts deteriorate.",
+        ],
+    )
+    print_threshold_block(
+        "M2 Money Supply Trend",
+        f"{m2_trend_label(m2_6m)} ({signed_pct(m2_6m)} 6M)",
+        "+0.50% expanding; -0.50% contracting",
+        m2_threshold_distance(m2_6m),
+        m2_threshold_classification(m2_6m),
+        [
+            "M2 is treated as a long-term liquidity backdrop rather than a short-term timing signal.",
+            "An expanding M2 trend supports the broader liquidity backdrop, while contraction would imply tighter long-term liquidity conditions.",
+        ],
+    )
     print("Interpretation:")
     for line in global_liquidity_interpretation(data):
         print(line)
@@ -1798,6 +2308,9 @@ def print_global_liquidity_conditions(data):
 
 
 def print_macro_fragility_analysis(fragility):
+    sentiment = fragility.get("consumer_sentiment")
+    ism = fragility.get("ism_pmi")
+    breadth = fragility.get("breadth_proxy")
     print("=================================================")
     print("MACRO FRAGILITY ANALYSIS")
     print("=================================================")
@@ -1808,8 +2321,74 @@ def print_macro_fragility_analysis(fragility):
     print(f"ISM Manufacturing PMI: {fmt(fragility['ism_pmi'], 1)} ({signed_fmt(fragility['ism_pmi_trend'], 1)} change; source: {fragility.get('ism_source', 'Unavailable')})")
     print(f"Market Breadth Proxy (RSP vs SPY): {signed_pct(fragility['breadth_proxy'])} 3M")
     print()
+    print("Threshold Diagnostics:")
+    print()
+    print_threshold_block(
+        "Consumer Sentiment",
+        fmt(sentiment, 1),
+        "60 weak-sentiment threshold",
+        point_distance(sentiment, 60, 1),
+        consumer_sentiment_classification(sentiment),
+        [
+            "Consumer sentiment below 60 signals elevated household-confidence pressure.",
+            "Weak sentiment does not automatically break market leadership, but it weakens real-economy confirmation behind asset-price strength.",
+        ],
+    )
+    print_threshold_block(
+        "ISM Manufacturing PMI",
+        fmt(ism, 1),
+        "50 expansion / contraction threshold",
+        point_distance(ism, 50, 1),
+        ism_classification(ism),
+        [
+            "PMI below 50 indicates manufacturing contraction.",
+            "A sub-50 reading suggests market strength is relying more on liquidity, concentration, or narrative durability than broad industrial confirmation.",
+        ],
+    )
+    print_threshold_block(
+        "Market Breadth Proxy (RSP vs SPY)",
+        f"{signed_pct(breadth)} 3M",
+        "0.00% relative performance; negative means equal-weight underperforms cap-weight",
+        trend_distance(breadth),
+        breadth_classification(breadth),
+        [
+            "Negative RSP vs SPY means equal-weight breadth is lagging cap-weight leadership.",
+            "This supports a concentrated-leadership interpretation rather than a broad-based market expansion claim.",
+        ],
+    )
     print("Interpretation:")
     for line in fragility["interpretation"]:
+        print(line)
+    print()
+
+
+def print_macro_catalyst_monitor(catalysts):
+    print("=================================================")
+    print("MACRO CATALYST MONITOR")
+    print("=================================================")
+    print()
+    print("CPI:")
+    print(f"{catalysts['inflation_state']}")
+    print(f"Headline CPI: {pct(catalysts['cpi_yoy'])} YoY ({signed_pct(catalysts['cpi_yoy_trend'])} 3M YoY change)")
+    print(f"Core CPI: {pct(catalysts['core_cpi_yoy'])} YoY ({signed_pct(catalysts['core_cpi_yoy_trend'])} 3M YoY change)")
+    print(f"PPI: {pct(catalysts['ppi_yoy'])} YoY ({signed_pct(catalysts['ppi_yoy_trend'])} 3M YoY change)")
+    print()
+    print("Labor Market:")
+    print(catalysts["labor_state"])
+    print(f"Non-Farm Payrolls: {fmt(catalysts['nfp_change'], 0, '', 'k')} monthly change")
+    print(f"Unemployment Rate: {pct(catalysts['unemployment'] / 100 if catalysts['unemployment'] is not None else None)} ({signed_fmt(catalysts['unemployment_trend'], 2)} 3M point change)")
+    print(f"Average Hourly Earnings: {pct(catalysts['wages_yoy'])} YoY ({signed_pct(catalysts['wages_yoy_trend'])} 3M YoY change)")
+    print(f"Initial Jobless Claims: {fmt(catalysts['claims'], 0)} ({signed_number(catalysts['claims_trend'])} 13W change)")
+    print()
+    print("Fed Sensitivity:")
+    print(catalysts["fed_sensitivity"])
+    if catalysts.get("fed_future_rate") is not None:
+        print(f"Fed Funds Futures Implied Rate: {fmt(catalysts['fed_future_rate'], 2, '', '%')} ({signed_fmt(catalysts['fed_future_trend'], 2)} 1M point change)")
+    else:
+        print("Fed Funds Futures Implied Rate: Unavailable")
+    print()
+    print("Interpretation:")
+    for line in catalysts["interpretation"]:
         print(line)
     print()
 
@@ -1817,10 +2396,12 @@ def print_macro_fragility_analysis(fragility):
 def print_macro_command():
     data = compute_macro()
     fragility = compute_macro_fragility(data)
+    catalysts = compute_macro_catalysts(data)
     erp_negative = data["erp"] is not None and data["erp"] < 0
 
     print_global_liquidity_conditions(data)
     print_macro_fragility_analysis(fragility)
+    print_macro_catalyst_monitor(catalysts)
     print("Macro / ERP Context:")
     if data["erp"] is None:
         print("ERP Unavailable")
@@ -1985,7 +2566,74 @@ def commentary_lines(macro, leader, candidates, candidate_narrative):
     return lines
 
 
-def final_market_interpretation(macro, fragility, sectors, sector_positioning_report, candidate_narrative):
+def market_character_label(macro, fragility, catalysts, sector_positioning_report):
+    liquidity = liquidity_regime_label(macro["liquidity_score"])
+    fragility_label = fragility["label"]
+    breadth = fragility.get("breadth_proxy")
+    sector_type = sector_positioning_report.get("narrative_type") if sector_positioning_report else None
+    fiscal_stress = fiscal_stress_label(macro.get("tyx_level"), macro.get("tyx_3m"))
+    inflation_hot = catalysts.get("inflation_state", "").startswith(("Hot", "Sticky"))
+
+    if sector_type in {"Inflation-Hedge Rotation", "Defensive Hard-Asset Rotation"}:
+        return "Inflation-Sensitive Rotation"
+    if sector_type == "Crowded Momentum":
+        return "Speculative Late-Cycle Momentum"
+    if breadth is not None and breadth < -0.03 and fragility_label in {"Elevated", "High"}:
+        return "Fragile Mega-Cap Dominance"
+    if sector_type in {"Institutional Momentum", "Stable Institutional Rotation"} and breadth is not None and breadth < 0:
+        return "Concentrated Institutional Leadership"
+    if liquidity in {"Loose", "Neutral"} and fragility_label in {"Low", "Moderate"} and breadth is not None and breadth > 0:
+        return "Broad Economic Expansion"
+    if liquidity in {"Loose", "Neutral"} and m2_backdrop_label(macro.get("m2_6m")) == "Supportive":
+        return "Liquidity-Driven Risk Expansion"
+    if inflation_hot or fiscal_stress == "Elevated ⚠":
+        return "Selective Narrative Expansion"
+    return "Mixed Selective Rotation"
+
+
+def market_character_interpretation(character):
+    if character == "Inflation-Sensitive Rotation":
+        return [
+            "The dominant structure is hard-asset and inflation-sensitive rotation.",
+            "Capital is responding to inflation pressure, fiscal stress, and the search for real-asset exposure rather than broad economic acceleration.",
+        ]
+    if character == "Speculative Late-Cycle Momentum":
+        return [
+            "The dominant structure is late-cycle narrative momentum.",
+            "Capital is still chasing leadership, but positioning and valuation risk are increasingly important beneath the surface.",
+        ]
+    if character == "Fragile Mega-Cap Dominance":
+        return [
+            "The dominant structure is fragile concentrated leadership.",
+            "Headline strength is relying more on narrow leadership and narrative durability than broad market participation.",
+        ]
+    if character == "Concentrated Institutional Leadership":
+        return [
+            "The dominant structure is concentrated institutional leadership.",
+            "Capital is rotating selectively into validated themes, while equal-weight breadth remains weak.",
+        ]
+    if character == "Broad Economic Expansion":
+        return [
+            "The dominant structure is broad economic expansion.",
+            "Liquidity, macro data, and breadth are more aligned than in a narrow narrative-led regime.",
+        ]
+    if character == "Liquidity-Driven Risk Expansion":
+        return [
+            "The dominant structure is liquidity-driven risk expansion.",
+            "Risk appetite is being supported by liquidity conditions more than broad real-economy confirmation.",
+        ]
+    if character == "Selective Narrative Expansion":
+        return [
+            "The dominant structure is selective narrative expansion.",
+            "Leadership can persist, but it remains sensitive to inflation, yields, and valuation compression risk.",
+        ]
+    return [
+        "The dominant structure is mixed selective rotation.",
+        "Capital is rotating, but the regime is not yet broad or clean enough to call a durable expansion cycle.",
+    ]
+
+
+def final_market_interpretation(macro, fragility, catalysts, sectors, sector_positioning_report, candidate_narrative):
     leader = sectors[0] if sectors else None
     leader_text = leader["name"] if leader else "no clear sector leader"
     sector_type = sector_positioning_report.get("narrative_type") if sector_positioning_report else "Developing"
@@ -1993,6 +2641,7 @@ def final_market_interpretation(macro, fragility, sectors, sector_positioning_re
     fragility_label = fragility["label"]
     breadth = fragility.get("breadth_proxy")
     m2_backdrop = m2_backdrop_label(macro.get("m2_6m"))
+    character = market_character_label(macro, fragility, catalysts, sector_positioning_report)
 
     if liquidity in {"Loose", "Neutral"} and fragility_label in {"Low", "Moderate"} and breadth is not None and breadth > 0:
         structure = "broad risk expansion with improving capital rotation"
@@ -2024,15 +2673,35 @@ def final_market_interpretation(macro, fragility, sectors, sector_positioning_re
     else:
         liquidity_line = f"Long-term liquidity backdrop is {m2_backdrop.lower()}, based on the M2 trend."
 
-    return [
+    lines = [
+        f"Market Character: {character}.",
         f"Dominant structure: {structure}.",
-        f"Capital is currently rotating most visibly toward {leader_text}.",
+    ]
+    lines.extend(market_character_interpretation(character))
+    cycle_line = (
+        f"This should be interpreted as a {driver} market structure, not a mechanical buy/sell signal."
+        if character == "Broad Economic Expansion"
+        else f"This should be interpreted as a {driver} market structure, not a broad-based economic acceleration cycle or a mechanical buy/sell signal."
+    )
+
+    dependency_line = (
+        "Current leadership is being confirmed by improving breadth and real-economy support, while liquidity and narrative still shape sector leadership."
+        if character == "Broad Economic Expansion"
+        else "Current leadership remains dependent on liquidity persistence, selective institutional rotation, and narrative concentration rather than broad-based economic acceleration."
+    )
+
+    lines.extend([
+        f"Capital is currently rotating most visibly toward {leader_text}, with the leading sector narrative classified as {sector_type}.",
         liquidity_line,
         breadth_line,
+        f"Macro catalyst sensitivity is {catalysts['fed_sensitivity'].lower()}, with {catalysts['inflation_state'].lower()} and a labor market that is {catalysts['labor_state'].lower()}.",
         f"Macro fragility is {fragility_label.lower()}, so the durability of leadership depends on whether real-economy data can confirm asset-price strength.",
-        f"This should be interpreted as a {driver} market structure, not a broad-based economic acceleration cycle or a mechanical buy/sell signal.",
+        dependency_line,
+        "Elevated inflation sensitivity and long-duration yield pressure continue to increase fragility beneath headline asset strength.",
+        cycle_line,
         "The framework should be read as a map of liquidity, capital flow, narrative strength, and positioning risk.",
-    ]
+    ])
+    return lines
 
 
 def print_full_command():
@@ -2046,11 +2715,13 @@ def print_full_command():
     candidate_narrative = narrative_strength(top_candidate["ticker"]) if top_candidate else None
     candidate_heat = candidate_narrative["heat"] if candidate_narrative else None
     sector_positioning_report = sector_positioning(key, leader) if leader else None
+    catalysts = compute_macro_catalysts(macro, sector_positioning_report)
 
     print("MARKET INTELLIGENCE REPORT")
     print()
     print_global_liquidity_conditions(macro)
     print_macro_fragility_analysis(fragility)
+    print_macro_catalyst_monitor(catalysts)
 
     print("=================================================")
     print("SECTOR ROTATION ANALYSIS")
@@ -2090,7 +2761,7 @@ def print_full_command():
     print("FINAL MARKET INTERPRETATION")
     print("=================================================")
     print()
-    for line in final_market_interpretation(macro, fragility, sectors, sector_positioning_report, candidate_narrative):
+    for line in final_market_interpretation(macro, fragility, catalysts, sectors, sector_positioning_report, candidate_narrative):
         print(line)
 
 
