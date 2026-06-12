@@ -25,11 +25,15 @@ Usage:
 import contextlib
 import csv
 import io
+import json
 import math
+import os
 import re
 import statistics
 import sys
+import time
 import urllib.request
+from datetime import datetime, timedelta, timezone
 
 import yfinance as yf
 
@@ -232,6 +236,31 @@ MANUAL_MACRO_INDICATORS = [
     "Credit Spread",
 ]
 
+MACRO_FALLBACKS = {
+    "tnx": [
+        {"kind": "yahoo", "symbol": "^TNX"},
+        {"kind": "fred", "symbol": "DGS10"},
+        {"kind": "treasury", "symbol": "10 Yr"},
+    ],
+    "tyx": [
+        {"kind": "yahoo", "symbol": "^TYX"},
+        {"kind": "fred", "symbol": "DGS30"},
+        {"kind": "treasury", "symbol": "30 Yr"},
+    ],
+    "vix": [
+        {"kind": "yahoo", "symbol": "^VIX"},
+        {"kind": "cboe_vix", "symbol": "VIX"},
+    ],
+    "usdjpy": [
+        {"kind": "yahoo", "symbol": "JPY=X"},
+        {"kind": "yahoo", "symbol": "USDJPY=X"},
+        {"kind": "frankfurter", "symbol": "USDJPY"},
+    ],
+}
+
+DEFAULT_PROVIDER_CACHE_TTL_SECONDS = 3600
+_PROVIDER_CACHE = {}
+
 
 def pct(v):
     return f"{v * 100:.2f}%" if is_number(v) else "Unavailable"
@@ -319,7 +348,44 @@ def clamp(value, low=0, high=100):
     return max(low, min(high, value))
 
 
+def provider_cache_ttl():
+    raw = os.getenv("MACRO_PROVIDER_CACHE_TTL_SECONDS") or os.getenv("MACRO_CACHE_TTL_SECONDS")
+    if not raw:
+        return DEFAULT_PROVIDER_CACHE_TTL_SECONDS
+    try:
+        return int(raw)
+    except ValueError:
+        return DEFAULT_PROVIDER_CACHE_TTL_SECONDS
+
+
+def provider_cache_get(key):
+    entry = _PROVIDER_CACHE.get(key)
+    if not entry:
+        return None
+    expires_at, value = entry
+    if expires_at <= time.time():
+        _PROVIDER_CACHE.pop(key, None)
+        return None
+    if hasattr(value, "copy"):
+        return value.copy()
+    if isinstance(value, list):
+        return list(value)
+    return value
+
+
+def provider_cache_set(key, value):
+    ttl = provider_cache_ttl()
+    if ttl <= 0 or value is None:
+        return
+    stored = value.copy() if hasattr(value, "copy") else list(value) if isinstance(value, list) else value
+    _PROVIDER_CACHE[key] = (time.time() + ttl, stored)
+
+
 def fetch_history(ticker, period="1y"):
+    cache_key = f"history:{ticker}:{period}"
+    cached = provider_cache_get(cache_key)
+    if cached is not None:
+        return cached
     try:
         with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
             hist = yf.download(ticker, period=period, interval="1d", progress=False, auto_adjust=True)
@@ -327,7 +393,9 @@ def fetch_history(ticker, period="1y"):
             return None
         if hasattr(hist.columns, "levels"):
             hist.columns = hist.columns.get_level_values(0)
-        return hist.dropna()
+        hist = hist.dropna()
+        provider_cache_set(cache_key, hist)
+        return hist
     except Exception:
         return None
 
@@ -550,9 +618,13 @@ def global_liquidity_interpretation(data):
 
 
 def fetch_fred_series(series_id):
+    cache_key = f"fred:{series_id}"
+    cached = provider_cache_get(cache_key)
+    if cached is not None:
+        return cached
     url = f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}"
     try:
-        with urllib.request.urlopen(url, timeout=8) as response:
+        with urllib.request.urlopen(url, timeout=15) as response:
             text = response.read().decode("utf-8")
         rows = []
         for row in csv.DictReader(io.StringIO(text)):
@@ -560,9 +632,223 @@ def fetch_fred_series(series_id):
             if not value or value == ".":
                 continue
             rows.append((row.get("observation_date"), float(value)))
+        if rows:
+            provider_cache_set(cache_key, rows)
         return rows
     except Exception:
         return []
+
+
+def fetch_stooq_closes(symbol):
+    cache_key = f"stooq:{symbol}"
+    cached = provider_cache_get(cache_key)
+    if cached is not None:
+        return cached
+    url = f"https://stooq.com/q/d/l/?s={symbol}&i=d"
+    try:
+        request = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(request, timeout=8) as response:
+            text = response.read().decode("utf-8")
+        rows = []
+        for row in csv.DictReader(io.StringIO(text)):
+            close = row.get("Close")
+            date = row.get("Date")
+            if not close or close == "No data" or not date:
+                continue
+            rows.append((date, float(close)))
+        if rows:
+            provider_cache_set(cache_key, rows)
+        return rows
+    except Exception:
+        return []
+
+
+def fetch_cboe_vix_closes():
+    cache_key = "cboe:vix"
+    cached = provider_cache_get(cache_key)
+    if cached is not None:
+        return cached
+    url = "https://cdn.cboe.com/api/global/us_indices/daily_prices/VIX_History.csv"
+    try:
+        request = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(request, timeout=12) as response:
+            text = response.read().decode("utf-8")
+        rows = []
+        for row in csv.DictReader(io.StringIO(text)):
+            close = row.get("CLOSE")
+            date = row.get("DATE")
+            if not close or not date:
+                continue
+            rows.append((date, float(close)))
+        if rows:
+            provider_cache_set(cache_key, rows)
+        return rows
+    except Exception:
+        return []
+
+
+def fetch_treasury_yield_curve_rows():
+    current_year = datetime.now(timezone.utc).year
+    cache_key = f"treasury_yield_curve:{current_year}"
+    cached = provider_cache_get(cache_key)
+    if cached is not None:
+        return cached
+
+    rows = []
+    for year in (current_year - 1, current_year):
+        url = (
+            "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/"
+            f"daily-treasury-rates.csv/{year}/all"
+            f"?type=daily_treasury_yield_curve&field_tdr_date_value={year}&page&_format=csv"
+        )
+        try:
+            request = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(request, timeout=12) as response:
+                text = response.read().decode("utf-8")
+        except Exception:
+            continue
+        for row in csv.DictReader(io.StringIO(text)):
+            date = row.get("Date")
+            if not date:
+                continue
+            rows.append(row)
+
+    def row_date(row):
+        try:
+            return datetime.strptime(row["Date"], "%m/%d/%Y")
+        except Exception:
+            return datetime.min
+
+    rows = sorted(rows, key=row_date)
+    if rows:
+        provider_cache_set(cache_key, rows)
+    return rows
+
+
+def fetch_frankfurter_usdjpy_rows():
+    cache_key = "frankfurter:USDJPY"
+    cached = provider_cache_get(cache_key)
+    if cached is not None:
+        return cached
+
+    end_date = datetime.now(timezone.utc).date()
+    start_date = end_date - timedelta(days=140)
+    url = f"https://api.frankfurter.app/{start_date}..{end_date}?from=USD&to=JPY"
+    try:
+        request = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(request, timeout=12) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except Exception:
+        return []
+
+    rates = payload.get("rates", {})
+    rows = []
+    for date, daily_rates in rates.items():
+        value = daily_rates.get("JPY") if isinstance(daily_rates, dict) else None
+        if value is None:
+            continue
+        rows.append((date, float(value)))
+    rows = sorted(rows, key=lambda row: row[0])
+    if rows:
+        provider_cache_set(cache_key, rows)
+    return rows
+
+
+def frankfurter_usdjpy_level_change(periods=63):
+    rows = fetch_frankfurter_usdjpy_rows()
+    level, change = level_change_from_rows(rows, periods)
+    return level, change, "Frankfurter USD/JPY"
+
+
+def treasury_yield_level_change(column, periods=63):
+    rows = []
+    for row in fetch_treasury_yield_curve_rows():
+        value = row.get(column)
+        date = row.get("Date")
+        if not value or not date:
+            continue
+        try:
+            rows.append((date, float(value)))
+        except ValueError:
+            continue
+    level, change = level_change_from_rows(rows, periods)
+    return level, change, f"US Treasury daily yield curve ({column})"
+
+
+def pct_change_from_rows(rows, periods=63):
+    if not rows or len(rows) <= periods:
+        return None
+    latest = rows[-1][1]
+    prior = rows[-1 - periods][1]
+    if prior == 0:
+        return None
+    return latest / prior - 1
+
+
+def level_change_from_rows(rows, periods=63):
+    if not rows:
+        return None, None
+    return rows[-1][1], pct_change_from_rows(rows, periods)
+
+
+def yahoo_level_change(symbol, period="1y", days=63):
+    source = f"Yahoo Finance ({symbol})"
+    hist = fetch_history(symbol, period)
+    if hist is None or "Close" not in hist:
+        return None, None, source
+    level = float(hist["Close"].iloc[-1])
+    return level, price_change(hist, days), source
+
+
+def fred_level_change(series_id, periods=63):
+    rows = fetch_fred_series(series_id)
+    level, change = level_change_from_rows(rows, periods)
+    return level, change, f"FRED {series_id}"
+
+
+def stooq_level_change(symbol, periods=63):
+    rows = fetch_stooq_closes(symbol)
+    level, change = level_change_from_rows(rows, periods)
+    return level, change, f"Stooq ({symbol})"
+
+
+def cboe_vix_level_change(periods=63):
+    rows = fetch_cboe_vix_closes()
+    level, change = level_change_from_rows(rows, periods)
+    return level, change, "Cboe VIX historical CSV"
+
+
+def fetch_macro_level_change(candidates):
+    labels = []
+    partial = None
+    for candidate in candidates:
+        kind = candidate["kind"]
+        symbol = candidate["symbol"]
+        if kind == "yahoo":
+            level, change, source = yahoo_level_change(symbol, candidate.get("period", "1y"), candidate.get("days", 63))
+        elif kind == "fred":
+            level, change, source = fred_level_change(symbol, candidate.get("periods", 63))
+        elif kind == "stooq":
+            level, change, source = stooq_level_change(symbol, candidate.get("periods", 63))
+        elif kind == "cboe_vix":
+            level, change, source = cboe_vix_level_change(candidate.get("periods", 63))
+        elif kind == "treasury":
+            level, change, source = treasury_yield_level_change(symbol, candidate.get("periods", 63))
+        elif kind == "frankfurter":
+            level, change, source = frankfurter_usdjpy_level_change(candidate.get("periods", 63))
+        else:
+            continue
+
+        labels.append(source)
+        if is_number(level) and is_number(change):
+            return level, change, source, labels
+        if partial is None and (is_number(level) or is_number(change)):
+            partial = (level, change, source)
+
+    if partial is not None:
+        level, change, source = partial
+        return level, change, source, labels
+    return None, None, None, labels
 
 
 def fetch_ism_manufacturing_pmi():
@@ -799,6 +1085,10 @@ def macro_provider_warning(label, source, *values):
     return f"{label}: Unavailable or incomplete from {source}."
 
 
+def attempted_sources_text(sources):
+    return ", ".join(source for source in sources if source) or "configured public providers"
+
+
 def macro_catalyst_warning(label, source, value):
     if is_number(value):
         return None
@@ -806,27 +1096,20 @@ def macro_catalyst_warning(label, source, value):
 
 
 def compute_macro():
-    tnx_ticker, tnx = fetch_first_history(["^TNX"], "1y")
-    tyx_ticker, tyx = fetch_first_history(["^TYX"], "1y")
+    tnx_level, tnx_3m, tnx_source, tnx_sources = fetch_macro_level_change(MACRO_FALLBACKS["tnx"])
+    tyx_level, tyx_3m, tyx_source, tyx_sources = fetch_macro_level_change(MACRO_FALLBACKS["tyx"])
+    vix_level, _vix_3m, vix_source, vix_sources = fetch_macro_level_change(MACRO_FALLBACKS["vix"])
+    usdjpy_level, usdjpy_3m, usdjpy_source, usdjpy_sources = fetch_macro_level_change(MACRO_FALLBACKS["usdjpy"])
     front_rate_ticker, front_rate = fetch_first_history(["2YY=F", "^IRX", "^FVX"], "1y")
     dxy = fetch_history("DX-Y.NYB", "1y")
-    usdjpy = fetch_history("JPY=X", "1y")
-    vix = fetch_history("^VIX", "1y")
     hyg_ief = relative_change("HYG", "IEF", 63)
     m2_rows = fetch_fred_series("M2SL")
 
-    tnx_level = last_close(tnx_ticker)
-    tyx_level = last_close(tyx_ticker)
     front_rate_level = last_close(front_rate_ticker)
     dxy_level = last_close("DX-Y.NYB")
-    usdjpy_level = last_close("JPY=X")
-    vix_level = last_close("^VIX")
 
-    tnx_3m = price_change(tnx, 63)
-    tyx_3m = price_change(tyx, 63)
     front_rate_3m = price_change(front_rate, 63)
     dxy_3m = price_change(dxy, 63)
-    usdjpy_3m = price_change(usdjpy, 63)
     m2_level, m2_point_change_6m = latest_and_trend(m2_rows, 6)
     m2_6m = (m2_point_change_6m / (m2_level - m2_point_change_6m)) if is_number(m2_level) and is_number(m2_point_change_6m) and (m2_level - m2_point_change_6m) != 0 else None
 
@@ -870,12 +1153,12 @@ def compute_macro():
     provider_warnings = [
         warning
         for warning in [
-            macro_provider_warning("US 10Y yield level / 3M trend", "Yahoo Finance (^TNX)", tnx_level, tnx_3m),
-            macro_provider_warning("US 30Y yield level / 3M trend", "Yahoo Finance (^TYX)", tyx_level, tyx_3m),
+            macro_provider_warning("US 10Y yield level / 3M trend", attempted_sources_text(tnx_sources), tnx_level, tnx_3m),
+            macro_provider_warning("US 30Y yield level / 3M trend", attempted_sources_text(tyx_sources), tyx_level, tyx_3m),
             macro_provider_warning(f"Front-rate proxy {front_rate_ticker} level / 3M trend", "Yahoo Finance", front_rate_level, front_rate_3m),
             macro_provider_warning("DXY level / 3M trend", "Yahoo Finance (DX-Y.NYB)", dxy_level, dxy_3m),
-            macro_provider_warning("USDJPY level / 3M trend", "Yahoo Finance (JPY=X)", usdjpy_level, usdjpy_3m),
-            macro_provider_warning("VIX level", "Yahoo Finance (^VIX)", vix_level),
+            macro_provider_warning("USDJPY level / 3M trend", attempted_sources_text(usdjpy_sources), usdjpy_level, usdjpy_3m),
+            macro_provider_warning("VIX level", attempted_sources_text(vix_sources), vix_level),
             macro_provider_warning("Credit-risk preference proxy HYG vs IEF", "Yahoo Finance", hyg_ief),
             macro_provider_warning("M2 money supply 6M trend", "FRED M2SL", m2_6m),
             macro_provider_warning("SPY forward PE / earnings yield", "Yahoo Finance SPY quoteSummary", forward_pe, earning_yield),
@@ -887,8 +1170,10 @@ def compute_macro():
     return {
         "tnx_level": tnx_level,
         "tnx_3m": tnx_3m,
+        "tnx_source": tnx_source or "Unavailable",
         "tyx_level": tyx_level,
         "tyx_3m": tyx_3m,
+        "tyx_source": tyx_source or "Unavailable",
         "front_rate_ticker": front_rate_ticker,
         "front_rate_level": front_rate_level,
         "front_rate_3m": front_rate_3m,
@@ -897,7 +1182,9 @@ def compute_macro():
         "dxy_3m": dxy_3m,
         "usdjpy_level": usdjpy_level,
         "usdjpy_3m": usdjpy_3m,
+        "usdjpy_source": usdjpy_source or "Unavailable",
         "vix_level": vix_level,
+        "vix_source": vix_source or "Unavailable",
         "m2_level": m2_level,
         "m2_6m": m2_6m,
         "hyg_ief": hyg_ief,
@@ -3234,18 +3521,15 @@ def macro_regime_engine():
     divider("LAYER 1 - MACRO REGIME ENGINE")
     print("  Mapping which asset class is attracting capital through rates, USD, and risk preference.")
 
-    tnx_ticker, tnx = fetch_first_history(["^TNX"], "1y")
+    tnx_level, tnx_3m, _tnx_source, _tnx_sources = fetch_macro_level_change(MACRO_FALLBACKS["tnx"])
+    vix_level, _vix_3m, _vix_source, _vix_sources = fetch_macro_level_change(MACRO_FALLBACKS["vix"])
     front_rate_ticker, front_rate = fetch_first_history(["2YY=F", "^IRX", "^FVX"], "1y")
     dxy = fetch_history("DX-Y.NYB", "1y")
-    vix = fetch_history("^VIX", "1y")
     hyg_ief = relative_change("HYG", "IEF", 63)
 
-    tnx_level = last_close(tnx_ticker)
     front_rate_level = last_close(front_rate_ticker)
     dxy_level = last_close("DX-Y.NYB")
-    vix_level = last_close("^VIX")
 
-    tnx_3m = price_change(tnx, 63)
     front_rate_3m = price_change(front_rate, 63)
     dxy_3m = price_change(dxy, 63)
 
