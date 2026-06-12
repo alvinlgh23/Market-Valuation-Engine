@@ -6,13 +6,31 @@ from dataclasses import dataclass
 
 TICKER_PATTERN = re.compile(r"^[A-Z]{1,6}$")
 
-SUPPORTED_MODES = {
-    "macro",
-    "full",
-    "sectors",
-    "sector",
-    "company",
-    "overheat",
+MODE_ALIASES = {
+    "1": "macro",
+    "macro": "macro",
+    "2": "sectors",
+    "sectors": "sectors",
+    "sector-leaderboard": "sectors",
+    "sectors-all": "sectors_all",
+    "sectors_all": "sectors_all",
+    "all-sectors": "sectors_all",
+    "3": "sector",
+    "sector": "sector",
+    "theme": "sector",
+    "sector-condition": "sector",
+    "check-sector": "sector",
+    "4": "company",
+    "company": "company",
+    "stock": "company",
+    "company-condition": "company",
+    "check-company": "company",
+    "5": "risk",
+    "risk": "risk",
+    "overheat": "overheat",
+    "6": "full",
+    "full": "full",
+    "conclusion": "conclusion",
 }
 
 SECTOR_ALIASES = {
@@ -85,23 +103,69 @@ class ModeSpec:
     requires_input: bool
     input_type: str | None
     command: list[str]
+    aliases: list[str]
+    examples: list[str]
 
 
 MODE_SPECS = {
-    "macro": ModeSpec("macro", "Macro Regime Scan", False, None, ["macro"]),
-    "full": ModeSpec("full", "Full Hottest-Market Report", False, None, ["full"]),
-    "sectors": ModeSpec("sectors", "Hottest Sector Leaderboard", False, None, ["sectors"]),
-    "sector": ModeSpec("sector", "Specific Sector Condition / Crowding", True, "sector", ["sector"]),
-    "company": ModeSpec("company", "Specific Company Condition / Chase Risk", True, "ticker", ["company"]),
-    "overheat": ModeSpec("overheat", "Company Overheat Check", True, "ticker", ["risk"]),
+    "macro": ModeSpec("macro", "Macro Regime Scan", False, None, ["macro"], ["1"], ["python model.py macro", "python model.py 1"]),
+    "full": ModeSpec("full", "Full Hottest-Market Report", False, None, ["full"], ["6"], ["python model.py full", "python model.py 6"]),
+    "sectors": ModeSpec(
+        "sectors",
+        "Hottest Sector Leaderboard",
+        False,
+        None,
+        ["sectors"],
+        ["2"],
+        ["python model.py sectors", "python model.py 2"],
+    ),
+    "sectors_all": ModeSpec(
+        "sectors_all",
+        "Full Sector Leaderboard",
+        False,
+        None,
+        ["sectors", "all"],
+        ["sectors-all", "all-sectors"],
+        ["python model.py sectors all"],
+    ),
+    "sector": ModeSpec(
+        "sector",
+        "Specific Sector Condition / Crowding",
+        True,
+        "sector",
+        ["sector"],
+        ["3", "theme", "sector-condition", "check-sector"],
+        ["python model.py sector semis", "python model.py theme utilities"],
+    ),
+    "company": ModeSpec(
+        "company",
+        "Specific Company Condition / Chase Risk",
+        True,
+        "ticker",
+        ["company"],
+        ["4", "stock", "company-condition", "check-company"],
+        ["python model.py company NVDA", "python model.py stock MU"],
+    ),
+    "risk": ModeSpec("risk", "Company Overheat Check", True, "ticker", ["risk"], ["5"], ["python model.py risk NVDA", "python model.py 5 NVDA"]),
+    "overheat": ModeSpec("overheat", "Company Overheat Check", True, "ticker", ["risk"], [], ["API alias for python model.py risk NVDA"]),
+    "conclusion": ModeSpec(
+        "conclusion",
+        "Short Market Conclusion",
+        False,
+        None,
+        ["conclusion"],
+        [],
+        ["python model.py conclusion"],
+    ),
 }
 
 
 def normalize_mode(value: str) -> str:
     mode = value.strip().lower()
-    if mode not in SUPPORTED_MODES:
+    normalized = MODE_ALIASES.get(mode)
+    if normalized is None:
         raise ValueError(f"Unsupported mode: {value}")
-    return mode
+    return normalized
 
 
 def normalize_ticker(value: str | None) -> str:
@@ -122,6 +186,9 @@ def normalize_sector(value: str | None) -> str:
 
 def command_for(mode_value: str, input_value: str | None) -> tuple[str, list[str], str]:
     mode = normalize_mode(mode_value)
+    if mode == "sectors" and (input_value or "").strip().lower() == "all":
+        mode = "sectors_all"
+
     spec = MODE_SPECS[mode]
     args = list(spec.command)
     normalized_input = ""
@@ -145,6 +212,8 @@ def public_modes() -> list[dict[str, object]]:
             "label": spec.label,
             "requires_input": spec.requires_input,
             "input_type": spec.input_type,
+            "aliases": spec.aliases,
+            "examples": spec.examples,
         }
         for spec in MODE_SPECS.values()
     ]

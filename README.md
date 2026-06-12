@@ -54,6 +54,8 @@ python model.py sector semis
 python model.py theme utilities
 python model.py company NVDA
 python model.py stock MU
+python model.py risk NVDA
+python model.py conclusion
 ```
 
 Default menu:
@@ -112,9 +114,25 @@ Supported API modes:
 - `macro`
 - `full`
 - `sectors`
+- `sectors_all`
 - `sector`
 - `company`
+- `risk`
 - `overheat`
+- `conclusion`
+
+Supported API aliases:
+
+- `1` -> `macro`
+- `2` -> `sectors`
+- `3`, `theme`, `sector-condition`, `check-sector` -> `sector`
+- `4`, `stock`, `company-condition`, `check-company` -> `company`
+- `5` -> `risk`
+- `6` -> `full`
+- `sectors-all`, `all-sectors` -> `sectors_all`
+
+`POST /v1/analyze` also accepts `{"mode":"sectors","input":"all"}` as an alias
+for `python model.py sectors all`.
 
 Security model:
 
@@ -125,6 +143,55 @@ Security model:
 - subprocess execution uses an argument array
 - timeout protection via `ANALYSIS_TIMEOUT_SECONDS`
 - output length cap via `MAX_OUTPUT_CHARS`
+
+Reliability layer:
+
+- in-memory response cache enabled by default
+- default cache TTL is 15 minutes via `CACHE_TTL_SECONDS=900`
+- cache key is normalized `mode + input`, for example `macro`, `sectors_all`, `company_NVDA`
+- `company`, `risk`, and `overheat` can use `COMPANY_CACHE_TTL_SECONDS` when a shorter TTL is desired
+- lightweight per-IP rate limiting defaults to `RATE_LIMIT_PER_MINUTE=10`
+- timeout errors return a friendly `504` response without stack traces
+- Yahoo Finance `429` / provider rate-limit failures return `503`
+- temporary provider/network failures return `503`
+
+Every analysis response includes:
+
+```json
+{
+  "ok": true,
+  "cached": false,
+  "duration_ms": 1234,
+  "timestamp_utc": "2026-06-12T00:00:00+00:00"
+}
+```
+
+Error responses use the same metadata shape:
+
+```json
+{
+  "ok": false,
+  "cached": false,
+  "duration_ms": 5000,
+  "timestamp_utc": "2026-06-12T00:00:00+00:00",
+  "error": "Market data provider is temporarily rate-limited. Please try again later."
+}
+```
+
+Expanded health check:
+
+```json
+{
+  "status": "ok",
+  "service": "market-intelligence-api",
+  "version": "v1",
+  "cache_enabled": true
+}
+```
+
+Future hooks are intentionally isolated in `api/cache.py` and `api/rate_limit.py`
+so Redis, Postgres, or background jobs can be added later without changing the
+research engine.
 
 ## Render Deployment
 
@@ -143,6 +210,10 @@ Environment variables:
 ```text
 ANALYSIS_TIMEOUT_SECONDS=90
 MAX_OUTPUT_CHARS=60000
+CACHE_ENABLED=true
+CACHE_TTL_SECONDS=900
+COMPANY_CACHE_TTL_SECONDS=900
+RATE_LIMIT_PER_MINUTE=10
 ```
 
 No database is required for the first API version. The backend returns live

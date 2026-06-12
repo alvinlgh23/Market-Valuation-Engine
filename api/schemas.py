@@ -15,6 +15,8 @@ class AnalyzeResponse(BaseModel):
     command: str
     output: str
     duration_ms: int
+    cached: bool = False
+    timestamp_utc: str
     truncated: bool = False
     error: str | None = None
 
@@ -22,6 +24,8 @@ class AnalyzeResponse(BaseModel):
 class HealthResponse(BaseModel):
     status: str
     service: str
+    version: str
+    cache_enabled: bool
 
 
 class ModesResponse(BaseModel):
