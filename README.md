@@ -74,3 +74,76 @@ The full report also adds a capital-flow story, market phase, leadership durabil
 Use `sector <name>` or `company <ticker>` when you want to inspect a specific sector or company regardless of whether it is currently ranked first.
 
 Some macro indicators such as Fed Funds, M2, Reverse Repo, CPI, and credit spreads need external or manual data feeds for a complete institutional-grade stack.
+
+## API Backend
+
+The CLI can also run behind a FastAPI service.
+
+Install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+Start the API locally:
+
+```bash
+uvicorn api.main:app --reload
+```
+
+Endpoints:
+
+```text
+GET  /health
+GET  /v1/modes
+POST /v1/analyze
+```
+
+Example request:
+
+```bash
+curl -X POST http://127.0.0.1:8000/v1/analyze \
+  -H "Content-Type: application/json" \
+  -d '{"mode":"company","input":"NVDA"}'
+```
+
+Supported API modes:
+
+- `macro`
+- `full`
+- `sectors`
+- `sector`
+- `company`
+- `overheat`
+
+Security model:
+
+- no arbitrary shell execution
+- strict mode whitelist
+- ticker validation with uppercase `A-Z`, 1-6 characters
+- sector whitelist
+- subprocess execution uses an argument array
+- timeout protection via `ANALYSIS_TIMEOUT_SECONDS`
+- output length cap via `MAX_OUTPUT_CHARS`
+
+## Render Deployment
+
+This repository includes `render.yaml`.
+
+Recommended Render settings:
+
+```text
+Service type: Web Service
+Build command: pip install -r requirements.txt
+Start command: uvicorn api.main:app --host 0.0.0.0 --port $PORT
+```
+
+Environment variables:
+
+```text
+ANALYSIS_TIMEOUT_SECONDS=90
+MAX_OUTPUT_CHARS=60000
+```
+
+No database is required for the first API version. The backend returns live
+stdout reports from the existing CLI and does not store user requests.
