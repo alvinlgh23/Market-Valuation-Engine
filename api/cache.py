@@ -9,7 +9,9 @@ from typing import Protocol
 
 
 DEFAULT_CACHE_TTL_SECONDS = 900
+DEFAULT_MACRO_CACHE_TTL_SECONDS = 3600
 CACHEABLE_MODES = {"macro", "sectors", "sectors_all", "sector", "company", "risk", "overheat", "conclusion"}
+LONG_TTL_MODES = {"macro"}
 SHORT_TTL_MODES = {"company", "risk", "overheat"}
 
 
@@ -72,6 +74,8 @@ def cache_enabled() -> bool:
 
 
 def ttl_for_mode(mode: str) -> int:
+    if mode in LONG_TTL_MODES:
+        return int_from_env("MACRO_CACHE_TTL_SECONDS", DEFAULT_MACRO_CACHE_TTL_SECONDS)
     if mode in SHORT_TTL_MODES:
         return int_from_env("COMPANY_CACHE_TTL_SECONDS", int_from_env("CACHE_TTL_SECONDS", DEFAULT_CACHE_TTL_SECONDS))
     return int_from_env("CACHE_TTL_SECONDS", DEFAULT_CACHE_TTL_SECONDS)

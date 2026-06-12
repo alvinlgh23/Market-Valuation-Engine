@@ -234,34 +234,34 @@ MANUAL_MACRO_INDICATORS = [
 
 
 def pct(v):
-    return f"{v * 100:.2f}%" if is_number(v) else "-"
+    return f"{v * 100:.2f}%" if is_number(v) else "Unavailable"
 
 
 def signed_pct(v):
-    return f"{v * 100:+.2f}%" if is_number(v) else "-"
+    return f"{v * 100:+.2f}%" if is_number(v) else "Unavailable"
 
 
 def signed_fmt(v, decimals=1, suffix=""):
     if not is_number(v):
-        return "-"
+        return "Unavailable"
     return f"{v:+.{decimals}f}{suffix}"
 
 
 def fmt(v, decimals=2, prefix="", suffix=""):
     if not is_number(v):
-        return "-"
+        return "Unavailable"
     return f"{prefix}{v:,.{decimals}f}{suffix}"
 
 
 def signed_number(v, decimals=0):
     if not is_number(v):
-        return "-"
+        return "Unavailable"
     return f"{v:+,.{decimals}f}"
 
 
 def point_distance(value, threshold, decimals=2):
     if not is_number(value) or not is_number(threshold):
-        return "-"
+        return "Unavailable"
     diff = value - threshold
     direction = "above" if diff >= 0 else "below"
     return f"{abs(diff):.{decimals}f} points {direction} threshold"
@@ -269,7 +269,7 @@ def point_distance(value, threshold, decimals=2):
 
 def pct_point_distance(value, threshold):
     if not is_number(value) or not is_number(threshold):
-        return "-"
+        return "Unavailable"
     diff = value - threshold
     direction = "above" if diff >= 0 else "below"
     return f"{abs(diff):.2f} percentage points {direction} threshold"
@@ -277,14 +277,14 @@ def pct_point_distance(value, threshold):
 
 def trend_distance(value):
     if not is_number(value):
-        return "-"
+        return "Unavailable"
     direction = "above" if value >= 0 else "below"
     return f"{abs(value) * 100:.2f} percentage points {direction} flat trend line"
 
 
 def trend_threshold_distance(value, threshold):
     if not is_number(value) or not is_number(threshold):
-        return "-"
+        return "Unavailable"
     diff = value - threshold
     direction = "above" if diff >= 0 else "below"
     return f"{abs(diff) * 100:.2f} percentage points {direction} threshold"
@@ -447,7 +447,7 @@ def liquidity_regime_label(score):
 
 def risk_perception_label(vix_level):
     if vix_level is None:
-        return "Normal"
+        return "Unavailable"
     if vix_level < 15:
         return "Complacent"
     if vix_level < 22:
@@ -456,6 +456,8 @@ def risk_perception_label(vix_level):
 
 
 def carry_condition_label(usdjpy_3m, vix_level):
+    if usdjpy_3m is None and vix_level is None:
+        return "Unavailable"
     if (usdjpy_3m is not None and usdjpy_3m < -0.03) or (vix_level is not None and vix_level > 24):
         return "Unwind Risk"
     if usdjpy_3m is not None and usdjpy_3m > 0.02 and (vix_level is None or vix_level < 20):
@@ -791,6 +793,18 @@ def preferred_environment(macro_score, dxy_3m, tnx_3m):
     return ["Selective growth", "Strong free-cash-flow compounders", "Narratives with earnings support"]
 
 
+def macro_provider_warning(label, source, *values):
+    if all(is_number(value) for value in values):
+        return None
+    return f"{label}: Unavailable or incomplete from {source}."
+
+
+def macro_catalyst_warning(label, source, value):
+    if is_number(value):
+        return None
+    return f"{label}: Unavailable from {source}."
+
+
 def compute_macro():
     tnx_ticker, tnx = fetch_first_history(["^TNX"], "1y")
     tyx_ticker, tyx = fetch_first_history(["^TYX"], "1y")
@@ -853,6 +867,22 @@ def compute_macro():
     earning_yield = (1 / forward_pe) if forward_pe else None
     treasury = (tnx_level / 100) if tnx_level else None
     erp = earning_yield - treasury if earning_yield and treasury else None
+    provider_warnings = [
+        warning
+        for warning in [
+            macro_provider_warning("US 10Y yield level / 3M trend", "Yahoo Finance (^TNX)", tnx_level, tnx_3m),
+            macro_provider_warning("US 30Y yield level / 3M trend", "Yahoo Finance (^TYX)", tyx_level, tyx_3m),
+            macro_provider_warning(f"Front-rate proxy {front_rate_ticker} level / 3M trend", "Yahoo Finance", front_rate_level, front_rate_3m),
+            macro_provider_warning("DXY level / 3M trend", "Yahoo Finance (DX-Y.NYB)", dxy_level, dxy_3m),
+            macro_provider_warning("USDJPY level / 3M trend", "Yahoo Finance (JPY=X)", usdjpy_level, usdjpy_3m),
+            macro_provider_warning("VIX level", "Yahoo Finance (^VIX)", vix_level),
+            macro_provider_warning("Credit-risk preference proxy HYG vs IEF", "Yahoo Finance", hyg_ief),
+            macro_provider_warning("M2 money supply 6M trend", "FRED M2SL", m2_6m),
+            macro_provider_warning("SPY forward PE / earnings yield", "Yahoo Finance SPY quoteSummary", forward_pe, earning_yield),
+            macro_provider_warning("Equity risk premium", "SPY earnings yield and US 10Y yield", erp),
+        ]
+        if warning
+    ]
 
     return {
         "tnx_level": tnx_level,
@@ -878,6 +908,7 @@ def compute_macro():
         "liquidity_score": liquidity_score,
         "risk_score": risk_score,
         "macro_score": macro_score,
+        "provider_warnings": provider_warnings,
     }
 
 
@@ -2105,7 +2136,7 @@ def vix_threshold_classification(vix_level):
 
 def vix_threshold_distance(vix_level):
     if vix_level is None:
-        return "-"
+        return "Unavailable"
     if vix_level < 15:
         return f"{15 - vix_level:.1f} points below complacency threshold"
     if vix_level > 25:
@@ -2138,7 +2169,7 @@ def usdjpy_threshold_distance(usdjpy_3m, vix_level):
     if label == "Unwind Risk" and vix_level is not None and vix_level > 24:
         return point_distance(vix_level, 24, 1)
     if usdjpy_3m is None:
-        return "-"
+        return "Unavailable"
     return "Between +2.00% supportive and -3.00% unwind thresholds"
 
 
@@ -2154,7 +2185,7 @@ def m2_threshold_distance(m2_6m):
         return trend_threshold_distance(m2_6m, -0.005)
     if trend == "Flat":
         return "Within +/-0.50 percentage point flat range"
-    return "-"
+    return "Unavailable"
 
 
 def consumer_sentiment_classification(sentiment):
@@ -2204,6 +2235,7 @@ def intensity_label(score, low="Low", mid="Moderate", high="High", extreme="Extr
 
 def print_global_liquidity_conditions(data):
     dxy_rising = data["dxy_3m"] is not None and data["dxy_3m"] > 0
+    dxy_label = "Unavailable" if data.get("dxy_3m") is None else "Rising" if dxy_rising else "Falling / Stable"
     ten_year = data.get("tnx_level")
     thirty_year = data.get("tyx_level")
     vix_level = data.get("vix_level")
@@ -2220,7 +2252,7 @@ def print_global_liquidity_conditions(data):
     print()
     print(f"US 10Y Treasury Yield: {pct(data['tnx_level'] / 100 if data['tnx_level'] else None)}")
     print(f"US 30Y Treasury Yield: {pct(data['tyx_level'] / 100 if data.get('tyx_level') else None)}")
-    print(f"DXY Trend: {'Rising' if dxy_rising else 'Falling / Stable'} ({signed_pct(data['dxy_3m'])} 3M)")
+    print(f"DXY Trend: {dxy_label} ({signed_pct(data['dxy_3m'])} 3M)")
     print(f"USDJPY / JPY Carry: {fmt(data.get('usdjpy_level'))} ({signed_pct(data.get('usdjpy_3m'))} 3M)")
     print(f"VIX: {fmt(data['vix_level'])}")
     print()
@@ -2259,7 +2291,7 @@ def print_global_liquidity_conditions(data):
     )
     print_threshold_block(
         "DXY Trend",
-        f"{'Rising' if dxy_rising else 'Falling / Stable'} ({signed_pct(dxy_3m)} 3M)",
+        f"{dxy_label} ({signed_pct(dxy_3m)} 3M)",
         "0.00% 3M change; >+2.00% signals stronger dollar-liquidity pressure",
         trend_distance(dxy_3m),
         dxy_threshold_classification(dxy_3m),
@@ -2393,6 +2425,45 @@ def print_macro_catalyst_monitor(catalysts):
     print()
 
 
+def combined_provider_warnings(data, fragility, catalysts):
+    warnings = list(data.get("provider_warnings") or [])
+    warnings.extend(
+        warning
+        for warning in [
+            macro_catalyst_warning("Consumer sentiment", "FRED UMCSENT", fragility.get("consumer_sentiment")),
+            macro_catalyst_warning("ISM Manufacturing PMI", fragility.get("ism_source", "FRED/ISM"), fragility.get("ism_pmi")),
+            macro_catalyst_warning("Market breadth proxy RSP vs SPY", "Yahoo Finance", fragility.get("breadth_proxy")),
+            macro_catalyst_warning("Headline CPI", "FRED CPIAUCSL", catalysts.get("cpi_yoy")),
+            macro_catalyst_warning("Core CPI", "FRED CPILFESL", catalysts.get("core_cpi_yoy")),
+            macro_catalyst_warning("PPI", "FRED PPIFIS", catalysts.get("ppi_yoy")),
+            macro_catalyst_warning("Non-farm payrolls", "FRED PAYEMS", catalysts.get("nfp_change")),
+            macro_catalyst_warning("Unemployment rate", "FRED UNRATE", catalysts.get("unemployment")),
+            macro_catalyst_warning("Average hourly earnings", "FRED CES0500000003", catalysts.get("wages_yoy")),
+            macro_catalyst_warning("Initial jobless claims", "FRED ICSA", catalysts.get("claims")),
+            macro_catalyst_warning("Fed funds futures implied rate", "Yahoo Finance ZQ=F", catalysts.get("fed_future_rate")),
+        ]
+        if warning
+    )
+    return warnings
+
+
+def print_provider_warning_section(data, fragility, catalysts):
+    warnings = combined_provider_warnings(data, fragility, catalysts)
+    if not warnings:
+        return
+
+    print("=================================================")
+    print("DATA PROVIDER WARNINGS")
+    print("=================================================")
+    print()
+    print("Some live macro inputs were unavailable, delayed, or rate-limited.")
+    print("Unavailable values are labeled explicitly; existing neutral fallback scoring remains unchanged.")
+    print()
+    for warning in warnings:
+        print(f"- {warning}")
+    print()
+
+
 def print_macro_command():
     data = compute_macro()
     fragility = compute_macro_fragility(data)
@@ -2402,6 +2473,7 @@ def print_macro_command():
     print_global_liquidity_conditions(data)
     print_macro_fragility_analysis(fragility)
     print_macro_catalyst_monitor(catalysts)
+    print_provider_warning_section(data, fragility, catalysts)
     print("Macro / ERP Context:")
     if data["erp"] is None:
         print("ERP Unavailable")

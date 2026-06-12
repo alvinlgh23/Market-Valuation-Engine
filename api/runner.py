@@ -87,10 +87,6 @@ def run_analysis(mode: str, input_value: str | None = None) -> dict[str, object]
         raise AnalysisError(detail[:2000])
 
     raw_output = stdout or stderr
-    provider_error = _provider_error_for(raw_output)
-    if provider_error is not None:
-        raise provider_error
-
     truncated = len(raw_output) > max_output
     output = raw_output[:max_output]
     if truncated:
