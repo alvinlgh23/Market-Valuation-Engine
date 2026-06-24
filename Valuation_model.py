@@ -37,6 +37,8 @@ from datetime import datetime, timedelta, timezone
 
 import yfinance as yf
 
+from risk_regime import analyze_risk_regime, collect_risk_regime_data
+
 
 SECTOR_ETFS = {
     # Core GICS sector ETFs
@@ -2751,6 +2753,48 @@ def print_provider_warning_section(data, fragility, catalysts):
     print()
 
 
+
+def compute_risk_regime_report():
+    data = collect_risk_regime_data(fetch_history)
+    return analyze_risk_regime(data)
+
+
+def print_risk_regime_monitor(report):
+    print("=================================================")
+    print("RISK REGIME & DEFENSIVE ROTATION MONITOR")
+    print("=================================================")
+    print()
+    print(f"Current Regime: {report["regime"]}")
+    print(f"Confidence: {report["confidence"]}")
+    print()
+    print("Market Structure Summary:")
+    print(report["summary"])
+    print()
+    print("Evidence Matrix:")
+    for name, label, detail in report.get("evidence", []):
+        print(f"- {name}: {label} ({detail})")
+    print()
+    print("Interpretation:")
+    for line in report["interpretation"]:
+        print(line)
+    print()
+    print("What Would Invalidate This View:")
+    for line in report["invalidation"][:6]:
+        print(f"- {line}")
+    print()
+    print("Portfolio Stance:")
+    for line in report["portfolio_stance"]:
+        print(line)
+    if report.get("unavailable"):
+        print()
+        print("Unavailable Evidence:")
+        print(", ".join(report["unavailable"][:12]))
+    print()
+
+
+def print_risk_regime_command():
+    print_risk_regime_monitor(compute_risk_regime_report())
+
 def print_macro_command():
     data = compute_macro()
     fragility = compute_macro_fragility(data)
@@ -3422,10 +3466,12 @@ def print_usage():
     print("4. Specific Company Condition / Chase Risk")
     print("5. Company Overheat Check")
     print("6. Full Hottest-Market Report")
+    print("7. Risk Regime & Defensive Rotation")
     print()
     print("Usage:")
     print("  python model.py                 # or: python Valuation_model.py")
     print("  python model.py full            # hottest sector + hottest company")
+    print("  python model.py risk-regime     # defensive rotation / risk-off monitor")
     print("  python model.py sectors         # sector leaderboard")
     print("  python model.py sectors all     # full sector leaderboard")
     print("  python model.py sector semis    # specific sector condition")
@@ -3482,6 +3528,8 @@ def run_menu():
         print_risk_command(ticker)
     elif choice in {"6", "full"}:
         print_full_command()
+    elif choice in {"7", "risk-regime", "regime", "rotation", "defensive-rotation"}:
+        print_risk_regime_command()
     elif choice == "conclusion":
         print_conclusion_command()
     else:
@@ -3510,6 +3558,8 @@ def run_cli(args):
         print_risk_command(ticker)
     elif command in {"6", "full"}:
         print_full_command()
+    elif command in {"7", "risk-regime", "regime", "rotation", "defensive-rotation"}:
+        print_risk_regime_command()
     elif command == "conclusion":
         print_conclusion_command()
     else:
