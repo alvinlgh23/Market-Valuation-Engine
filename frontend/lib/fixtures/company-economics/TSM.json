@@ -1,0 +1,906 @@
+{
+  "company_economics": {
+    "company": {
+      "name": "Taiwan Semiconductor Manufacturing",
+      "ticker": "TSM",
+      "as_of": "2025-12-31",
+      "security_type": "OPERATING_COMPANY",
+      "exchange": "",
+      "currency": "",
+      "country": "",
+      "quote_type": "",
+      "sector": "Technology",
+      "industry": "Semiconductor Foundry"
+    },
+    "classification": {
+      "primary_archetype": "SEMICONDUCTOR_FOUNDRY",
+      "secondary_archetypes": [],
+      "classification_confidence": "HIGH",
+      "routing_evidence": [
+        "business description contains 'semiconductor foundry'",
+        "business description contains 'wafer fabrication'",
+        "capex intensity reinforces the metadata route's physical capacity economics",
+        "semiconductor manufacturing language or high capex intensity indicates owned fabrication",
+        "declarative company routing preference"
+      ],
+      "routing_evidence_ids": [
+        "E3",
+        "E4",
+        "E5",
+        "E6",
+        "E8",
+        "E13"
+      ],
+      "override_used": true,
+      "override_required": false,
+      "override_changes": [
+        "preferred_archetype: SEMICONDUCTOR_FOUNDRY -> SEMICONDUCTOR_FOUNDRY",
+        "constraint_priority: FAB_CAPACITY, CAPITAL_INTENSITY, EQUIPMENT_AVAILABILITY"
+      ]
+    },
+    "core_economic_question": "Can Taiwan Semiconductor Manufacturing add advanced-node capacity while preserving utilization and returns on capital?",
+    "growth_architecture": {
+      "primary_growth_equation": "Revenue \u2248 Wafer Volume \u00d7 Pricing \u00d7 Node Mix",
+      "primary_driver": {
+        "primitive": "WAFER_VOLUME",
+        "importance": "PRIMARY",
+        "observability": "DIRECT",
+        "evidence_ids": [
+          "E16"
+        ],
+        "confidence": "MODERATE"
+      },
+      "secondary_drivers": [
+        {
+          "primitive": "PRICING",
+          "importance": "SECONDARY",
+          "observability": "INDIRECT",
+          "evidence_ids": [],
+          "confidence": "LOW"
+        },
+        {
+          "primitive": "NODE_MIX",
+          "importance": "SECONDARY",
+          "observability": "DIRECT",
+          "evidence_ids": [
+            "E17"
+          ],
+          "confidence": "MODERATE"
+        }
+      ],
+      "direct_evidence_ids": [
+        "E16",
+        "E17"
+      ],
+      "proxy_evidence_ids": [
+        "E7"
+      ],
+      "confidence": "MODERATE"
+    },
+    "constraints": {
+      "primary_constraint": {
+        "constraint": "FAB_CAPACITY",
+        "economic_mechanism": "Installed fabrication capacity caps wafer output.",
+        "supporting_evidence_ids": [
+          "E16",
+          "E18",
+          "E19",
+          "E22"
+        ],
+        "contrary_evidence_ids": [],
+        "direction": "EASING",
+        "confidence": "HIGH",
+        "data_gaps": [],
+        "inference": "Fab Capacity appears easing based on the cited operating and scaling evidence.",
+        "inference_evidence_ids": [
+          "E16",
+          "E18",
+          "E19",
+          "E22"
+        ]
+      },
+      "secondary_constraints": [],
+      "candidate_constraints": [
+        "CAPITAL_INTENSITY",
+        "EQUIPMENT_AVAILABILITY",
+        "POWER_CAPACITY"
+      ],
+      "unknown_constraints": [],
+      "constraint_interactions": [],
+      "previous_primary_constraint": "UNAVAILABLE",
+      "current_primary_constraint": "FAB_CAPACITY",
+      "constraint_transition": "UNAVAILABLE",
+      "transition_confidence": "INSUFFICIENT",
+      "transition_evidence_ids": []
+    },
+    "scaling_economics": {
+      "metrics": [
+        {
+          "name": "incremental_operating_margin",
+          "value": 0.5,
+          "unit": "decimal",
+          "current_period": "FY2025 vs FY2024",
+          "comparison_period": "Prior comparable period",
+          "interpretation": "Change in operating income divided by positive change in revenue",
+          "evidence_id": "E21"
+        },
+        {
+          "name": "revenue_growth_minus_capex_growth",
+          "value": 0.10599999999999998,
+          "unit": "decimal",
+          "current_period": "FY2025 vs FY2024",
+          "comparison_period": "Prior comparable period",
+          "interpretation": "Revenue growth less capex growth",
+          "evidence_id": "E22"
+        },
+        {
+          "name": "revenue_per_capex",
+          "value": 3.0,
+          "unit": "multiple",
+          "current_period": "FY2025 vs FY2024",
+          "comparison_period": "Prior comparable period",
+          "interpretation": "Revenue supported per unit of current capex",
+          "evidence_id": "E23"
+        }
+      ],
+      "interpretation": "Available archetype-relevant metrics indicate improving scaling.",
+      "confidence": "MODERATE"
+    },
+    "growth_sustainability": {
+      "current_revenue_growth": 0.286,
+      "primary_growth_engine": "WAFER_VOLUME",
+      "primary_constraint": "FAB_CAPACITY",
+      "constraint_direction": "EASING",
+      "scaling_structure": "Available archetype-relevant metrics indicate improving scaling.",
+      "supporting_evidence_ids": [
+        "E16",
+        "E17",
+        "E7",
+        "E18",
+        "E19",
+        "E22",
+        "E21",
+        "E23"
+      ],
+      "contrary_evidence_ids": [],
+      "interpretation": "Current evidence supports continued growth because the observed growth engine remains active and the identified constraint is not tightening; maintaining the rate still requires the cited drivers to persist.",
+      "confidence": "MODERATE"
+    },
+    "falsification_conditions": [
+      {
+        "condition": "Utilization falls despite added capacity",
+        "observable_metric": "utilization",
+        "rationale": "This would weaken the Revenue \u2248 Wafer Volume \u00d7 Pricing \u00d7 Node Mix growth mechanism or its cash conversion.",
+        "evidence_ids": [
+          "E16",
+          "E17",
+          "E18",
+          "E19"
+        ]
+      },
+      {
+        "condition": "Capex outgrows demand",
+        "observable_metric": "capex",
+        "rationale": "This would weaken the Revenue \u2248 Wafer Volume \u00d7 Pricing \u00d7 Node Mix growth mechanism or its cash conversion.",
+        "evidence_ids": [
+          "E16",
+          "E17",
+          "E18",
+          "E19"
+        ]
+      },
+      {
+        "condition": "Advanced-node mix stalls",
+        "observable_metric": "advanced_node",
+        "rationale": "This would weaken the Revenue \u2248 Wafer Volume \u00d7 Pricing \u00d7 Node Mix growth mechanism or its cash conversion.",
+        "evidence_ids": [
+          "E16",
+          "E17",
+          "E18",
+          "E19"
+        ]
+      }
+    ],
+    "financial_translation": {
+      "revenue_forecast": {
+        "state": "POSITIVE",
+        "reason": "Current evidence supports continued growth because the observed growth engine remains active and the identified constraint is not tightening; maintaining the rate still requires the cited drivers to persist.",
+        "evidence_ids": [
+          "E16",
+          "E17",
+          "E7",
+          "E18",
+          "E19",
+          "E22",
+          "E21",
+          "E23"
+        ]
+      },
+      "margin": {
+        "state": "POSITIVE",
+        "reason": "Change in operating income divided by positive change in revenue",
+        "evidence_ids": [
+          "E21"
+        ]
+      },
+      "capital_intensity": {
+        "state": "POSITIVE",
+        "reason": "Revenue growth less capex growth",
+        "evidence_ids": [
+          "E22"
+        ]
+      },
+      "fcff_conversion": {
+        "state": "INSUFFICIENT_EVIDENCE",
+        "reason": "Incremental FCF margin is unavailable.",
+        "evidence_ids": []
+      }
+    },
+    "valuation_assumption_review": {
+      "reviews": [
+        {
+          "assumption": "revenue_growth",
+          "dcf_value": 0.25739999999999996,
+          "state": "SUPPORTED",
+          "reason": "DCF Year-1 growth of 25.7% is compared with observed growth of 28.6%; Company Economics does not change it.",
+          "evidence_ids": [
+            "E16",
+            "E17",
+            "E7",
+            "E18"
+          ]
+        },
+        {
+          "assumption": "fcff_margin",
+          "dcf_value": 0.276,
+          "state": "SUPPORTED",
+          "reason": "DCF normalized FCFF margin of 27.6% is compared with observed FCFF margin of 25.6%; no mutation occurs.",
+          "evidence_ids": [
+            "E16",
+            "E17",
+            "E7",
+            "E18"
+          ]
+        }
+      ],
+      "mutates_dcf_inputs": false
+    },
+    "market_expectations_comparison": {
+      "state": "BELOW_SUPPORTED_ECONOMICS",
+      "market_implied_revenue_cagr": 0.20019999999999996,
+      "market_implied_fcff_margin": 0.276,
+      "observed_economics": "Current evidence supports continued growth because the observed growth engine remains active and the identified constraint is not tightening; maintaining the rate still requires the cited drivers to persist.",
+      "reason": "Market-implied five-year growth of 20.0% is compared with observed growth of 28.6% and the diagnosed scaling structure.",
+      "evidence_ids": [
+        "E16",
+        "E17",
+        "E7",
+        "E18"
+      ]
+    },
+    "data_gaps": [
+      {
+        "missing_field": "pricing",
+        "related_driver": "PRICING",
+        "related_constraint": null,
+        "why_it_matters": "Direct observation would confirm the growth equation component.",
+        "confidence_impact": "Driver confidence remains LOW.",
+        "fallback_proxy_used": "revenue growth"
+      }
+    ],
+    "evidence_trace": [
+      {
+        "id": "E1",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "ticker",
+        "statement": "Ticker is reported as TSM.",
+        "value": "TSM",
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "security resolution / structured financial provider",
+        "source_type": "structured_data",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E2",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "company_name",
+        "statement": "Company Name is reported as Taiwan Semiconductor Manufacturing.",
+        "value": "Taiwan Semiconductor Manufacturing",
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "security resolution / structured financial provider",
+        "source_type": "structured_data",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E3",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "sector",
+        "statement": "Sector is reported as Technology.",
+        "value": "Technology",
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "security resolution / structured financial provider",
+        "source_type": "structured_data",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E4",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "industry",
+        "statement": "Industry is reported as Semiconductor Foundry.",
+        "value": "Semiconductor Foundry",
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "security resolution / structured financial provider",
+        "source_type": "structured_data",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E5",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "business_description",
+        "statement": "Business Description is reported as Contract semiconductor foundry providing wafer fabrication and advanced nodes..",
+        "value": "Contract semiconductor foundry providing wafer fabrication and advanced nodes.",
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "security resolution / structured financial provider",
+        "source_type": "structured_data",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E6",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "revenue",
+        "statement": "Revenue is reported as 90000.0.",
+        "value": 90000.0,
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E7",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "revenue_growth",
+        "statement": "Revenue Growth is reported as 0.286.",
+        "value": 0.286,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "IMPROVING",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E8",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "gross_margin",
+        "statement": "Gross Margin is reported as 0.57.",
+        "value": 0.57,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E9",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "operating_income",
+        "statement": "Operating Income is reported as 39000.0.",
+        "value": 39000.0,
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E10",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "operating_margin",
+        "statement": "Operating Margin is reported as 0.433.",
+        "value": 0.433,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E11",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "fcf",
+        "statement": "Fcf is reported as 23000.0.",
+        "value": 23000.0,
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E12",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "fcf_margin",
+        "statement": "Fcf Margin is reported as 0.256.",
+        "value": 0.256,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E13",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "capex",
+        "statement": "Capex is reported as 30000.0.",
+        "value": 30000.0,
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E14",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "capex_growth",
+        "statement": "Capex Growth is reported as 0.18.",
+        "value": 0.18,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "IMPROVING",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E15",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "employees",
+        "statement": "Employees is reported as 76000.",
+        "value": 76000,
+        "unit": "count",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E16",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "wafer_volume",
+        "statement": "Wafer Volume is reported as 17.0.",
+        "value": 17.0,
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E17",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "advanced_node_mix",
+        "statement": "Advanced Node Mix is reported as 0.69.",
+        "value": 0.69,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E18",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "utilization",
+        "statement": "Utilization is reported as 0.82.",
+        "value": 0.82,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E19",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "fab_capacity_growth",
+        "statement": "Fab Capacity Growth is reported as 0.12.",
+        "value": 0.12,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "IMPROVING",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E20",
+        "type": "INFERENCE",
+        "tier": "INDIRECT",
+        "metric": "business_model_classification",
+        "statement": "The supported primary business-model archetype is SEMICONDUCTOR_FOUNDRY.",
+        "value": null,
+        "unit": "",
+        "period": "Current structural profile",
+        "source": "Company Economics deterministic classifier",
+        "source_type": "model",
+        "source_nature": "INFERRED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": [
+          "E3",
+          "E4",
+          "E5",
+          "E6",
+          "E8",
+          "E13"
+        ]
+      },
+      {
+        "id": "E21",
+        "type": "PROXY",
+        "tier": "INDIRECT",
+        "metric": "incremental_operating_margin",
+        "statement": "Incremental Operating Margin is 0.5000.",
+        "value": 0.5,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "calculated from normalized company snapshot",
+        "source_type": "calculation",
+        "source_nature": "CALCULATED",
+        "direction": "UNKNOWN",
+        "confidence": "MODERATE",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E22",
+        "type": "PROXY",
+        "tier": "INDIRECT",
+        "metric": "revenue_growth_minus_capex_growth",
+        "statement": "Revenue Growth Minus Capex Growth is 0.1060.",
+        "value": 0.10599999999999998,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "calculated from normalized company snapshot",
+        "source_type": "calculation",
+        "source_nature": "DERIVED_PROXY",
+        "direction": "IMPROVING",
+        "confidence": "MODERATE",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E23",
+        "type": "PROXY",
+        "tier": "INDIRECT",
+        "metric": "revenue_per_capex",
+        "statement": "Revenue Per Capex is 3.0000.",
+        "value": 3.0,
+        "unit": "multiple",
+        "period": "FY2025 vs FY2024",
+        "source": "calculated from normalized company snapshot",
+        "source_type": "calculation",
+        "source_nature": "CALCULATED",
+        "direction": "UNKNOWN",
+        "confidence": "MODERATE",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E24",
+        "type": "INFERENCE",
+        "tier": "INDIRECT",
+        "metric": "fab_capacity_diagnosis",
+        "statement": "Fab Capacity appears easing based on the cited operating and scaling evidence.",
+        "value": null,
+        "unit": "",
+        "period": "Current assessment",
+        "source": "Company Economics deterministic diagnosis",
+        "source_type": "model",
+        "source_nature": "INFERRED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": "FAB_CAPACITY",
+        "supporting_evidence_ids": [
+          "E16",
+          "E18",
+          "E19",
+          "E22"
+        ]
+      },
+      {
+        "id": "E25",
+        "type": "INFERENCE",
+        "tier": "INDIRECT",
+        "metric": "capital_intensity_diagnosis",
+        "statement": "Capital Intensity appears easing based on the cited operating and scaling evidence.",
+        "value": null,
+        "unit": "",
+        "period": "Current assessment",
+        "source": "Company Economics deterministic diagnosis",
+        "source_type": "model",
+        "source_nature": "INFERRED",
+        "direction": "UNKNOWN",
+        "confidence": "MODERATE",
+        "related_driver": null,
+        "related_constraint": "CAPITAL_INTENSITY",
+        "supporting_evidence_ids": [
+          "E13",
+          "E22",
+          "E23"
+        ]
+      },
+      {
+        "id": "E26",
+        "type": "INFERENCE",
+        "tier": "INDIRECT",
+        "metric": "power_capacity_diagnosis",
+        "statement": "Power Capacity appears easing based on the cited operating and scaling evidence.",
+        "value": null,
+        "unit": "",
+        "period": "Current assessment",
+        "source": "Company Economics deterministic diagnosis",
+        "source_type": "model",
+        "source_nature": "INFERRED",
+        "direction": "UNKNOWN",
+        "confidence": "LOW",
+        "related_driver": null,
+        "related_constraint": "POWER_CAPACITY",
+        "supporting_evidence_ids": [
+          "E22"
+        ]
+      }
+    ],
+    "economic_graph": {
+      "nodes": [
+        {
+          "id": "revenue",
+          "label": "Revenue",
+          "type": "revenue"
+        },
+        {
+          "id": "wafer_volume",
+          "label": "Wafer Volume",
+          "type": "growth_driver"
+        },
+        {
+          "id": "pricing",
+          "label": "Pricing",
+          "type": "growth_driver"
+        },
+        {
+          "id": "node_mix",
+          "label": "Node Mix",
+          "type": "growth_driver"
+        },
+        {
+          "id": "fab_capacity",
+          "label": "Fab Capacity",
+          "type": "constraint"
+        },
+        {
+          "id": "margin",
+          "label": "Margin",
+          "type": "margin"
+        },
+        {
+          "id": "cash_flow",
+          "label": "Cash Flow",
+          "type": "cash_flow"
+        },
+        {
+          "id": "valuation",
+          "label": "Valuation Review",
+          "type": "valuation"
+        }
+      ],
+      "edges": [
+        {
+          "from": "wafer_volume",
+          "to": "revenue",
+          "relationship": "drives"
+        },
+        {
+          "from": "pricing",
+          "to": "revenue",
+          "relationship": "drives"
+        },
+        {
+          "from": "node_mix",
+          "to": "revenue",
+          "relationship": "drives"
+        },
+        {
+          "from": "fab_capacity",
+          "to": "revenue",
+          "relationship": "limits"
+        },
+        {
+          "from": "revenue",
+          "to": "margin",
+          "relationship": "supports"
+        },
+        {
+          "from": "margin",
+          "to": "cash_flow",
+          "relationship": "converts_to"
+        },
+        {
+          "from": "cash_flow",
+          "to": "valuation",
+          "relationship": "supports"
+        }
+      ]
+    },
+    "validation": {
+      "status": "PROVISIONAL",
+      "checks": {
+        "company_identity_valid": true,
+        "archetype_valid": true,
+        "classification_evidence_exists": true,
+        "growth_equation_exists": true,
+        "growth_drivers_exist": true,
+        "primary_constraint_supported_or_unknown": true,
+        "evidence_ids_unique": true,
+        "facts_have_sources": true,
+        "facts_have_periods": true,
+        "facts_have_values": true,
+        "proxies_labeled": true,
+        "inferences_cite_evidence": true,
+        "classification_evidence_references_exist": true,
+        "high_confidence_is_justified": true,
+        "data_gaps_explicit": true,
+        "scaling_metrics_valid": true,
+        "falsification_conditions_exist": true,
+        "valuation_review_does_not_mutate": true,
+        "ticker_overrides_are_declarative": true,
+        "json_serializable": true,
+        "graph_node_types_valid": true,
+        "graph_edges_valid": true
+      },
+      "reasons": [
+        "Data gaps or UNKNOWN conclusions remain explicit."
+      ]
+    },
+    "data_quality": {
+      "classification": "HIGH",
+      "constraint_diagnosis": "HIGH",
+      "valuation": "AVAILABLE",
+      "overall": "PARTIAL",
+      "evidence_coverage": {
+        "facts": 19,
+        "proxies": 3,
+        "inferences": 4,
+        "gaps": 1
+      }
+    },
+    "qualitative_research_needed": false,
+    "qualitative_research_reason": "Current structured evidence supports the reported deterministic diagnosis.",
+    "company_economics_schema_version": "1.1"
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "slug": "deepmind",
+  "file": "deepmind.json",
+  "company": "Google DeepMind",
+  "aliases": ["google-deepmind", "gemini"],
+  "last_updated": "2026-07-01",
+  "data_confidence": "Medium",
+  "evidence_quality": "Strong evidence on models, products, and Google infrastructure; private-company financial metrics are not applicable because DeepMind is part of Alphabet.",
+  "sections": {
+    "business_scale": {
+      "ARR": {"value": "Not separately disclosed", "status": "Not Public", "source": "Alphabet public filings and Google disclosures", "source_date": "2026-07-01", "confidence": "N/A", "reason": "Google DeepMind is not a standalone reporting segment with ARR disclosure."},
+      "Annual Revenue": {"value": "Not separately disclosed", "status": "Not Public", "source": "Alphabet public filings", "source_date": "2026-07-01", "confidence": "N/A", "reason": "Alphabet does not publish standalone DeepMind revenue."},
+      "Revenue Mix": {"value": "Embedded across Google products, Cloud, Search, Workspace, and consumer AI experiences", "status": "Estimated", "source": "Manual assessment from Google product integration", "source_date": "2026-07-01", "confidence": "Medium"}
+    },
+    "customer_adoption": {
+      "Major Products": {"value": ["Gemini", "Gemini API", "Vertex AI", "AI Overviews / Search AI features", "Google Workspace AI features"], "status": "Reported", "source": "Google product announcements", "source_date": "2023-2026", "confidence": "High"},
+      "Major Customers": {"value": "Google Cloud enterprise customers disclosed through Google Cloud announcements", "status": "Reported", "source": "Google Cloud announcements", "source_date": "2023-2026", "confidence": "Medium"},
+      "Consumer Adoption": {"value": "Distribution through Google Search, Android, Gemini app, and Workspace ecosystem", "status": "Reported", "source": "Google product announcements", "source_date": "2023-2026", "confidence": "High"}
+    },
+    "model_product": {
+      "Current Flagship Models": {"value": "Gemini model family", "status": "Reported", "source": "Google DeepMind model announcements", "source_date": "2023-2026", "confidence": "High"},
+      "Reasoning / Multimodal": {"value": "Frontier multimodal and reasoning capabilities disclosed in Gemini releases", "status": "Reported", "source": "Google DeepMind model announcements", "source_date": "2023-2026", "confidence": "High"},
+      "API Position": {"value": "Distributed through Gemini API and Vertex AI", "status": "Reported", "source": "Google Cloud and AI Studio materials", "source_date": "2023-2026", "confidence": "High"},
+      "Benchmark Leadership": {"value": "Frequently competitive at frontier; leadership varies by release and benchmark", "status": "Industry Estimate", "source": "Google model cards and external benchmark coverage", "source_date": "2026-07-01", "confidence": "Medium"}
+    },
+    "infrastructure": {
+      "Cloud Partners": {"value": "Google Cloud internal infrastructure", "status": "Reported", "source": "Alphabet / Google Cloud disclosures", "source_date": "2023-2026", "confidence": "High"},
+      "GPU / TPU Partners": {"value": "Google TPU infrastructure plus GPU capacity where used", "status": "Reported", "source": "Google Cloud infrastructure announcements", "source_date": "2023-2026", "confidence": "High"},
+      "Estimated Compute Spending": {"value": "Large but not separately disclosed for DeepMind", "status": "Not Public", "source": "Alphabet public filings", "source_date": "2026-07-01", "confidence": "N/A", "reason": "Alphabet reports capex at company/cloud scale, not by DeepMind model program."}
+    },
+    "capital": {
+      "Latest Valuation": {"value": "Not applicable as standalone private valuation", "status": "Not Public", "source": "Alphabet public filings", "source_date": "2026-07-01", "confidence": "N/A", "reason": "Google DeepMind is part of Alphabet and does not have a standalone private-company valuation."},
+      "Funding History": {"value": "Internally funded by Alphabet", "status": "Reported", "source": "Alphabet corporate structure and public filings", "source_date": "2026-07-01", "confidence": "High"},
+      "Capital Requirements": {"value": "Embedded in Alphabet AI and cloud infrastructure capex", "status": "Estimated", "source": "Manual assessment from Alphabet AI infrastructure disclosures", "source_date": "2026-07-01", "confidence": "Medium"}
+    },
+    "valuation": {
+      "Revenue Multiple": {"value": "Not applicable", "status": "Not Public", "source": "Alphabet public filings", "source_date": "2026-07-01", "confidence": "N/A", "reason": "No standalone revenue or valuation exists."}
+    },
+    "competition": {
+      "Major Competitors": {"value": ["OpenAI", "Anthropic", "Meta AI", "xAI", "Mistral"], "status": "Industry Estimate", "source": "Manual competitive mapping", "source_date": "2026-07-01", "confidence": "High"},
+      "Current Advantages": {"value": ["Google distribution", "Search and Android integration", "TPU/cloud infrastructure", "Research depth"], "status": "Industry Estimate", "source": "Manual competitive assessment", "source_date": "2026-07-01", "confidence": "High"},
+      "Current Weaknesses": {"value": ["Harder to isolate standalone economics", "Product integration complexity", "Competitive pressure in developer mindshare"], "status": "Industry Estimate", "source": "Manual competitive assessment", "source_date": "2026-07-01", "confidence": "Medium"}
+    }
+  },
+  "interpretations": {
+    "business_scale": "DeepMind cannot be analyzed like a private company because its economics are embedded inside Alphabet.",
+    "customer_adoption": "Adoption should be read through Google distribution and Cloud integration rather than standalone customer counts.",
+    "model_product": "Google DeepMind remains a core frontier-model competitor with strong multimodal and infrastructure backing.",
+    "infrastructure": "Infrastructure is a major advantage because Google controls cloud and TPU capacity.",
+    "capital": "Funding risk is lower than private labs, but capex intensity is absorbed at Alphabet scale.",
+    "valuation": "Standalone valuation analysis is not meaningful.",
+    "competition": "DeepMind is differentiated by distribution, infrastructure, and research depth."
+  },
+  "strengthen": ["Gemini gains developer and enterprise share", "Google Search and Workspace AI features improve monetization", "Benchmark leadership broadens", "Cloud AI adoption accelerates"],
+  "weaken": ["Developer mindshare shifts to OpenAI or Anthropic", "Search AI monetization pressures ads", "Model releases lag frontier peers", "Regulatory restrictions limit integration"],
+  "final_interpretation": "Google DeepMind is a frontier AI organization embedded in Alphabet rather than a standalone private AI company. Its thesis rests on model quality, Google distribution, cloud infrastructure, and integration into core products."
+}

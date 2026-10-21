@@ -24,6 +24,7 @@ Usage:
 
 import contextlib
 import csv
+import datetime as dt
 import io
 import math
 import re
@@ -32,6 +33,17 @@ import sys
 import urllib.request
 
 import yfinance as yf
+
+from company_report import print_company_intelligence_report
+from company_economics import (
+    build_company_economics,
+    print_company_economics,
+    run_company_economics,
+    snapshot_from_resolved_security,
+)
+from inflation_pressure import print_inflation_debug, print_inflation_pressure_report
+from intrinsic_valuation import run_valuation
+from risk_regime import analyze_risk_regime, collect_risk_regime_data, sector_context_for
 
 
 SECTOR_ETFS = {
@@ -330,6 +342,14 @@ def fetch_history(ticker, period="1y"):
         return hist.dropna()
     except Exception:
         return None
+
+
+def fetch_ticker_info(ticker_obj):
+    try:
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            return ticker_obj.info or {}
+    except Exception:
+        return {}
 
 
 def fetch_first_history(tickers, period="1y"):
@@ -792,6 +812,7 @@ def preferred_environment(macro_score, dxy_3m, tnx_3m):
 
 
 def compute_macro():
+    from treasury_semantics import treasury_curve
     tnx_ticker, tnx = fetch_first_history(["^TNX"], "1y")
     tyx_ticker, tyx = fetch_first_history(["^TYX"], "1y")
     front_rate_ticker, front_rate = fetch_first_history(["2YY=F", "^IRX", "^FVX"], "1y")
@@ -819,6 +840,9 @@ def compute_macro():
     yield_curve = None
     if is_number(tnx_level) and is_number(front_rate_level) and front_rate_ticker != "^IRX":
         yield_curve = (tnx_level - front_rate_level) / 100
+    def observed_at(history):
+        return str(history.index[-1])[:10] if history is not None and not history.empty else None
+    curve_metadata = treasury_curve(tnx_level, front_rate_level, front_rate_ticker, observed_at(tnx), observed_at(front_rate))
 
     rate_score = score_from_change(tnx_3m, bullish_when_positive=False, scale=0.12)
     front_rate_score = score_from_change(front_rate_3m, bullish_when_positive=False, scale=0.12)
@@ -863,6 +887,9 @@ def compute_macro():
         "front_rate_level": front_rate_level,
         "front_rate_3m": front_rate_3m,
         "yield_curve": yield_curve,
+        "yield_curve_metadata": curve_metadata,
+        "tnx_observed_at": observed_at(tnx),
+        "front_rate_observed_at": observed_at(front_rate),
         "dxy_level": dxy_level,
         "dxy_3m": dxy_3m,
         "usdjpy_level": usdjpy_level,
@@ -911,6 +938,8 @@ def compute_sectors():
             "rel_6m": rel_6m,
             "breakout": breakout,
             "score": score,
+            "as_of": str(hist.index[-1])[:10],
+            "source": "Yahoo Finance / Python sector engine",
         })
     return sorted(rows, key=lambda row: row["score"], reverse=True)
 
@@ -2393,13 +2422,109 @@ def print_macro_catalyst_monitor(catalysts):
     print()
 
 
+def compute_risk_regime_report():
+    data = collect_risk_regime_data(fetch_history)
+    return analyze_risk_regime(data)
+
+
+def print_risk_regime_monitor(report, compact=False):
+    print("=================================================")
+    print("RISK REGIME & DEFENSIVE ROTATION MONITOR")
+    print("=================================================")
+    print()
+    published_regime = report.get("published_regime", report["regime"])
+    print(f"Current Regime: {published_regime}")
+    print(f"Confidence: {report['confidence']}")
+    print(f"Evidence Coverage: {report.get('coverage', 0) * 100:.0f}%")
+    print()
+    print("Market Structure Summary:")
+    print(report["summary"])
+    print()
+
+    evidence = report.get("evidence", [])
+    limit = 6 if compact else len(evidence)
+    print("Evidence Matrix:")
+    for name, label, detail in evidence[:limit]:
+        print(f"- {name}: {label} ({detail})")
+    if compact and len(evidence) > limit:
+        print(f"- Additional evidence: {len(evidence) - limit} cross-asset checks included in full report")
+    print()
+
+    if report.get("publication_state") == "INSUFFICIENT":
+        print("Interpretation Withheld:")
+        print(report["publication_rule"])
+        if report.get("unavailable"):
+            print()
+            print("Unavailable Evidence:")
+            print(", ".join(report["unavailable"][:12]))
+        print()
+        return
+
+    print("Interpretation:")
+    for line in report["interpretation"]:
+        print(line)
+    print()
+    print("What Would Invalidate This View:")
+    for line in report["invalidation"][:6]:
+        print(f"- {line}")
+    print()
+    print("Portfolio Stance:")
+    for line in report["portfolio_stance"]:
+        print(line)
+    if report.get("unavailable"):
+        print()
+        print("Unavailable Evidence:")
+        print(", ".join(report["unavailable"][:12]))
+    print()
+
+
+def print_risk_regime_sector_context(report, key):
+    print("Risk Regime Context:")
+    if report.get("publication_state") == "INSUFFICIENT":
+        print("Insufficient Evidence (regime interpretation withheld)")
+        print(report["publication_rule"])
+        print()
+        return
+    print(f"{report['regime']} ({report['confidence']} confidence)")
+    print(sector_context_for(report["regime"], key))
+    print()
+
+
+def print_risk_regime_company_context(report, narrative):
+    heat = narrative.get("heat", {})
+    regime = report["regime"]
+    print("Risk Regime Context:")
+    if report.get("publication_state") == "INSUFFICIENT":
+        print("Insufficient Evidence (regime interpretation withheld)")
+        print(report["publication_rule"])
+        print()
+        return
+    print(f"{regime} ({report['confidence']} confidence)")
+    print(report["company_context"])
+    if regime == "Narrow Leadership Unwind" and heat.get("momentum_heat", 0) >= 45:
+        print("This company has enough momentum heat that first-dip buying deserves extra caution.")
+    elif regime == "Broad Risk-Off":
+        print("Company-specific strength should be judged against broader de-risking, not in isolation.")
+    elif regime == "Liquidity / Inflation Stress":
+        print("Multiple compression risk can remain active even when company fundamentals look solid.")
+    elif regime == "Healthy Rotation":
+        print("This regime supports selectivity, not automatic dip-buying.")
+    print()
+
+
+def print_risk_regime_command():
+    print_risk_regime_monitor(compute_risk_regime_report())
+
+
 def print_macro_command():
     data = compute_macro()
     fragility = compute_macro_fragility(data)
     catalysts = compute_macro_catalysts(data)
+    risk_regime = compute_risk_regime_report()
     erp_negative = data["erp"] is not None and data["erp"] < 0
 
     print_global_liquidity_conditions(data)
+    print_risk_regime_monitor(risk_regime)
     print_macro_fragility_analysis(fragility)
     print_macro_catalyst_monitor(catalysts)
     print("Macro / ERP Context:")
@@ -2443,6 +2568,7 @@ def print_sector_command(raw_sector):
 
     quality = company_quality_rows(tickers)
     heat = {row["ticker"]: row for row in heat_rows([row["ticker"] for row in quality[:6]])}
+    risk_regime = compute_risk_regime_report()
 
     print("Top Institutional Quality Candidates:")
     print()
@@ -2461,13 +2587,23 @@ def print_sector_command(raw_sector):
 
     print()
     print_sector_positioning_analysis(sector_positioning(key))
+    print()
+    print_risk_regime_sector_context(risk_regime, key)
 
 
 def print_risk_command(ticker):
-    ticker = resolve_ticker(ticker)
+    resolved = resolve_security(ticker)
+    integrity = validate_security_data(resolved)
+    if not should_use_standard_company_framework(integrity):
+        print_company_analysis(ticker)
+        return
+
+    ticker = resolved["ticker"]
     narrative = narrative_strength(ticker)
     row = narrative["heat"]
+    risk_regime = compute_risk_regime_report()
 
+    print_risk_regime_company_context(risk_regime, narrative)
     print_narrative_evidence(narrative)
     print(f"Valuation Expansion: {intensity_label(row['valuation_heat'], high='High', extreme='Extreme')}")
     print(f"Momentum Heat: {intensity_label(row['momentum_heat'], high='Elevated', extreme='Extreme')}")
@@ -2476,46 +2612,7 @@ def print_risk_command(ticker):
 
 
 def print_company_command(ticker):
-    requested_ticker = ticker.upper()
-    ticker = resolve_ticker(ticker)
-    narrative = narrative_strength(ticker)
-    quality = narrative["quality"]
-    heat = narrative["heat"]
-
-    print("SPECIFIC COMPANY CONDITION REPORT")
-    print()
-    if ticker != requested_ticker:
-        print(f"Company: {ticker} (alias for {requested_ticker})")
-    else:
-        print(f"Company: {ticker}")
-    print()
-    print(f"Revenue acceleration: {pct(quality['accel'])}")
-    print(f"Margin expansion: {pct(quality['margin_expansion'])}")
-    print(f"FCF: {fmt(quality['fcf'] / 1e9 if is_number(quality['fcf']) else None, 2, '', 'B')}")
-    print(f"Quality score: {fmt(quality['score'], 1)}")
-    print(f"Valuation risk: {valuation_risk_label(heat).replace(' Valuation Risk', '')}")
-    print()
-    print("Intelligence Breakdown:")
-    print(f"- Financial Quality: {financial_quality_label(quality)}")
-    print(f"- Narrative Strength: {narrative['label']}")
-    print(f"- Momentum / Positioning: {momentum_positioning_label(heat)}")
-    print(f"- Valuation Risk: {valuation_risk_label(heat)}")
-    print(f"- Chase Risk: {chase_risk_label(heat)}")
-    print()
-    print_narrative_evidence(narrative)
-    print(f"Valuation Expansion: {intensity_label(heat['valuation_heat'], high='High', extreme='Extreme')}")
-    print(f"Momentum Heat: {intensity_label(heat['momentum_heat'], high='Elevated', extreme='Extreme')}")
-    print()
-    print_overheat_analysis(narrative)
-    market_interpretation = narrative.get("classification", {}).get("market_interpretation")
-    if market_interpretation:
-        print()
-        print("=================================================")
-        print("MARKET INTERPRETATION")
-        print("=================================================")
-        print()
-        for line in market_interpretation:
-            print(line)
+    print_company_analysis(ticker)
 
 
 def print_conclusion_command():
@@ -2993,6 +3090,7 @@ def print_intelligence_extensions(macro, fragility, catalysts, sectors, sector_p
 
 def print_full_command():
     macro = compute_macro()
+    risk_regime = compute_risk_regime_report()
     fragility = compute_macro_fragility(macro)
     sectors = compute_sectors()
     leader = sectors[0] if sectors else None
@@ -3007,6 +3105,7 @@ def print_full_command():
     print("MARKET INTELLIGENCE REPORT")
     print()
     print_global_liquidity_conditions(macro)
+    print_risk_regime_monitor(risk_regime)
     print_macro_fragility_analysis(fragility)
     print_macro_catalyst_monitor(catalysts)
 
@@ -3063,16 +3162,34 @@ def print_usage():
     print("4. Specific Company Condition / Chase Risk")
     print("5. Company Overheat Check")
     print("6. Full Hottest-Market Report")
+    print("7. Risk Regime & Defensive Rotation")
+    print("8. US Inflation Pressure Engine")
+    print("9. Intrinsic Valuation Engine")
+    print("10. Company Economics Engine")
     print()
     print("Usage:")
     print("  python model.py                 # or: python Valuation_model.py")
     print("  python model.py full            # hottest sector + hottest company")
+    print("  python model.py risk-regime     # defensive rotation / risk-off monitor")
     print("  python model.py sectors         # sector leaderboard")
     print("  python model.py sectors all     # full sector leaderboard")
     print("  python model.py sector semis    # specific sector condition")
     print("  python model.py theme utilities # alias for sector")
     print("  python model.py company NVDA    # specific company condition")
     print("  python model.py stock MU        # alias for company")
+    print("  python model.py inflation       # 3-6M forward inflation-pressure report")
+    print("  python model.py cpi             # alias for inflation")
+    print("  python model.py inflation-pressure")
+    print("  python model.py inflation-debug # data-pipeline diagnostics")
+    print("  python model.py value MSFT       # intrinsic valuation")
+    print("  python model.py valuation MSFT   # alias for value")
+    print("  python model.py dcf MSFT         # alias for value")
+    print("  python model.py fair-value MSFT  # alias for value")
+    print("  python model.py economics PLTR   # company economics only")
+    print("  python model.py company-economics PLTR --json")
+    print("  python model.py research-system inventory --json")
+    print("  python model.py research-system dashboard --json")
+    print("  python model.py research-system full --live --json")
 
 
 def normalize_args(raw):
@@ -3123,19 +3240,48 @@ def run_menu():
         print_risk_command(ticker)
     elif choice in {"6", "full"}:
         print_full_command()
+    elif choice in {"7", "risk-regime", "regime", "rotation", "defensive-rotation"}:
+        print_risk_regime_command()
+    elif choice in {"8", "inflation", "cpi", "inflation-pressure"}:
+        print_inflation_pressure_report()
+    elif choice in {"9", "value", "valuation", "dcf", "fair-value"}:
+        ticker = args[1] if len(args) >= 2 else prompt_value("Ticker", "MSFT")
+        try:
+            valuation_options = parse_valuation_options(args[2:])
+            run_valuation(ticker, valuation_options["overrides"], valuation_options["json"])
+        except ValueError as exc:
+            print(f"Valuation input error: {exc}", file=sys.stderr)
+            return 2
+    elif choice in {"10", "economics", "company-economics"}:
+        ticker = args[1] if len(args) >= 2 else prompt_value("Ticker", "PLTR")
+        extra = args[2:]
+        unknown = [item for item in extra if item not in {"--json", "--fixture", "--refresh"}]
+        if unknown:
+            print(f"Company Economics input error: unsupported option {unknown[0]}", file=sys.stderr)
+            return 2
+        run_company_economics(ticker, json_output="--json" in extra, use_fixture="--fixture" in extra, force_refresh="--refresh" in extra)
+    elif choice == "inflation-debug":
+        print_inflation_debug()
     elif choice == "conclusion":
         print_conclusion_command()
     else:
         print("Invalid selection.")
+        return 2
+    return 0
 
 
 def run_cli(args):
     args = normalize_args(args)
     if not args:
-        run_menu()
-        return
+        return run_menu()
 
     command = args[0].lower()
+    if command == "research-system":
+        from research_system import main as run_research_system_cli
+        return run_research_system_cli(args[1:])
+    if command == "macro-world":
+        from macro_world import run_macro_world_cli
+        return run_macro_world_cli(args[1:])
     if command in {"1", "macro"}:
         print_macro_command()
     elif command in {"2", "sectors"}:
@@ -3151,10 +3297,87 @@ def run_cli(args):
         print_risk_command(ticker)
     elif command in {"6", "full"}:
         print_full_command()
+    elif command in {"7", "risk-regime", "regime", "rotation", "defensive-rotation"}:
+        print_risk_regime_command()
+    elif command in {"8", "inflation", "cpi", "inflation-pressure"}:
+        print_inflation_pressure_report()
+    elif command in {"9", "value", "valuation", "dcf", "fair-value"}:
+        ticker = args[1] if len(args) >= 2 else "MSFT"
+        try:
+            valuation_options = parse_valuation_options(args[2:])
+            run_valuation(ticker, valuation_options["overrides"], valuation_options["json"])
+        except ValueError as exc:
+            print(f"Valuation input error: {exc}", file=sys.stderr)
+            return 2
+    elif command in {"10", "economics", "company-economics"}:
+        ticker = args[1] if len(args) >= 2 else "PLTR"
+        extra = args[2:]
+        unknown = [item for item in extra if item not in {"--json", "--fixture", "--refresh"}]
+        if unknown:
+            print(f"Company Economics input error: unsupported option {unknown[0]}", file=sys.stderr)
+            return 2
+        run_company_economics(ticker, json_output="--json" in extra, use_fixture="--fixture" in extra, force_refresh="--refresh" in extra)
+    elif command == "inflation-debug":
+        print_inflation_debug()
     elif command == "conclusion":
         print_conclusion_command()
     else:
         print_usage()
+        return 2
+    return 0
+
+
+def parse_valuation_options(args):
+    """Parse valuation-only flags without changing existing command parsing."""
+    options = {"json": False, "overrides": {}}
+    flag_names = {
+        "--revenue-growth": "revenue_growth",
+        "--wacc": "wacc",
+        "--terminal-growth": "terminal_growth",
+        "--fcf-margin": "fcf_margin",
+    }
+    bounds = {
+        "--revenue-growth": (-0.50, 1.0, "a decimal between -0.50 and 1.0, such as 0.12"),
+        "--wacc": (0.0, 1.0, "a decimal between 0 and 1, such as 0.10"),
+        "--terminal-growth": (0.0, 0.10, "a decimal between 0 and 0.10, such as 0.03"),
+        "--fcf-margin": (-0.50, 0.80, "a decimal between -0.50 and 0.80, such as 0.25"),
+    }
+    index = 0
+    while index < len(args):
+        flag = args[index]
+        if flag == "--json":
+            options["json"] = True
+            index += 1
+            continue
+        if flag == "--sbc-policy":
+            if index + 1 >= len(args):
+                raise ValueError("--sbc-policy requires accounting-fcff or owner-earnings.")
+            value = args[index + 1].strip().lower()
+            if value not in {"accounting-fcff", "owner-earnings"}:
+                raise ValueError("Invalid value for --sbc-policy. Expected accounting-fcff or owner-earnings.")
+            options["overrides"]["sbc_policy"] = value
+            index += 2
+            continue
+        if flag in flag_names:
+            if index + 1 >= len(args):
+                raise ValueError(f"{flag} requires {bounds[flag][2]}.")
+            try:
+                value = float(args[index + 1])
+            except (TypeError, ValueError):
+                raise ValueError(f"Invalid value for {flag}. Expected {bounds[flag][2]}.") from None
+            low, high, expectation = bounds[flag]
+            if not low < value < high:
+                raise ValueError(f"Invalid value for {flag}. Expected {expectation}.")
+            options["overrides"][flag_names[flag]] = value
+            index += 2
+            continue
+        supported = "--revenue-growth, --fcf-margin, --wacc, --terminal-growth, --sbc-policy, --json"
+        raise ValueError(f"Unknown valuation option: {flag}. Supported flags: {supported}.")
+    wacc = options["overrides"].get("wacc")
+    terminal = options["overrides"].get("terminal_growth")
+    if wacc is not None and terminal is not None and terminal >= wacc:
+        raise ValueError("Terminal growth must be below WACC.")
+    return options
 
 
 # Layer 1
@@ -3396,6 +3619,485 @@ def trailing_free_cash_flow(ticker_obj):
         return None
 
 
+def yes_no(value):
+    return "Yes" if value else "No"
+
+
+def money_b(v):
+    return fmt(v / 1e9 if is_number(v) else None, 2, "$", "B")
+
+
+def expense_ratio_pct(v):
+    if not is_number(v):
+        return "Unavailable"
+    if v > 0.02:
+        return f"{v:.2f}%"
+    return pct(v)
+
+
+def info_has_identity(info):
+    return any(safe(info, key) for key in ["shortName", "longName", "symbol", "quoteType", "exchange", "currency"])
+
+
+def statement_row_count(frame, row_name):
+    if frame is None or frame.empty or row_name not in frame.index:
+        return 0
+    return len(frame.loc[row_name].dropna())
+
+
+def get_income_statement(ticker_obj):
+    for attr in ["quarterly_income_stmt", "income_stmt", "financials"]:
+        try:
+            frame = getattr(ticker_obj, attr)
+        except Exception:
+            frame = None
+        if frame is not None and not frame.empty:
+            return frame
+    return None
+
+
+def get_cashflow_statement(ticker_obj):
+    for attr in ["quarterly_cashflow", "cashflow"]:
+        try:
+            frame = getattr(ticker_obj, attr)
+        except Exception:
+            frame = None
+        if frame is not None and not frame.empty:
+            return frame
+    return None
+
+
+def revenue_growth_detail(ticker_obj):
+    try:
+        income = ticker_obj.quarterly_income_stmt
+        if income is None or income.empty or "Total Revenue" not in income.index:
+            return None
+        revenue = income.loc["Total Revenue"].dropna()
+        if len(revenue) < 5 or float(revenue.iloc[4]) == 0:
+            return None
+        current_yoy = float(revenue.iloc[0]) / float(revenue.iloc[4]) - 1
+        prior_yoy = None
+        acceleration = current_yoy
+        if len(revenue) >= 6 and float(revenue.iloc[5]) != 0:
+            prior_yoy = float(revenue.iloc[1]) / float(revenue.iloc[5]) - 1
+            acceleration = current_yoy - prior_yoy
+        return {"current_yoy": current_yoy, "prior_yoy": prior_yoy, "acceleration": acceleration}
+    except Exception:
+        return None
+
+
+def margin_expansion_detail(ticker_obj):
+    try:
+        income = ticker_obj.quarterly_income_stmt
+        if income is None or income.empty or "Total Revenue" not in income.index:
+            return None
+        margin_row = None
+        for candidate in ["Operating Income", "Pretax Income", "Net Income"]:
+            if candidate in income.index:
+                margin_row = candidate
+                break
+        if margin_row is None:
+            return None
+        revenue = income.loc["Total Revenue"].dropna()
+        margin_income = income.loc[margin_row].dropna()
+        if len(revenue) < 5 or len(margin_income) < 5 or float(revenue.iloc[0]) == 0 or float(revenue.iloc[4]) == 0:
+            return None
+        latest_margin = float(margin_income.iloc[0]) / float(revenue.iloc[0])
+        prior_year_margin = float(margin_income.iloc[4]) / float(revenue.iloc[4])
+        return {"basis": margin_row, "latest_margin": latest_margin, "prior_year_margin": prior_year_margin, "expansion": latest_margin - prior_year_margin}
+    except Exception:
+        return None
+
+
+def analyst_coverage_status(info):
+    analyst_count = safe(info, "numberOfAnalystOpinions")
+    forward_eps = safe(info, "forwardEps")
+    forward_pe = safe(info, "forwardPE")
+    if is_number(analyst_count) and analyst_count >= 5 and (is_number(forward_eps) or is_number(forward_pe)):
+        return "Available"
+    if is_number(analyst_count) and analyst_count > 0:
+        return "Limited"
+    if is_number(forward_eps) or is_number(forward_pe):
+        return "Limited"
+    return "Unavailable"
+
+
+def infer_security_type(info, integrity, quality=None):
+    quote_type = str(safe(info, "quoteType", default="")).upper()
+    name = str(safe(info, "shortName", "longName", default="")).lower()
+    sector = str(safe(info, "sector", default="")).lower()
+    industry = str(safe(info, "industry", default="")).lower()
+    fcf = quality.get("fcf") if quality else safe(info, "freeCashflow")
+    forward_eps = safe(info, "forwardEps")
+    trailing_eps = safe(info, "trailingEps")
+    revenue_growth = safe(info, "revenueGrowth")
+    op_margin = safe(info, "operatingMargins")
+
+    if not info_has_identity(info) and not integrity["price_history_available"]:
+        return "INVALID_OR_UNRESOLVED"
+    if quote_type in {"ETF", "MUTUALFUND", "FUND"} or any(token in name for token in [" etf", " fund", " trust", "shares", "ishares", "spdr", "invesco"]):
+        return "ETF_OR_FUND"
+    if not integrity["revenue_history_available"] and not integrity["cashflow_history_available"]:
+        if integrity["price_history_available"] or info_has_identity(info):
+            return "PRIVATE_COMPANY_PROXY" if integrity["ticker_mapping_confidence"] == "Low" else "INSUFFICIENT_DATA"
+        return "INVALID_OR_UNRESOLVED"
+    if not integrity["revenue_history_available"] and not integrity["price_history_available"]:
+        return "PRIVATE_COMPANY_PROXY" if integrity["ticker_mapping_confidence"] == "Low" else "INSUFFICIENT_DATA"
+    shell_pattern = r"\b(blank check|spac|shell)\b"
+    if re.search(shell_pattern, name) or re.search(shell_pattern, industry):
+        return "SPAC_OR_SHELL"
+    if sector == "financial services" or "bank" in industry or "insurance" in industry or "capital markets" in industry:
+        return "FINANCIAL_INSTITUTION"
+    if "reit" in industry or "real estate investment trust" in name:
+        return "REIT"
+    if any(token in sector for token in ["energy", "basic materials"]) or any(token in industry for token in ["steel", "copper", "gold", "oil", "gas", "mining"]):
+        return "CYCLICAL_COMPANY"
+    if (
+        (is_number(forward_eps) and forward_eps <= 0)
+        or (is_number(trailing_eps) and trailing_eps <= 0)
+        or (is_number(fcf) and fcf < 0)
+        or (is_number(op_margin) and op_margin < 0)
+    ):
+        return "PRE_PROFIT_COMPANY"
+    if is_number(revenue_growth) and revenue_growth >= 0.20:
+        return "GROWTH_OPERATING_COMPANY"
+    if integrity["ticker_mapping_confidence"] == "Low":
+        return "INSUFFICIENT_DATA"
+    return "MATURE_OPERATING_COMPANY"
+
+
+def resolve_security(ticker):
+    requested = ticker.upper()
+    resolved_ticker = resolve_ticker(ticker)
+    ticker_obj = yf.Ticker(resolved_ticker)
+    info = fetch_ticker_info(ticker_obj)
+    hist = fetch_history(resolved_ticker, "1y")
+    return {
+        "requested_ticker": requested,
+        "ticker": resolved_ticker,
+        "ticker_obj": ticker_obj,
+        "info": info,
+        "history": hist,
+        "income": get_income_statement(ticker_obj),
+        "cashflow": get_cashflow_statement(ticker_obj),
+        "name": safe(info, "shortName", "longName", default="Unavailable"),
+        "exchange": safe(info, "exchange", "fullExchangeName", default="Unavailable"),
+        "currency": safe(info, "currency", "financialCurrency", default="Unavailable"),
+        "provider": "Yahoo Finance via yfinance",
+        "as_of": dt.datetime.now().strftime("%Y-%m-%d %H:%M %Z").strip(),
+    }
+
+
+def validate_security_data(resolved):
+    info = resolved["info"]
+    hist = resolved["history"]
+    income = resolved["income"]
+    cashflow = resolved["cashflow"]
+    revenue_count = statement_row_count(income, "Total Revenue")
+    margin_available = income is not None and not income.empty and "Total Revenue" in income.index and any(row in income.index for row in ["Operating Income", "Pretax Income", "Net Income"])
+    cashflow_available = cashflow is not None and not cashflow.empty and any(row in cashflow.index for row in ["Free Cash Flow", "Operating Cash Flow", "Capital Expenditure"])
+    price_available = hist is not None and "Close" in hist and len(hist) >= 126
+    confidence = "High"
+    reasons = []
+    if resolved["requested_ticker"] != resolved["ticker"]:
+        confidence = "Medium"
+        reasons.append("requested symbol was resolved through an alias map")
+    if not info_has_identity(info):
+        confidence = "Low"
+        reasons.append("provider returned little or no issuer metadata")
+    if not price_available:
+        confidence = "Low"
+        reasons.append("verified one-year price history is unavailable")
+    if revenue_count < 4 and not cashflow_available:
+        confidence = "Low"
+        reasons.append("historical financial statements are unavailable or too sparse")
+
+    integrity_seed = {
+        "revenue_history_available": revenue_count >= 5,
+        "margin_history_available": margin_available and revenue_count >= 5,
+        "cashflow_history_available": cashflow_available,
+        "price_history_available": price_available,
+        "ticker_mapping_confidence": confidence,
+    }
+    fcf = safe(info, "freeCashflow")
+    if fcf is None:
+        fcf = trailing_free_cash_flow(resolved["ticker_obj"])
+    security_type = infer_security_type(info, integrity_seed, {"fcf": fcf})
+    data_coverage = []
+    if integrity_seed["revenue_history_available"]:
+        data_coverage.append("revenue history")
+    if integrity_seed["margin_history_available"]:
+        data_coverage.append("margin history")
+    if cashflow_available:
+        data_coverage.append("cash-flow history")
+    if price_available:
+        data_coverage.append("price history")
+
+    return {
+        **integrity_seed,
+        "security_type": security_type,
+        "forward_eps_available": is_number(safe(info, "forwardEps")),
+        "analyst_estimate_coverage": analyst_coverage_status(info),
+        "confidence_explanation": "; ".join(reasons) if reasons else "Provider metadata, price history, and financial statements are sufficient for this template.",
+        "data_coverage": ", ".join(data_coverage) if data_coverage else "Insufficient verified operating-company data",
+    }
+
+
+def print_data_integrity_section(resolved, integrity, analysis_mode=None):
+    print("=================================================")
+    print("DATA INTEGRITY & COMPANY TYPE")
+    print("=================================================")
+    print()
+    print(f"Ticker Requested: {resolved['requested_ticker']}")
+    print(f"Ticker Resolved: {resolved['ticker']}")
+    print(f"Resolved Security: {resolved['name']}")
+    print(f"Security Type: {integrity['security_type']}")
+    if analysis_mode:
+        print(f"Analysis Mode: {analysis_mode}")
+    print(f"Exchange: {resolved['exchange']}")
+    print(f"Currency: {resolved['currency']}")
+    print(f"Data Provider: {resolved['provider']}")
+    print(f"As Of: {resolved['as_of']}")
+    print(f"Ticker Mapping Confidence: {integrity['ticker_mapping_confidence']}")
+    print(f"Data Coverage: {integrity['data_coverage']}")
+    print()
+    print(f"Revenue history available: {yes_no(integrity['revenue_history_available'])}")
+    print(f"Margin history available: {yes_no(integrity['margin_history_available'])}")
+    print(f"Cash-flow history available: {yes_no(integrity['cashflow_history_available'])}")
+    print(f"Price history available: {yes_no(integrity['price_history_available'])}")
+    print(f"Forward EPS available: {yes_no(integrity['forward_eps_available'])}")
+    print(f"Analyst estimate coverage: {integrity['analyst_estimate_coverage']}")
+    if integrity["ticker_mapping_confidence"] == "Low" or integrity["security_type"] in {"PRIVATE_COMPANY_PROXY", "INVALID_OR_UNRESOLVED", "INSUFFICIENT_DATA"}:
+        print()
+        print("Data Integrity Warning:")
+        print("The requested ticker could not be confidently mapped to a conventional,")
+        print("publicly traded operating company with sufficient historical financial")
+        print("and price data.")
+        print()
+        print("Traditional quality, valuation, and momentum metrics may therefore be")
+        print("unavailable or economically meaningless.")
+        print(f"Reason: {integrity['confidence_explanation']}")
+    print()
+
+
+def should_use_standard_company_framework(integrity):
+    return (
+        integrity["security_type"] in {"MATURE_OPERATING_COMPANY", "GROWTH_OPERATING_COMPANY", "CYCLICAL_COMPANY"}
+        and integrity["revenue_history_available"]
+        and integrity["cashflow_history_available"]
+        and integrity["price_history_available"]
+        and integrity["ticker_mapping_confidence"] != "Low"
+    )
+
+
+def is_pre_profit_template(integrity):
+    return integrity["security_type"] in {"PRE_PROFIT_COMPANY", "GROWTH_OPERATING_COMPANY"} and not should_use_standard_company_framework(integrity)
+
+
+def print_security_resolution_report(resolved, integrity):
+    print("SECURITY RESOLUTION REPORT")
+    print()
+    print_data_integrity_section(resolved, integrity, "Resolution / Insufficient Verified Operating Data")
+    print("Why standard company analysis was not run:")
+    print("The requested symbol could not be confidently verified as a conventional")
+    print("public operating company with reliable financial and price history.")
+    print()
+    print("Important:")
+    print("Do not treat this report as an analysis of a private company unless a verified,")
+    print("publicly traded security exists and is explicitly identified.")
+    print()
+    print("Suggested next steps:")
+    print("- verify ticker and exchange")
+    print("- analyze a verified public proxy separately")
+    print("- use a private-market analysis mode if private-company data is supplied")
+
+
+def print_etf_or_fund_report(resolved, integrity):
+    info = resolved["info"]
+    hist = resolved["history"]
+    print("ETF / FUND EXPOSURE REPORT")
+    print()
+    print_data_integrity_section(resolved, integrity, "ETF / Fund Exposure")
+    print("Exposure:")
+    print(f"Category: {safe(info, 'category', default='Unavailable')}")
+    print(f"Fund family: {safe(info, 'fundFamily', default='Unavailable')}")
+    print(f"Assets under management: {money_b(safe(info, 'totalAssets'))}")
+    expense_ratio = safe(info, "annualReportExpenseRatio", "netExpenseRatio")
+    print(f"Expense ratio: {expense_ratio_pct(expense_ratio)}")
+    print()
+    print("Market Behavior:")
+    six_month = price_change(hist, 126)
+    ma200 = moving_average(hist, 200)
+    current = float(hist["Close"].iloc[-1]) if hist is not None and ma200 else None
+    dist_200 = current / ma200 - 1 if current and ma200 else None
+    if six_month is None and dist_200 is None:
+        print("Market positioning analysis is unavailable because sufficient verified price history could not be retrieved.")
+    else:
+        print(f"6M price performance: {signed_pct(six_month)}")
+        print(f"Distance from 200DMA: {signed_pct(dist_200)}")
+    print()
+    print("Interpretation:")
+    print("This is a pooled vehicle, so revenue, margins, free cash flow, and issuer PE are not operating-company metrics.")
+    print("Any valuation view should be based on the underlying basket, holdings, and exposure data rather than the fund wrapper itself.")
+
+
+def print_spac_or_shell_report(resolved, integrity):
+    info = resolved["info"]
+    print("SPAC / SHELL / CORPORATE ACTION REPORT")
+    print()
+    print_data_integrity_section(resolved, integrity, "SPAC / Shell / Corporate Action")
+    print("Structure:")
+    print(f"Market cap: {money_b(safe(info, 'marketCap'))}")
+    print(f"Cash and equivalents: {money_b(safe(info, 'totalCash'))}")
+    print(f"Total debt: {money_b(safe(info, 'totalDebt'))}")
+    print()
+    print("Interpretation:")
+    print("Conventional quality scoring is not used because shell or merger-transition securities often lack operating history.")
+    print("Relevant analysis should focus on trust value, redemption risk, merger status, dilution instruments, warrants, PIPE financing, and post-merger operating data if available.")
+
+
+def print_pre_profit_company_report(resolved, integrity):
+    info = resolved["info"]
+    hist = resolved["history"]
+    fcf = safe(info, "freeCashflow")
+    if fcf is None:
+        fcf = trailing_free_cash_flow(resolved["ticker_obj"])
+    cash = safe(info, "totalCash")
+    debt = safe(info, "totalDebt")
+    op_cash = safe(info, "operatingCashflow")
+    net_cash = cash - debt if is_number(cash) and is_number(debt) else None
+    forward_pe = safe(info, "forwardPE")
+    forward_eps = safe(info, "forwardEps")
+    market_cap = safe(info, "marketCap")
+
+    print("VENTURE-STAGE / PRE-PROFITABILITY COMPANY REPORT")
+    print()
+    print_data_integrity_section(resolved, integrity, "Pre-Profit / Heavy-Investment")
+    print("=================================================")
+    print("BUSINESS STAGE & ECONOMIC MODEL")
+    print("=================================================")
+    print()
+    print(f"Business Stage: {'Heavy-Investment / Scaling' if integrity['revenue_history_available'] else 'Pre-Revenue / Insufficient Revenue History'}")
+    print(f"Revenue Availability: {yes_no(integrity['revenue_history_available'])}")
+    print(f"Revenue Trend: {signed_pct(safe(info, 'revenueGrowth')) if is_number(safe(info, 'revenueGrowth')) else 'Unavailable'}")
+    print(f"Profitability Status: {'Pre-profit / unstable' if (is_number(fcf) and fcf < 0) or (is_number(forward_eps) and forward_eps <= 0) else 'Unavailable or not established'}")
+    print(f"Cash Flow: {money_b(fcf)}")
+    print(f"Capital Intensity: {'High / externally funded' if is_number(fcf) and fcf < 0 else 'Unavailable'}")
+    print()
+    print("Interpretation:")
+    print("The standard mature-company score is not used because earnings, cash flow, or history are not stable enough")
+    print("to support conventional quality, PE, and momentum conclusions.")
+    print()
+    print("=================================================")
+    print("FUNDING & RUNWAY RISK")
+    print("=================================================")
+    print()
+    print(f"Cash and Equivalents: {money_b(cash)}")
+    print(f"Total Debt: {money_b(debt)}")
+    print(f"Net Cash / Net Debt: {money_b(net_cash)}")
+    print(f"Operating Cash Burn: {money_b(op_cash)}")
+    print(f"Free Cash Flow: {money_b(fcf)}")
+    burn = abs(fcf) if is_number(fcf) and fcf < 0 else None
+    runway = cash / burn if is_number(cash) and burn else None
+    print(f"Estimated Runway: {fmt(runway, 1, '', ' years') if is_number(runway) else 'Unavailable'}")
+    print(f"Financing Dependence: {'Likely external financing / dilution risk' if is_number(fcf) and fcf < 0 else 'Unknown'}")
+    print(f"Dilution History: shares outstanding {fmt(safe(info, 'sharesOutstanding'), 0)}; float {fmt(safe(info, 'floatShares'), 0)}")
+    print()
+    print("Interpretation:")
+    print("Funding risk should be judged from cash, debt, burn rate, and share issuance rather than a single quality score.")
+    print()
+    print("=================================================")
+    print("MILESTONE & COMMERCIAL VALIDATION")
+    print("=================================================")
+    print()
+    print("Backlog / contract wins / unit economics / milestone evidence: Unavailable from current structured provider data.")
+    print("Do not infer customer validation or milestone delivery without source data.")
+    print()
+    print("=================================================")
+    print("VALUATION INTERPRETATION")
+    print("=================================================")
+    print()
+    print("Traditional Forward PE:")
+    print(f"{fmt(forward_pe, 1, '', 'x') if is_number(forward_pe) else 'Unavailable'}")
+    print(f"Status: {'Not meaningful' if is_number(forward_pe) else 'Unavailable'}")
+    print("Reason:")
+    print("Forward EPS is negative, near-zero, unstable, or estimate coverage is insufficient for a conventional PE conclusion.")
+    print(f"EV / Revenue: {fmt(safe(info, 'enterpriseToRevenue'), 2, '', 'x')}")
+    print(f"Price / Sales: {fmt(safe(info, 'priceToSalesTrailing12Months'), 2, '', 'x')}")
+    burn_to_cap = abs(fcf) / market_cap if is_number(fcf) and is_number(market_cap) and market_cap else None
+    print(f"Cash burn relative to market cap: {fmt(burn_to_cap, 2)}")
+    print()
+    print("=================================================")
+    print("MARKET BEHAVIOR")
+    print("=================================================")
+    print()
+    six_month = price_change(hist, 126)
+    ma200 = moving_average(hist, 200)
+    current = float(hist["Close"].iloc[-1]) if hist is not None and ma200 else None
+    dist_200 = current / ma200 - 1 if current and ma200 else None
+    if six_month is None and dist_200 is None:
+        print("Market positioning analysis is unavailable because sufficient verified price history could not be retrieved.")
+    else:
+        print(f"6M price performance: {signed_pct(six_month)}")
+        print(f"Distance from 200DMA: {signed_pct(dist_200)}")
+    print()
+    print("=================================================")
+    print("THESIS CONDITIONS")
+    print("=================================================")
+    print()
+    print("What would strengthen the case:")
+    print("- verified recurring revenue growth")
+    print("- improving gross margin / unit economics")
+    print("- reduced burn relative to revenue")
+    print("- stronger contract / customer validation")
+    print("- lower financing dependence")
+    print("- milestone delivery")
+    print()
+    print("What would weaken the case:")
+    print("- repeated milestone delays")
+    print("- accelerating cash burn")
+    print("- equity issuance / dilution")
+    print("- debt refinancing stress")
+    print("- weak demand conversion")
+    print("- falling backlog / contract visibility")
+    print()
+    print("=================================================")
+    print("FINAL STRUCTURAL INTERPRETATION")
+    print("=================================================")
+    print()
+    print("This security is better analyzed through execution evidence, financing runway, dilution risk, and verified commercial milestones.")
+    print("The report avoids a single score because the available data does not support mature-company confidence.")
+
+
+def print_mature_company_report(resolved, integrity):
+    ticker = resolved["ticker"]
+    narrative = narrative_strength(ticker)
+    print_company_intelligence_report(resolved["requested_ticker"], ticker, narrative)
+
+
+def print_company_analysis(ticker):
+    resolved = resolve_security(ticker)
+    integrity = validate_security_data(resolved)
+    security_type = integrity["security_type"]
+    standard_framework = should_use_standard_company_framework(integrity)
+    if standard_framework:
+        print_mature_company_report(resolved, integrity)
+    elif security_type == "ETF_OR_FUND":
+        print_etf_or_fund_report(resolved, integrity)
+    elif security_type == "SPAC_OR_SHELL":
+        print_spac_or_shell_report(resolved, integrity)
+    elif is_pre_profit_template(integrity):
+        print_pre_profit_company_report(resolved, integrity)
+    else:
+        print_security_resolution_report(resolved, integrity)
+
+    # Read-only bridge between company fundamentals and valuation.  The
+    # already-resolved provider data is reused and no DCF assumption is changed.
+    if not standard_framework and security_type not in {"ETF_OR_FUND", "SPAC_OR_SHELL", "INVALID_OR_UNRESOLVED", "PRIVATE_COMPANY_PROXY"}:
+        print()
+        print_company_economics(build_company_economics(snapshot_from_resolved_security(resolved)))
+
+
 def company_quality_engine(tickers):
     divider("LAYER 3 - INSTITUTIONAL TARGET QUALITY")
     print("  Looking for companies in the active narrative that have growth, margin, cash flow, and execution quality.")
@@ -3591,4 +4293,4 @@ def run_framework(tickers):
 
 
 if __name__ == "__main__":
-    run_cli(sys.argv[1:])
+    raise SystemExit(run_cli(sys.argv[1:]))

@@ -1,0 +1,63 @@
+{
+  "slug": "meta-ai",
+  "file": "meta_ai.json",
+  "company": "Meta AI",
+  "aliases": ["meta", "llama"],
+  "last_updated": "2026-07-01",
+  "data_confidence": "Medium",
+  "evidence_quality": "Strong evidence on Llama, Meta AI product distribution, and Meta infrastructure; standalone AI revenue and valuation are not disclosed because Meta AI is embedded within Meta Platforms.",
+  "sections": {
+    "business_scale": {
+      "ARR": {"value": "Not separately disclosed", "status": "Not Public", "source": "Meta public filings", "source_date": "2026-07-01", "confidence": "N/A", "reason": "Meta does not publish standalone AI ARR."},
+      "Annual Revenue": {"value": "Not separately disclosed", "status": "Not Public", "source": "Meta public filings", "source_date": "2026-07-01", "confidence": "N/A", "reason": "AI revenue is embedded across advertising, apps, devices, and infrastructure rather than a standalone segment."},
+      "Revenue Mix": {"value": "Embedded across family-of-apps engagement, advertising systems, business messaging, and AI assistant distribution", "status": "Estimated", "source": "Manual assessment from Meta product integration", "source_date": "2026-07-01", "confidence": "Medium"}
+    },
+    "customer_adoption": {
+      "Major Products": {"value": ["Meta AI assistant", "Llama model family", "AI features across Facebook, Instagram, WhatsApp, Messenger"], "status": "Reported", "source": "Meta product and model announcements", "source_date": "2023-2026", "confidence": "High"},
+      "Consumer Adoption": {"value": "Distribution through Meta family of apps", "status": "Reported", "source": "Meta product announcements and earnings commentary", "source_date": "2023-2026", "confidence": "High"},
+      "Developer Adoption": {"value": "Open model ecosystem around Llama", "status": "Reported", "source": "Meta Llama announcements and developer materials", "source_date": "2023-2026", "confidence": "High"}
+    },
+    "model_product": {
+      "Current Flagship Models": {"value": "Llama model family", "status": "Reported", "source": "Meta AI model announcements", "source_date": "2023-2026", "confidence": "High"},
+      "Open Model Position": {"value": "Leading open-weight model ecosystem", "status": "Industry Estimate", "source": "Manual assessment from developer adoption and model releases", "source_date": "2026-07-01", "confidence": "High"},
+      "Consumer Platform": {"value": "Meta AI inside Meta apps", "status": "Reported", "source": "Meta product announcements", "source_date": "2023-2026", "confidence": "High"},
+      "Benchmark Leadership": {"value": "Competitive in open-model category; leadership varies against closed frontier models", "status": "Industry Estimate", "source": "Public model releases and benchmark coverage", "source_date": "2026-07-01", "confidence": "Medium"}
+    },
+    "infrastructure": {
+      "Cloud / Internal Infrastructure": {"value": "Meta-owned AI infrastructure and data centers", "status": "Reported", "source": "Meta earnings commentary and infrastructure disclosures", "source_date": "2023-2026", "confidence": "High"},
+      "GPU Partners": {"value": "Large Nvidia GPU procurement widely reported through Meta capex commentary", "status": "Reported", "source": "Meta earnings commentary and infrastructure reporting", "source_date": "2023-2026", "confidence": "High"},
+      "Estimated Compute Spending": {"value": "Very large but not separately disclosed for Meta AI", "status": "Not Public", "source": "Meta public filings", "source_date": "2026-07-01", "confidence": "N/A", "reason": "Meta reports capex at company level, not as standalone Meta AI model spending."},
+      "Capex Intensity": {"value": "Substantial and strategic",
+        "status": "Reported",
+        "source": "Meta earnings commentary",
+        "source_date": "2024-2026",
+        "confidence": "High"
+      }
+    },
+    "capital": {
+      "Latest Valuation": {"value": "Not applicable as standalone private valuation", "status": "Not Public", "source": "Meta public filings", "source_date": "2026-07-01", "confidence": "N/A", "reason": "Meta AI is part of Meta Platforms and has no standalone private valuation."},
+      "Funding History": {"value": "Internally funded by Meta Platforms", "status": "Reported", "source": "Meta public filings and earnings commentary", "source_date": "2023-2026", "confidence": "High"},
+      "Capital Requirements": {"value": "Embedded in Meta AI infrastructure capex", "status": "Reported", "source": "Meta earnings commentary", "source_date": "2024-2026", "confidence": "High"}
+    },
+    "valuation": {
+      "Revenue Multiple": {"value": "Not applicable", "status": "Not Public", "source": "Meta public filings", "source_date": "2026-07-01", "confidence": "N/A", "reason": "No standalone revenue or valuation exists for Meta AI."}
+    },
+    "competition": {
+      "Major Competitors": {"value": ["OpenAI", "Anthropic", "Google DeepMind", "xAI", "Mistral"], "status": "Industry Estimate", "source": "Manual competitive mapping", "source_date": "2026-07-01", "confidence": "High"},
+      "Current Advantages": {"value": ["Open model ecosystem", "Massive consumer distribution", "Large infrastructure budget", "Social data and app integration"], "status": "Industry Estimate", "source": "Manual competitive assessment", "source_date": "2026-07-01", "confidence": "High"},
+      "Current Weaknesses": {"value": ["Standalone monetization less clear", "Open model strategy may diffuse value capture", "Large capex burden"], "status": "Industry Estimate", "source": "Manual competitive assessment", "source_date": "2026-07-01", "confidence": "Medium"}
+    }
+  },
+  "interpretations": {
+    "business_scale": "Meta AI is not a standalone company; economic impact must be inferred through Meta's apps, ads, engagement, and infrastructure spend.",
+    "customer_adoption": "Adoption is distribution-led through Meta's family of apps and developer-led through Llama.",
+    "model_product": "Meta is differentiated by open-weight model strategy and massive consumer distribution.",
+    "infrastructure": "Meta has one of the strongest internal infrastructure bases, but capex intensity is substantial.",
+    "capital": "Funding risk is low relative to private labs because Meta funds AI internally, but investor scrutiny centers on returns on capex.",
+    "valuation": "Standalone valuation is not meaningful.",
+    "competition": "Meta competes by making open models and assistant distribution a scale advantage."
+  },
+  "strengthen": ["Llama adoption expands in enterprise and developer ecosystems", "Meta AI increases app engagement or ad performance", "Capex growth translates into visible product gains", "Open model leadership remains durable"],
+  "weaken": ["AI capex rises without visible monetization", "Closed frontier models widen quality gaps", "Open model commoditization limits value capture", "Regulatory constraints limit data/product integration"],
+  "final_interpretation": "Meta AI is a frontier AI effort embedded inside Meta Platforms. It should be analyzed through open-model influence, consumer distribution, infrastructure scale, and the economic return on AI capex rather than standalone private-company metrics."
+}

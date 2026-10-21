@@ -1,0 +1,907 @@
+{
+  "company_economics": {
+    "company": {
+      "name": "Costco Wholesale",
+      "ticker": "COST",
+      "as_of": "2025-12-31",
+      "security_type": "OPERATING_COMPANY",
+      "exchange": "",
+      "currency": "",
+      "country": "",
+      "quote_type": "",
+      "sector": "Consumer Defensive",
+      "industry": "Discount Stores"
+    },
+    "classification": {
+      "primary_archetype": "RETAIL_PHYSICAL_NETWORK",
+      "secondary_archetypes": [],
+      "classification_confidence": "HIGH",
+      "routing_evidence": [
+        "business description contains 'warehouse club'",
+        "industry matches 'discount stores'",
+        "sector 'Consumer Defensive' is consistent with the archetype",
+        "declarative company routing preference"
+      ],
+      "routing_evidence_ids": [
+        "E3",
+        "E4",
+        "E5",
+        "E6",
+        "E8",
+        "E13"
+      ],
+      "override_used": true,
+      "override_required": false,
+      "override_changes": [
+        "preferred_archetype: RETAIL_PHYSICAL_NETWORK -> RETAIL_PHYSICAL_NETWORK",
+        "constraint_priority: STORE_EXPANSION, LOGISTICS, MARKET_SATURATION"
+      ]
+    },
+    "core_economic_question": "Can Costco Wholesale continue expanding warehouse and membership economics without physical-network saturation reducing incremental returns?",
+    "growth_architecture": {
+      "primary_growth_equation": "Revenue \u2248 Store Count \u00d7 Same-Store Sales + Membership",
+      "primary_driver": {
+        "primitive": "STORE_COUNT",
+        "importance": "PRIMARY",
+        "observability": "DIRECT",
+        "evidence_ids": [
+          "E16",
+          "E17"
+        ],
+        "confidence": "HIGH"
+      },
+      "secondary_drivers": [
+        {
+          "primitive": "SAME_STORE_SALES",
+          "importance": "SECONDARY",
+          "observability": "DIRECT",
+          "evidence_ids": [
+            "E18"
+          ],
+          "confidence": "MODERATE"
+        },
+        {
+          "primitive": "MEMBERSHIP",
+          "importance": "SECONDARY",
+          "observability": "DIRECT",
+          "evidence_ids": [
+            "E19",
+            "E20"
+          ],
+          "confidence": "HIGH"
+        }
+      ],
+      "direct_evidence_ids": [
+        "E16",
+        "E17",
+        "E18",
+        "E19",
+        "E20"
+      ],
+      "proxy_evidence_ids": [
+        "E7"
+      ],
+      "confidence": "MODERATE"
+    },
+    "constraints": {
+      "primary_constraint": {
+        "constraint": "STORE_EXPANSION",
+        "economic_mechanism": "The pace of productive new locations limits physical network growth.",
+        "supporting_evidence_ids": [
+          "E16",
+          "E17"
+        ],
+        "contrary_evidence_ids": [],
+        "direction": "EASING",
+        "confidence": "MODERATE",
+        "data_gaps": [],
+        "inference": "Store Expansion appears easing based on the cited operating and scaling evidence.",
+        "inference_evidence_ids": [
+          "E16",
+          "E17"
+        ]
+      },
+      "secondary_constraints": [
+        {
+          "constraint": "LOGISTICS",
+          "economic_mechanism": "Distribution throughput limits inventory availability and store productivity.",
+          "supporting_evidence_ids": [
+            "E21"
+          ],
+          "contrary_evidence_ids": [],
+          "direction": "EASING",
+          "confidence": "LOW",
+          "data_gaps": [],
+          "inference": "Logistics appears easing based on the cited operating and scaling evidence.",
+          "inference_evidence_ids": [
+            "E21"
+          ]
+        }
+      ],
+      "candidate_constraints": [
+        "MARKET_SATURATION",
+        "REAL_ESTATE",
+        "LABOR_CAPACITY",
+        "INVENTORY"
+      ],
+      "unknown_constraints": [],
+      "constraint_interactions": [
+        "STORE_EXPANSION and LOGISTICS may jointly limit conversion of demand into revenue; interaction evidence is currently indirect."
+      ],
+      "previous_primary_constraint": "UNAVAILABLE",
+      "current_primary_constraint": "STORE_EXPANSION",
+      "constraint_transition": "UNAVAILABLE",
+      "transition_confidence": "INSUFFICIENT",
+      "transition_evidence_ids": []
+    },
+    "scaling_economics": {
+      "metrics": [
+        {
+          "name": "incremental_operating_margin",
+          "value": 0.07142857142857142,
+          "unit": "decimal",
+          "current_period": "FY2025 vs FY2024",
+          "comparison_period": "Prior comparable period",
+          "interpretation": "Change in operating income divided by positive change in revenue",
+          "evidence_id": "E23"
+        },
+        {
+          "name": "inventory_growth_minus_revenue_growth",
+          "value": null,
+          "unit": "decimal",
+          "current_period": "FY2025 vs FY2024",
+          "comparison_period": "Prior comparable period",
+          "interpretation": "Inventory Growth Minus Revenue Growth",
+          "evidence_id": null
+        },
+        {
+          "name": "revenue_per_store",
+          "value": null,
+          "unit": "decimal",
+          "current_period": "FY2025 vs FY2024",
+          "comparison_period": "Prior comparable period",
+          "interpretation": "Revenue Per Store",
+          "evidence_id": null
+        }
+      ],
+      "interpretation": "Available archetype-relevant metrics indicate improving scaling.",
+      "confidence": "LOW"
+    },
+    "growth_sustainability": {
+      "current_revenue_growth": 0.083,
+      "primary_growth_engine": "STORE_COUNT",
+      "primary_constraint": "STORE_EXPANSION",
+      "constraint_direction": "EASING",
+      "scaling_structure": "Available archetype-relevant metrics indicate improving scaling.",
+      "supporting_evidence_ids": [
+        "E16",
+        "E17",
+        "E18",
+        "E19",
+        "E20",
+        "E7",
+        "E23"
+      ],
+      "contrary_evidence_ids": [],
+      "interpretation": "Current evidence supports continued growth because the observed growth engine remains active and the identified constraint is not tightening; maintaining the rate still requires the cited drivers to persist.",
+      "confidence": "MODERATE"
+    },
+    "falsification_conditions": [
+      {
+        "condition": "Same-store sales weaken",
+        "observable_metric": "same_store",
+        "rationale": "This would weaken the Revenue \u2248 Store Count \u00d7 Same-Store Sales + Membership growth mechanism or its cash conversion.",
+        "evidence_ids": [
+          "E16",
+          "E17",
+          "E18",
+          "E19"
+        ]
+      },
+      {
+        "condition": "Inventory outgrows sales",
+        "observable_metric": "inventory",
+        "rationale": "This would weaken the Revenue \u2248 Store Count \u00d7 Same-Store Sales + Membership growth mechanism or its cash conversion.",
+        "evidence_ids": [
+          "E16",
+          "E17",
+          "E18",
+          "E19"
+        ]
+      },
+      {
+        "condition": "New stores dilute store economics",
+        "observable_metric": "new",
+        "rationale": "This would weaken the Revenue \u2248 Store Count \u00d7 Same-Store Sales + Membership growth mechanism or its cash conversion.",
+        "evidence_ids": [
+          "E16",
+          "E17",
+          "E18",
+          "E19"
+        ]
+      }
+    ],
+    "financial_translation": {
+      "revenue_forecast": {
+        "state": "POSITIVE",
+        "reason": "Current evidence supports continued growth because the observed growth engine remains active and the identified constraint is not tightening; maintaining the rate still requires the cited drivers to persist.",
+        "evidence_ids": [
+          "E16",
+          "E17",
+          "E18",
+          "E19",
+          "E20",
+          "E7",
+          "E23"
+        ]
+      },
+      "margin": {
+        "state": "POSITIVE",
+        "reason": "Change in operating income divided by positive change in revenue",
+        "evidence_ids": [
+          "E23"
+        ]
+      },
+      "capital_intensity": {
+        "state": "INSUFFICIENT_EVIDENCE",
+        "reason": "Comparable capex growth is unavailable.",
+        "evidence_ids": []
+      },
+      "fcff_conversion": {
+        "state": "INSUFFICIENT_EVIDENCE",
+        "reason": "Incremental FCF margin is unavailable.",
+        "evidence_ids": []
+      }
+    },
+    "valuation_assumption_review": {
+      "reviews": [
+        {
+          "assumption": "revenue_growth",
+          "dcf_value": 0.0747,
+          "state": "SUPPORTED",
+          "reason": "DCF Year-1 growth of 7.5% is compared with observed growth of 8.3%; Company Economics does not change it.",
+          "evidence_ids": [
+            "E16",
+            "E17",
+            "E18",
+            "E19"
+          ]
+        },
+        {
+          "assumption": "fcff_margin",
+          "dcf_value": 0.048,
+          "state": "SUPPORTED",
+          "reason": "DCF normalized FCFF margin of 4.8% is compared with observed FCFF margin of 2.8%; no mutation occurs.",
+          "evidence_ids": [
+            "E16",
+            "E17",
+            "E18",
+            "E19"
+          ]
+        }
+      ],
+      "mutates_dcf_inputs": false
+    },
+    "market_expectations_comparison": {
+      "state": "ROUGHLY_CONSISTENT",
+      "market_implied_revenue_cagr": 0.0581,
+      "market_implied_fcff_margin": 0.048,
+      "observed_economics": "Current evidence supports continued growth because the observed growth engine remains active and the identified constraint is not tightening; maintaining the rate still requires the cited drivers to persist.",
+      "reason": "Market-implied five-year growth of 5.8% is compared with observed growth of 8.3% and the diagnosed scaling structure.",
+      "evidence_ids": [
+        "E16",
+        "E17",
+        "E18",
+        "E19"
+      ]
+    },
+    "data_gaps": [
+      {
+        "missing_field": "inventory_growth_minus_revenue_growth",
+        "related_driver": null,
+        "related_constraint": null,
+        "why_it_matters": "Required to evaluate archetype-specific scaling economics.",
+        "confidence_impact": "Scaling confidence is reduced.",
+        "fallback_proxy_used": null
+      },
+      {
+        "missing_field": "revenue_per_store",
+        "related_driver": null,
+        "related_constraint": null,
+        "why_it_matters": "Required to evaluate archetype-specific scaling economics.",
+        "confidence_impact": "Scaling confidence is reduced.",
+        "fallback_proxy_used": null
+      }
+    ],
+    "evidence_trace": [
+      {
+        "id": "E1",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "ticker",
+        "statement": "Ticker is reported as COST.",
+        "value": "COST",
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "security resolution / structured financial provider",
+        "source_type": "structured_data",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E2",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "company_name",
+        "statement": "Company Name is reported as Costco Wholesale.",
+        "value": "Costco Wholesale",
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "security resolution / structured financial provider",
+        "source_type": "structured_data",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E3",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "sector",
+        "statement": "Sector is reported as Consumer Defensive.",
+        "value": "Consumer Defensive",
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "security resolution / structured financial provider",
+        "source_type": "structured_data",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E4",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "industry",
+        "statement": "Industry is reported as Discount Stores.",
+        "value": "Discount Stores",
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "security resolution / structured financial provider",
+        "source_type": "structured_data",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E5",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "business_description",
+        "statement": "Business Description is reported as Warehouse club retail network with paid membership..",
+        "value": "Warehouse club retail network with paid membership.",
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "security resolution / structured financial provider",
+        "source_type": "structured_data",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E6",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "revenue",
+        "statement": "Revenue is reported as 275000.0.",
+        "value": 275000.0,
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E7",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "revenue_growth",
+        "statement": "Revenue Growth is reported as 0.083.",
+        "value": 0.083,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "IMPROVING",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E8",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "gross_margin",
+        "statement": "Gross Margin is reported as 0.13.",
+        "value": 0.13,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E9",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "operating_income",
+        "statement": "Operating Income is reported as 10500.0.",
+        "value": 10500.0,
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E10",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "operating_margin",
+        "statement": "Operating Margin is reported as 0.038.",
+        "value": 0.038,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E11",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "fcf",
+        "statement": "Fcf is reported as 7800.0.",
+        "value": 7800.0,
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E12",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "fcf_margin",
+        "statement": "Fcf Margin is reported as 0.028.",
+        "value": 0.028,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E13",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "capex",
+        "statement": "Capex is reported as 5100.0.",
+        "value": 5100.0,
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E14",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "employees",
+        "statement": "Employees is reported as 333000.",
+        "value": 333000,
+        "unit": "count",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E15",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "inventory_growth",
+        "statement": "Inventory Growth is reported as 0.05.",
+        "value": 0.05,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "IMPROVING",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E16",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "store_count",
+        "statement": "Store Count is reported as 914.",
+        "value": 914,
+        "unit": "count",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E17",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "store_growth",
+        "statement": "Store Growth is reported as 0.035.",
+        "value": 0.035,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "IMPROVING",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E18",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "same_store_sales",
+        "statement": "Same Store Sales is reported as 0.075.",
+        "value": 0.075,
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E19",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "members",
+        "statement": "Members is reported as 145000000.",
+        "value": 145000000,
+        "unit": "count",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E20",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "membership_growth",
+        "statement": "Membership Growth is reported as 0.07.",
+        "value": 0.07,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "IMPROVING",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E21",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "distribution_capacity_growth",
+        "statement": "Distribution Capacity Growth is reported as 0.04.",
+        "value": 0.04,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "IMPROVING",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E22",
+        "type": "INFERENCE",
+        "tier": "INDIRECT",
+        "metric": "business_model_classification",
+        "statement": "The supported primary business-model archetype is RETAIL_PHYSICAL_NETWORK.",
+        "value": null,
+        "unit": "",
+        "period": "Current structural profile",
+        "source": "Company Economics deterministic classifier",
+        "source_type": "model",
+        "source_nature": "INFERRED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": [
+          "E3",
+          "E4",
+          "E5",
+          "E6",
+          "E8",
+          "E13"
+        ]
+      },
+      {
+        "id": "E23",
+        "type": "PROXY",
+        "tier": "INDIRECT",
+        "metric": "incremental_operating_margin",
+        "statement": "Incremental Operating Margin is 0.0714.",
+        "value": 0.07142857142857142,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "calculated from normalized company snapshot",
+        "source_type": "calculation",
+        "source_nature": "CALCULATED",
+        "direction": "UNKNOWN",
+        "confidence": "MODERATE",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E24",
+        "type": "INFERENCE",
+        "tier": "INDIRECT",
+        "metric": "store_expansion_diagnosis",
+        "statement": "Store Expansion appears easing based on the cited operating and scaling evidence.",
+        "value": null,
+        "unit": "",
+        "period": "Current assessment",
+        "source": "Company Economics deterministic diagnosis",
+        "source_type": "model",
+        "source_nature": "INFERRED",
+        "direction": "UNKNOWN",
+        "confidence": "MODERATE",
+        "related_driver": null,
+        "related_constraint": "STORE_EXPANSION",
+        "supporting_evidence_ids": [
+          "E16",
+          "E17"
+        ]
+      },
+      {
+        "id": "E25",
+        "type": "INFERENCE",
+        "tier": "INDIRECT",
+        "metric": "logistics_diagnosis",
+        "statement": "Logistics appears easing based on the cited operating and scaling evidence.",
+        "value": null,
+        "unit": "",
+        "period": "Current assessment",
+        "source": "Company Economics deterministic diagnosis",
+        "source_type": "model",
+        "source_nature": "INFERRED",
+        "direction": "UNKNOWN",
+        "confidence": "LOW",
+        "related_driver": null,
+        "related_constraint": "LOGISTICS",
+        "supporting_evidence_ids": [
+          "E21"
+        ]
+      }
+    ],
+    "economic_graph": {
+      "nodes": [
+        {
+          "id": "revenue",
+          "label": "Revenue",
+          "type": "revenue"
+        },
+        {
+          "id": "store_count",
+          "label": "Store Count",
+          "type": "growth_driver"
+        },
+        {
+          "id": "same_store_sales",
+          "label": "Same Store Sales",
+          "type": "growth_driver"
+        },
+        {
+          "id": "membership",
+          "label": "Membership",
+          "type": "growth_driver"
+        },
+        {
+          "id": "store_expansion",
+          "label": "Store Expansion",
+          "type": "constraint"
+        },
+        {
+          "id": "margin",
+          "label": "Margin",
+          "type": "margin"
+        },
+        {
+          "id": "cash_flow",
+          "label": "Cash Flow",
+          "type": "cash_flow"
+        },
+        {
+          "id": "valuation",
+          "label": "Valuation Review",
+          "type": "valuation"
+        }
+      ],
+      "edges": [
+        {
+          "from": "store_count",
+          "to": "revenue",
+          "relationship": "drives"
+        },
+        {
+          "from": "same_store_sales",
+          "to": "revenue",
+          "relationship": "drives"
+        },
+        {
+          "from": "membership",
+          "to": "revenue",
+          "relationship": "drives"
+        },
+        {
+          "from": "store_expansion",
+          "to": "revenue",
+          "relationship": "limits"
+        },
+        {
+          "from": "revenue",
+          "to": "margin",
+          "relationship": "supports"
+        },
+        {
+          "from": "margin",
+          "to": "cash_flow",
+          "relationship": "converts_to"
+        },
+        {
+          "from": "cash_flow",
+          "to": "valuation",
+          "relationship": "supports"
+        }
+      ]
+    },
+    "validation": {
+      "status": "PROVISIONAL",
+      "checks": {
+        "company_identity_valid": true,
+        "archetype_valid": true,
+        "classification_evidence_exists": true,
+        "growth_equation_exists": true,
+        "growth_drivers_exist": true,
+        "primary_constraint_supported_or_unknown": true,
+        "evidence_ids_unique": true,
+        "facts_have_sources": true,
+        "facts_have_periods": true,
+        "facts_have_values": true,
+        "proxies_labeled": true,
+        "inferences_cite_evidence": true,
+        "classification_evidence_references_exist": true,
+        "high_confidence_is_justified": true,
+        "data_gaps_explicit": true,
+        "scaling_metrics_valid": true,
+        "falsification_conditions_exist": true,
+        "valuation_review_does_not_mutate": true,
+        "ticker_overrides_are_declarative": true,
+        "json_serializable": true,
+        "graph_node_types_valid": true,
+        "graph_edges_valid": true
+      },
+      "reasons": [
+        "Data gaps or UNKNOWN conclusions remain explicit."
+      ]
+    },
+    "data_quality": {
+      "classification": "HIGH",
+      "constraint_diagnosis": "MODERATE",
+      "valuation": "AVAILABLE",
+      "overall": "PARTIAL",
+      "evidence_coverage": {
+        "facts": 21,
+        "proxies": 1,
+        "inferences": 3,
+        "gaps": 2
+      }
+    },
+    "qualitative_research_needed": false,
+    "qualitative_research_reason": "Current structured evidence supports the reported deterministic diagnosis.",
+    "company_economics_schema_version": "1.1"
+  }
+}

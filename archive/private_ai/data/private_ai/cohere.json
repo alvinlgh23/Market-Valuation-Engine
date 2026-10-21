@@ -1,0 +1,57 @@
+{
+  "slug": "cohere",
+  "file": "cohere.json",
+  "company": "Cohere",
+  "aliases": ["cohere-ai"],
+  "last_updated": "2026-07-01",
+  "data_confidence": "Medium",
+  "evidence_quality": "Good evidence on enterprise positioning and funding; limited public evidence on ARR, retention, cash, and detailed model economics.",
+  "sections": {
+    "business_scale": {
+      "ARR": {"value": "Not publicly disclosed", "status": "Not Public", "source": "Cohere public disclosures", "source_date": "2026-07-01", "confidence": "N/A", "reason": "Cohere has not published ARR."},
+      "Annual Revenue": {"value": "Not publicly disclosed", "status": "Not Public", "source": "Cohere public disclosures", "source_date": "2026-07-01", "confidence": "N/A", "reason": "Audited revenue is not public."},
+      "Revenue Mix": {"value": "Enterprise AI and API/platform revenue appear central; exact mix not disclosed", "status": "Estimated", "source": "Manual assessment from enterprise product positioning", "source_date": "2026-07-01", "confidence": "Low"}
+    },
+    "customer_adoption": {
+      "Major Products": {"value": ["Command model family", "Embed", "Rerank", "North enterprise platform"], "status": "Reported", "source": "Cohere product announcements", "source_date": "2023-2026", "confidence": "High"},
+      "Major Customers": {"value": "Enterprise customers disclosed selectively", "status": "Reported", "source": "Cohere customer and partner announcements", "source_date": "2023-2026", "confidence": "Medium"},
+      "Retention / Expansion": {"value": "Not publicly disclosed", "status": "Not Public", "source": "Cohere public disclosures", "source_date": "2026-07-01", "confidence": "N/A", "reason": "Net retention, churn, and expansion metrics are not published."}
+    },
+    "model_product": {
+      "Current Flagship Models": {"value": "Command model family", "status": "Reported", "source": "Cohere model announcements", "source_date": "2023-2026", "confidence": "High"},
+      "Enterprise Platform": {"value": "Enterprise-focused AI platform and private deployment positioning", "status": "Reported", "source": "Cohere product materials", "source_date": "2024-2026", "confidence": "High"},
+      "API Position": {"value": "Enterprise-oriented API and retrieval/reranking provider", "status": "Industry Estimate", "source": "Manual assessment from product lineup", "source_date": "2026-07-01", "confidence": "Medium"},
+      "Benchmark Leadership": {"value": "Competitive in selected enterprise and retrieval use cases; not generally treated as broad consumer frontier leader", "status": "Industry Estimate", "source": "Public model releases and benchmark coverage", "source_date": "2026-07-01", "confidence": "Medium"}
+    },
+    "infrastructure": {
+      "Cloud Partners": {"value": "Enterprise and cloud partnerships disclosed selectively", "status": "Reported", "source": "Cohere partner announcements", "source_date": "2023-2026", "confidence": "Medium"},
+      "Estimated Compute Spending": {"value": "Material but not publicly quantified", "status": "Estimated", "source": "Manual assessment from model-development strategy", "source_date": "2026-07-01", "confidence": "Low", "reason": "Compute spending is not published."},
+      "Capex Intensity": {"value": "Meaningful, but likely less consumer-inference intensive than ChatGPT-scale assistant businesses", "status": "Estimated", "source": "Manual infrastructure assessment", "source_date": "2026-07-01", "confidence": "Medium"}
+    },
+    "capital": {
+      "Latest Valuation": {"value": "Multi-billion-dollar private valuation reported", "status": "Reported", "source": "Financial press reporting", "source_date": "2024-2025", "confidence": "Medium"},
+      "Funding History": {"value": "Large private AI funding rounds reported", "status": "Reported", "source": "Official funding announcements and financial press reporting", "source_date": "2023-2025", "confidence": "Medium"},
+      "Cash / Runway": {"value": "Not publicly disclosed", "status": "Not Public", "source": "Cohere public disclosures", "source_date": "2026-07-01", "confidence": "N/A", "reason": "Cash and burn metrics are not published."}
+    },
+    "valuation": {
+      "Revenue Multiple": {"value": "Not reliably calculable", "status": "Not Public", "source": "Cohere public disclosures", "source_date": "2026-07-01", "confidence": "N/A", "reason": "Revenue and ARR are not disclosed in enough detail."}
+    },
+    "competition": {
+      "Major Competitors": {"value": ["OpenAI", "Anthropic", "Mistral", "Google DeepMind", "enterprise AI platforms"], "status": "Industry Estimate", "source": "Manual competitive mapping", "source_date": "2026-07-01", "confidence": "High"},
+      "Current Advantages": {"value": ["Enterprise focus", "Retrieval/reranking products", "Private deployment positioning"], "status": "Industry Estimate", "source": "Manual competitive assessment", "source_date": "2026-07-01", "confidence": "Medium"},
+      "Current Weaknesses": {"value": ["Less consumer distribution", "Less frontier-model mindshare than OpenAI/Anthropic", "Revenue disclosure limited"], "status": "Industry Estimate", "source": "Manual competitive assessment", "source_date": "2026-07-01", "confidence": "Medium"}
+    }
+  },
+  "interpretations": {
+    "business_scale": "Cohere is better read through enterprise deployment quality than consumer-scale metrics.",
+    "customer_adoption": "Customer evidence is selective, so retention and expansion remain central missing variables.",
+    "model_product": "Cohere is differentiated by enterprise, retrieval, and private deployment use cases.",
+    "infrastructure": "Compute needs are meaningful but the business is less defined by mass consumer inference than OpenAI.",
+    "capital": "Funding supports enterprise model development, but runway is not externally calculable.",
+    "valuation": "Valuation cannot be normalized without ARR or revenue disclosure.",
+    "competition": "Cohere competes as an enterprise AI platform rather than as a broad consumer assistant."
+  },
+  "strengthen": ["Enterprise retention is disclosed", "Private deployment wins expand", "Rerank/retrieval products become default enterprise infrastructure", "Revenue growth becomes public"],
+  "weaken": ["Foundation model differentiation narrows", "Enterprise customers consolidate around hyperscaler platforms", "Revenue disclosure remains limited", "Compute costs pressure margins"],
+  "final_interpretation": "Cohere is an enterprise-focused AI company whose thesis depends on durable business deployment, retrieval infrastructure, and private-enterprise model adoption rather than consumer distribution."
+}

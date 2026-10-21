@@ -1,0 +1,890 @@
+{
+  "company_economics": {
+    "company": {
+      "name": "Advanced Micro Devices",
+      "ticker": "AMD",
+      "as_of": "2025-12-31",
+      "security_type": "OPERATING_COMPANY",
+      "exchange": "",
+      "currency": "",
+      "country": "",
+      "quote_type": "",
+      "sector": "Technology",
+      "industry": "Semiconductors"
+    },
+    "classification": {
+      "primary_archetype": "FABLESS_SEMICONDUCTOR",
+      "secondary_archetypes": [],
+      "classification_confidence": "HIGH",
+      "routing_evidence": [
+        "business description contains 'designs and develops semiconductor'",
+        "business description contains 'microprocessor'",
+        "business description contains 'graphics processor'",
+        "business description contains 'accelerator'",
+        "industry matches 'semiconductors'",
+        "semiconductor industry with no owned-foundry signal is consistent with design economics"
+      ],
+      "routing_evidence_ids": [
+        "E3",
+        "E4",
+        "E5",
+        "E6",
+        "E8",
+        "E13"
+      ],
+      "override_used": false,
+      "override_required": false,
+      "override_changes": []
+    },
+    "core_economic_question": "Can Advanced Micro Devices convert accelerator demand into shippable units fast enough without packaging, memory, and foundry capacity becoming binding?",
+    "growth_architecture": {
+      "primary_growth_equation": "Revenue \u2248 Units \u00d7 ASP \u00d7 Product Mix",
+      "primary_driver": {
+        "primitive": "UNITS",
+        "importance": "PRIMARY",
+        "observability": "INDIRECT",
+        "evidence_ids": [],
+        "confidence": "LOW"
+      },
+      "secondary_drivers": [
+        {
+          "primitive": "ASP",
+          "importance": "SECONDARY",
+          "observability": "INDIRECT",
+          "evidence_ids": [],
+          "confidence": "LOW"
+        },
+        {
+          "primitive": "PRODUCT_MIX",
+          "importance": "SECONDARY",
+          "observability": "INDIRECT",
+          "evidence_ids": [],
+          "confidence": "LOW"
+        }
+      ],
+      "direct_evidence_ids": [],
+      "proxy_evidence_ids": [
+        "E7"
+      ],
+      "confidence": "LOW"
+    },
+    "constraints": {
+      "primary_constraint": {
+        "constraint": "ADVANCED_PACKAGING",
+        "economic_mechanism": "Packaging throughput caps finished high-performance systems.",
+        "supporting_evidence_ids": [
+          "E8",
+          "E16"
+        ],
+        "contrary_evidence_ids": [],
+        "direction": "EASING",
+        "confidence": "MODERATE",
+        "data_gaps": [],
+        "inference": "Advanced Packaging appears easing based on the cited operating and scaling evidence.",
+        "inference_evidence_ids": [
+          "E8",
+          "E16"
+        ]
+      },
+      "secondary_constraints": [
+        {
+          "constraint": "FOUNDRY_CAPACITY",
+          "economic_mechanism": "External wafer supply caps shippable chip volume.",
+          "supporting_evidence_ids": [
+            "E17"
+          ],
+          "contrary_evidence_ids": [],
+          "direction": "EASING",
+          "confidence": "LOW",
+          "data_gaps": [],
+          "inference": "Foundry Capacity appears easing based on the cited operating and scaling evidence.",
+          "inference_evidence_ids": [
+            "E17"
+          ]
+        }
+      ],
+      "candidate_constraints": [
+        "MEMORY_SUPPLY",
+        "CUSTOMER_ADOPTION",
+        "INVENTORY",
+        "SUPPLIER_CONCENTRATION"
+      ],
+      "unknown_constraints": [],
+      "constraint_interactions": [
+        "ADVANCED_PACKAGING and FOUNDRY_CAPACITY may jointly limit conversion of demand into revenue; interaction evidence is currently indirect."
+      ],
+      "previous_primary_constraint": "UNAVAILABLE",
+      "current_primary_constraint": "ADVANCED_PACKAGING",
+      "constraint_transition": "UNAVAILABLE",
+      "transition_confidence": "INSUFFICIENT",
+      "transition_evidence_ids": []
+    },
+    "scaling_economics": {
+      "metrics": [
+        {
+          "name": "incremental_operating_margin",
+          "value": 0.31666666666666665,
+          "unit": "decimal",
+          "current_period": "FY2025 vs FY2024",
+          "comparison_period": "Prior comparable period",
+          "interpretation": "Change in operating income divided by positive change in revenue",
+          "evidence_id": "E19"
+        },
+        {
+          "name": "revenue_per_employee",
+          "value": 1.1357142857142857,
+          "unit": "currency/employee",
+          "current_period": "FY2025 vs FY2024",
+          "comparison_period": "Prior comparable period",
+          "interpretation": "Revenue generated per employee",
+          "evidence_id": "E20"
+        },
+        {
+          "name": "inventory_growth_minus_revenue_growth",
+          "value": null,
+          "unit": "decimal",
+          "current_period": "FY2025 vs FY2024",
+          "comparison_period": "Prior comparable period",
+          "interpretation": "Inventory Growth Minus Revenue Growth",
+          "evidence_id": null
+        }
+      ],
+      "interpretation": "Available archetype-relevant metrics indicate improving scaling.",
+      "confidence": "MODERATE"
+    },
+    "growth_sustainability": {
+      "current_revenue_growth": 0.233,
+      "primary_growth_engine": "UNITS",
+      "primary_constraint": "ADVANCED_PACKAGING",
+      "constraint_direction": "EASING",
+      "scaling_structure": "Available archetype-relevant metrics indicate improving scaling.",
+      "supporting_evidence_ids": [
+        "E7",
+        "E8",
+        "E16",
+        "E19",
+        "E20"
+      ],
+      "contrary_evidence_ids": [],
+      "interpretation": "Current evidence supports continued growth because the observed growth engine remains active and the identified constraint is not tightening; maintaining the rate still requires the cited drivers to persist.",
+      "confidence": "MODERATE"
+    },
+    "falsification_conditions": [
+      {
+        "condition": "Inventory materially outgrows revenue",
+        "observable_metric": "inventory",
+        "rationale": "This would weaken the Revenue \u2248 Units \u00d7 ASP \u00d7 Product Mix growth mechanism or its cash conversion.",
+        "evidence_ids": [
+          "E8",
+          "E16",
+          "E19",
+          "E20"
+        ]
+      },
+      {
+        "condition": "Gross margin falls as supply eases",
+        "observable_metric": "gross",
+        "rationale": "This would weaken the Revenue \u2248 Units \u00d7 ASP \u00d7 Product Mix growth mechanism or its cash conversion.",
+        "evidence_ids": [
+          "E8",
+          "E16",
+          "E19",
+          "E20"
+        ]
+      },
+      {
+        "condition": "Capacity expands faster than demand",
+        "observable_metric": "capacity",
+        "rationale": "This would weaken the Revenue \u2248 Units \u00d7 ASP \u00d7 Product Mix growth mechanism or its cash conversion.",
+        "evidence_ids": [
+          "E8",
+          "E16",
+          "E19",
+          "E20"
+        ]
+      }
+    ],
+    "financial_translation": {
+      "revenue_forecast": {
+        "state": "POSITIVE",
+        "reason": "Current evidence supports continued growth because the observed growth engine remains active and the identified constraint is not tightening; maintaining the rate still requires the cited drivers to persist.",
+        "evidence_ids": [
+          "E7",
+          "E8",
+          "E16",
+          "E19",
+          "E20"
+        ]
+      },
+      "margin": {
+        "state": "POSITIVE",
+        "reason": "Change in operating income divided by positive change in revenue",
+        "evidence_ids": [
+          "E19"
+        ]
+      },
+      "capital_intensity": {
+        "state": "INSUFFICIENT_EVIDENCE",
+        "reason": "Comparable capex growth is unavailable.",
+        "evidence_ids": []
+      },
+      "fcff_conversion": {
+        "state": "INSUFFICIENT_EVIDENCE",
+        "reason": "Incremental FCF margin is unavailable.",
+        "evidence_ids": []
+      }
+    },
+    "valuation_assumption_review": {
+      "reviews": [
+        {
+          "assumption": "revenue_growth",
+          "dcf_value": 0.20970000000000003,
+          "state": "SUPPORTED",
+          "reason": "DCF Year-1 growth of 21.0% is compared with observed growth of 23.3%; Company Economics does not change it.",
+          "evidence_ids": [
+            "E7",
+            "E8",
+            "E16",
+            "E19"
+          ]
+        },
+        {
+          "assumption": "fcff_margin",
+          "dcf_value": 0.152,
+          "state": "SUPPORTED",
+          "reason": "DCF normalized FCFF margin of 15.2% is compared with observed FCFF margin of 13.2%; no mutation occurs.",
+          "evidence_ids": [
+            "E7",
+            "E8",
+            "E16",
+            "E19"
+          ]
+        }
+      ],
+      "mutates_dcf_inputs": false
+    },
+    "market_expectations_comparison": {
+      "state": "BELOW_SUPPORTED_ECONOMICS",
+      "market_implied_revenue_cagr": 0.1631,
+      "market_implied_fcff_margin": 0.152,
+      "observed_economics": "Current evidence supports continued growth because the observed growth engine remains active and the identified constraint is not tightening; maintaining the rate still requires the cited drivers to persist.",
+      "reason": "Market-implied five-year growth of 16.3% is compared with observed growth of 23.3% and the diagnosed scaling structure.",
+      "evidence_ids": [
+        "E7",
+        "E8",
+        "E16",
+        "E19"
+      ]
+    },
+    "data_gaps": [
+      {
+        "missing_field": "units",
+        "related_driver": "UNITS",
+        "related_constraint": null,
+        "why_it_matters": "Direct observation would confirm the growth equation component.",
+        "confidence_impact": "Driver confidence remains LOW.",
+        "fallback_proxy_used": "revenue growth"
+      },
+      {
+        "missing_field": "asp",
+        "related_driver": "ASP",
+        "related_constraint": null,
+        "why_it_matters": "Direct observation would confirm the growth equation component.",
+        "confidence_impact": "Driver confidence remains LOW.",
+        "fallback_proxy_used": "revenue growth"
+      },
+      {
+        "missing_field": "product_mix",
+        "related_driver": "PRODUCT_MIX",
+        "related_constraint": null,
+        "why_it_matters": "Direct observation would confirm the growth equation component.",
+        "confidence_impact": "Driver confidence remains LOW.",
+        "fallback_proxy_used": "revenue growth"
+      },
+      {
+        "missing_field": "inventory_growth_minus_revenue_growth",
+        "related_driver": null,
+        "related_constraint": null,
+        "why_it_matters": "Required to evaluate archetype-specific scaling economics.",
+        "confidence_impact": "Scaling confidence is reduced.",
+        "fallback_proxy_used": null
+      }
+    ],
+    "evidence_trace": [
+      {
+        "id": "E1",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "ticker",
+        "statement": "Ticker is reported as AMD.",
+        "value": "AMD",
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "security resolution / structured financial provider",
+        "source_type": "structured_data",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E2",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "company_name",
+        "statement": "Company Name is reported as Advanced Micro Devices.",
+        "value": "Advanced Micro Devices",
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "security resolution / structured financial provider",
+        "source_type": "structured_data",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E3",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "sector",
+        "statement": "Sector is reported as Technology.",
+        "value": "Technology",
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "security resolution / structured financial provider",
+        "source_type": "structured_data",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E4",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "industry",
+        "statement": "Industry is reported as Semiconductors.",
+        "value": "Semiconductors",
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "security resolution / structured financial provider",
+        "source_type": "structured_data",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E5",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "business_description",
+        "statement": "Business Description is reported as Designs and develops semiconductor microprocessors, graphics processors, and data-center accelerators using external manufacturing partners..",
+        "value": "Designs and develops semiconductor microprocessors, graphics processors, and data-center accelerators using external manufacturing partners.",
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "security resolution / structured financial provider",
+        "source_type": "structured_data",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E6",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "revenue",
+        "statement": "Revenue is reported as 31800.0.",
+        "value": 31800.0,
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E7",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "revenue_growth",
+        "statement": "Revenue Growth is reported as 0.233.",
+        "value": 0.233,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "IMPROVING",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E8",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "gross_margin",
+        "statement": "Gross Margin is reported as 0.53.",
+        "value": 0.53,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E9",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "operating_income",
+        "statement": "Operating Income is reported as 5100.0.",
+        "value": 5100.0,
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E10",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "operating_margin",
+        "statement": "Operating Margin is reported as 0.16.",
+        "value": 0.16,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E11",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "fcf",
+        "statement": "Fcf is reported as 4200.0.",
+        "value": 4200.0,
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E12",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "fcf_margin",
+        "statement": "Fcf Margin is reported as 0.132.",
+        "value": 0.132,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E13",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "capex",
+        "statement": "Capex is reported as 700.0.",
+        "value": 700.0,
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E14",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "employees",
+        "statement": "Employees is reported as 28000.",
+        "value": 28000,
+        "unit": "count",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E15",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "inventory_growth",
+        "statement": "Inventory Growth is reported as 0.08.",
+        "value": 0.08,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "IMPROVING",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E16",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "packaging_capacity_growth",
+        "statement": "Packaging Capacity Growth is reported as 0.12.",
+        "value": 0.12,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "IMPROVING",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E17",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "foundry_capacity_growth",
+        "statement": "Foundry Capacity Growth is reported as 0.1.",
+        "value": 0.1,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "IMPROVING",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E18",
+        "type": "INFERENCE",
+        "tier": "INDIRECT",
+        "metric": "business_model_classification",
+        "statement": "The supported primary business-model archetype is FABLESS_SEMICONDUCTOR.",
+        "value": null,
+        "unit": "",
+        "period": "Current structural profile",
+        "source": "Company Economics deterministic classifier",
+        "source_type": "model",
+        "source_nature": "INFERRED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": [
+          "E3",
+          "E4",
+          "E5",
+          "E6",
+          "E8",
+          "E13"
+        ]
+      },
+      {
+        "id": "E19",
+        "type": "PROXY",
+        "tier": "INDIRECT",
+        "metric": "incremental_operating_margin",
+        "statement": "Incremental Operating Margin is 0.3167.",
+        "value": 0.31666666666666665,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "calculated from normalized company snapshot",
+        "source_type": "calculation",
+        "source_nature": "CALCULATED",
+        "direction": "UNKNOWN",
+        "confidence": "MODERATE",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E20",
+        "type": "PROXY",
+        "tier": "INDIRECT",
+        "metric": "revenue_per_employee",
+        "statement": "Revenue Per Employee is 1.1357.",
+        "value": 1.1357142857142857,
+        "unit": "currency/employee",
+        "period": "FY2025 vs FY2024",
+        "source": "calculated from normalized company snapshot",
+        "source_type": "calculation",
+        "source_nature": "CALCULATED",
+        "direction": "UNKNOWN",
+        "confidence": "MODERATE",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E21",
+        "type": "INFERENCE",
+        "tier": "INDIRECT",
+        "metric": "advanced_packaging_diagnosis",
+        "statement": "Advanced Packaging appears easing based on the cited operating and scaling evidence.",
+        "value": null,
+        "unit": "",
+        "period": "Current assessment",
+        "source": "Company Economics deterministic diagnosis",
+        "source_type": "model",
+        "source_nature": "INFERRED",
+        "direction": "UNKNOWN",
+        "confidence": "MODERATE",
+        "related_driver": null,
+        "related_constraint": "ADVANCED_PACKAGING",
+        "supporting_evidence_ids": [
+          "E8",
+          "E16"
+        ]
+      },
+      {
+        "id": "E22",
+        "type": "INFERENCE",
+        "tier": "INDIRECT",
+        "metric": "memory_supply_diagnosis",
+        "statement": "Memory Supply appears stable based on the cited operating and scaling evidence.",
+        "value": null,
+        "unit": "",
+        "period": "Current assessment",
+        "source": "Company Economics deterministic diagnosis",
+        "source_type": "model",
+        "source_nature": "INFERRED",
+        "direction": "UNKNOWN",
+        "confidence": "LOW",
+        "related_driver": null,
+        "related_constraint": "MEMORY_SUPPLY",
+        "supporting_evidence_ids": [
+          "E8"
+        ]
+      },
+      {
+        "id": "E23",
+        "type": "INFERENCE",
+        "tier": "INDIRECT",
+        "metric": "foundry_capacity_diagnosis",
+        "statement": "Foundry Capacity appears easing based on the cited operating and scaling evidence.",
+        "value": null,
+        "unit": "",
+        "period": "Current assessment",
+        "source": "Company Economics deterministic diagnosis",
+        "source_type": "model",
+        "source_nature": "INFERRED",
+        "direction": "UNKNOWN",
+        "confidence": "LOW",
+        "related_driver": null,
+        "related_constraint": "FOUNDRY_CAPACITY",
+        "supporting_evidence_ids": [
+          "E17"
+        ]
+      },
+      {
+        "id": "E24",
+        "type": "INFERENCE",
+        "tier": "INDIRECT",
+        "metric": "customer_adoption_diagnosis",
+        "statement": "Customer Adoption appears easing based on the cited operating and scaling evidence.",
+        "value": null,
+        "unit": "",
+        "period": "Current assessment",
+        "source": "Company Economics deterministic diagnosis",
+        "source_type": "model",
+        "source_nature": "INFERRED",
+        "direction": "UNKNOWN",
+        "confidence": "LOW",
+        "related_driver": null,
+        "related_constraint": "CUSTOMER_ADOPTION",
+        "supporting_evidence_ids": [
+          "E7"
+        ]
+      }
+    ],
+    "economic_graph": {
+      "nodes": [
+        {
+          "id": "revenue",
+          "label": "Revenue",
+          "type": "revenue"
+        },
+        {
+          "id": "units",
+          "label": "Units",
+          "type": "growth_driver"
+        },
+        {
+          "id": "asp",
+          "label": "Asp",
+          "type": "growth_driver"
+        },
+        {
+          "id": "product_mix",
+          "label": "Product Mix",
+          "type": "growth_driver"
+        },
+        {
+          "id": "advanced_packaging",
+          "label": "Advanced Packaging",
+          "type": "constraint"
+        },
+        {
+          "id": "margin",
+          "label": "Margin",
+          "type": "margin"
+        },
+        {
+          "id": "cash_flow",
+          "label": "Cash Flow",
+          "type": "cash_flow"
+        },
+        {
+          "id": "valuation",
+          "label": "Valuation Review",
+          "type": "valuation"
+        }
+      ],
+      "edges": [
+        {
+          "from": "units",
+          "to": "revenue",
+          "relationship": "drives"
+        },
+        {
+          "from": "asp",
+          "to": "revenue",
+          "relationship": "drives"
+        },
+        {
+          "from": "product_mix",
+          "to": "revenue",
+          "relationship": "drives"
+        },
+        {
+          "from": "advanced_packaging",
+          "to": "revenue",
+          "relationship": "limits"
+        },
+        {
+          "from": "revenue",
+          "to": "margin",
+          "relationship": "supports"
+        },
+        {
+          "from": "margin",
+          "to": "cash_flow",
+          "relationship": "converts_to"
+        },
+        {
+          "from": "cash_flow",
+          "to": "valuation",
+          "relationship": "supports"
+        }
+      ]
+    },
+    "validation": {
+      "status": "PROVISIONAL",
+      "checks": {
+        "company_identity_valid": true,
+        "archetype_valid": true,
+        "classification_evidence_exists": true,
+        "growth_equation_exists": true,
+        "growth_drivers_exist": true,
+        "primary_constraint_supported_or_unknown": true,
+        "evidence_ids_unique": true,
+        "facts_have_sources": true,
+        "facts_have_periods": true,
+        "facts_have_values": true,
+        "proxies_labeled": true,
+        "inferences_cite_evidence": true,
+        "classification_evidence_references_exist": true,
+        "high_confidence_is_justified": true,
+        "data_gaps_explicit": true,
+        "scaling_metrics_valid": true,
+        "falsification_conditions_exist": true,
+        "valuation_review_does_not_mutate": true,
+        "ticker_overrides_are_declarative": true,
+        "json_serializable": true,
+        "graph_node_types_valid": true,
+        "graph_edges_valid": true
+      },
+      "reasons": [
+        "Data gaps or UNKNOWN conclusions remain explicit."
+      ]
+    },
+    "data_quality": {
+      "classification": "HIGH",
+      "constraint_diagnosis": "MODERATE",
+      "valuation": "AVAILABLE",
+      "overall": "PARTIAL",
+      "evidence_coverage": {
+        "facts": 17,
+        "proxies": 2,
+        "inferences": 5,
+        "gaps": 4
+      }
+    },
+    "qualitative_research_needed": false,
+    "qualitative_research_reason": "Current structured evidence supports the reported deterministic diagnosis.",
+    "company_economics_schema_version": "1.1"
+  }
+}

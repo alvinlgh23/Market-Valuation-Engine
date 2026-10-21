@@ -1,0 +1,5313 @@
+{
+  "MSFT": {
+    "report_type": "intrinsic_valuation",
+    "security_type": "MATURE_OPERATING_COMPANY",
+    "company_type": "Mature Operating Company",
+    "selected_method": "Five-year FCFF DCF with FCF-yield and trading-multiple cross-checks",
+    "company": {
+      "name": "Microsoft",
+      "ticker": "MSFT",
+      "security_type": "MATURE_OPERATING_COMPANY",
+      "company_type": "Mature Operating Company",
+      "valuation_method": "Five-year FCFF DCF with FCF-yield and trading-multiple cross-checks",
+      "as_of": "2026-07-23 12:00 EDT",
+      "current_market_price": 31.0
+    },
+    "valuation_method_selection": {
+      "company_type": "Mature Operating Company",
+      "selected_framework": "Five-year FCFF DCF with FCF-yield and trading-multiple cross-checks",
+      "routing_evidence": [
+        "deterministic fixture"
+      ]
+    },
+    "data_quality": {
+      "status": "GOOD",
+      "missing": [],
+      "reason": "4 annual revenue periods available; market and statement fields sourced from Yahoo Finance. The historical working-capital cash-flow impact is included."
+    },
+    "historical_base": {
+      "period_basis": {
+        "revenue": "Latest fiscal year",
+        "operating_income": "Latest fiscal year",
+        "fcff": "Latest fiscal year",
+        "free_cash_flow": "Latest fiscal year",
+        "cash_and_debt": "Latest reported balance sheet",
+        "shares": "Latest fiscal-year diluted average",
+        "market_price": "Current / latest available market price"
+      },
+      "period_consistency": "Revenue and FCFF both use Latest fiscal year.",
+      "latest_annual_revenue": 1000.0,
+      "prior_annual_revenue": 900.0,
+      "three_year_revenue_cagr": 0.11060352259318784,
+      "current_provider_revenue_growth": 0.12,
+      "gross_margin": 0.7,
+      "operating_margin": 0.2,
+      "historical_operating_margin_range": [
+        0.1780821917808219,
+        0.2
+      ],
+      "fcff_margin": 0.166,
+      "operating_cash_flow": 210.0,
+      "capital_expenditure": 60.0,
+      "free_cash_flow": 150.0,
+      "stock_based_compensation": 20.0,
+      "working_capital_effects": "Latest reported cash-flow impact included in historical FCFF: $-10; future effects are embedded in the normalized FCFF margin.",
+      "tax_treatment": "FCFF starts from operating income after the effective tax rate, then adds depreciation and subtracts capex when available.",
+      "capex_treatment": "Latest reported capex is included in the historical FCFF base; future capital intensity is embedded in forecast FCFF margins.",
+      "stock_based_compensation_treatment": "Added back to accounting FCFF; economic cost reflected through dilution",
+      "cash": 200.0,
+      "debt": 100.0,
+      "net_cash": 100.0,
+      "diluted_shares": 100.0,
+      "diluted_share_history": []
+    },
+    "historical_fcff_reconciliation": {
+      "period": "Latest fiscal year",
+      "status": "PASSED",
+      "missing": [],
+      "tolerance_policy": "Difference must be no more than the greater of 5% of the larger absolute FCFF measure or 1% of revenue.",
+      "sbc_policy": "accounting-fcff",
+      "nopat": 158.0,
+      "depreciation_and_amortization": 40.0,
+      "capex": 60.0,
+      "change_in_working_capital": 10.0,
+      "after_tax_interest": 15.8,
+      "stock_based_compensation": 20.0,
+      "sbc_treatment": "Added back to accounting FCFF; economic cost reflected through dilution",
+      "other_adjustments": 18.0,
+      "nopat_based_fcff_before_sbc": 146.0,
+      "sbc_addback": 20.0,
+      "adjusted_nopat_based_fcff": 166.0,
+      "accounting_cfo_based_fcff": 165.8,
+      "owner_earnings_nopat_based": 146.0,
+      "owner_earnings_cfo_based": 145.8,
+      "calculated_fcff": 166.0,
+      "nopat_based_fcff": 166.0,
+      "operating_cash_flow": 210.0,
+      "operating_cash_flow_minus_capex": 150.0,
+      "cfo_based_fcff": 165.8,
+      "difference_vs_operating_cash_flow_minus_capex": 16.0,
+      "reconciliation_difference": 0.19999999999998863,
+      "difference": 0.19999999999998863,
+      "absolute_difference": 0.19999999999998863,
+      "reconciliation_difference_pct": 0.0012048192771083653,
+      "difference_before_sbc": -19.80000000000001,
+      "tolerance": 10.0,
+      "within_tolerance": true,
+      "likely_cause": "Stock-based compensation treatment mismatch",
+      "sbc_explains_initial_difference": true,
+      "sbc_added_back_exactly_once": true,
+      "sbc_deducted_exactly_once": false,
+      "dilution_modeled": true,
+      "double_count_check": "PASSED",
+      "reason": "NOPAT-based and CFO-based FCFF reconcile within tolerance.",
+      "other_adjustments_basis": "Explicit deferred-tax and other non-cash statement rows; SBC is separate and non-operating gain/loss reversals are excluded because NOPAT already excludes them.",
+      "excluded_operating_gains_losses": null
+    },
+    "assumptions": {
+      "bear": [
+        {
+          "name": "year_1_revenue_growth",
+          "value": 0.07999999999999999,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "current and historical growth decaying toward mature-company economics",
+          "confidence": "medium",
+          "scenario": "bear",
+          "period": "Forecast year 1",
+          "overridden": false
+        },
+        {
+          "name": "year_5_fcff_margin",
+          "value": 0.146,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "current FCFF margin 16.6% with limited normalization for durable mature-company economics",
+          "confidence": "medium",
+          "scenario": "bear",
+          "period": "Forecast year 5",
+          "overridden": false
+        },
+        {
+          "name": "wacc",
+          "value": 0.094,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "capital-structure-weighted cost of equity and after-tax debt; bounded to 5.5%\u201318%",
+          "confidence": "high",
+          "scenario": "bear",
+          "period": "Five-year forecast and terminal value",
+          "overridden": false
+        },
+        {
+          "name": "terminal_growth",
+          "value": 0.02,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "2.5% mature nominal-growth default with \u00b10.5 percentage-point scenario spread; bounded below WACC",
+          "confidence": "medium",
+          "scenario": "bear",
+          "period": "Post-year-5 perpetuity",
+          "overridden": false
+        },
+        {
+          "name": "annual_dilution",
+          "value": 0.006,
+          "unit": "decimal",
+          "source": "company_type_policy",
+          "basis": "0.5% base for growth software and 0.1% for other supported companies; bear/bull cases adjust dilution",
+          "confidence": "low",
+          "scenario": "bear",
+          "period": "Annual through forecast",
+          "overridden": false
+        },
+        {
+          "name": "exit_ev_fcff_multiple",
+          "value": 14.0,
+          "unit": "multiple",
+          "source": "company_type_policy",
+          "basis": "10x cyclical, 16x mature, or 22x growth-software cross-check with \u00b12x scenario spread; not a peer claim",
+          "confidence": "low",
+          "scenario": "bear",
+          "period": "End of forecast year 5",
+          "overridden": false
+        },
+        {
+          "name": "tax_rate",
+          "value": 0.21,
+          "unit": "decimal",
+          "source": "historical_company_data_or_fallback",
+          "basis": "latest usable effective tax rate; explicit 21% fallback",
+          "confidence": "medium",
+          "scenario": "bear",
+          "period": "Latest fiscal year",
+          "overridden": false
+        }
+      ],
+      "base": [
+        {
+          "name": "year_1_revenue_growth",
+          "value": 0.12,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "current and historical growth decaying toward mature-company economics",
+          "confidence": "medium",
+          "scenario": "base",
+          "period": "Forecast year 1",
+          "overridden": false
+        },
+        {
+          "name": "year_5_fcff_margin",
+          "value": 0.186,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "current FCFF margin 16.6% with limited normalization for durable mature-company economics",
+          "confidence": "medium",
+          "scenario": "base",
+          "period": "Forecast year 5",
+          "overridden": false
+        },
+        {
+          "name": "wacc",
+          "value": 0.084,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "capital-structure-weighted cost of equity and after-tax debt; bounded to 5.5%\u201318%",
+          "confidence": "high",
+          "scenario": "base",
+          "period": "Five-year forecast and terminal value",
+          "overridden": false
+        },
+        {
+          "name": "terminal_growth",
+          "value": 0.025,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "2.5% mature nominal-growth default with \u00b10.5 percentage-point scenario spread; bounded below WACC",
+          "confidence": "medium",
+          "scenario": "base",
+          "period": "Post-year-5 perpetuity",
+          "overridden": false
+        },
+        {
+          "name": "annual_dilution",
+          "value": 0.001,
+          "unit": "decimal",
+          "source": "company_type_policy",
+          "basis": "0.5% base for growth software and 0.1% for other supported companies; bear/bull cases adjust dilution",
+          "confidence": "low",
+          "scenario": "base",
+          "period": "Annual through forecast",
+          "overridden": false
+        },
+        {
+          "name": "exit_ev_fcff_multiple",
+          "value": 16.0,
+          "unit": "multiple",
+          "source": "company_type_policy",
+          "basis": "10x cyclical, 16x mature, or 22x growth-software cross-check with \u00b12x scenario spread; not a peer claim",
+          "confidence": "low",
+          "scenario": "base",
+          "period": "End of forecast year 5",
+          "overridden": false
+        },
+        {
+          "name": "tax_rate",
+          "value": 0.21,
+          "unit": "decimal",
+          "source": "historical_company_data_or_fallback",
+          "basis": "latest usable effective tax rate; explicit 21% fallback",
+          "confidence": "medium",
+          "scenario": "base",
+          "period": "Latest fiscal year",
+          "overridden": false
+        }
+      ],
+      "bull": [
+        {
+          "name": "year_1_revenue_growth",
+          "value": 0.16,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "current and historical growth decaying toward mature-company economics",
+          "confidence": "medium",
+          "scenario": "bull",
+          "period": "Forecast year 1",
+          "overridden": false
+        },
+        {
+          "name": "year_5_fcff_margin",
+          "value": 0.226,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "current FCFF margin 16.6% with limited normalization for durable mature-company economics",
+          "confidence": "medium",
+          "scenario": "bull",
+          "period": "Forecast year 5",
+          "overridden": false
+        },
+        {
+          "name": "wacc",
+          "value": 0.07400000000000001,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "capital-structure-weighted cost of equity and after-tax debt; bounded to 5.5%\u201318%",
+          "confidence": "high",
+          "scenario": "bull",
+          "period": "Five-year forecast and terminal value",
+          "overridden": false
+        },
+        {
+          "name": "terminal_growth",
+          "value": 0.030000000000000002,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "2.5% mature nominal-growth default with \u00b10.5 percentage-point scenario spread; bounded below WACC",
+          "confidence": "medium",
+          "scenario": "bull",
+          "period": "Post-year-5 perpetuity",
+          "overridden": false
+        },
+        {
+          "name": "annual_dilution",
+          "value": 0,
+          "unit": "decimal",
+          "source": "company_type_policy",
+          "basis": "0.5% base for growth software and 0.1% for other supported companies; bear/bull cases adjust dilution",
+          "confidence": "low",
+          "scenario": "bull",
+          "period": "Annual through forecast",
+          "overridden": false
+        },
+        {
+          "name": "exit_ev_fcff_multiple",
+          "value": 18.0,
+          "unit": "multiple",
+          "source": "company_type_policy",
+          "basis": "10x cyclical, 16x mature, or 22x growth-software cross-check with \u00b12x scenario spread; not a peer claim",
+          "confidence": "low",
+          "scenario": "bull",
+          "period": "End of forecast year 5",
+          "overridden": false
+        },
+        {
+          "name": "tax_rate",
+          "value": 0.21,
+          "unit": "decimal",
+          "source": "historical_company_data_or_fallback",
+          "basis": "latest usable effective tax rate; explicit 21% fallback",
+          "confidence": "medium",
+          "scenario": "bull",
+          "period": "Latest fiscal year",
+          "overridden": false
+        }
+      ],
+      "policies": {
+        "capex_intensity": {
+          "value": "embedded_in_fcff_margin",
+          "source": "historical_company_cash_flow",
+          "basis": "forecast FCFF margins normalize observed after-tax operating cash economics, depreciation, and capex",
+          "confidence": "medium",
+          "period": "Latest fiscal year"
+        },
+        "working_capital": {
+          "value": "embedded_in_fcff_margin",
+          "source": "historical_company_cash_flow",
+          "basis": "no separate working-capital release is invented",
+          "confidence": "low",
+          "period": "Forecast annual"
+        },
+        "stock_based_compensation": {
+          "value": "accounting-fcff",
+          "source": "historical_company_cash_flow_and_company_type_policy",
+          "basis": "Added back to accounting FCFF; economic cost reflected through dilution",
+          "confidence": "medium",
+          "period": "Forecast annual"
+        }
+      }
+    },
+    "discount_rate": {
+      "risk_free_rate": 0.04,
+      "risk_free_source": "fixture",
+      "equity_risk_premium": 0.045,
+      "erp_source": "fixture",
+      "beta": 1.0,
+      "beta_source": "fixture",
+      "cost_of_equity": 0.085,
+      "pre_tax_cost_of_debt": 0.055,
+      "after_tax_cost_of_debt": 0.04345,
+      "debt_weight": 0.03,
+      "equity_weight": 0.97,
+      "wacc": 0.084,
+      "confidence": "high",
+      "fallbacks": []
+    },
+    "scenarios": {
+      "bear": {
+        "forecast": [
+          {
+            "year": 1,
+            "period": "Forecast year 1",
+            "revenue_growth": 0.07999999999999999,
+            "revenue": 1080.0,
+            "fcff_margin": 0.162,
+            "fcff": 174.96,
+            "discount_factor": 1.094,
+            "present_value": 159.92687385740402
+          },
+          {
+            "year": 2,
+            "period": "Forecast year 2",
+            "revenue_growth": 0.06749999999999999,
+            "revenue": 1152.8999999999999,
+            "fcff_margin": 0.158,
+            "fcff": 182.1582,
+            "discount_factor": 1.1968360000000002,
+            "present_value": 152.19980013970164
+          },
+          {
+            "year": 3,
+            "period": "Forecast year 3",
+            "revenue_growth": 0.05499999999999999,
+            "revenue": 1216.3094999999998,
+            "fcff_margin": 0.154,
+            "fcff": 187.31166299999998,
+            "discount_factor": 1.3093385840000002,
+            "present_value": 143.05823206383104
+          },
+          {
+            "year": 4,
+            "period": "Forecast year 4",
+            "revenue_growth": 0.042499999999999996,
+            "revenue": 1268.0026537499998,
+            "fcff_margin": 0.15,
+            "fcff": 190.20039806249997,
+            "discount_factor": 1.4324164108960005,
+            "present_value": 132.78289512441876
+          },
+          {
+            "year": 5,
+            "period": "Forecast year 5",
+            "revenue_growth": 0.03,
+            "revenue": 1306.0427333624998,
+            "fcff_margin": 0.146,
+            "fcff": 190.68223907092496,
+            "discount_factor": 1.5670635535202246,
+            "present_value": 121.68124173558861
+          }
+        ],
+        "pv_forecast_fcff": 709.6490429209441,
+        "terminal_value": 2628.3227547613983,
+        "terminal_year_fcff": 194.49588385234347,
+        "pv_terminal_value": 1677.227926625681,
+        "enterprise_value": 2386.8769695466253,
+        "net_cash_debt_adjustment": 100.0,
+        "other_senior_claims": 0.0,
+        "equity_value": 2486.8769695466253,
+        "diluted_shares": 103.0362166487776,
+        "fair_value_per_share": 24.135949964309265,
+        "exit_multiple": 14.0,
+        "exit_terminal_value": 2669.5513469929497,
+        "exit_enterprise_value": 2413.186427219185,
+        "exit_fair_value_per_share": 24.391291809422246,
+        "terminal_method_difference": 0.2553418451129801,
+        "current_price": 31.0,
+        "upside_downside": -0.22142096889324947
+      },
+      "base": {
+        "forecast": [
+          {
+            "year": 1,
+            "period": "Forecast year 1",
+            "revenue_growth": 0.12,
+            "revenue": 1120.0,
+            "fcff_margin": 0.17,
+            "fcff": 190.4,
+            "discount_factor": 1.084,
+            "present_value": 175.64575645756457
+          },
+          {
+            "year": 2,
+            "period": "Forecast year 2",
+            "revenue_growth": 0.09875,
+            "revenue": 1230.6,
+            "fcff_margin": 0.17400000000000002,
+            "fcff": 214.1244,
+            "discount_factor": 1.175056,
+            "present_value": 182.22484715622062
+          },
+          {
+            "year": 3,
+            "period": "Forecast year 3",
+            "revenue_growth": 0.0775,
+            "revenue": 1325.9714999999999,
+            "fcff_margin": 0.178,
+            "fcff": 236.02292699999995,
+            "discount_factor": 1.2737607040000003,
+            "present_value": 185.2961284319852
+          },
+          {
+            "year": 4,
+            "period": "Forecast year 4",
+            "revenue_growth": 0.056249999999999994,
+            "revenue": 1400.5573968749998,
+            "fcff_margin": 0.182,
+            "fcff": 254.90144623124996,
+            "discount_factor": 1.3807566031360003,
+            "present_value": 184.60997807456653
+          },
+          {
+            "year": 5,
+            "period": "Forecast year 5",
+            "revenue_growth": 0.035,
+            "revenue": 1449.5769057656246,
+            "fcff_margin": 0.186,
+            "fcff": 269.62130447240617,
+            "discount_factor": 1.4967401577994246,
+            "present_value": 180.13901950009523
+          }
+        ],
+        "pv_forecast_fcff": 907.9157296204321,
+        "terminal_value": 4684.098933630784,
+        "terminal_year_fcff": 276.3618370842163,
+        "pv_terminal_value": 3129.5338133491114,
+        "enterprise_value": 4037.4495429695435,
+        "net_cash_debt_adjustment": 100.0,
+        "other_senior_claims": 0.0,
+        "equity_value": 4137.4495429695435,
+        "diluted_shares": 100.50100100050004,
+        "fair_value_per_share": 41.168242124762095,
+        "exit_multiple": 16.0,
+        "exit_terminal_value": 4313.940871558499,
+        "exit_enterprise_value": 3790.140041621956,
+        "exit_fair_value_per_share": 38.70747557631392,
+        "terminal_method_difference": -2.460766548448177,
+        "current_price": 31.0,
+        "upside_downside": 0.32800781047619654
+      },
+      "bull": {
+        "forecast": [
+          {
+            "year": 1,
+            "period": "Forecast year 1",
+            "revenue_growth": 0.16,
+            "revenue": 1160.0,
+            "fcff_margin": 0.17800000000000002,
+            "fcff": 206.48000000000002,
+            "discount_factor": 1.074,
+            "present_value": 192.2532588454376
+          },
+          {
+            "year": 2,
+            "period": "Forecast year 2",
+            "revenue_growth": 0.13,
+            "revenue": 1310.8,
+            "fcff_margin": 0.19,
+            "fcff": 249.052,
+            "discount_factor": 1.1534760000000002,
+            "present_value": 215.9143319843672
+          },
+          {
+            "year": 3,
+            "period": "Forecast year 3",
+            "revenue_growth": 0.1,
+            "revenue": 1441.88,
+            "fcff_margin": 0.202,
+            "fcff": 291.25976,
+            "discount_factor": 1.2388332240000002,
+            "present_value": 235.10812783949035
+          },
+          {
+            "year": 4,
+            "period": "Forecast year 4",
+            "revenue_growth": 0.07,
+            "revenue": 1542.8116000000002,
+            "fcff_margin": 0.21400000000000002,
+            "fcff": 330.1616824000001,
+            "discount_factor": 1.3305068825760002,
+            "present_value": 248.1472938800381
+          },
+          {
+            "year": 5,
+            "period": "Forecast year 5",
+            "revenue_growth": 0.04000000000000001,
+            "revenue": 1604.5240640000002,
+            "fcff_margin": 0.226,
+            "fcff": 362.622438464,
+            "discount_factor": 1.4289643918866244,
+            "present_value": 253.76590244158504
+          }
+        ],
+        "pv_forecast_fcff": 1145.1889149909184,
+        "terminal_value": 8488.66162768,
+        "terminal_year_fcff": 373.50111161792006,
+        "pv_terminal_value": 5940.429079882559,
+        "enterprise_value": 7085.617994873477,
+        "net_cash_debt_adjustment": 100.0,
+        "other_senior_claims": 0.0,
+        "equity_value": 7185.617994873477,
+        "diluted_shares": 100.0,
+        "fair_value_per_share": 71.85617994873478,
+        "exit_multiple": 18.0,
+        "exit_terminal_value": 6527.203892352,
+        "exit_enterprise_value": 5712.975158939449,
+        "exit_fair_value_per_share": 58.12975158939449,
+        "terminal_method_difference": -13.72642835934029,
+        "current_price": 31.0,
+        "upside_downside": 1.3179412886688637
+      }
+    },
+    "sensitivity": {
+      "wacc": [
+        0.064,
+        0.07400000000000001,
+        0.084,
+        0.094,
+        0.10400000000000001
+      ],
+      "terminal_growth": [
+        0.015000000000000001,
+        0.02,
+        0.025,
+        0.030000000000000002
+      ],
+      "values": [
+        [
+          50.256600874977764,
+          55.57597305296176,
+          62.25875818212909,
+          70.90646159643624
+        ],
+        [
+          41.73707383219886,
+          45.28570132329335,
+          49.55812653477195,
+          54.801098399382894
+        ],
+        [
+          35.6917551414482,
+          38.21622780477869,
+          41.168242124762095,
+          44.66655943909265
+        ],
+        [
+          31.18088737941084,
+          33.06162826950885,
+          35.21465967873953,
+          37.70379950280489
+        ],
+        [
+          27.687084935563846,
+          29.137856558729105,
+          30.77203004860589,
+          32.62678129292615
+        ]
+      ],
+      "validity": [
+        [
+          true,
+          true,
+          true,
+          true
+        ],
+        [
+          true,
+          true,
+          true,
+          true
+        ],
+        [
+          true,
+          true,
+          true,
+          true
+        ],
+        [
+          true,
+          true,
+          true,
+          true
+        ],
+        [
+          true,
+          true,
+          true,
+          true
+        ]
+      ],
+      "calculation": "Each cell is a full DCF recalculation; invalid cells have WACC <= terminal growth."
+    },
+    "reverse_dcf": {
+      "solved_variable": "Year-1 revenue growth (with resulting five-year revenue CAGR)",
+      "fixed_assumptions": {
+        "wacc": 0.084,
+        "year_5_fcff_margin": 0.186,
+        "terminal_growth": 0.025,
+        "annual_dilution": 0.001
+      },
+      "search_bounds": {
+        "year_1_revenue_growth": [
+          -0.2,
+          0.5
+        ],
+        "residual_tolerance_per_share": 0.005
+      },
+      "converged": true,
+      "status": "CONVERGED",
+      "required_5y_revenue_cagr": 0.013085880557702101,
+      "required_year_1_revenue_growth": -0.008593750000000008,
+      "required_year_5_fcff_margin": 0.186,
+      "terminal_growth": 0.025,
+      "wacc": 0.084,
+      "dilution": 0.001,
+      "residual_per_share": 0.0024277744452163574,
+      "iterations": 7
+    },
+    "cross_checks": {
+      "metrics": {
+        "forward_pe": 24.0,
+        "ev_revenue": 4.0,
+        "ev_ebitda": 18.0,
+        "fcf_yield": 0.04838709677419355,
+        "base_case_implied_value": 41.168242124762095
+      },
+      "notes": [],
+      "historical_peer_ranges": "Unavailable from the current verified data feed; no range was invented."
+    },
+    "risks": [
+      "Revenue growth may decelerate faster than the scenario path.",
+      "FCFF-margin convergence may stall; working-capital and capital-intensity needs may exceed the normalized margin.",
+      "Stock-based compensation and dilution may exceed the explicit annual dilution assumption.",
+      "A higher WACC or lower terminal growth materially reduces present value.",
+      "Terminal economics may prove less durable than assumed."
+    ],
+    "fair_value_drivers": {
+      "raise": [
+        "higher sustained revenue growth",
+        "stronger FCFF conversion",
+        "lower dilution",
+        "lower WACC",
+        "stronger terminal economics"
+      ],
+      "lower": [
+        "lower growth",
+        "weaker margins",
+        "higher dilution",
+        "higher WACC",
+        "lower terminal growth"
+      ],
+      "highest_sensitivity": "WACC and terminal growth dominate the sensitivity grid; revenue growth and Year-5 FCFF margin dominate operating value."
+    },
+    "final_interpretation": {
+      "bear_to_bull_range": [
+        24.135949964309265,
+        71.85617994873478
+      ],
+      "base_fair_value": 41.168242124762095,
+      "text": "The explicit scenarios produce a fair-value range of $24.14\u2013$71.86 per share, with a $41.17 base-case estimate. This is a research estimate, not a recommendation, and is highly sensitive to discount rate, durable cash-flow margin, growth, and dilution."
+    },
+    "validation": {
+      "status": "PASSED",
+      "checks": {
+        "forecast_arithmetic": {
+          "passed": true,
+          "detail": "Explicit forecast PV equals the sum of recalculated annual FCFF present values."
+        },
+        "terminal_value": {
+          "passed": true,
+          "detail": "Enterprise value equals explicit forecast PV plus terminal-value PV."
+        },
+        "ev_to_equity_bridge": {
+          "passed": true,
+          "detail": "Equity value equals enterprise value plus cash less debt and other senior claims."
+        },
+        "share_count": {
+          "passed": true,
+          "detail": "Fair value uses a positive, forecast-diluted share count."
+        },
+        "scenario_ordering": {
+          "passed": true,
+          "detail": "Bear <= base <= bull."
+        },
+        "wacc_above_terminal_growth": {
+          "passed": true,
+          "detail": "All scenario and valid sensitivity calculations require WACC > terminal growth."
+        },
+        "reverse_dcf_convergence": {
+          "passed": true,
+          "detail": "CONVERGED"
+        },
+        "period_consistency": {
+          "passed": true,
+          "detail": "Revenue and FCFF both use Latest fiscal year."
+        },
+        "sensitivity_monotonicity": {
+          "passed": true,
+          "detail": "Higher WACC lowers value and higher terminal growth raises value for all valid cells."
+        },
+        "historical_fcff_reconciliation": {
+          "passed": true,
+          "detail": "NOPAT-based and CFO-based FCFF reconcile within tolerance."
+        },
+        "sbc_policy_identified": {
+          "passed": true,
+          "detail": "Selected policy: accounting-fcff."
+        },
+        "sbc_comparable_definitions": {
+          "passed": true,
+          "detail": "Both FCFF routes use the same explicit SBC policy."
+        },
+        "sbc_added_or_deducted_once": {
+          "passed": true,
+          "detail": "Added back to accounting FCFF; economic cost reflected through dilution"
+        },
+        "sbc_dilution_double_count": {
+          "passed": true,
+          "detail": "Accounting FCFF retains SBC and applies forecast dilution once."
+        }
+      },
+      "reasons": []
+    },
+    "internal_validation": {
+      "status": "PASSED",
+      "checks": {
+        "forecast_arithmetic": {
+          "passed": true,
+          "detail": "Explicit forecast PV equals the sum of recalculated annual FCFF present values."
+        },
+        "terminal_value": {
+          "passed": true,
+          "detail": "Enterprise value equals explicit forecast PV plus terminal-value PV."
+        },
+        "ev_to_equity_bridge": {
+          "passed": true,
+          "detail": "Equity value equals enterprise value plus cash less debt and other senior claims."
+        },
+        "share_count": {
+          "passed": true,
+          "detail": "Fair value uses a positive, forecast-diluted share count."
+        },
+        "scenario_ordering": {
+          "passed": true,
+          "detail": "Bear <= base <= bull."
+        },
+        "wacc_above_terminal_growth": {
+          "passed": true,
+          "detail": "All scenario and valid sensitivity calculations require WACC > terminal growth."
+        },
+        "reverse_dcf_convergence": {
+          "passed": true,
+          "detail": "CONVERGED"
+        },
+        "period_consistency": {
+          "passed": true,
+          "detail": "Revenue and FCFF both use Latest fiscal year."
+        },
+        "sensitivity_monotonicity": {
+          "passed": true,
+          "detail": "Higher WACC lowers value and higher terminal growth raises value for all valid cells."
+        },
+        "historical_fcff_reconciliation": {
+          "passed": true,
+          "detail": "NOPAT-based and CFO-based FCFF reconcile within tolerance."
+        },
+        "sbc_policy_identified": {
+          "passed": true,
+          "detail": "Selected policy: accounting-fcff."
+        },
+        "sbc_comparable_definitions": {
+          "passed": true,
+          "detail": "Both FCFF routes use the same explicit SBC policy."
+        },
+        "sbc_added_or_deducted_once": {
+          "passed": true,
+          "detail": "Added back to accounting FCFF; economic cost reflected through dilution"
+        },
+        "sbc_dilution_double_count": {
+          "passed": true,
+          "detail": "Accounting FCFF retains SBC and applies forecast dilution once."
+        }
+      },
+      "reasons": []
+    },
+    "fallback": {}
+  },
+  "GOOG": {
+    "report_type": "intrinsic_valuation",
+    "security_type": "MATURE_OPERATING_COMPANY",
+    "company_type": "Mature Operating Company",
+    "selected_method": "Five-year FCFF DCF with FCF-yield and trading-multiple cross-checks",
+    "company": {
+      "name": "Alphabet",
+      "ticker": "GOOG",
+      "security_type": "MATURE_OPERATING_COMPANY",
+      "company_type": "Mature Operating Company",
+      "valuation_method": "Five-year FCFF DCF with FCF-yield and trading-multiple cross-checks",
+      "as_of": "2026-07-23 12:00 EDT",
+      "current_market_price": 245.0
+    },
+    "valuation_method_selection": {
+      "company_type": "Mature Operating Company",
+      "selected_framework": "Five-year FCFF DCF with FCF-yield and trading-multiple cross-checks",
+      "routing_evidence": [
+        "deterministic fixture"
+      ]
+    },
+    "data_quality": {
+      "status": "GOOD",
+      "missing": [],
+      "reason": "4 annual revenue periods available; market and statement fields sourced from Yahoo Finance. The historical working-capital cash-flow impact is included."
+    },
+    "historical_base": {
+      "period_basis": {
+        "revenue": "Latest fiscal year",
+        "operating_income": "Latest fiscal year",
+        "fcff": "Latest fiscal year",
+        "free_cash_flow": "Latest fiscal year",
+        "cash_and_debt": "Latest reported balance sheet",
+        "shares": "Latest fiscal-year diluted average",
+        "market_price": "Current / latest available market price"
+      },
+      "period_consistency": "Revenue and FCFF both use Latest fiscal year.",
+      "latest_annual_revenue": 350.0,
+      "prior_annual_revenue": 307.0,
+      "three_year_revenue_cagr": 0.16738772165039473,
+      "current_provider_revenue_growth": 0.14,
+      "gross_margin": 0.6,
+      "operating_margin": 0.2894285714285714,
+      "historical_operating_margin_range": [
+        0.2736156351791531,
+        0.3
+      ],
+      "fcff_margin": 0.20980000000000001,
+      "operating_cash_flow": 101.88,
+      "capital_expenditure": 30.0,
+      "free_cash_flow": 71.88,
+      "stock_based_compensation": 24.95,
+      "working_capital_effects": "Latest reported cash-flow impact included in historical FCFF: $-5; future effects are embedded in the normalized FCFF margin.",
+      "tax_treatment": "FCFF starts from operating income after the effective tax rate, then adds depreciation and subtracts capex when available.",
+      "capex_treatment": "Latest reported capex is included in the historical FCFF base; future capital intensity is embedded in forecast FCFF margins.",
+      "stock_based_compensation_treatment": "Added back to accounting FCFF; economic cost reflected through dilution",
+      "cash": 120.0,
+      "debt": 25.0,
+      "net_cash": 95.0,
+      "diluted_shares": 12.5,
+      "diluted_share_history": []
+    },
+    "historical_fcff_reconciliation": {
+      "period": "Latest fiscal year",
+      "status": "PASSED",
+      "missing": [],
+      "tolerance_policy": "Difference must be no more than the greater of 5% of the larger absolute FCFF measure or 1% of revenue.",
+      "sbc_policy": "accounting-fcff",
+      "nopat": 80.0,
+      "depreciation_and_amortization": 20.0,
+      "capex": 30.0,
+      "change_in_working_capital": 5.0,
+      "after_tax_interest": 2.0,
+      "stock_based_compensation": 24.95,
+      "sbc_treatment": "Added back to accounting FCFF; economic cost reflected through dilution",
+      "other_adjustments": -16.52,
+      "nopat_based_fcff_before_sbc": 48.480000000000004,
+      "sbc_addback": 24.95,
+      "adjusted_nopat_based_fcff": 73.43,
+      "accounting_cfo_based_fcff": 73.88,
+      "owner_earnings_nopat_based": 48.480000000000004,
+      "owner_earnings_cfo_based": 48.92999999999999,
+      "calculated_fcff": 73.43,
+      "nopat_based_fcff": 73.43,
+      "operating_cash_flow": 101.88,
+      "operating_cash_flow_minus_capex": 71.88,
+      "cfo_based_fcff": 73.88,
+      "difference_vs_operating_cash_flow_minus_capex": 1.5500000000000114,
+      "reconciliation_difference": -0.44999999999998863,
+      "difference": -0.44999999999998863,
+      "absolute_difference": 0.44999999999998863,
+      "reconciliation_difference_pct": 0.006090958310774075,
+      "difference_before_sbc": -25.39999999999999,
+      "tolerance": 3.694,
+      "within_tolerance": true,
+      "likely_cause": "Stock-based compensation treatment mismatch",
+      "sbc_explains_initial_difference": true,
+      "sbc_added_back_exactly_once": true,
+      "sbc_deducted_exactly_once": false,
+      "dilution_modeled": true,
+      "double_count_check": "PASSED",
+      "reason": "NOPAT-based and CFO-based FCFF reconcile within tolerance.",
+      "other_adjustments_basis": "Explicit deferred-tax and other non-cash statement rows; SBC is separate and non-operating gain/loss reversals are excluded because NOPAT already excludes them.",
+      "excluded_operating_gains_losses": null
+    },
+    "assumptions": {
+      "bear": [
+        {
+          "name": "year_1_revenue_growth",
+          "value": 0.1,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "current and historical growth decaying toward mature-company economics",
+          "confidence": "medium",
+          "scenario": "bear",
+          "period": "Forecast year 1",
+          "overridden": false
+        },
+        {
+          "name": "year_5_fcff_margin",
+          "value": 0.1898,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "current FCFF margin 21.0% with limited normalization for durable mature-company economics",
+          "confidence": "medium",
+          "scenario": "bear",
+          "period": "Forecast year 5",
+          "overridden": false
+        },
+        {
+          "name": "wacc",
+          "value": 0.094,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "capital-structure-weighted cost of equity and after-tax debt; bounded to 5.5%\u201318%",
+          "confidence": "high",
+          "scenario": "bear",
+          "period": "Five-year forecast and terminal value",
+          "overridden": false
+        },
+        {
+          "name": "terminal_growth",
+          "value": 0.02,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "2.5% mature nominal-growth default with \u00b10.5 percentage-point scenario spread; bounded below WACC",
+          "confidence": "medium",
+          "scenario": "bear",
+          "period": "Post-year-5 perpetuity",
+          "overridden": false
+        },
+        {
+          "name": "annual_dilution",
+          "value": 0.006,
+          "unit": "decimal",
+          "source": "company_type_policy",
+          "basis": "0.5% base for growth software and 0.1% for other supported companies; bear/bull cases adjust dilution",
+          "confidence": "low",
+          "scenario": "bear",
+          "period": "Annual through forecast",
+          "overridden": false
+        },
+        {
+          "name": "exit_ev_fcff_multiple",
+          "value": 14.0,
+          "unit": "multiple",
+          "source": "company_type_policy",
+          "basis": "10x cyclical, 16x mature, or 22x growth-software cross-check with \u00b12x scenario spread; not a peer claim",
+          "confidence": "low",
+          "scenario": "bear",
+          "period": "End of forecast year 5",
+          "overridden": false
+        },
+        {
+          "name": "tax_rate",
+          "value": 0.21,
+          "unit": "decimal",
+          "source": "historical_company_data_or_fallback",
+          "basis": "latest usable effective tax rate; explicit 21% fallback",
+          "confidence": "medium",
+          "scenario": "bear",
+          "period": "Latest fiscal year",
+          "overridden": false
+        }
+      ],
+      "base": [
+        {
+          "name": "year_1_revenue_growth",
+          "value": 0.14,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "current and historical growth decaying toward mature-company economics",
+          "confidence": "medium",
+          "scenario": "base",
+          "period": "Forecast year 1",
+          "overridden": false
+        },
+        {
+          "name": "year_5_fcff_margin",
+          "value": 0.2298,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "current FCFF margin 21.0% with limited normalization for durable mature-company economics",
+          "confidence": "medium",
+          "scenario": "base",
+          "period": "Forecast year 5",
+          "overridden": false
+        },
+        {
+          "name": "wacc",
+          "value": 0.084,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "capital-structure-weighted cost of equity and after-tax debt; bounded to 5.5%\u201318%",
+          "confidence": "high",
+          "scenario": "base",
+          "period": "Five-year forecast and terminal value",
+          "overridden": false
+        },
+        {
+          "name": "terminal_growth",
+          "value": 0.025,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "2.5% mature nominal-growth default with \u00b10.5 percentage-point scenario spread; bounded below WACC",
+          "confidence": "medium",
+          "scenario": "base",
+          "period": "Post-year-5 perpetuity",
+          "overridden": false
+        },
+        {
+          "name": "annual_dilution",
+          "value": 0.001,
+          "unit": "decimal",
+          "source": "company_type_policy",
+          "basis": "0.5% base for growth software and 0.1% for other supported companies; bear/bull cases adjust dilution",
+          "confidence": "low",
+          "scenario": "base",
+          "period": "Annual through forecast",
+          "overridden": false
+        },
+        {
+          "name": "exit_ev_fcff_multiple",
+          "value": 16.0,
+          "unit": "multiple",
+          "source": "company_type_policy",
+          "basis": "10x cyclical, 16x mature, or 22x growth-software cross-check with \u00b12x scenario spread; not a peer claim",
+          "confidence": "low",
+          "scenario": "base",
+          "period": "End of forecast year 5",
+          "overridden": false
+        },
+        {
+          "name": "tax_rate",
+          "value": 0.21,
+          "unit": "decimal",
+          "source": "historical_company_data_or_fallback",
+          "basis": "latest usable effective tax rate; explicit 21% fallback",
+          "confidence": "medium",
+          "scenario": "base",
+          "period": "Latest fiscal year",
+          "overridden": false
+        }
+      ],
+      "bull": [
+        {
+          "name": "year_1_revenue_growth",
+          "value": 0.18000000000000002,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "current and historical growth decaying toward mature-company economics",
+          "confidence": "medium",
+          "scenario": "bull",
+          "period": "Forecast year 1",
+          "overridden": false
+        },
+        {
+          "name": "year_5_fcff_margin",
+          "value": 0.2698,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "current FCFF margin 21.0% with limited normalization for durable mature-company economics",
+          "confidence": "medium",
+          "scenario": "bull",
+          "period": "Forecast year 5",
+          "overridden": false
+        },
+        {
+          "name": "wacc",
+          "value": 0.07400000000000001,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "capital-structure-weighted cost of equity and after-tax debt; bounded to 5.5%\u201318%",
+          "confidence": "high",
+          "scenario": "bull",
+          "period": "Five-year forecast and terminal value",
+          "overridden": false
+        },
+        {
+          "name": "terminal_growth",
+          "value": 0.030000000000000002,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "2.5% mature nominal-growth default with \u00b10.5 percentage-point scenario spread; bounded below WACC",
+          "confidence": "medium",
+          "scenario": "bull",
+          "period": "Post-year-5 perpetuity",
+          "overridden": false
+        },
+        {
+          "name": "annual_dilution",
+          "value": 0,
+          "unit": "decimal",
+          "source": "company_type_policy",
+          "basis": "0.5% base for growth software and 0.1% for other supported companies; bear/bull cases adjust dilution",
+          "confidence": "low",
+          "scenario": "bull",
+          "period": "Annual through forecast",
+          "overridden": false
+        },
+        {
+          "name": "exit_ev_fcff_multiple",
+          "value": 18.0,
+          "unit": "multiple",
+          "source": "company_type_policy",
+          "basis": "10x cyclical, 16x mature, or 22x growth-software cross-check with \u00b12x scenario spread; not a peer claim",
+          "confidence": "low",
+          "scenario": "bull",
+          "period": "End of forecast year 5",
+          "overridden": false
+        },
+        {
+          "name": "tax_rate",
+          "value": 0.21,
+          "unit": "decimal",
+          "source": "historical_company_data_or_fallback",
+          "basis": "latest usable effective tax rate; explicit 21% fallback",
+          "confidence": "medium",
+          "scenario": "bull",
+          "period": "Latest fiscal year",
+          "overridden": false
+        }
+      ],
+      "policies": {
+        "capex_intensity": {
+          "value": "embedded_in_fcff_margin",
+          "source": "historical_company_cash_flow",
+          "basis": "forecast FCFF margins normalize observed after-tax operating cash economics, depreciation, and capex",
+          "confidence": "medium",
+          "period": "Latest fiscal year"
+        },
+        "working_capital": {
+          "value": "embedded_in_fcff_margin",
+          "source": "historical_company_cash_flow",
+          "basis": "no separate working-capital release is invented",
+          "confidence": "low",
+          "period": "Forecast annual"
+        },
+        "stock_based_compensation": {
+          "value": "accounting-fcff",
+          "source": "historical_company_cash_flow_and_company_type_policy",
+          "basis": "Added back to accounting FCFF; economic cost reflected through dilution",
+          "confidence": "medium",
+          "period": "Forecast annual"
+        }
+      }
+    },
+    "discount_rate": {
+      "risk_free_rate": 0.04,
+      "risk_free_source": "fixture",
+      "equity_risk_premium": 0.045,
+      "erp_source": "fixture",
+      "beta": 1.0,
+      "beta_source": "fixture",
+      "cost_of_equity": 0.085,
+      "pre_tax_cost_of_debt": 0.055,
+      "after_tax_cost_of_debt": 0.04345,
+      "debt_weight": 0.03,
+      "equity_weight": 0.97,
+      "wacc": 0.084,
+      "confidence": "high",
+      "fallbacks": []
+    },
+    "scenarios": {
+      "bear": {
+        "forecast": [
+          {
+            "year": 1,
+            "period": "Forecast year 1",
+            "revenue_growth": 0.1,
+            "revenue": 385.00000000000006,
+            "fcff_margin": 0.2058,
+            "fcff": 79.23300000000002,
+            "discount_factor": 1.094,
+            "present_value": 72.42504570383913
+          },
+          {
+            "year": 2,
+            "period": "Forecast year 2",
+            "revenue_growth": 0.0825,
+            "revenue": 416.76250000000005,
+            "fcff_margin": 0.2018,
+            "fcff": 84.10267250000001,
+            "discount_factor": 1.1968360000000002,
+            "present_value": 70.27084120130075
+          },
+          {
+            "year": 3,
+            "period": "Forecast year 3",
+            "revenue_growth": 0.065,
+            "revenue": 443.85206250000005,
+            "fcff_margin": 0.1978,
+            "fcff": 87.79393796250001,
+            "discount_factor": 1.3093385840000002,
+            "present_value": 67.0521277195479
+          },
+          {
+            "year": 4,
+            "period": "Forecast year 4",
+            "revenue_growth": 0.0475,
+            "revenue": 464.9350354687501,
+            "fcff_margin": 0.1938,
+            "fcff": 90.10440987384376,
+            "discount_factor": 1.4324164108960005,
+            "present_value": 62.90378216030208
+          },
+          {
+            "year": 5,
+            "period": "Forecast year 5",
+            "revenue_growth": 0.03,
+            "revenue": 478.88308653281257,
+            "fcff_margin": 0.1898,
+            "fcff": 90.89200982392782,
+            "discount_factor": 1.5670635535202246,
+            "present_value": 58.001482849722066
+          }
+        ],
+        "pv_forecast_fcff": 330.6532796347119,
+        "terminal_value": 1252.8358110865727,
+        "terminal_year_fcff": 92.70985002040638,
+        "pv_terminal_value": 799.4798987394122,
+        "enterprise_value": 1130.133178374124,
+        "net_cash_debt_adjustment": 95.0,
+        "other_senior_claims": 0.0,
+        "equity_value": 1225.133178374124,
+        "diluted_shares": 12.8795270810972,
+        "fair_value_per_share": 95.12252823104089,
+        "exit_multiple": 14.0,
+        "exit_terminal_value": 1272.4881375349896,
+        "exit_enterprise_value": 1142.674039530821,
+        "exit_fair_value_per_share": 96.09623332733302,
+        "terminal_method_difference": 0.9737050962921359,
+        "current_price": 245.0,
+        "upside_downside": -0.6117447827304454
+      },
+      "base": {
+        "forecast": [
+          {
+            "year": 1,
+            "period": "Forecast year 1",
+            "revenue_growth": 0.14,
+            "revenue": 399.00000000000006,
+            "fcff_margin": 0.21380000000000002,
+            "fcff": 85.30620000000002,
+            "discount_factor": 1.084,
+            "present_value": 78.69575645756458
+          },
+          {
+            "year": 2,
+            "period": "Forecast year 2",
+            "revenue_growth": 0.11375000000000002,
+            "revenue": 444.3862500000001,
+            "fcff_margin": 0.21780000000000002,
+            "fcff": 96.78732525000002,
+            "discount_factor": 1.175056,
+            "present_value": 82.3682660656173
+          },
+          {
+            "year": 3,
+            "period": "Forecast year 3",
+            "revenue_growth": 0.08750000000000001,
+            "revenue": 483.27004687500005,
+            "fcff_margin": 0.2218,
+            "fcff": 107.18929639687501,
+            "discount_factor": 1.2737607040000003,
+            "present_value": 84.15183170611847
+          },
+          {
+            "year": 4,
+            "period": "Forecast year 4",
+            "revenue_growth": 0.06125,
+            "revenue": 512.8703372460939,
+            "fcff_margin": 0.2258,
+            "fcff": 115.806122150168,
+            "discount_factor": 1.3807566031360003,
+            "present_value": 83.87149616894604
+          },
+          {
+            "year": 5,
+            "period": "Forecast year 5",
+            "revenue_growth": 0.035,
+            "revenue": 530.8207990497071,
+            "fcff_margin": 0.2298,
+            "fcff": 121.9826196216227,
+            "discount_factor": 1.4967401577994246,
+            "present_value": 81.49886203425389
+          }
+        ],
+        "pv_forecast_fcff": 410.58621243250025,
+        "terminal_value": 2119.1895781722587,
+        "terminal_year_fcff": 125.03218511216326,
+        "pv_terminal_value": 1415.8700607645803,
+        "enterprise_value": 1826.4562731970805,
+        "net_cash_debt_adjustment": 95.0,
+        "other_senior_claims": 0.0,
+        "equity_value": 1921.4562731970805,
+        "diluted_shares": 12.562625125062505,
+        "fair_value_per_share": 152.9502197246788,
+        "exit_multiple": 16.0,
+        "exit_terminal_value": 1951.7219139459633,
+        "exit_enterprise_value": 1714.5680049805624,
+        "exit_fair_value_per_share": 144.04377962138378,
+        "terminal_method_difference": -8.906440103295012,
+        "current_price": 245.0,
+        "upside_downside": -0.3757133888788621
+      },
+      "bull": {
+        "forecast": [
+          {
+            "year": 1,
+            "period": "Forecast year 1",
+            "revenue_growth": 0.18000000000000002,
+            "revenue": 413.0,
+            "fcff_margin": 0.2218,
+            "fcff": 91.6034,
+            "discount_factor": 1.074,
+            "present_value": 85.29180633147112
+          },
+          {
+            "year": 2,
+            "period": "Forecast year 2",
+            "revenue_growth": 0.14500000000000002,
+            "revenue": 472.885,
+            "fcff_margin": 0.2338,
+            "fcff": 110.560513,
+            "discount_factor": 1.1534760000000002,
+            "present_value": 95.84985990172312
+          },
+          {
+            "year": 3,
+            "period": "Forecast year 3",
+            "revenue_growth": 0.11000000000000001,
+            "revenue": 524.9023500000001,
+            "fcff_margin": 0.2458,
+            "fcff": 129.02099763,
+            "discount_factor": 1.2388332240000002,
+            "present_value": 104.14718876638716
+          },
+          {
+            "year": 4,
+            "period": "Forecast year 4",
+            "revenue_growth": 0.07500000000000001,
+            "revenue": 564.27002625,
+            "fcff_margin": 0.2578,
+            "fcff": 145.46881276724997,
+            "discount_factor": 1.3305068825760002,
+            "present_value": 109.33337863356796
+          },
+          {
+            "year": 5,
+            "period": "Forecast year 5",
+            "revenue_growth": 0.04000000000000001,
+            "revenue": 586.8408273,
+            "fcff_margin": 0.2698,
+            "fcff": 158.32965520553998,
+            "discount_factor": 1.4289643918866244,
+            "present_value": 110.80028033203925
+          }
+        ],
+        "pv_forecast_fcff": 505.4225139651886,
+        "terminal_value": 3706.353292311503,
+        "terminal_year_fcff": 163.07954486170618,
+        "pv_terminal_value": 2593.733835045464,
+        "enterprise_value": 3099.1563490106523,
+        "net_cash_debt_adjustment": 95.0,
+        "other_senior_claims": 0.0,
+        "equity_value": 3194.1563490106523,
+        "diluted_shares": 12.5,
+        "fair_value_per_share": 255.5325079208522,
+        "exit_multiple": 18.0,
+        "exit_terminal_value": 2849.9337936997194,
+        "exit_enterprise_value": 2499.827559941895,
+        "exit_fair_value_per_share": 207.5862047953516,
+        "terminal_method_difference": -47.946303125500606,
+        "current_price": 245.0,
+        "upside_downside": 0.04298982824837627
+      }
+    },
+    "sensitivity": {
+      "wacc": [
+        0.064,
+        0.07400000000000001,
+        0.084,
+        0.094,
+        0.10400000000000001
+      ],
+      "terminal_growth": [
+        0.015000000000000001,
+        0.02,
+        0.025,
+        0.030000000000000002
+      ],
+      "values": [
+        [
+          185.8637434596329,
+          205.10901415421839,
+          229.28697303551075,
+          260.57380422990195
+        ],
+        [
+          155.0239524591511,
+          167.8615254685086,
+          183.31745645709216,
+          202.28436606824002
+        ],
+        [
+          133.14027520900962,
+          142.27200401560353,
+          152.9502197246788,
+          165.6045009150962
+        ],
+        [
+          116.81100761012168,
+          123.61356217565861,
+          131.4009365202604,
+          140.40394685472214
+        ],
+        [
+          104.1633323059434,
+          109.41024373094103,
+          115.32041675976045,
+          122.02829552654646
+        ]
+      ],
+      "validity": [
+        [
+          true,
+          true,
+          true,
+          true
+        ],
+        [
+          true,
+          true,
+          true,
+          true
+        ],
+        [
+          true,
+          true,
+          true,
+          true
+        ],
+        [
+          true,
+          true,
+          true,
+          true
+        ],
+        [
+          true,
+          true,
+          true,
+          true
+        ]
+      ],
+      "calculation": "Each cell is a full DCF recalculation; invalid cells have WACC <= terminal growth."
+    },
+    "reverse_dcf": {
+      "solved_variable": "Year-1 revenue growth (with resulting five-year revenue CAGR)",
+      "fixed_assumptions": {
+        "wacc": 0.084,
+        "year_5_fcff_margin": 0.2298,
+        "terminal_growth": 0.025,
+        "annual_dilution": 0.001
+      },
+      "search_bounds": {
+        "year_1_revenue_growth": [
+          -0.2,
+          0.5
+        ],
+        "residual_tolerance_per_share": 0.005
+      },
+      "converged": true,
+      "status": "CONVERGED",
+      "required_5y_revenue_cagr": 0.20399383727949671,
+      "required_year_1_revenue_growth": 0.38577575683593746,
+      "required_year_5_fcff_margin": 0.2298,
+      "terminal_growth": 0.025,
+      "wacc": 0.084,
+      "dilution": 0.001,
+      "residual_per_share": -0.0001354587312221156,
+      "iterations": 15
+    },
+    "cross_checks": {
+      "metrics": {
+        "forward_pe": 28.0,
+        "ev_revenue": 7.5,
+        "ev_ebitda": 20.0,
+        "fcf_yield": 0.023471020408163262,
+        "base_case_implied_value": 152.9502197246788
+      },
+      "notes": [],
+      "historical_peer_ranges": "Unavailable from the current verified data feed; no range was invented."
+    },
+    "risks": [
+      "Revenue growth may decelerate faster than the scenario path.",
+      "FCFF-margin convergence may stall; working-capital and capital-intensity needs may exceed the normalized margin.",
+      "Stock-based compensation and dilution may exceed the explicit annual dilution assumption.",
+      "A higher WACC or lower terminal growth materially reduces present value.",
+      "Terminal economics may prove less durable than assumed."
+    ],
+    "fair_value_drivers": {
+      "raise": [
+        "higher sustained revenue growth",
+        "stronger FCFF conversion",
+        "lower dilution",
+        "lower WACC",
+        "stronger terminal economics"
+      ],
+      "lower": [
+        "lower growth",
+        "weaker margins",
+        "higher dilution",
+        "higher WACC",
+        "lower terminal growth"
+      ],
+      "highest_sensitivity": "WACC and terminal growth dominate the sensitivity grid; revenue growth and Year-5 FCFF margin dominate operating value."
+    },
+    "final_interpretation": {
+      "bear_to_bull_range": [
+        95.12252823104089,
+        255.5325079208522
+      ],
+      "base_fair_value": 152.9502197246788,
+      "text": "The explicit scenarios produce a fair-value range of $95.12\u2013$255.53 per share, with a $152.95 base-case estimate. This is a research estimate, not a recommendation, and is highly sensitive to discount rate, durable cash-flow margin, growth, and dilution."
+    },
+    "validation": {
+      "status": "PASSED",
+      "checks": {
+        "forecast_arithmetic": {
+          "passed": true,
+          "detail": "Explicit forecast PV equals the sum of recalculated annual FCFF present values."
+        },
+        "terminal_value": {
+          "passed": true,
+          "detail": "Enterprise value equals explicit forecast PV plus terminal-value PV."
+        },
+        "ev_to_equity_bridge": {
+          "passed": true,
+          "detail": "Equity value equals enterprise value plus cash less debt and other senior claims."
+        },
+        "share_count": {
+          "passed": true,
+          "detail": "Fair value uses a positive, forecast-diluted share count."
+        },
+        "scenario_ordering": {
+          "passed": true,
+          "detail": "Bear <= base <= bull."
+        },
+        "wacc_above_terminal_growth": {
+          "passed": true,
+          "detail": "All scenario and valid sensitivity calculations require WACC > terminal growth."
+        },
+        "reverse_dcf_convergence": {
+          "passed": true,
+          "detail": "CONVERGED"
+        },
+        "period_consistency": {
+          "passed": true,
+          "detail": "Revenue and FCFF both use Latest fiscal year."
+        },
+        "sensitivity_monotonicity": {
+          "passed": true,
+          "detail": "Higher WACC lowers value and higher terminal growth raises value for all valid cells."
+        },
+        "historical_fcff_reconciliation": {
+          "passed": true,
+          "detail": "NOPAT-based and CFO-based FCFF reconcile within tolerance."
+        },
+        "sbc_policy_identified": {
+          "passed": true,
+          "detail": "Selected policy: accounting-fcff."
+        },
+        "sbc_comparable_definitions": {
+          "passed": true,
+          "detail": "Both FCFF routes use the same explicit SBC policy."
+        },
+        "sbc_added_or_deducted_once": {
+          "passed": true,
+          "detail": "Added back to accounting FCFF; economic cost reflected through dilution"
+        },
+        "sbc_dilution_double_count": {
+          "passed": true,
+          "detail": "Accounting FCFF retains SBC and applies forecast dilution once."
+        }
+      },
+      "reasons": []
+    },
+    "internal_validation": {
+      "status": "PASSED",
+      "checks": {
+        "forecast_arithmetic": {
+          "passed": true,
+          "detail": "Explicit forecast PV equals the sum of recalculated annual FCFF present values."
+        },
+        "terminal_value": {
+          "passed": true,
+          "detail": "Enterprise value equals explicit forecast PV plus terminal-value PV."
+        },
+        "ev_to_equity_bridge": {
+          "passed": true,
+          "detail": "Equity value equals enterprise value plus cash less debt and other senior claims."
+        },
+        "share_count": {
+          "passed": true,
+          "detail": "Fair value uses a positive, forecast-diluted share count."
+        },
+        "scenario_ordering": {
+          "passed": true,
+          "detail": "Bear <= base <= bull."
+        },
+        "wacc_above_terminal_growth": {
+          "passed": true,
+          "detail": "All scenario and valid sensitivity calculations require WACC > terminal growth."
+        },
+        "reverse_dcf_convergence": {
+          "passed": true,
+          "detail": "CONVERGED"
+        },
+        "period_consistency": {
+          "passed": true,
+          "detail": "Revenue and FCFF both use Latest fiscal year."
+        },
+        "sensitivity_monotonicity": {
+          "passed": true,
+          "detail": "Higher WACC lowers value and higher terminal growth raises value for all valid cells."
+        },
+        "historical_fcff_reconciliation": {
+          "passed": true,
+          "detail": "NOPAT-based and CFO-based FCFF reconcile within tolerance."
+        },
+        "sbc_policy_identified": {
+          "passed": true,
+          "detail": "Selected policy: accounting-fcff."
+        },
+        "sbc_comparable_definitions": {
+          "passed": true,
+          "detail": "Both FCFF routes use the same explicit SBC policy."
+        },
+        "sbc_added_or_deducted_once": {
+          "passed": true,
+          "detail": "Added back to accounting FCFF; economic cost reflected through dilution"
+        },
+        "sbc_dilution_double_count": {
+          "passed": true,
+          "detail": "Accounting FCFF retains SBC and applies forecast dilution once."
+        }
+      },
+      "reasons": []
+    },
+    "fallback": {}
+  },
+  "PLTR": {
+    "report_type": "intrinsic_valuation",
+    "security_type": "MATURE_OPERATING_COMPANY",
+    "company_type": "Mature Operating Company",
+    "selected_method": "Five-year FCFF DCF with FCF-yield and trading-multiple cross-checks",
+    "company": {
+      "name": "Palantir",
+      "ticker": "PLTR",
+      "security_type": "MATURE_OPERATING_COMPANY",
+      "company_type": "Mature Operating Company",
+      "valuation_method": "Five-year FCFF DCF with FCF-yield and trading-multiple cross-checks",
+      "as_of": "2026-07-23 12:00 EDT",
+      "current_market_price": 180.0
+    },
+    "valuation_method_selection": {
+      "company_type": "Mature Operating Company",
+      "selected_framework": "Five-year FCFF DCF with FCF-yield and trading-multiple cross-checks",
+      "routing_evidence": [
+        "deterministic fixture"
+      ]
+    },
+    "data_quality": {
+      "status": "GOOD",
+      "missing": [],
+      "reason": "4 annual revenue periods available; market and statement fields sourced from Yahoo Finance. The historical working-capital cash-flow impact is included."
+    },
+    "historical_base": {
+      "period_basis": {
+        "revenue": "Latest fiscal year",
+        "operating_income": "Latest fiscal year",
+        "fcff": "Latest fiscal year",
+        "free_cash_flow": "Latest fiscal year",
+        "cash_and_debt": "Latest reported balance sheet",
+        "shares": "Latest fiscal-year diluted average",
+        "market_price": "Current / latest available market price"
+      },
+      "period_consistency": "Revenue and FCFF both use Latest fiscal year.",
+      "latest_annual_revenue": 1000.0,
+      "prior_annual_revenue": 900.0,
+      "three_year_revenue_cagr": 0.11060352259318784,
+      "current_provider_revenue_growth": 0.31,
+      "gross_margin": 0.7,
+      "operating_margin": 0.2,
+      "historical_operating_margin_range": [
+        0.1780821917808219,
+        0.2
+      ],
+      "fcff_margin": 0.166,
+      "operating_cash_flow": 210.0,
+      "capital_expenditure": 60.0,
+      "free_cash_flow": 150.0,
+      "stock_based_compensation": 20.0,
+      "working_capital_effects": "Latest reported cash-flow impact included in historical FCFF: $-10; future effects are embedded in the normalized FCFF margin.",
+      "tax_treatment": "FCFF starts from operating income after the effective tax rate, then adds depreciation and subtracts capex when available.",
+      "capex_treatment": "Latest reported capex is included in the historical FCFF base; future capital intensity is embedded in forecast FCFF margins.",
+      "stock_based_compensation_treatment": "Added back to accounting FCFF; economic cost reflected through dilution",
+      "cash": 200.0,
+      "debt": 100.0,
+      "net_cash": 100.0,
+      "diluted_shares": 100.0,
+      "diluted_share_history": []
+    },
+    "historical_fcff_reconciliation": {
+      "period": "Latest fiscal year",
+      "status": "PASSED",
+      "missing": [],
+      "tolerance_policy": "Difference must be no more than the greater of 5% of the larger absolute FCFF measure or 1% of revenue.",
+      "sbc_policy": "accounting-fcff",
+      "nopat": 158.0,
+      "depreciation_and_amortization": 40.0,
+      "capex": 60.0,
+      "change_in_working_capital": 10.0,
+      "after_tax_interest": 15.8,
+      "stock_based_compensation": 20.0,
+      "sbc_treatment": "Added back to accounting FCFF; economic cost reflected through dilution",
+      "other_adjustments": 18.0,
+      "nopat_based_fcff_before_sbc": 146.0,
+      "sbc_addback": 20.0,
+      "adjusted_nopat_based_fcff": 166.0,
+      "accounting_cfo_based_fcff": 165.8,
+      "owner_earnings_nopat_based": 146.0,
+      "owner_earnings_cfo_based": 145.8,
+      "calculated_fcff": 166.0,
+      "nopat_based_fcff": 166.0,
+      "operating_cash_flow": 210.0,
+      "operating_cash_flow_minus_capex": 150.0,
+      "cfo_based_fcff": 165.8,
+      "difference_vs_operating_cash_flow_minus_capex": 16.0,
+      "reconciliation_difference": 0.19999999999998863,
+      "difference": 0.19999999999998863,
+      "absolute_difference": 0.19999999999998863,
+      "reconciliation_difference_pct": 0.0012048192771083653,
+      "difference_before_sbc": -19.80000000000001,
+      "tolerance": 10.0,
+      "within_tolerance": true,
+      "likely_cause": "Stock-based compensation treatment mismatch",
+      "sbc_explains_initial_difference": true,
+      "sbc_added_back_exactly_once": true,
+      "sbc_deducted_exactly_once": false,
+      "dilution_modeled": true,
+      "double_count_check": "PASSED",
+      "reason": "NOPAT-based and CFO-based FCFF reconcile within tolerance.",
+      "other_adjustments_basis": "Explicit deferred-tax and other non-cash statement rows; SBC is separate and non-operating gain/loss reversals are excluded because NOPAT already excludes them.",
+      "excluded_operating_gains_losses": null
+    },
+    "assumptions": {
+      "bear": [
+        {
+          "name": "year_1_revenue_growth",
+          "value": 0.13999999999999999,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "current and historical growth decaying toward mature-company economics",
+          "confidence": "medium",
+          "scenario": "bear",
+          "period": "Forecast year 1",
+          "overridden": false
+        },
+        {
+          "name": "year_5_fcff_margin",
+          "value": 0.146,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "current FCFF margin 16.6% with limited normalization for durable mature-company economics",
+          "confidence": "medium",
+          "scenario": "bear",
+          "period": "Forecast year 5",
+          "overridden": false
+        },
+        {
+          "name": "wacc",
+          "value": 0.094,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "capital-structure-weighted cost of equity and after-tax debt; bounded to 5.5%\u201318%",
+          "confidence": "high",
+          "scenario": "bear",
+          "period": "Five-year forecast and terminal value",
+          "overridden": false
+        },
+        {
+          "name": "terminal_growth",
+          "value": 0.02,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "2.5% mature nominal-growth default with \u00b10.5 percentage-point scenario spread; bounded below WACC",
+          "confidence": "medium",
+          "scenario": "bear",
+          "period": "Post-year-5 perpetuity",
+          "overridden": false
+        },
+        {
+          "name": "annual_dilution",
+          "value": 0.006,
+          "unit": "decimal",
+          "source": "company_type_policy",
+          "basis": "0.5% base for growth software and 0.1% for other supported companies; bear/bull cases adjust dilution",
+          "confidence": "low",
+          "scenario": "bear",
+          "period": "Annual through forecast",
+          "overridden": false
+        },
+        {
+          "name": "exit_ev_fcff_multiple",
+          "value": 14.0,
+          "unit": "multiple",
+          "source": "company_type_policy",
+          "basis": "10x cyclical, 16x mature, or 22x growth-software cross-check with \u00b12x scenario spread; not a peer claim",
+          "confidence": "low",
+          "scenario": "bear",
+          "period": "End of forecast year 5",
+          "overridden": false
+        },
+        {
+          "name": "tax_rate",
+          "value": 0.21,
+          "unit": "decimal",
+          "source": "historical_company_data_or_fallback",
+          "basis": "latest usable effective tax rate; explicit 21% fallback",
+          "confidence": "medium",
+          "scenario": "bear",
+          "period": "Latest fiscal year",
+          "overridden": false
+        }
+      ],
+      "base": [
+        {
+          "name": "year_1_revenue_growth",
+          "value": 0.18,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "current and historical growth decaying toward mature-company economics",
+          "confidence": "medium",
+          "scenario": "base",
+          "period": "Forecast year 1",
+          "overridden": false
+        },
+        {
+          "name": "year_5_fcff_margin",
+          "value": 0.186,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "current FCFF margin 16.6% with limited normalization for durable mature-company economics",
+          "confidence": "medium",
+          "scenario": "base",
+          "period": "Forecast year 5",
+          "overridden": false
+        },
+        {
+          "name": "wacc",
+          "value": 0.084,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "capital-structure-weighted cost of equity and after-tax debt; bounded to 5.5%\u201318%",
+          "confidence": "high",
+          "scenario": "base",
+          "period": "Five-year forecast and terminal value",
+          "overridden": false
+        },
+        {
+          "name": "terminal_growth",
+          "value": 0.025,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "2.5% mature nominal-growth default with \u00b10.5 percentage-point scenario spread; bounded below WACC",
+          "confidence": "medium",
+          "scenario": "base",
+          "period": "Post-year-5 perpetuity",
+          "overridden": false
+        },
+        {
+          "name": "annual_dilution",
+          "value": 0.001,
+          "unit": "decimal",
+          "source": "company_type_policy",
+          "basis": "0.5% base for growth software and 0.1% for other supported companies; bear/bull cases adjust dilution",
+          "confidence": "low",
+          "scenario": "base",
+          "period": "Annual through forecast",
+          "overridden": false
+        },
+        {
+          "name": "exit_ev_fcff_multiple",
+          "value": 16.0,
+          "unit": "multiple",
+          "source": "company_type_policy",
+          "basis": "10x cyclical, 16x mature, or 22x growth-software cross-check with \u00b12x scenario spread; not a peer claim",
+          "confidence": "low",
+          "scenario": "base",
+          "period": "End of forecast year 5",
+          "overridden": false
+        },
+        {
+          "name": "tax_rate",
+          "value": 0.21,
+          "unit": "decimal",
+          "source": "historical_company_data_or_fallback",
+          "basis": "latest usable effective tax rate; explicit 21% fallback",
+          "confidence": "medium",
+          "scenario": "base",
+          "period": "Latest fiscal year",
+          "overridden": false
+        }
+      ],
+      "bull": [
+        {
+          "name": "year_1_revenue_growth",
+          "value": 0.22,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "current and historical growth decaying toward mature-company economics",
+          "confidence": "medium",
+          "scenario": "bull",
+          "period": "Forecast year 1",
+          "overridden": false
+        },
+        {
+          "name": "year_5_fcff_margin",
+          "value": 0.226,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "current FCFF margin 16.6% with limited normalization for durable mature-company economics",
+          "confidence": "medium",
+          "scenario": "bull",
+          "period": "Forecast year 5",
+          "overridden": false
+        },
+        {
+          "name": "wacc",
+          "value": 0.07400000000000001,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "capital-structure-weighted cost of equity and after-tax debt; bounded to 5.5%\u201318%",
+          "confidence": "high",
+          "scenario": "bull",
+          "period": "Five-year forecast and terminal value",
+          "overridden": false
+        },
+        {
+          "name": "terminal_growth",
+          "value": 0.030000000000000002,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "2.5% mature nominal-growth default with \u00b10.5 percentage-point scenario spread; bounded below WACC",
+          "confidence": "medium",
+          "scenario": "bull",
+          "period": "Post-year-5 perpetuity",
+          "overridden": false
+        },
+        {
+          "name": "annual_dilution",
+          "value": 0,
+          "unit": "decimal",
+          "source": "company_type_policy",
+          "basis": "0.5% base for growth software and 0.1% for other supported companies; bear/bull cases adjust dilution",
+          "confidence": "low",
+          "scenario": "bull",
+          "period": "Annual through forecast",
+          "overridden": false
+        },
+        {
+          "name": "exit_ev_fcff_multiple",
+          "value": 18.0,
+          "unit": "multiple",
+          "source": "company_type_policy",
+          "basis": "10x cyclical, 16x mature, or 22x growth-software cross-check with \u00b12x scenario spread; not a peer claim",
+          "confidence": "low",
+          "scenario": "bull",
+          "period": "End of forecast year 5",
+          "overridden": false
+        },
+        {
+          "name": "tax_rate",
+          "value": 0.21,
+          "unit": "decimal",
+          "source": "historical_company_data_or_fallback",
+          "basis": "latest usable effective tax rate; explicit 21% fallback",
+          "confidence": "medium",
+          "scenario": "bull",
+          "period": "Latest fiscal year",
+          "overridden": false
+        }
+      ],
+      "policies": {
+        "capex_intensity": {
+          "value": "embedded_in_fcff_margin",
+          "source": "historical_company_cash_flow",
+          "basis": "forecast FCFF margins normalize observed after-tax operating cash economics, depreciation, and capex",
+          "confidence": "medium",
+          "period": "Latest fiscal year"
+        },
+        "working_capital": {
+          "value": "embedded_in_fcff_margin",
+          "source": "historical_company_cash_flow",
+          "basis": "no separate working-capital release is invented",
+          "confidence": "low",
+          "period": "Forecast annual"
+        },
+        "stock_based_compensation": {
+          "value": "accounting-fcff",
+          "source": "historical_company_cash_flow_and_company_type_policy",
+          "basis": "Added back to accounting FCFF; economic cost reflected through dilution",
+          "confidence": "medium",
+          "period": "Forecast annual"
+        }
+      }
+    },
+    "discount_rate": {
+      "risk_free_rate": 0.04,
+      "risk_free_source": "fixture",
+      "equity_risk_premium": 0.045,
+      "erp_source": "fixture",
+      "beta": 1.0,
+      "beta_source": "fixture",
+      "cost_of_equity": 0.085,
+      "pre_tax_cost_of_debt": 0.055,
+      "after_tax_cost_of_debt": 0.04345,
+      "debt_weight": 0.03,
+      "equity_weight": 0.97,
+      "wacc": 0.084,
+      "confidence": "high",
+      "fallbacks": []
+    },
+    "scenarios": {
+      "bear": {
+        "forecast": [
+          {
+            "year": 1,
+            "period": "Forecast year 1",
+            "revenue_growth": 0.13999999999999999,
+            "revenue": 1140.0,
+            "fcff_margin": 0.162,
+            "fcff": 184.68,
+            "discount_factor": 1.094,
+            "present_value": 168.81170018281534
+          },
+          {
+            "year": 2,
+            "period": "Forecast year 2",
+            "revenue_growth": 0.11249999999999999,
+            "revenue": 1268.25,
+            "fcff_margin": 0.158,
+            "fcff": 200.3835,
+            "discount_factor": 1.1968360000000002,
+            "present_value": 167.42770103840456
+          },
+          {
+            "year": 3,
+            "period": "Forecast year 3",
+            "revenue_growth": 0.08499999999999999,
+            "revenue": 1376.05125,
+            "fcff_margin": 0.154,
+            "fcff": 211.9118925,
+            "discount_factor": 1.3093385840000002,
+            "present_value": 161.84651937210455
+          },
+          {
+            "year": 4,
+            "period": "Forecast year 4",
+            "revenue_growth": 0.057499999999999996,
+            "revenue": 1455.1741968750002,
+            "fcff_margin": 0.15,
+            "fcff": 218.27612953125004,
+            "discount_factor": 1.4324164108960005,
+            "present_value": 152.38315330017383
+          },
+          {
+            "year": 5,
+            "period": "Forecast year 5",
+            "revenue_growth": 0.03,
+            "revenue": 1498.8294227812503,
+            "fcff_margin": 0.146,
+            "fcff": 218.82909572606252,
+            "discount_factor": 1.5670635535202246,
+            "present_value": 139.64277022108556
+          }
+        ],
+        "pv_forecast_fcff": 790.1118441145838,
+        "terminal_value": 3016.29294108897,
+        "terminal_year_fcff": 223.2056776405838,
+        "pv_terminal_value": 1924.8057516960441,
+        "enterprise_value": 2714.917595810628,
+        "net_cash_debt_adjustment": 100.0,
+        "other_senior_claims": 0.0,
+        "equity_value": 2814.917595810628,
+        "diluted_shares": 103.0362166487776,
+        "fair_value_per_share": 27.319690952996805,
+        "exit_multiple": 14.0,
+        "exit_terminal_value": 3063.6073401648755,
+        "exit_enterprise_value": 2745.1106272097813,
+        "exit_fair_value_per_share": 27.6127241444432,
+        "terminal_method_difference": 0.29303319144639417,
+        "current_price": 180.0,
+        "upside_downside": -0.8482239391500177
+      },
+      "base": {
+        "forecast": [
+          {
+            "year": 1,
+            "period": "Forecast year 1",
+            "revenue_growth": 0.18,
+            "revenue": 1180.0,
+            "fcff_margin": 0.17,
+            "fcff": 200.60000000000002,
+            "discount_factor": 1.084,
+            "present_value": 185.05535055350555
+          },
+          {
+            "year": 2,
+            "period": "Forecast year 2",
+            "revenue_growth": 0.14375,
+            "revenue": 1349.625,
+            "fcff_margin": 0.17400000000000002,
+            "fcff": 234.83475,
+            "discount_factor": 1.175056,
+            "present_value": 199.8498369439414
+          },
+          {
+            "year": 3,
+            "period": "Forecast year 3",
+            "revenue_growth": 0.1075,
+            "revenue": 1494.7096875,
+            "fcff_margin": 0.178,
+            "fcff": 266.058324375,
+            "discount_factor": 1.2737607040000003,
+            "present_value": 208.8762226213252
+          },
+          {
+            "year": 4,
+            "period": "Forecast year 4",
+            "revenue_growth": 0.07125000000000001,
+            "revenue": 1601.207752734375,
+            "fcff_margin": 0.182,
+            "fcff": 291.4198109976562,
+            "discount_factor": 1.3807566031360003,
+            "present_value": 211.05806072973184
+          },
+          {
+            "year": 5,
+            "period": "Forecast year 5",
+            "revenue_growth": 0.035,
+            "revenue": 1657.250024080078,
+            "fcff_margin": 0.186,
+            "fcff": 308.2485044788945,
+            "discount_factor": 1.4967401577994246,
+            "present_value": 205.94657186996002
+          }
+        ],
+        "pv_forecast_fcff": 1010.7860427184639,
+        "terminal_value": 5355.16469645537,
+        "terminal_year_fcff": 315.95471709086684,
+        "pv_terminal_value": 3577.8853587577796,
+        "enterprise_value": 4588.671401476244,
+        "net_cash_debt_adjustment": 100.0,
+        "other_senior_claims": 0.0,
+        "equity_value": 4688.671401476244,
+        "diluted_shares": 100.50100100050004,
+        "fair_value_per_share": 46.65298210764006,
+        "exit_multiple": 16.0,
+        "exit_terminal_value": 4931.976071662312,
+        "exit_enterprise_value": 4305.931192637824,
+        "exit_fair_value_per_share": 43.83967471742796,
+        "terminal_method_difference": -2.8133073902120955,
+        "current_price": 180.0,
+        "upside_downside": -0.7408167660686664
+      },
+      "bull": {
+        "forecast": [
+          {
+            "year": 1,
+            "period": "Forecast year 1",
+            "revenue_growth": 0.22,
+            "revenue": 1220.0,
+            "fcff_margin": 0.17800000000000002,
+            "fcff": 217.16000000000003,
+            "discount_factor": 1.074,
+            "present_value": 202.19739292364991
+          },
+          {
+            "year": 2,
+            "period": "Forecast year 2",
+            "revenue_growth": 0.175,
+            "revenue": 1433.5,
+            "fcff_margin": 0.19,
+            "fcff": 272.365,
+            "discount_factor": 1.1534760000000002,
+            "present_value": 236.1254157000232
+          },
+          {
+            "year": 3,
+            "period": "Forecast year 3",
+            "revenue_growth": 0.13,
+            "revenue": 1619.8549999999998,
+            "fcff_margin": 0.202,
+            "fcff": 327.21071,
+            "discount_factor": 1.2388332240000002,
+            "present_value": 264.12813578206067
+          },
+          {
+            "year": 4,
+            "period": "Forecast year 4",
+            "revenue_growth": 0.08499999999999999,
+            "revenue": 1757.5426749999997,
+            "fcff_margin": 0.21400000000000002,
+            "fcff": 376.11413245,
+            "discount_factor": 1.3305068825760002,
+            "present_value": 282.68484543409784
+          },
+          {
+            "year": 5,
+            "period": "Forecast year 5",
+            "revenue_growth": 0.04000000000000001,
+            "revenue": 1827.8443819999998,
+            "fcff_margin": 0.226,
+            "fcff": 413.09283033199995,
+            "discount_factor": 1.4289643918866244,
+            "present_value": 289.0854612455418
+          }
+        ],
+        "pv_forecast_fcff": 1274.2212510853735,
+        "terminal_value": 9670.127619135452,
+        "terminal_year_fcff": 425.48561524196,
+        "pv_terminal_value": 6767.227842793363,
+        "enterprise_value": 8041.449093878737,
+        "net_cash_debt_adjustment": 100.0,
+        "other_senior_claims": 0.0,
+        "equity_value": 8141.449093878737,
+        "diluted_shares": 100.0,
+        "fair_value_per_share": 81.41449093878737,
+        "exit_multiple": 18.0,
+        "exit_terminal_value": 7435.670945975999,
+        "exit_enterprise_value": 6477.759553505125,
+        "exit_fair_value_per_share": 65.77759553505125,
+        "terminal_method_difference": -15.63689540373612,
+        "current_price": 180.0,
+        "upside_downside": -0.5476972725622924
+      }
+    },
+    "sensitivity": {
+      "wacc": [
+        0.064,
+        0.07400000000000001,
+        0.084,
+        0.094,
+        0.10400000000000001
+      ],
+      "terminal_growth": [
+        0.015000000000000001,
+        0.02,
+        0.025,
+        0.030000000000000002
+      ],
+      "values": [
+        [
+          57.05239215801081,
+          63.12635319590369,
+          70.75717858789382,
+          80.631719874462
+        ],
+        [
+          47.31322461368373,
+          51.36397421838584,
+          56.240969765760525,
+          62.22588571800583
+        ],
+        [
+          40.40352235062923,
+          43.28429678678546,
+          46.65298210764006,
+          50.64510887990074
+        ],
+        [
+          35.2485580537977,
+          37.394072263864324,
+          39.85023241691056,
+          42.689845960036536
+        ],
+        [
+          31.25663966690349,
+          32.91113516672681,
+          34.77480536237736,
+          36.89005036260489
+        ]
+      ],
+      "validity": [
+        [
+          true,
+          true,
+          true,
+          true
+        ],
+        [
+          true,
+          true,
+          true,
+          true
+        ],
+        [
+          true,
+          true,
+          true,
+          true
+        ],
+        [
+          true,
+          true,
+          true,
+          true
+        ],
+        [
+          true,
+          true,
+          true,
+          true
+        ]
+      ],
+      "calculation": "Each cell is a full DCF recalculation; invalid cells have WACC <= terminal growth."
+    },
+    "reverse_dcf": {
+      "solved_variable": "Year-1 revenue growth (with resulting five-year revenue CAGR)",
+      "fixed_assumptions": {
+        "wacc": 0.084,
+        "year_5_fcff_margin": 0.186,
+        "terminal_growth": 0.025,
+        "annual_dilution": 0.001
+      },
+      "search_bounds": {
+        "year_1_revenue_growth": [
+          -0.2,
+          0.5
+        ],
+        "residual_tolerance_per_share": 0.005
+      },
+      "converged": false,
+      "status": "NO_ECONOMIC_SOLUTION",
+      "reason": "No economically plausible solution exists inside the tested -20% to 50% Year-1 growth range.",
+      "low_case_value": 19.408076752708865,
+      "high_case_value": 85.24085362303335,
+      "residual_per_share": -94.75914637696665
+    },
+    "cross_checks": {
+      "metrics": {
+        "forward_pe": 130.0,
+        "ev_revenue": 45.0,
+        "ev_ebitda": 18.0,
+        "fcf_yield": 0.008333333333333333,
+        "base_case_implied_value": 46.65298210764006
+      },
+      "notes": [],
+      "historical_peer_ranges": "Unavailable from the current verified data feed; no range was invented."
+    },
+    "risks": [
+      "Revenue growth may decelerate faster than the scenario path.",
+      "FCFF-margin convergence may stall; working-capital and capital-intensity needs may exceed the normalized margin.",
+      "Stock-based compensation and dilution may exceed the explicit annual dilution assumption.",
+      "A higher WACC or lower terminal growth materially reduces present value.",
+      "Terminal economics may prove less durable than assumed."
+    ],
+    "fair_value_drivers": {
+      "raise": [
+        "higher sustained revenue growth",
+        "stronger FCFF conversion",
+        "lower dilution",
+        "lower WACC",
+        "stronger terminal economics"
+      ],
+      "lower": [
+        "lower growth",
+        "weaker margins",
+        "higher dilution",
+        "higher WACC",
+        "lower terminal growth"
+      ],
+      "highest_sensitivity": "WACC and terminal growth dominate the sensitivity grid; revenue growth and Year-5 FCFF margin dominate operating value."
+    },
+    "final_interpretation": {
+      "bear_to_bull_range": [
+        27.319690952996805,
+        81.41449093878737
+      ],
+      "base_fair_value": 46.65298210764006,
+      "text": "The explicit scenarios produce a fair-value range of $27.32\u2013$81.41 per share, with a $46.65 base-case estimate. This is a research estimate, not a recommendation, and is highly sensitive to discount rate, durable cash-flow margin, growth, and dilution."
+    },
+    "validation": {
+      "status": "PROVISIONAL",
+      "checks": {
+        "forecast_arithmetic": {
+          "passed": true,
+          "detail": "Explicit forecast PV equals the sum of recalculated annual FCFF present values."
+        },
+        "terminal_value": {
+          "passed": true,
+          "detail": "Enterprise value equals explicit forecast PV plus terminal-value PV."
+        },
+        "ev_to_equity_bridge": {
+          "passed": true,
+          "detail": "Equity value equals enterprise value plus cash less debt and other senior claims."
+        },
+        "share_count": {
+          "passed": true,
+          "detail": "Fair value uses a positive, forecast-diluted share count."
+        },
+        "scenario_ordering": {
+          "passed": true,
+          "detail": "Bear <= base <= bull."
+        },
+        "wacc_above_terminal_growth": {
+          "passed": true,
+          "detail": "All scenario and valid sensitivity calculations require WACC > terminal growth."
+        },
+        "reverse_dcf_convergence": {
+          "passed": false,
+          "detail": "NO_ECONOMIC_SOLUTION"
+        },
+        "period_consistency": {
+          "passed": true,
+          "detail": "Revenue and FCFF both use Latest fiscal year."
+        },
+        "sensitivity_monotonicity": {
+          "passed": true,
+          "detail": "Higher WACC lowers value and higher terminal growth raises value for all valid cells."
+        },
+        "historical_fcff_reconciliation": {
+          "passed": true,
+          "detail": "NOPAT-based and CFO-based FCFF reconcile within tolerance."
+        },
+        "sbc_policy_identified": {
+          "passed": true,
+          "detail": "Selected policy: accounting-fcff."
+        },
+        "sbc_comparable_definitions": {
+          "passed": true,
+          "detail": "Both FCFF routes use the same explicit SBC policy."
+        },
+        "sbc_added_or_deducted_once": {
+          "passed": true,
+          "detail": "Added back to accounting FCFF; economic cost reflected through dilution"
+        },
+        "sbc_dilution_double_count": {
+          "passed": true,
+          "detail": "Accounting FCFF retains SBC and applies forecast dilution once."
+        }
+      },
+      "reasons": [
+        "reverse DCF: No economically plausible solution exists inside the tested -20% to 50% Year-1 growth range."
+      ]
+    },
+    "internal_validation": {
+      "status": "PROVISIONAL",
+      "checks": {
+        "forecast_arithmetic": {
+          "passed": true,
+          "detail": "Explicit forecast PV equals the sum of recalculated annual FCFF present values."
+        },
+        "terminal_value": {
+          "passed": true,
+          "detail": "Enterprise value equals explicit forecast PV plus terminal-value PV."
+        },
+        "ev_to_equity_bridge": {
+          "passed": true,
+          "detail": "Equity value equals enterprise value plus cash less debt and other senior claims."
+        },
+        "share_count": {
+          "passed": true,
+          "detail": "Fair value uses a positive, forecast-diluted share count."
+        },
+        "scenario_ordering": {
+          "passed": true,
+          "detail": "Bear <= base <= bull."
+        },
+        "wacc_above_terminal_growth": {
+          "passed": true,
+          "detail": "All scenario and valid sensitivity calculations require WACC > terminal growth."
+        },
+        "reverse_dcf_convergence": {
+          "passed": false,
+          "detail": "NO_ECONOMIC_SOLUTION"
+        },
+        "period_consistency": {
+          "passed": true,
+          "detail": "Revenue and FCFF both use Latest fiscal year."
+        },
+        "sensitivity_monotonicity": {
+          "passed": true,
+          "detail": "Higher WACC lowers value and higher terminal growth raises value for all valid cells."
+        },
+        "historical_fcff_reconciliation": {
+          "passed": true,
+          "detail": "NOPAT-based and CFO-based FCFF reconcile within tolerance."
+        },
+        "sbc_policy_identified": {
+          "passed": true,
+          "detail": "Selected policy: accounting-fcff."
+        },
+        "sbc_comparable_definitions": {
+          "passed": true,
+          "detail": "Both FCFF routes use the same explicit SBC policy."
+        },
+        "sbc_added_or_deducted_once": {
+          "passed": true,
+          "detail": "Added back to accounting FCFF; economic cost reflected through dilution"
+        },
+        "sbc_dilution_double_count": {
+          "passed": true,
+          "detail": "Accounting FCFF retains SBC and applies forecast dilution once."
+        }
+      },
+      "reasons": [
+        "reverse DCF: No economically plausible solution exists inside the tested -20% to 50% Year-1 growth range."
+      ]
+    },
+    "fallback": {}
+  },
+  "NVDA": {
+    "report_type": "intrinsic_valuation",
+    "security_type": "GROWTH_SOFTWARE_COMPANY",
+    "company_type": "Growth Software Company",
+    "selected_method": "Revenue-to-FCFF convergence DCF with reverse DCF",
+    "company": {
+      "name": "NVIDIA",
+      "ticker": "NVDA",
+      "security_type": "GROWTH_SOFTWARE_COMPANY",
+      "company_type": "Growth Software Company",
+      "valuation_method": "Revenue-to-FCFF convergence DCF with reverse DCF",
+      "as_of": "2026-07-23 12:00 EDT",
+      "current_market_price": 190.0
+    },
+    "valuation_method_selection": {
+      "company_type": "Growth Software Company",
+      "selected_framework": "Revenue-to-FCFF convergence DCF with reverse DCF",
+      "routing_evidence": [
+        "deterministic fixture"
+      ]
+    },
+    "data_quality": {
+      "status": "GOOD",
+      "missing": [],
+      "reason": "4 annual revenue periods available; market and statement fields sourced from Yahoo Finance. The historical working-capital cash-flow impact is included."
+    },
+    "historical_base": {
+      "period_basis": {
+        "revenue": "Latest fiscal year",
+        "operating_income": "Latest fiscal year",
+        "fcff": "Latest fiscal year",
+        "free_cash_flow": "Latest fiscal year",
+        "cash_and_debt": "Latest reported balance sheet",
+        "shares": "Latest fiscal-year diluted average",
+        "market_price": "Current / latest available market price"
+      },
+      "period_consistency": "Revenue and FCFF both use Latest fiscal year.",
+      "latest_annual_revenue": 1000.0,
+      "prior_annual_revenue": 900.0,
+      "three_year_revenue_cagr": 0.11060352259318784,
+      "current_provider_revenue_growth": 0.7,
+      "gross_margin": 0.7,
+      "operating_margin": 0.2,
+      "historical_operating_margin_range": [
+        0.1780821917808219,
+        0.2
+      ],
+      "fcff_margin": 0.166,
+      "operating_cash_flow": 210.0,
+      "capital_expenditure": 60.0,
+      "free_cash_flow": 150.0,
+      "stock_based_compensation": 20.0,
+      "working_capital_effects": "Latest reported cash-flow impact included in historical FCFF: $-10; future effects are embedded in the normalized FCFF margin.",
+      "tax_treatment": "FCFF starts from operating income after the effective tax rate, then adds depreciation and subtracts capex when available.",
+      "capex_treatment": "Latest reported capex is included in the historical FCFF base; future capital intensity is embedded in forecast FCFF margins.",
+      "stock_based_compensation_treatment": "Added back to accounting FCFF; economic cost reflected through dilution",
+      "cash": 200.0,
+      "debt": 100.0,
+      "net_cash": 100.0,
+      "diluted_shares": 100.0,
+      "diluted_share_history": []
+    },
+    "historical_fcff_reconciliation": {
+      "period": "Latest fiscal year",
+      "status": "PASSED",
+      "missing": [],
+      "tolerance_policy": "Difference must be no more than the greater of 5% of the larger absolute FCFF measure or 1% of revenue.",
+      "sbc_policy": "accounting-fcff",
+      "nopat": 158.0,
+      "depreciation_and_amortization": 40.0,
+      "capex": 60.0,
+      "change_in_working_capital": 10.0,
+      "after_tax_interest": 15.8,
+      "stock_based_compensation": 20.0,
+      "sbc_treatment": "Added back to accounting FCFF; economic cost reflected through dilution",
+      "other_adjustments": 18.0,
+      "nopat_based_fcff_before_sbc": 146.0,
+      "sbc_addback": 20.0,
+      "adjusted_nopat_based_fcff": 166.0,
+      "accounting_cfo_based_fcff": 165.8,
+      "owner_earnings_nopat_based": 146.0,
+      "owner_earnings_cfo_based": 145.8,
+      "calculated_fcff": 166.0,
+      "nopat_based_fcff": 166.0,
+      "operating_cash_flow": 210.0,
+      "operating_cash_flow_minus_capex": 150.0,
+      "cfo_based_fcff": 165.8,
+      "difference_vs_operating_cash_flow_minus_capex": 16.0,
+      "reconciliation_difference": 0.19999999999998863,
+      "difference": 0.19999999999998863,
+      "absolute_difference": 0.19999999999998863,
+      "reconciliation_difference_pct": 0.0012048192771083653,
+      "difference_before_sbc": -19.80000000000001,
+      "tolerance": 10.0,
+      "within_tolerance": true,
+      "likely_cause": "Stock-based compensation treatment mismatch",
+      "sbc_explains_initial_difference": true,
+      "sbc_added_back_exactly_once": true,
+      "sbc_deducted_exactly_once": false,
+      "dilution_modeled": true,
+      "double_count_check": "PASSED",
+      "reason": "NOPAT-based and CFO-based FCFF reconcile within tolerance.",
+      "other_adjustments_basis": "Explicit deferred-tax and other non-cash statement rows; SBC is separate and non-operating gain/loss reversals are excluded because NOPAT already excludes them.",
+      "excluded_operating_gains_losses": null
+    },
+    "assumptions": {
+      "bear": [
+        {
+          "name": "year_1_revenue_growth",
+          "value": 0.31,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "current growth with five-year deceleration and software FCF-margin convergence",
+          "confidence": "medium",
+          "scenario": "bear",
+          "period": "Forecast year 1",
+          "overridden": false
+        },
+        {
+          "name": "year_5_fcff_margin",
+          "value": 0.17600000000000002,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "current FCFF margin 16.6% and provider FCF margin 14.0%; converges toward mature software economics",
+          "confidence": "medium",
+          "scenario": "bear",
+          "period": "Forecast year 5",
+          "overridden": false
+        },
+        {
+          "name": "wacc",
+          "value": 0.094,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "capital-structure-weighted cost of equity and after-tax debt; bounded to 5.5%\u201318%",
+          "confidence": "high",
+          "scenario": "bear",
+          "period": "Five-year forecast and terminal value",
+          "overridden": false
+        },
+        {
+          "name": "terminal_growth",
+          "value": 0.02,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "2.5% mature nominal-growth default with \u00b10.5 percentage-point scenario spread; bounded below WACC",
+          "confidence": "medium",
+          "scenario": "bear",
+          "period": "Post-year-5 perpetuity",
+          "overridden": false
+        },
+        {
+          "name": "annual_dilution",
+          "value": 0.01,
+          "unit": "decimal",
+          "source": "company_type_policy",
+          "basis": "0.5% base for growth software and 0.1% for other supported companies; bear/bull cases adjust dilution",
+          "confidence": "low",
+          "scenario": "bear",
+          "period": "Annual through forecast",
+          "overridden": false
+        },
+        {
+          "name": "exit_ev_fcff_multiple",
+          "value": 20.0,
+          "unit": "multiple",
+          "source": "company_type_policy",
+          "basis": "10x cyclical, 16x mature, or 22x growth-software cross-check with \u00b12x scenario spread; not a peer claim",
+          "confidence": "low",
+          "scenario": "bear",
+          "period": "End of forecast year 5",
+          "overridden": false
+        },
+        {
+          "name": "tax_rate",
+          "value": 0.21,
+          "unit": "decimal",
+          "source": "historical_company_data_or_fallback",
+          "basis": "latest usable effective tax rate; explicit 21% fallback",
+          "confidence": "medium",
+          "scenario": "bear",
+          "period": "Latest fiscal year",
+          "overridden": false
+        }
+      ],
+      "base": [
+        {
+          "name": "year_1_revenue_growth",
+          "value": 0.35,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "current growth with five-year deceleration and software FCF-margin convergence",
+          "confidence": "medium",
+          "scenario": "base",
+          "period": "Forecast year 1",
+          "overridden": false
+        },
+        {
+          "name": "year_5_fcff_margin",
+          "value": 0.21600000000000003,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "current FCFF margin 16.6% and provider FCF margin 14.0%; converges toward mature software economics",
+          "confidence": "medium",
+          "scenario": "base",
+          "period": "Forecast year 5",
+          "overridden": false
+        },
+        {
+          "name": "wacc",
+          "value": 0.084,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "capital-structure-weighted cost of equity and after-tax debt; bounded to 5.5%\u201318%",
+          "confidence": "high",
+          "scenario": "base",
+          "period": "Five-year forecast and terminal value",
+          "overridden": false
+        },
+        {
+          "name": "terminal_growth",
+          "value": 0.025,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "2.5% mature nominal-growth default with \u00b10.5 percentage-point scenario spread; bounded below WACC",
+          "confidence": "medium",
+          "scenario": "base",
+          "period": "Post-year-5 perpetuity",
+          "overridden": false
+        },
+        {
+          "name": "annual_dilution",
+          "value": 0.005,
+          "unit": "decimal",
+          "source": "company_type_policy",
+          "basis": "0.5% base for growth software and 0.1% for other supported companies; bear/bull cases adjust dilution",
+          "confidence": "low",
+          "scenario": "base",
+          "period": "Annual through forecast",
+          "overridden": false
+        },
+        {
+          "name": "exit_ev_fcff_multiple",
+          "value": 22.0,
+          "unit": "multiple",
+          "source": "company_type_policy",
+          "basis": "10x cyclical, 16x mature, or 22x growth-software cross-check with \u00b12x scenario spread; not a peer claim",
+          "confidence": "low",
+          "scenario": "base",
+          "period": "End of forecast year 5",
+          "overridden": false
+        },
+        {
+          "name": "tax_rate",
+          "value": 0.21,
+          "unit": "decimal",
+          "source": "historical_company_data_or_fallback",
+          "basis": "latest usable effective tax rate; explicit 21% fallback",
+          "confidence": "medium",
+          "scenario": "base",
+          "period": "Latest fiscal year",
+          "overridden": false
+        }
+      ],
+      "bull": [
+        {
+          "name": "year_1_revenue_growth",
+          "value": 0.38999999999999996,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "current growth with five-year deceleration and software FCF-margin convergence",
+          "confidence": "medium",
+          "scenario": "bull",
+          "period": "Forecast year 1",
+          "overridden": false
+        },
+        {
+          "name": "year_5_fcff_margin",
+          "value": 0.256,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "current FCFF margin 16.6% and provider FCF margin 14.0%; converges toward mature software economics",
+          "confidence": "medium",
+          "scenario": "bull",
+          "period": "Forecast year 5",
+          "overridden": false
+        },
+        {
+          "name": "wacc",
+          "value": 0.07400000000000001,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "capital-structure-weighted cost of equity and after-tax debt; bounded to 5.5%\u201318%",
+          "confidence": "high",
+          "scenario": "bull",
+          "period": "Five-year forecast and terminal value",
+          "overridden": false
+        },
+        {
+          "name": "terminal_growth",
+          "value": 0.030000000000000002,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "2.5% mature nominal-growth default with \u00b10.5 percentage-point scenario spread; bounded below WACC",
+          "confidence": "medium",
+          "scenario": "bull",
+          "period": "Post-year-5 perpetuity",
+          "overridden": false
+        },
+        {
+          "name": "annual_dilution",
+          "value": 0.004,
+          "unit": "decimal",
+          "source": "company_type_policy",
+          "basis": "0.5% base for growth software and 0.1% for other supported companies; bear/bull cases adjust dilution",
+          "confidence": "low",
+          "scenario": "bull",
+          "period": "Annual through forecast",
+          "overridden": false
+        },
+        {
+          "name": "exit_ev_fcff_multiple",
+          "value": 24.0,
+          "unit": "multiple",
+          "source": "company_type_policy",
+          "basis": "10x cyclical, 16x mature, or 22x growth-software cross-check with \u00b12x scenario spread; not a peer claim",
+          "confidence": "low",
+          "scenario": "bull",
+          "period": "End of forecast year 5",
+          "overridden": false
+        },
+        {
+          "name": "tax_rate",
+          "value": 0.21,
+          "unit": "decimal",
+          "source": "historical_company_data_or_fallback",
+          "basis": "latest usable effective tax rate; explicit 21% fallback",
+          "confidence": "medium",
+          "scenario": "bull",
+          "period": "Latest fiscal year",
+          "overridden": false
+        }
+      ],
+      "policies": {
+        "capex_intensity": {
+          "value": "embedded_in_fcff_margin",
+          "source": "historical_company_cash_flow",
+          "basis": "forecast FCFF margins normalize observed after-tax operating cash economics, depreciation, and capex",
+          "confidence": "medium",
+          "period": "Latest fiscal year"
+        },
+        "working_capital": {
+          "value": "embedded_in_fcff_margin",
+          "source": "historical_company_cash_flow",
+          "basis": "no separate working-capital release is invented",
+          "confidence": "low",
+          "period": "Forecast annual"
+        },
+        "stock_based_compensation": {
+          "value": "accounting-fcff",
+          "source": "historical_company_cash_flow_and_company_type_policy",
+          "basis": "Added back to accounting FCFF; economic cost reflected through dilution",
+          "confidence": "medium",
+          "period": "Forecast annual"
+        }
+      }
+    },
+    "discount_rate": {
+      "risk_free_rate": 0.04,
+      "risk_free_source": "fixture",
+      "equity_risk_premium": 0.045,
+      "erp_source": "fixture",
+      "beta": 1.0,
+      "beta_source": "fixture",
+      "cost_of_equity": 0.085,
+      "pre_tax_cost_of_debt": 0.055,
+      "after_tax_cost_of_debt": 0.04345,
+      "debt_weight": 0.03,
+      "equity_weight": 0.97,
+      "wacc": 0.084,
+      "confidence": "high",
+      "fallbacks": []
+    },
+    "scenarios": {
+      "bear": {
+        "forecast": [
+          {
+            "year": 1,
+            "period": "Forecast year 1",
+            "revenue_growth": 0.31,
+            "revenue": 1310.0,
+            "fcff_margin": 0.168,
+            "fcff": 220.08,
+            "discount_factor": 1.094,
+            "present_value": 201.17001828153565
+          },
+          {
+            "year": 2,
+            "period": "Forecast year 2",
+            "revenue_growth": 0.24,
+            "revenue": 1624.4,
+            "fcff_margin": 0.17,
+            "fcff": 276.148,
+            "discount_factor": 1.1968360000000002,
+            "present_value": 230.73169590486916
+          },
+          {
+            "year": 3,
+            "period": "Forecast year 3",
+            "revenue_growth": 0.16999999999999998,
+            "revenue": 1900.548,
+            "fcff_margin": 0.17200000000000001,
+            "fcff": 326.89425600000004,
+            "discount_factor": 1.3093385840000002,
+            "present_value": 249.66365460746246
+          },
+          {
+            "year": 4,
+            "period": "Forecast year 4",
+            "revenue_growth": 0.09999999999999998,
+            "revenue": 2090.6028,
+            "fcff_margin": 0.17400000000000002,
+            "fcff": 363.76488720000003,
+            "discount_factor": 1.4324164108960005,
+            "present_value": 253.9519126093082
+          },
+          {
+            "year": 5,
+            "period": "Forecast year 5",
+            "revenue_growth": 0.02999999999999997,
+            "revenue": 2153.320884,
+            "fcff_margin": 0.17600000000000002,
+            "fcff": 378.98447558400005,
+            "discount_factor": 1.5670635535202246,
+            "present_value": 241.84371765437072
+          }
+        ],
+        "pv_forecast_fcff": 1177.3609990575462,
+        "terminal_value": 5223.840068860542,
+        "terminal_year_fcff": 386.56416509568004,
+        "pv_terminal_value": 3333.5215136142992,
+        "enterprise_value": 4510.882512671846,
+        "net_cash_debt_adjustment": 100.0,
+        "other_senior_claims": 0.0,
+        "equity_value": 4610.882512671846,
+        "diluted_shares": 105.10100501000001,
+        "fair_value_per_share": 43.87096500393251,
+        "exit_multiple": 20.0,
+        "exit_terminal_value": 7579.689511680001,
+        "exit_enterprise_value": 6014.2353521449595,
+        "exit_fair_value_per_share": 58.174851435180955,
+        "terminal_method_difference": 14.303886431248444,
+        "current_price": 190.0,
+        "upside_downside": -0.7691001841898288
+      },
+      "base": {
+        "forecast": [
+          {
+            "year": 1,
+            "period": "Forecast year 1",
+            "revenue_growth": 0.35,
+            "revenue": 1350.0,
+            "fcff_margin": 0.17600000000000002,
+            "fcff": 237.60000000000002,
+            "discount_factor": 1.084,
+            "present_value": 219.1881918819188
+          },
+          {
+            "year": 2,
+            "period": "Forecast year 2",
+            "revenue_growth": 0.27125,
+            "revenue": 1716.1875,
+            "fcff_margin": 0.18600000000000003,
+            "fcff": 319.21087500000004,
+            "discount_factor": 1.175056,
+            "present_value": 271.6558827834588
+          },
+          {
+            "year": 3,
+            "period": "Forecast year 3",
+            "revenue_growth": 0.1925,
+            "revenue": 2046.55359375,
+            "fcff_margin": 0.196,
+            "fcff": 401.124504375,
+            "discount_factor": 1.2737607040000003,
+            "present_value": 314.91354939381137
+          },
+          {
+            "year": 4,
+            "period": "Forecast year 4",
+            "revenue_growth": 0.11375000000000002,
+            "revenue": 2279.349065039062,
+            "fcff_margin": 0.20600000000000002,
+            "fcff": 469.54590739804684,
+            "discount_factor": 1.3807566031360003,
+            "present_value": 340.0642128609817
+          },
+          {
+            "year": 5,
+            "period": "Forecast year 5",
+            "revenue_growth": 0.03500000000000003,
+            "revenue": 2359.1262823154298,
+            "fcff_margin": 0.21600000000000003,
+            "fcff": 509.5712769801329,
+            "discount_factor": 1.4967401577994246,
+            "present_value": 340.4540690144425
+          }
+        ],
+        "pv_forecast_fcff": 1486.2759059346133,
+        "terminal_value": 8852.721337366715,
+        "terminal_year_fcff": 522.3105589046362,
+        "pv_terminal_value": 5914.668148132264,
+        "enterprise_value": 7400.9440540668775,
+        "net_cash_debt_adjustment": 100.0,
+        "other_senior_claims": 0.0,
+        "equity_value": 7500.9440540668775,
+        "diluted_shares": 102.52512531281243,
+        "fair_value_per_share": 73.16200815342475,
+        "exit_multiple": 22.0,
+        "exit_terminal_value": 11210.568093562924,
+        "exit_enterprise_value": 8976.26542425235,
+        "exit_fair_value_per_share": 88.52723073061291,
+        "terminal_method_difference": 15.365222577188163,
+        "current_price": 190.0,
+        "upside_downside": -0.6149367991925013
+      },
+      "bull": {
+        "forecast": [
+          {
+            "year": 1,
+            "period": "Forecast year 1",
+            "revenue_growth": 0.38999999999999996,
+            "revenue": 1390.0,
+            "fcff_margin": 0.184,
+            "fcff": 255.76,
+            "discount_factor": 1.074,
+            "present_value": 238.13780260707634
+          },
+          {
+            "year": 2,
+            "period": "Forecast year 2",
+            "revenue_growth": 0.3025,
+            "revenue": 1810.475,
+            "fcff_margin": 0.202,
+            "fcff": 365.71595,
+            "discount_factor": 1.1534760000000002,
+            "present_value": 317.05553474888075
+          },
+          {
+            "year": 3,
+            "period": "Forecast year 3",
+            "revenue_growth": 0.21499999999999997,
+            "revenue": 2199.7271249999994,
+            "fcff_margin": 0.22,
+            "fcff": 483.93996749999985,
+            "discount_factor": 1.2388332240000002,
+            "present_value": 390.6417410548878
+          },
+          {
+            "year": 4,
+            "period": "Forecast year 4",
+            "revenue_growth": 0.1275,
+            "revenue": 2480.192333437499,
+            "fcff_margin": 0.238,
+            "fcff": 590.2857753581247,
+            "discount_factor": 1.3305068825760002,
+            "present_value": 443.65480786936615
+          },
+          {
+            "year": 5,
+            "period": "Forecast year 5",
+            "revenue_growth": 0.03999999999999998,
+            "revenue": 2579.4000267749993,
+            "fcff_margin": 0.256,
+            "fcff": 660.3264068543998,
+            "discount_factor": 1.4289643918866244,
+            "present_value": 462.1013725769528
+          }
+        ],
+        "pv_forecast_fcff": 1851.591258857164,
+        "terminal_value": 15457.640887727992,
+        "terminal_year_fcff": 680.1361990600318,
+        "pv_terminal_value": 10817.373039869575,
+        "enterprise_value": 12668.96429872674,
+        "net_cash_debt_adjustment": 100.0,
+        "other_senior_claims": 0.0,
+        "equity_value": 12768.96429872674,
+        "diluted_shares": 102.0160641281024,
+        "fair_value_per_share": 125.16621188887122,
+        "exit_multiple": 24.0,
+        "exit_terminal_value": 15847.833764505594,
+        "exit_enterprise_value": 12942.02420070403,
+        "exit_fair_value_per_share": 127.84284820405396,
+        "terminal_method_difference": 2.6766363151827477,
+        "current_price": 190.0,
+        "upside_downside": -0.3412304637427831
+      }
+    },
+    "sensitivity": {
+      "wacc": [
+        0.064,
+        0.07400000000000001,
+        0.084,
+        0.094,
+        0.10400000000000001
+      ],
+      "terminal_growth": [
+        0.015000000000000001,
+        0.02,
+        0.025,
+        0.030000000000000002
+      ],
+      "values": [
+        [
+          90.02540134643968,
+          99.8357075682426,
+          112.16107894817843,
+          128.11110396930633
+        ],
+        [
+          74.26153747285827,
+          80.79838072391733,
+          88.66896020021365,
+          98.3279593768628
+        ],
+        [
+          63.08557178068225,
+          67.73029786141134,
+          73.16200815342475,
+          79.59930990209672
+        ],
+        [
+          54.75455186965655,
+          58.21073493960407,
+          62.16759633817758,
+          66.74248296600139
+        ],
+        [
+          48.30890880729133,
+          50.97172977184193,
+          53.971428594461386,
+          57.37629167085286
+        ]
+      ],
+      "validity": [
+        [
+          true,
+          true,
+          true,
+          true
+        ],
+        [
+          true,
+          true,
+          true,
+          true
+        ],
+        [
+          true,
+          true,
+          true,
+          true
+        ],
+        [
+          true,
+          true,
+          true,
+          true
+        ],
+        [
+          true,
+          true,
+          true,
+          true
+        ]
+      ],
+      "calculation": "Each cell is a full DCF recalculation; invalid cells have WACC <= terminal growth."
+    },
+    "reverse_dcf": {
+      "solved_variable": "Year-1 revenue growth (with resulting five-year revenue CAGR)",
+      "fixed_assumptions": {
+        "wacc": 0.084,
+        "year_5_fcff_margin": 0.21600000000000003,
+        "terminal_growth": 0.025,
+        "annual_dilution": 0.005
+      },
+      "search_bounds": {
+        "year_1_revenue_growth": [
+          -0.2,
+          0.5
+        ],
+        "residual_tolerance_per_share": 0.005
+      },
+      "converged": false,
+      "status": "NO_ECONOMIC_SOLUTION",
+      "reason": "No economically plausible solution exists inside the tested -20% to 50% Year-1 growth range.",
+      "low_case_value": 21.615364377061297,
+      "high_case_value": 95.9815519548345,
+      "residual_per_share": -94.0184480451655
+    },
+    "cross_checks": {
+      "metrics": {
+        "forward_pe": 45.0,
+        "ev_revenue": 25.0,
+        "ev_ebitda": 18.0,
+        "fcf_yield": 0.007894736842105263,
+        "base_case_implied_value": 73.16200815342475
+      },
+      "notes": [],
+      "historical_peer_ranges": "Unavailable from the current verified data feed; no range was invented."
+    },
+    "risks": [
+      "Revenue growth may decelerate faster than the scenario path.",
+      "FCFF-margin convergence may stall; working-capital and capital-intensity needs may exceed the normalized margin.",
+      "Stock-based compensation and dilution may exceed the explicit annual dilution assumption.",
+      "A higher WACC or lower terminal growth materially reduces present value.",
+      "Terminal economics may prove less durable than assumed."
+    ],
+    "fair_value_drivers": {
+      "raise": [
+        "higher sustained revenue growth",
+        "stronger FCFF conversion",
+        "lower dilution",
+        "lower WACC",
+        "stronger terminal economics"
+      ],
+      "lower": [
+        "lower growth",
+        "weaker margins",
+        "higher dilution",
+        "higher WACC",
+        "lower terminal growth"
+      ],
+      "highest_sensitivity": "WACC and terminal growth dominate the sensitivity grid; revenue growth and Year-5 FCFF margin dominate operating value."
+    },
+    "final_interpretation": {
+      "bear_to_bull_range": [
+        43.87096500393251,
+        125.16621188887122
+      ],
+      "base_fair_value": 73.16200815342475,
+      "text": "The explicit scenarios produce a fair-value range of $43.87\u2013$125.17 per share, with a $73.16 base-case estimate. This is a research estimate, not a recommendation, and is highly sensitive to discount rate, durable cash-flow margin, growth, and dilution."
+    },
+    "validation": {
+      "status": "PROVISIONAL",
+      "checks": {
+        "forecast_arithmetic": {
+          "passed": true,
+          "detail": "Explicit forecast PV equals the sum of recalculated annual FCFF present values."
+        },
+        "terminal_value": {
+          "passed": true,
+          "detail": "Enterprise value equals explicit forecast PV plus terminal-value PV."
+        },
+        "ev_to_equity_bridge": {
+          "passed": true,
+          "detail": "Equity value equals enterprise value plus cash less debt and other senior claims."
+        },
+        "share_count": {
+          "passed": true,
+          "detail": "Fair value uses a positive, forecast-diluted share count."
+        },
+        "scenario_ordering": {
+          "passed": true,
+          "detail": "Bear <= base <= bull."
+        },
+        "wacc_above_terminal_growth": {
+          "passed": true,
+          "detail": "All scenario and valid sensitivity calculations require WACC > terminal growth."
+        },
+        "reverse_dcf_convergence": {
+          "passed": false,
+          "detail": "NO_ECONOMIC_SOLUTION"
+        },
+        "period_consistency": {
+          "passed": true,
+          "detail": "Revenue and FCFF both use Latest fiscal year."
+        },
+        "sensitivity_monotonicity": {
+          "passed": true,
+          "detail": "Higher WACC lowers value and higher terminal growth raises value for all valid cells."
+        },
+        "historical_fcff_reconciliation": {
+          "passed": true,
+          "detail": "NOPAT-based and CFO-based FCFF reconcile within tolerance."
+        },
+        "sbc_policy_identified": {
+          "passed": true,
+          "detail": "Selected policy: accounting-fcff."
+        },
+        "sbc_comparable_definitions": {
+          "passed": true,
+          "detail": "Both FCFF routes use the same explicit SBC policy."
+        },
+        "sbc_added_or_deducted_once": {
+          "passed": true,
+          "detail": "Added back to accounting FCFF; economic cost reflected through dilution"
+        },
+        "sbc_dilution_double_count": {
+          "passed": true,
+          "detail": "Accounting FCFF retains SBC and applies forecast dilution once."
+        }
+      },
+      "reasons": [
+        "reverse DCF: No economically plausible solution exists inside the tested -20% to 50% Year-1 growth range."
+      ]
+    },
+    "internal_validation": {
+      "status": "PROVISIONAL",
+      "checks": {
+        "forecast_arithmetic": {
+          "passed": true,
+          "detail": "Explicit forecast PV equals the sum of recalculated annual FCFF present values."
+        },
+        "terminal_value": {
+          "passed": true,
+          "detail": "Enterprise value equals explicit forecast PV plus terminal-value PV."
+        },
+        "ev_to_equity_bridge": {
+          "passed": true,
+          "detail": "Equity value equals enterprise value plus cash less debt and other senior claims."
+        },
+        "share_count": {
+          "passed": true,
+          "detail": "Fair value uses a positive, forecast-diluted share count."
+        },
+        "scenario_ordering": {
+          "passed": true,
+          "detail": "Bear <= base <= bull."
+        },
+        "wacc_above_terminal_growth": {
+          "passed": true,
+          "detail": "All scenario and valid sensitivity calculations require WACC > terminal growth."
+        },
+        "reverse_dcf_convergence": {
+          "passed": false,
+          "detail": "NO_ECONOMIC_SOLUTION"
+        },
+        "period_consistency": {
+          "passed": true,
+          "detail": "Revenue and FCFF both use Latest fiscal year."
+        },
+        "sensitivity_monotonicity": {
+          "passed": true,
+          "detail": "Higher WACC lowers value and higher terminal growth raises value for all valid cells."
+        },
+        "historical_fcff_reconciliation": {
+          "passed": true,
+          "detail": "NOPAT-based and CFO-based FCFF reconcile within tolerance."
+        },
+        "sbc_policy_identified": {
+          "passed": true,
+          "detail": "Selected policy: accounting-fcff."
+        },
+        "sbc_comparable_definitions": {
+          "passed": true,
+          "detail": "Both FCFF routes use the same explicit SBC policy."
+        },
+        "sbc_added_or_deducted_once": {
+          "passed": true,
+          "detail": "Added back to accounting FCFF; economic cost reflected through dilution"
+        },
+        "sbc_dilution_double_count": {
+          "passed": true,
+          "detail": "Accounting FCFF retains SBC and applies forecast dilution once."
+        }
+      },
+      "reasons": [
+        "reverse DCF: No economically plausible solution exists inside the tested -20% to 50% Year-1 growth range."
+      ]
+    },
+    "fallback": {}
+  },
+  "COST": {
+    "report_type": "intrinsic_valuation",
+    "security_type": "MATURE_OPERATING_COMPANY",
+    "company_type": "Mature Operating Company",
+    "selected_method": "Five-year FCFF DCF with FCF-yield and trading-multiple cross-checks",
+    "company": {
+      "name": "Costco",
+      "ticker": "COST",
+      "security_type": "MATURE_OPERATING_COMPANY",
+      "company_type": "Mature Operating Company",
+      "valuation_method": "Five-year FCFF DCF with FCF-yield and trading-multiple cross-checks",
+      "as_of": "2026-07-23 12:00 EDT",
+      "current_market_price": 52.0
+    },
+    "valuation_method_selection": {
+      "company_type": "Mature Operating Company",
+      "selected_framework": "Five-year FCFF DCF with FCF-yield and trading-multiple cross-checks",
+      "routing_evidence": [
+        "deterministic fixture"
+      ]
+    },
+    "data_quality": {
+      "status": "GOOD",
+      "missing": [],
+      "reason": "4 annual revenue periods available; market and statement fields sourced from Yahoo Finance. The historical working-capital cash-flow impact is included."
+    },
+    "historical_base": {
+      "period_basis": {
+        "revenue": "Latest fiscal year",
+        "operating_income": "Latest fiscal year",
+        "fcff": "Latest fiscal year",
+        "free_cash_flow": "Latest fiscal year",
+        "cash_and_debt": "Latest reported balance sheet",
+        "shares": "Latest fiscal-year diluted average",
+        "market_price": "Current / latest available market price"
+      },
+      "period_consistency": "Revenue and FCFF both use Latest fiscal year.",
+      "latest_annual_revenue": 1000.0,
+      "prior_annual_revenue": 900.0,
+      "three_year_revenue_cagr": 0.11060352259318784,
+      "current_provider_revenue_growth": 0.08,
+      "gross_margin": 0.7,
+      "operating_margin": 0.2,
+      "historical_operating_margin_range": [
+        0.1780821917808219,
+        0.2
+      ],
+      "fcff_margin": 0.166,
+      "operating_cash_flow": 210.0,
+      "capital_expenditure": 60.0,
+      "free_cash_flow": 150.0,
+      "stock_based_compensation": 20.0,
+      "working_capital_effects": "Latest reported cash-flow impact included in historical FCFF: $-10; future effects are embedded in the normalized FCFF margin.",
+      "tax_treatment": "FCFF starts from operating income after the effective tax rate, then adds depreciation and subtracts capex when available.",
+      "capex_treatment": "Latest reported capex is included in the historical FCFF base; future capital intensity is embedded in forecast FCFF margins.",
+      "stock_based_compensation_treatment": "Added back to accounting FCFF; economic cost reflected through dilution",
+      "cash": 200.0,
+      "debt": 100.0,
+      "net_cash": 100.0,
+      "diluted_shares": 100.0,
+      "diluted_share_history": []
+    },
+    "historical_fcff_reconciliation": {
+      "period": "Latest fiscal year",
+      "status": "PASSED",
+      "missing": [],
+      "tolerance_policy": "Difference must be no more than the greater of 5% of the larger absolute FCFF measure or 1% of revenue.",
+      "sbc_policy": "accounting-fcff",
+      "nopat": 158.0,
+      "depreciation_and_amortization": 40.0,
+      "capex": 60.0,
+      "change_in_working_capital": 10.0,
+      "after_tax_interest": 15.8,
+      "stock_based_compensation": 20.0,
+      "sbc_treatment": "Added back to accounting FCFF; economic cost reflected through dilution",
+      "other_adjustments": 18.0,
+      "nopat_based_fcff_before_sbc": 146.0,
+      "sbc_addback": 20.0,
+      "adjusted_nopat_based_fcff": 166.0,
+      "accounting_cfo_based_fcff": 165.8,
+      "owner_earnings_nopat_based": 146.0,
+      "owner_earnings_cfo_based": 145.8,
+      "calculated_fcff": 166.0,
+      "nopat_based_fcff": 166.0,
+      "operating_cash_flow": 210.0,
+      "operating_cash_flow_minus_capex": 150.0,
+      "cfo_based_fcff": 165.8,
+      "difference_vs_operating_cash_flow_minus_capex": 16.0,
+      "reconciliation_difference": 0.19999999999998863,
+      "difference": 0.19999999999998863,
+      "absolute_difference": 0.19999999999998863,
+      "reconciliation_difference_pct": 0.0012048192771083653,
+      "difference_before_sbc": -19.80000000000001,
+      "tolerance": 10.0,
+      "within_tolerance": true,
+      "likely_cause": "Stock-based compensation treatment mismatch",
+      "sbc_explains_initial_difference": true,
+      "sbc_added_back_exactly_once": true,
+      "sbc_deducted_exactly_once": false,
+      "dilution_modeled": true,
+      "double_count_check": "PASSED",
+      "reason": "NOPAT-based and CFO-based FCFF reconcile within tolerance.",
+      "other_adjustments_basis": "Explicit deferred-tax and other non-cash statement rows; SBC is separate and non-operating gain/loss reversals are excluded because NOPAT already excludes them.",
+      "excluded_operating_gains_losses": null
+    },
+    "assumptions": {
+      "bear": [
+        {
+          "name": "year_1_revenue_growth",
+          "value": 0.04,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "current and historical growth decaying toward mature-company economics",
+          "confidence": "medium",
+          "scenario": "bear",
+          "period": "Forecast year 1",
+          "overridden": false
+        },
+        {
+          "name": "year_5_fcff_margin",
+          "value": 0.126,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "current FCFF margin 16.6% with limited normalization for durable mature-company economics",
+          "confidence": "medium",
+          "scenario": "bear",
+          "period": "Forecast year 5",
+          "overridden": false
+        },
+        {
+          "name": "wacc",
+          "value": 0.094,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "capital-structure-weighted cost of equity and after-tax debt; bounded to 5.5%\u201318%",
+          "confidence": "high",
+          "scenario": "bear",
+          "period": "Five-year forecast and terminal value",
+          "overridden": false
+        },
+        {
+          "name": "terminal_growth",
+          "value": 0.02,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "2.5% mature nominal-growth default with \u00b10.5 percentage-point scenario spread; bounded below WACC",
+          "confidence": "medium",
+          "scenario": "bear",
+          "period": "Post-year-5 perpetuity",
+          "overridden": false
+        },
+        {
+          "name": "annual_dilution",
+          "value": 0.006,
+          "unit": "decimal",
+          "source": "company_type_policy",
+          "basis": "0.5% base for growth software and 0.1% for other supported companies; bear/bull cases adjust dilution",
+          "confidence": "low",
+          "scenario": "bear",
+          "period": "Annual through forecast",
+          "overridden": false
+        },
+        {
+          "name": "exit_ev_fcff_multiple",
+          "value": 14.0,
+          "unit": "multiple",
+          "source": "company_type_policy",
+          "basis": "10x cyclical, 16x mature, or 22x growth-software cross-check with \u00b12x scenario spread; not a peer claim",
+          "confidence": "low",
+          "scenario": "bear",
+          "period": "End of forecast year 5",
+          "overridden": false
+        },
+        {
+          "name": "tax_rate",
+          "value": 0.21,
+          "unit": "decimal",
+          "source": "historical_company_data_or_fallback",
+          "basis": "latest usable effective tax rate; explicit 21% fallback",
+          "confidence": "medium",
+          "scenario": "bear",
+          "period": "Latest fiscal year",
+          "overridden": false
+        }
+      ],
+      "base": [
+        {
+          "name": "year_1_revenue_growth",
+          "value": 0.08,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "current and historical growth decaying toward mature-company economics",
+          "confidence": "medium",
+          "scenario": "base",
+          "period": "Forecast year 1",
+          "overridden": false
+        },
+        {
+          "name": "year_5_fcff_margin",
+          "value": 0.166,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "current FCFF margin 16.6% with limited normalization for durable mature-company economics",
+          "confidence": "medium",
+          "scenario": "base",
+          "period": "Forecast year 5",
+          "overridden": false
+        },
+        {
+          "name": "wacc",
+          "value": 0.084,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "capital-structure-weighted cost of equity and after-tax debt; bounded to 5.5%\u201318%",
+          "confidence": "high",
+          "scenario": "base",
+          "period": "Five-year forecast and terminal value",
+          "overridden": false
+        },
+        {
+          "name": "terminal_growth",
+          "value": 0.025,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "2.5% mature nominal-growth default with \u00b10.5 percentage-point scenario spread; bounded below WACC",
+          "confidence": "medium",
+          "scenario": "base",
+          "period": "Post-year-5 perpetuity",
+          "overridden": false
+        },
+        {
+          "name": "annual_dilution",
+          "value": 0.001,
+          "unit": "decimal",
+          "source": "company_type_policy",
+          "basis": "0.5% base for growth software and 0.1% for other supported companies; bear/bull cases adjust dilution",
+          "confidence": "low",
+          "scenario": "base",
+          "period": "Annual through forecast",
+          "overridden": false
+        },
+        {
+          "name": "exit_ev_fcff_multiple",
+          "value": 16.0,
+          "unit": "multiple",
+          "source": "company_type_policy",
+          "basis": "10x cyclical, 16x mature, or 22x growth-software cross-check with \u00b12x scenario spread; not a peer claim",
+          "confidence": "low",
+          "scenario": "base",
+          "period": "End of forecast year 5",
+          "overridden": false
+        },
+        {
+          "name": "tax_rate",
+          "value": 0.21,
+          "unit": "decimal",
+          "source": "historical_company_data_or_fallback",
+          "basis": "latest usable effective tax rate; explicit 21% fallback",
+          "confidence": "medium",
+          "scenario": "base",
+          "period": "Latest fiscal year",
+          "overridden": false
+        }
+      ],
+      "bull": [
+        {
+          "name": "year_1_revenue_growth",
+          "value": 0.12,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "current and historical growth decaying toward mature-company economics",
+          "confidence": "medium",
+          "scenario": "bull",
+          "period": "Forecast year 1",
+          "overridden": false
+        },
+        {
+          "name": "year_5_fcff_margin",
+          "value": 0.20600000000000002,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "current FCFF margin 16.6% with limited normalization for durable mature-company economics",
+          "confidence": "medium",
+          "scenario": "bull",
+          "period": "Forecast year 5",
+          "overridden": false
+        },
+        {
+          "name": "wacc",
+          "value": 0.07400000000000001,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "capital-structure-weighted cost of equity and after-tax debt; bounded to 5.5%\u201318%",
+          "confidence": "high",
+          "scenario": "bull",
+          "period": "Five-year forecast and terminal value",
+          "overridden": false
+        },
+        {
+          "name": "terminal_growth",
+          "value": 0.030000000000000002,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "2.5% mature nominal-growth default with \u00b10.5 percentage-point scenario spread; bounded below WACC",
+          "confidence": "medium",
+          "scenario": "bull",
+          "period": "Post-year-5 perpetuity",
+          "overridden": false
+        },
+        {
+          "name": "annual_dilution",
+          "value": 0,
+          "unit": "decimal",
+          "source": "company_type_policy",
+          "basis": "0.5% base for growth software and 0.1% for other supported companies; bear/bull cases adjust dilution",
+          "confidence": "low",
+          "scenario": "bull",
+          "period": "Annual through forecast",
+          "overridden": false
+        },
+        {
+          "name": "exit_ev_fcff_multiple",
+          "value": 18.0,
+          "unit": "multiple",
+          "source": "company_type_policy",
+          "basis": "10x cyclical, 16x mature, or 22x growth-software cross-check with \u00b12x scenario spread; not a peer claim",
+          "confidence": "low",
+          "scenario": "bull",
+          "period": "End of forecast year 5",
+          "overridden": false
+        },
+        {
+          "name": "tax_rate",
+          "value": 0.21,
+          "unit": "decimal",
+          "source": "historical_company_data_or_fallback",
+          "basis": "latest usable effective tax rate; explicit 21% fallback",
+          "confidence": "medium",
+          "scenario": "bull",
+          "period": "Latest fiscal year",
+          "overridden": false
+        }
+      ],
+      "policies": {
+        "capex_intensity": {
+          "value": "embedded_in_fcff_margin",
+          "source": "historical_company_cash_flow",
+          "basis": "forecast FCFF margins normalize observed after-tax operating cash economics, depreciation, and capex",
+          "confidence": "medium",
+          "period": "Latest fiscal year"
+        },
+        "working_capital": {
+          "value": "embedded_in_fcff_margin",
+          "source": "historical_company_cash_flow",
+          "basis": "no separate working-capital release is invented",
+          "confidence": "low",
+          "period": "Forecast annual"
+        },
+        "stock_based_compensation": {
+          "value": "accounting-fcff",
+          "source": "historical_company_cash_flow_and_company_type_policy",
+          "basis": "Added back to accounting FCFF; economic cost reflected through dilution",
+          "confidence": "medium",
+          "period": "Forecast annual"
+        }
+      }
+    },
+    "discount_rate": {
+      "risk_free_rate": 0.04,
+      "risk_free_source": "fixture",
+      "equity_risk_premium": 0.045,
+      "erp_source": "fixture",
+      "beta": 1.0,
+      "beta_source": "fixture",
+      "cost_of_equity": 0.085,
+      "pre_tax_cost_of_debt": 0.055,
+      "after_tax_cost_of_debt": 0.04345,
+      "debt_weight": 0.03,
+      "equity_weight": 0.97,
+      "wacc": 0.084,
+      "confidence": "high",
+      "fallbacks": []
+    },
+    "scenarios": {
+      "bear": {
+        "forecast": [
+          {
+            "year": 1,
+            "period": "Forecast year 1",
+            "revenue_growth": 0.04,
+            "revenue": 1040.0,
+            "fcff_margin": 0.158,
+            "fcff": 164.32,
+            "discount_factor": 1.094,
+            "present_value": 150.20109689213893
+          },
+          {
+            "year": 2,
+            "period": "Forecast year 2",
+            "revenue_growth": 0.0375,
+            "revenue": 1079.0,
+            "fcff_margin": 0.15,
+            "fcff": 161.85,
+            "discount_factor": 1.1968360000000002,
+            "present_value": 135.23156054797815
+          },
+          {
+            "year": 3,
+            "period": "Forecast year 3",
+            "revenue_growth": 0.035,
+            "revenue": 1116.7649999999999,
+            "fcff_margin": 0.14200000000000002,
+            "fcff": 158.58062999999999,
+            "discount_factor": 1.3093385840000002,
+            "present_value": 121.11506675037383
+          },
+          {
+            "year": 4,
+            "period": "Forecast year 4",
+            "revenue_growth": 0.0325,
+            "revenue": 1153.0598624999998,
+            "fcff_margin": 0.134,
+            "fcff": 154.51002157499997,
+            "discount_factor": 1.4324164108960005,
+            "present_value": 107.86669323227828
+          },
+          {
+            "year": 5,
+            "period": "Forecast year 5",
+            "revenue_growth": 0.03,
+            "revenue": 1187.651658375,
+            "fcff_margin": 0.126,
+            "fcff": 149.64410895524998,
+            "discount_factor": 1.5670635535202246,
+            "present_value": 95.49332483618295
+          }
+        ],
+        "pv_forecast_fcff": 609.9077422589521,
+        "terminal_value": 2062.6620423561485,
+        "terminal_year_fcff": 152.636991134355,
+        "pv_terminal_value": 1316.2593423365759,
+        "enterprise_value": 1926.167084595528,
+        "net_cash_debt_adjustment": 100.0,
+        "other_senior_claims": 0.0,
+        "equity_value": 2026.167084595528,
+        "diluted_shares": 103.0362166487776,
+        "fair_value_per_share": 19.664610663085387,
+        "exit_multiple": 14.0,
+        "exit_terminal_value": 2095.0175253734997,
+        "exit_enterprise_value": 1946.8142899655134,
+        "exit_fair_value_per_share": 19.86499850768537,
+        "terminal_method_difference": 0.20038784459998382,
+        "current_price": 52.0,
+        "upside_downside": -0.6218344103252811
+      },
+      "base": {
+        "forecast": [
+          {
+            "year": 1,
+            "period": "Forecast year 1",
+            "revenue_growth": 0.08,
+            "revenue": 1080.0,
+            "fcff_margin": 0.166,
+            "fcff": 179.28,
+            "discount_factor": 1.084,
+            "present_value": 165.38745387453872
+          },
+          {
+            "year": 2,
+            "period": "Forecast year 2",
+            "revenue_growth": 0.06875,
+            "revenue": 1154.25,
+            "fcff_margin": 0.166,
+            "fcff": 191.6055,
+            "discount_factor": 1.175056,
+            "present_value": 163.06073923285356
+          },
+          {
+            "year": 3,
+            "period": "Forecast year 3",
+            "revenue_growth": 0.0575,
+            "revenue": 1220.6193750000002,
+            "fcff_margin": 0.166,
+            "fcff": 202.62281625000006,
+            "discount_factor": 1.2737607040000003,
+            "present_value": 159.07447577374785
+          },
+          {
+            "year": 4,
+            "period": "Forecast year 4",
+            "revenue_growth": 0.04625,
+            "revenue": 1277.0730210937502,
+            "fcff_margin": 0.166,
+            "fcff": 211.99412150156255,
+            "discount_factor": 1.3807566031360003,
+            "present_value": 153.5347511792285
+          },
+          {
+            "year": 5,
+            "period": "Forecast year 5",
+            "revenue_growth": 0.035,
+            "revenue": 1321.7705768320313,
+            "fcff_margin": 0.166,
+            "fcff": 219.41391575411723,
+            "discount_factor": 1.4967401577994246,
+            "present_value": 146.59452718680944
+          }
+        ],
+        "pv_forecast_fcff": 787.651947247178,
+        "terminal_value": 3811.8519262367818,
+        "terminal_year_fcff": 224.89926364797014,
+        "pv_terminal_value": 2546.7693282454184,
+        "enterprise_value": 3334.4212754925966,
+        "net_cash_debt_adjustment": 100.0,
+        "other_senior_claims": 0.0,
+        "equity_value": 3434.4212754925966,
+        "diluted_shares": 100.50100100050004,
+        "fair_value_per_share": 34.17300565469501,
+        "exit_multiple": 16.0,
+        "exit_terminal_value": 3510.6226520658756,
+        "exit_enterprise_value": 3133.1643822361293,
+        "exit_fair_value_per_share": 32.17046944855846,
+        "terminal_method_difference": -2.002536206136554,
+        "current_price": 52.0,
+        "upside_downside": -0.3428268143327883
+      },
+      "bull": {
+        "forecast": [
+          {
+            "year": 1,
+            "period": "Forecast year 1",
+            "revenue_growth": 0.12,
+            "revenue": 1120.0,
+            "fcff_margin": 0.17400000000000002,
+            "fcff": 194.88000000000002,
+            "discount_factor": 1.074,
+            "present_value": 181.45251396648047
+          },
+          {
+            "year": 2,
+            "period": "Forecast year 2",
+            "revenue_growth": 0.1,
+            "revenue": 1232.0,
+            "fcff_margin": 0.18200000000000002,
+            "fcff": 224.22400000000002,
+            "discount_factor": 1.1534760000000002,
+            "present_value": 194.3898269231436
+          },
+          {
+            "year": 3,
+            "period": "Forecast year 3",
+            "revenue_growth": 0.08,
+            "revenue": 1330.5600000000002,
+            "fcff_margin": 0.19,
+            "fcff": 252.80640000000002,
+            "discount_factor": 1.2388332240000002,
+            "present_value": 204.0681466256833
+          },
+          {
+            "year": 4,
+            "period": "Forecast year 4",
+            "revenue_growth": 0.060000000000000005,
+            "revenue": 1410.3936000000003,
+            "fcff_margin": 0.198,
+            "fcff": 279.2579328000001,
+            "discount_factor": 1.3305068825760002,
+            "present_value": 209.88837897578372
+          },
+          {
+            "year": 5,
+            "period": "Forecast year 5",
+            "revenue_growth": 0.04000000000000001,
+            "revenue": 1466.8093440000005,
+            "fcff_margin": 0.20600000000000002,
+            "fcff": 302.1627248640001,
+            "discount_factor": 1.4289643918866244,
+            "present_value": 211.45574136040054
+          }
+        ],
+        "pv_forecast_fcff": 1001.2546078514916,
+        "terminal_value": 7073.35469568,
+        "terminal_year_fcff": 311.2276066099201,
+        "pv_terminal_value": 4949.98667275483,
+        "enterprise_value": 5951.241280606321,
+        "net_cash_debt_adjustment": 100.0,
+        "other_senior_claims": 0.0,
+        "equity_value": 6051.241280606321,
+        "diluted_shares": 100.0,
+        "fair_value_per_share": 60.51241280606321,
+        "exit_multiple": 18.0,
+        "exit_terminal_value": 5438.929047552002,
+        "exit_enterprise_value": 4807.457952338702,
+        "exit_fair_value_per_share": 49.07457952338702,
+        "terminal_method_difference": -11.437833282676188,
+        "current_price": 52.0,
+        "upside_downside": 0.16370024627044644
+      }
+    },
+    "sensitivity": {
+      "wacc": [
+        0.064,
+        0.07400000000000001,
+        0.084,
+        0.094,
+        0.10400000000000001
+      ],
+      "terminal_growth": [
+        0.015000000000000001,
+        0.02,
+        0.025,
+        0.030000000000000002
+      ],
+      "values": [
+        [
+          41.576384592526345,
+          45.90956914202681,
+          51.35321393182073,
+          58.397226899366714
+        ],
+        [
+          34.63621942527091,
+          37.52777406652206,
+          41.008965789326716,
+          45.280806489527755
+        ],
+        [
+          29.70934812886916,
+          31.766993251060843,
+          34.17300565469501,
+          37.02415343804082
+        ],
+        [
+          26.031167328137467,
+          27.56459029916658,
+          29.319925991783418,
+          31.349184714860606
+        ],
+        [
+          23.18071849701477,
+          24.363949097083452,
+          25.696680538105294,
+          27.209216636119507
+        ]
+      ],
+      "validity": [
+        [
+          true,
+          true,
+          true,
+          true
+        ],
+        [
+          true,
+          true,
+          true,
+          true
+        ],
+        [
+          true,
+          true,
+          true,
+          true
+        ],
+        [
+          true,
+          true,
+          true,
+          true
+        ],
+        [
+          true,
+          true,
+          true,
+          true
+        ]
+      ],
+      "calculation": "Each cell is a full DCF recalculation; invalid cells have WACC <= terminal growth."
+    },
+    "reverse_dcf": {
+      "solved_variable": "Year-1 revenue growth (with resulting five-year revenue CAGR)",
+      "fixed_assumptions": {
+        "wacc": 0.084,
+        "year_5_fcff_margin": 0.166,
+        "terminal_growth": 0.025,
+        "annual_dilution": 0.001
+      },
+      "search_bounds": {
+        "year_1_revenue_growth": [
+          -0.2,
+          0.5
+        ],
+        "residual_tolerance_per_share": 0.005
+      },
+      "converged": true,
+      "status": "CONVERGED",
+      "required_5y_revenue_cagr": 0.15715222247107485,
+      "required_year_1_revenue_growth": 0.28612060546875007,
+      "required_year_5_fcff_margin": 0.166,
+      "terminal_growth": 0.025,
+      "wacc": 0.084,
+      "dilution": 0.001,
+      "residual_per_share": -0.002943823346178931,
+      "iterations": 13
+    },
+    "cross_checks": {
+      "metrics": {
+        "forward_pe": 48.0,
+        "ev_revenue": 1.5,
+        "ev_ebitda": 18.0,
+        "fcf_yield": 0.028846153846153848,
+        "base_case_implied_value": 34.17300565469501
+      },
+      "notes": [],
+      "historical_peer_ranges": "Unavailable from the current verified data feed; no range was invented."
+    },
+    "risks": [
+      "Revenue growth may decelerate faster than the scenario path.",
+      "FCFF-margin convergence may stall; working-capital and capital-intensity needs may exceed the normalized margin.",
+      "Stock-based compensation and dilution may exceed the explicit annual dilution assumption.",
+      "A higher WACC or lower terminal growth materially reduces present value.",
+      "Terminal economics may prove less durable than assumed."
+    ],
+    "fair_value_drivers": {
+      "raise": [
+        "higher sustained revenue growth",
+        "stronger FCFF conversion",
+        "lower dilution",
+        "lower WACC",
+        "stronger terminal economics"
+      ],
+      "lower": [
+        "lower growth",
+        "weaker margins",
+        "higher dilution",
+        "higher WACC",
+        "lower terminal growth"
+      ],
+      "highest_sensitivity": "WACC and terminal growth dominate the sensitivity grid; revenue growth and Year-5 FCFF margin dominate operating value."
+    },
+    "final_interpretation": {
+      "bear_to_bull_range": [
+        19.664610663085387,
+        60.51241280606321
+      ],
+      "base_fair_value": 34.17300565469501,
+      "text": "The explicit scenarios produce a fair-value range of $19.66\u2013$60.51 per share, with a $34.17 base-case estimate. This is a research estimate, not a recommendation, and is highly sensitive to discount rate, durable cash-flow margin, growth, and dilution."
+    },
+    "validation": {
+      "status": "PASSED",
+      "checks": {
+        "forecast_arithmetic": {
+          "passed": true,
+          "detail": "Explicit forecast PV equals the sum of recalculated annual FCFF present values."
+        },
+        "terminal_value": {
+          "passed": true,
+          "detail": "Enterprise value equals explicit forecast PV plus terminal-value PV."
+        },
+        "ev_to_equity_bridge": {
+          "passed": true,
+          "detail": "Equity value equals enterprise value plus cash less debt and other senior claims."
+        },
+        "share_count": {
+          "passed": true,
+          "detail": "Fair value uses a positive, forecast-diluted share count."
+        },
+        "scenario_ordering": {
+          "passed": true,
+          "detail": "Bear <= base <= bull."
+        },
+        "wacc_above_terminal_growth": {
+          "passed": true,
+          "detail": "All scenario and valid sensitivity calculations require WACC > terminal growth."
+        },
+        "reverse_dcf_convergence": {
+          "passed": true,
+          "detail": "CONVERGED"
+        },
+        "period_consistency": {
+          "passed": true,
+          "detail": "Revenue and FCFF both use Latest fiscal year."
+        },
+        "sensitivity_monotonicity": {
+          "passed": true,
+          "detail": "Higher WACC lowers value and higher terminal growth raises value for all valid cells."
+        },
+        "historical_fcff_reconciliation": {
+          "passed": true,
+          "detail": "NOPAT-based and CFO-based FCFF reconcile within tolerance."
+        },
+        "sbc_policy_identified": {
+          "passed": true,
+          "detail": "Selected policy: accounting-fcff."
+        },
+        "sbc_comparable_definitions": {
+          "passed": true,
+          "detail": "Both FCFF routes use the same explicit SBC policy."
+        },
+        "sbc_added_or_deducted_once": {
+          "passed": true,
+          "detail": "Added back to accounting FCFF; economic cost reflected through dilution"
+        },
+        "sbc_dilution_double_count": {
+          "passed": true,
+          "detail": "Accounting FCFF retains SBC and applies forecast dilution once."
+        }
+      },
+      "reasons": []
+    },
+    "internal_validation": {
+      "status": "PASSED",
+      "checks": {
+        "forecast_arithmetic": {
+          "passed": true,
+          "detail": "Explicit forecast PV equals the sum of recalculated annual FCFF present values."
+        },
+        "terminal_value": {
+          "passed": true,
+          "detail": "Enterprise value equals explicit forecast PV plus terminal-value PV."
+        },
+        "ev_to_equity_bridge": {
+          "passed": true,
+          "detail": "Equity value equals enterprise value plus cash less debt and other senior claims."
+        },
+        "share_count": {
+          "passed": true,
+          "detail": "Fair value uses a positive, forecast-diluted share count."
+        },
+        "scenario_ordering": {
+          "passed": true,
+          "detail": "Bear <= base <= bull."
+        },
+        "wacc_above_terminal_growth": {
+          "passed": true,
+          "detail": "All scenario and valid sensitivity calculations require WACC > terminal growth."
+        },
+        "reverse_dcf_convergence": {
+          "passed": true,
+          "detail": "CONVERGED"
+        },
+        "period_consistency": {
+          "passed": true,
+          "detail": "Revenue and FCFF both use Latest fiscal year."
+        },
+        "sensitivity_monotonicity": {
+          "passed": true,
+          "detail": "Higher WACC lowers value and higher terminal growth raises value for all valid cells."
+        },
+        "historical_fcff_reconciliation": {
+          "passed": true,
+          "detail": "NOPAT-based and CFO-based FCFF reconcile within tolerance."
+        },
+        "sbc_policy_identified": {
+          "passed": true,
+          "detail": "Selected policy: accounting-fcff."
+        },
+        "sbc_comparable_definitions": {
+          "passed": true,
+          "detail": "Both FCFF routes use the same explicit SBC policy."
+        },
+        "sbc_added_or_deducted_once": {
+          "passed": true,
+          "detail": "Added back to accounting FCFF; economic cost reflected through dilution"
+        },
+        "sbc_dilution_double_count": {
+          "passed": true,
+          "detail": "Accounting FCFF retains SBC and applies forecast dilution once."
+        }
+      },
+      "reasons": []
+    },
+    "fallback": {}
+  },
+  "XOM": {
+    "report_type": "intrinsic_valuation",
+    "security_type": "CYCLICAL_COMPANY",
+    "company_type": "Cyclical Company",
+    "selected_method": "Cycle-adjusted FCFF DCF using normalized mid-cycle economics",
+    "company": {
+      "name": "Exxon Mobil",
+      "ticker": "XOM",
+      "security_type": "CYCLICAL_COMPANY",
+      "company_type": "Cyclical Company",
+      "valuation_method": "Cycle-adjusted FCFF DCF using normalized mid-cycle economics",
+      "as_of": "2026-07-23 12:00 EDT",
+      "current_market_price": 24.0
+    },
+    "valuation_method_selection": {
+      "company_type": "Cyclical Company",
+      "selected_framework": "Cycle-adjusted FCFF DCF using normalized mid-cycle economics",
+      "routing_evidence": [
+        "deterministic fixture"
+      ]
+    },
+    "data_quality": {
+      "status": "GOOD",
+      "missing": [],
+      "reason": "4 annual revenue periods available; market and statement fields sourced from Yahoo Finance. The historical working-capital cash-flow impact is included."
+    },
+    "historical_base": {
+      "period_basis": {
+        "revenue": "Latest fiscal year",
+        "operating_income": "Latest fiscal year",
+        "fcff": "Latest fiscal year",
+        "free_cash_flow": "Latest fiscal year",
+        "cash_and_debt": "Latest reported balance sheet",
+        "shares": "Latest fiscal-year diluted average",
+        "market_price": "Current / latest available market price"
+      },
+      "period_consistency": "Revenue and FCFF both use Latest fiscal year.",
+      "latest_annual_revenue": 1000.0,
+      "prior_annual_revenue": 900.0,
+      "three_year_revenue_cagr": 0.11060352259318784,
+      "current_provider_revenue_growth": 0.02,
+      "gross_margin": 0.7,
+      "operating_margin": 0.2,
+      "historical_operating_margin_range": [
+        0.1780821917808219,
+        0.2
+      ],
+      "fcff_margin": 0.166,
+      "operating_cash_flow": 210.0,
+      "capital_expenditure": 60.0,
+      "free_cash_flow": 150.0,
+      "stock_based_compensation": 20.0,
+      "working_capital_effects": "Latest reported cash-flow impact included in historical FCFF: $-10; future effects are embedded in the normalized FCFF margin.",
+      "tax_treatment": "FCFF starts from operating income after the effective tax rate, then adds depreciation and subtracts capex when available.",
+      "capex_treatment": "Latest reported capex is included in the historical FCFF base; future capital intensity is embedded in forecast FCFF margins.",
+      "stock_based_compensation_treatment": "Added back to accounting FCFF; economic cost reflected through dilution",
+      "cash": 200.0,
+      "debt": 100.0,
+      "net_cash": 100.0,
+      "diluted_shares": 100.0,
+      "diluted_share_history": []
+    },
+    "historical_fcff_reconciliation": {
+      "period": "Latest fiscal year",
+      "status": "PASSED",
+      "missing": [],
+      "tolerance_policy": "Difference must be no more than the greater of 5% of the larger absolute FCFF measure or 1% of revenue.",
+      "sbc_policy": "accounting-fcff",
+      "nopat": 158.0,
+      "depreciation_and_amortization": 40.0,
+      "capex": 60.0,
+      "change_in_working_capital": 10.0,
+      "after_tax_interest": 15.8,
+      "stock_based_compensation": 20.0,
+      "sbc_treatment": "Added back to accounting FCFF; economic cost reflected through dilution",
+      "other_adjustments": 18.0,
+      "nopat_based_fcff_before_sbc": 146.0,
+      "sbc_addback": 20.0,
+      "adjusted_nopat_based_fcff": 166.0,
+      "accounting_cfo_based_fcff": 165.8,
+      "owner_earnings_nopat_based": 146.0,
+      "owner_earnings_cfo_based": 145.8,
+      "calculated_fcff": 166.0,
+      "nopat_based_fcff": 166.0,
+      "operating_cash_flow": 210.0,
+      "operating_cash_flow_minus_capex": 150.0,
+      "cfo_based_fcff": 165.8,
+      "difference_vs_operating_cash_flow_minus_capex": 16.0,
+      "reconciliation_difference": 0.19999999999998863,
+      "difference": 0.19999999999998863,
+      "absolute_difference": 0.19999999999998863,
+      "reconciliation_difference_pct": 0.0012048192771083653,
+      "difference_before_sbc": -19.80000000000001,
+      "tolerance": 10.0,
+      "within_tolerance": true,
+      "likely_cause": "Stock-based compensation treatment mismatch",
+      "sbc_explains_initial_difference": true,
+      "sbc_added_back_exactly_once": true,
+      "sbc_deducted_exactly_once": false,
+      "dilution_modeled": true,
+      "double_count_check": "PASSED",
+      "reason": "NOPAT-based and CFO-based FCFF reconcile within tolerance.",
+      "other_adjustments_basis": "Explicit deferred-tax and other non-cash statement rows; SBC is separate and non-operating gain/loss reversals are excluded because NOPAT already excludes them.",
+      "excluded_operating_gains_losses": null
+    },
+    "assumptions": {
+      "bear": [
+        {
+          "name": "year_1_revenue_growth",
+          "value": 0.04,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "mid-cycle revenue growth and normalized historical operating economics; peak results are not perpetuated",
+          "confidence": "medium",
+          "scenario": "bear",
+          "period": "Forecast year 1",
+          "overridden": false
+        },
+        {
+          "name": "year_5_fcff_margin",
+          "value": 0.11980555555555555,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "current FCFF margin 16.6% blended with normalized historical after-tax operating margin 15.4%",
+          "confidence": "medium",
+          "scenario": "bear",
+          "period": "Forecast year 5",
+          "overridden": false
+        },
+        {
+          "name": "wacc",
+          "value": 0.094,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "capital-structure-weighted cost of equity and after-tax debt; bounded to 5.5%\u201318%",
+          "confidence": "high",
+          "scenario": "bear",
+          "period": "Five-year forecast and terminal value",
+          "overridden": false
+        },
+        {
+          "name": "terminal_growth",
+          "value": 0.02,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "2.5% mature nominal-growth default with \u00b10.5 percentage-point scenario spread; bounded below WACC",
+          "confidence": "medium",
+          "scenario": "bear",
+          "period": "Post-year-5 perpetuity",
+          "overridden": false
+        },
+        {
+          "name": "annual_dilution",
+          "value": 0.006,
+          "unit": "decimal",
+          "source": "company_type_policy",
+          "basis": "0.5% base for growth software and 0.1% for other supported companies; bear/bull cases adjust dilution",
+          "confidence": "low",
+          "scenario": "bear",
+          "period": "Annual through forecast",
+          "overridden": false
+        },
+        {
+          "name": "exit_ev_fcff_multiple",
+          "value": 8.0,
+          "unit": "multiple",
+          "source": "company_type_policy",
+          "basis": "10x cyclical, 16x mature, or 22x growth-software cross-check with \u00b12x scenario spread; not a peer claim",
+          "confidence": "low",
+          "scenario": "bear",
+          "period": "End of forecast year 5",
+          "overridden": false
+        },
+        {
+          "name": "tax_rate",
+          "value": 0.21,
+          "unit": "decimal",
+          "source": "historical_company_data_or_fallback",
+          "basis": "latest usable effective tax rate; explicit 21% fallback",
+          "confidence": "medium",
+          "scenario": "bear",
+          "period": "Latest fiscal year",
+          "overridden": false
+        }
+      ],
+      "base": [
+        {
+          "name": "year_1_revenue_growth",
+          "value": 0.08,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "mid-cycle revenue growth and normalized historical operating economics; peak results are not perpetuated",
+          "confidence": "medium",
+          "scenario": "base",
+          "period": "Forecast year 1",
+          "overridden": false
+        },
+        {
+          "name": "year_5_fcff_margin",
+          "value": 0.15980555555555556,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "current FCFF margin 16.6% blended with normalized historical after-tax operating margin 15.4%",
+          "confidence": "medium",
+          "scenario": "base",
+          "period": "Forecast year 5",
+          "overridden": false
+        },
+        {
+          "name": "wacc",
+          "value": 0.084,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "capital-structure-weighted cost of equity and after-tax debt; bounded to 5.5%\u201318%",
+          "confidence": "high",
+          "scenario": "base",
+          "period": "Five-year forecast and terminal value",
+          "overridden": false
+        },
+        {
+          "name": "terminal_growth",
+          "value": 0.025,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "2.5% mature nominal-growth default with \u00b10.5 percentage-point scenario spread; bounded below WACC",
+          "confidence": "medium",
+          "scenario": "base",
+          "period": "Post-year-5 perpetuity",
+          "overridden": false
+        },
+        {
+          "name": "annual_dilution",
+          "value": 0.001,
+          "unit": "decimal",
+          "source": "company_type_policy",
+          "basis": "0.5% base for growth software and 0.1% for other supported companies; bear/bull cases adjust dilution",
+          "confidence": "low",
+          "scenario": "base",
+          "period": "Annual through forecast",
+          "overridden": false
+        },
+        {
+          "name": "exit_ev_fcff_multiple",
+          "value": 10.0,
+          "unit": "multiple",
+          "source": "company_type_policy",
+          "basis": "10x cyclical, 16x mature, or 22x growth-software cross-check with \u00b12x scenario spread; not a peer claim",
+          "confidence": "low",
+          "scenario": "base",
+          "period": "End of forecast year 5",
+          "overridden": false
+        },
+        {
+          "name": "tax_rate",
+          "value": 0.21,
+          "unit": "decimal",
+          "source": "historical_company_data_or_fallback",
+          "basis": "latest usable effective tax rate; explicit 21% fallback",
+          "confidence": "medium",
+          "scenario": "base",
+          "period": "Latest fiscal year",
+          "overridden": false
+        }
+      ],
+      "bull": [
+        {
+          "name": "year_1_revenue_growth",
+          "value": 0.12,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "mid-cycle revenue growth and normalized historical operating economics; peak results are not perpetuated",
+          "confidence": "medium",
+          "scenario": "bull",
+          "period": "Forecast year 1",
+          "overridden": false
+        },
+        {
+          "name": "year_5_fcff_margin",
+          "value": 0.19980555555555557,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "current FCFF margin 16.6% blended with normalized historical after-tax operating margin 15.4%",
+          "confidence": "medium",
+          "scenario": "bull",
+          "period": "Forecast year 5",
+          "overridden": false
+        },
+        {
+          "name": "wacc",
+          "value": 0.07400000000000001,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "capital-structure-weighted cost of equity and after-tax debt; bounded to 5.5%\u201318%",
+          "confidence": "high",
+          "scenario": "bull",
+          "period": "Five-year forecast and terminal value",
+          "overridden": false
+        },
+        {
+          "name": "terminal_growth",
+          "value": 0.030000000000000002,
+          "unit": "decimal",
+          "source": "historical_company_data_and_model_policy",
+          "basis": "2.5% mature nominal-growth default with \u00b10.5 percentage-point scenario spread; bounded below WACC",
+          "confidence": "medium",
+          "scenario": "bull",
+          "period": "Post-year-5 perpetuity",
+          "overridden": false
+        },
+        {
+          "name": "annual_dilution",
+          "value": 0,
+          "unit": "decimal",
+          "source": "company_type_policy",
+          "basis": "0.5% base for growth software and 0.1% for other supported companies; bear/bull cases adjust dilution",
+          "confidence": "low",
+          "scenario": "bull",
+          "period": "Annual through forecast",
+          "overridden": false
+        },
+        {
+          "name": "exit_ev_fcff_multiple",
+          "value": 12.0,
+          "unit": "multiple",
+          "source": "company_type_policy",
+          "basis": "10x cyclical, 16x mature, or 22x growth-software cross-check with \u00b12x scenario spread; not a peer claim",
+          "confidence": "low",
+          "scenario": "bull",
+          "period": "End of forecast year 5",
+          "overridden": false
+        },
+        {
+          "name": "tax_rate",
+          "value": 0.21,
+          "unit": "decimal",
+          "source": "historical_company_data_or_fallback",
+          "basis": "latest usable effective tax rate; explicit 21% fallback",
+          "confidence": "medium",
+          "scenario": "bull",
+          "period": "Latest fiscal year",
+          "overridden": false
+        }
+      ],
+      "policies": {
+        "capex_intensity": {
+          "value": "embedded_in_fcff_margin",
+          "source": "historical_company_cash_flow",
+          "basis": "forecast FCFF margins normalize observed after-tax operating cash economics, depreciation, and capex",
+          "confidence": "medium",
+          "period": "Latest fiscal year"
+        },
+        "working_capital": {
+          "value": "embedded_in_fcff_margin",
+          "source": "historical_company_cash_flow",
+          "basis": "no separate working-capital release is invented",
+          "confidence": "low",
+          "period": "Forecast annual"
+        },
+        "stock_based_compensation": {
+          "value": "accounting-fcff",
+          "source": "historical_company_cash_flow_and_company_type_policy",
+          "basis": "Added back to accounting FCFF; economic cost reflected through dilution",
+          "confidence": "medium",
+          "period": "Forecast annual"
+        }
+      }
+    },
+    "discount_rate": {
+      "risk_free_rate": 0.04,
+      "risk_free_source": "fixture",
+      "equity_risk_premium": 0.045,
+      "erp_source": "fixture",
+      "beta": 1.0,
+      "beta_source": "fixture",
+      "cost_of_equity": 0.085,
+      "pre_tax_cost_of_debt": 0.055,
+      "after_tax_cost_of_debt": 0.04345,
+      "debt_weight": 0.03,
+      "equity_weight": 0.97,
+      "wacc": 0.084,
+      "confidence": "high",
+      "fallbacks": []
+    },
+    "scenarios": {
+      "bear": {
+        "forecast": [
+          {
+            "year": 1,
+            "period": "Forecast year 1",
+            "revenue_growth": 0.04,
+            "revenue": 1040.0,
+            "fcff_margin": 0.15676111111111113,
+            "fcff": 163.03155555555557,
+            "discount_factor": 1.094,
+            "present_value": 149.02335973999595
+          },
+          {
+            "year": 2,
+            "period": "Forecast year 2",
+            "revenue_growth": 0.0375,
+            "revenue": 1079.0,
+            "fcff_margin": 0.14752222222222222,
+            "fcff": 159.1764777777778,
+            "discount_factor": 1.1968360000000002,
+            "present_value": 132.99773551077823
+          },
+          {
+            "year": 3,
+            "period": "Forecast year 3",
+            "revenue_growth": 0.035,
+            "revenue": 1116.7649999999999,
+            "fcff_margin": 0.13828333333333334,
+            "fcff": 154.42998674999998,
+            "discount_factor": 1.3093385840000002,
+            "present_value": 117.94503624740044
+          },
+          {
+            "year": 4,
+            "period": "Forecast year 4",
+            "revenue_growth": 0.0325,
+            "revenue": 1153.0598624999998,
+            "fcff_margin": 0.12904444444444443,
+            "fcff": 148.79596936749996,
+            "discount_factor": 1.4324164108960005,
+            "present_value": 103.8775933001393
+          },
+          {
+            "year": 5,
+            "period": "Forecast year 5",
+            "revenue_growth": 0.03,
+            "revenue": 1187.651658375,
+            "fcff_margin": 0.11980555555555555,
+            "fcff": 142.28726673809373,
+            "discount_factor": 1.5670635535202246,
+            "present_value": 90.79865741147643
+          }
+        ],
+        "pv_forecast_fcff": 594.6423822097904,
+        "terminal_value": 1961.2569199034544,
+        "terminal_year_fcff": 145.13301207285562,
+        "pv_terminal_value": 1251.5490616176482,
+        "enterprise_value": 1846.1914438274387,
+        "net_cash_debt_adjustment": 100.0,
+        "other_senior_claims": 0.0,
+        "equity_value": 1946.1914438274387,
+        "diluted_shares": 103.0362166487776,
+        "fair_value_per_share": 18.888421053555135,
+        "exit_multiple": 8.0,
+        "exit_terminal_value": 1138.2981339047499,
+        "exit_enterprise_value": 1321.0316415016018,
+        "exit_fair_value_per_share": 13.791574338812456,
+        "terminal_method_difference": -5.096846714742679,
+        "current_price": 24.0,
+        "upside_downside": -0.2129824561018694
+      },
+      "base": {
+        "forecast": [
+          {
+            "year": 1,
+            "period": "Forecast year 1",
+            "revenue_growth": 0.08,
+            "revenue": 1080.0,
+            "fcff_margin": 0.1647611111111111,
+            "fcff": 177.942,
+            "discount_factor": 1.084,
+            "present_value": 164.1531365313653
+          },
+          {
+            "year": 2,
+            "period": "Forecast year 2",
+            "revenue_growth": 0.06875,
+            "revenue": 1154.25,
+            "fcff_margin": 0.16352222222222224,
+            "fcff": 188.74552500000001,
+            "discount_factor": 1.175056,
+            "present_value": 160.62683395514767
+          },
+          {
+            "year": 3,
+            "period": "Forecast year 3",
+            "revenue_growth": 0.0575,
+            "revenue": 1220.6193750000002,
+            "fcff_margin": 0.16228333333333333,
+            "fcff": 198.08618090625004,
+            "discount_factor": 1.2737607040000003,
+            "present_value": 155.51286853503842
+          },
+          {
+            "year": 4,
+            "period": "Forecast year 4",
+            "revenue_growth": 0.04625,
+            "revenue": 1277.0730210937502,
+            "fcff_margin": 0.16104444444444446,
+            "fcff": 205.6655151970313,
+            "discount_factor": 1.3807566031360003,
+            "present_value": 148.95131750948713
+          },
+          {
+            "year": 5,
+            "period": "Forecast year 5",
+            "revenue_growth": 0.035,
+            "revenue": 1321.7705768320313,
+            "fcff_margin": 0.15980555555555556,
+            "fcff": 211.2262813476299,
+            "discount_factor": 1.4967401577994246,
+            "present_value": 141.1242160150125
+          }
+        ],
+        "pv_forecast_fcff": 770.368372546051,
+        "terminal_value": 3669.609125107129,
+        "terminal_year_fcff": 216.50693838132062,
+        "pv_terminal_value": 2451.7342612777593,
+        "enterprise_value": 3222.1026338238103,
+        "net_cash_debt_adjustment": 100.0,
+        "other_senior_claims": 0.0,
+        "equity_value": 3322.1026338238103,
+        "diluted_shares": 100.50100100050004,
+        "fair_value_per_share": 33.05541836152738,
+        "exit_multiple": 10.0,
+        "exit_terminal_value": 2112.262813476299,
+        "exit_enterprise_value": 2181.610532696176,
+        "exit_fair_value_per_share": 22.70236624493744,
+        "terminal_method_difference": -10.35305211658994,
+        "current_price": 24.0,
+        "upside_downside": 0.37730909839697424
+      },
+      "bull": {
+        "forecast": [
+          {
+            "year": 1,
+            "period": "Forecast year 1",
+            "revenue_growth": 0.12,
+            "revenue": 1120.0,
+            "fcff_margin": 0.17276111111111112,
+            "fcff": 193.49244444444446,
+            "discount_factor": 1.074,
+            "present_value": 180.1605627974343
+          },
+          {
+            "year": 2,
+            "period": "Forecast year 2",
+            "revenue_growth": 0.1,
+            "revenue": 1232.0,
+            "fcff_margin": 0.17952222222222222,
+            "fcff": 221.17137777777776,
+            "discount_factor": 1.1534760000000002,
+            "present_value": 191.74337201448296
+          },
+          {
+            "year": 3,
+            "period": "Forecast year 3",
+            "revenue_growth": 0.08,
+            "revenue": 1330.5600000000002,
+            "fcff_margin": 0.18628333333333336,
+            "fcff": 247.86115200000006,
+            "discount_factor": 1.2388332240000002,
+            "present_value": 200.07628726625111
+          },
+          {
+            "year": 4,
+            "period": "Forecast year 4",
+            "revenue_growth": 0.060000000000000005,
+            "revenue": 1410.3936000000003,
+            "fcff_margin": 0.19304444444444446,
+            "fcff": 272.26864896000006,
+            "discount_factor": 1.3305068825760002,
+            "present_value": 204.63528037739988
+          },
+          {
+            "year": 5,
+            "period": "Forecast year 5",
+            "revenue_growth": 0.04000000000000001,
+            "revenue": 1466.8093440000005,
+            "fcff_margin": 0.19980555555555557,
+            "fcff": 293.0766558720001,
+            "discount_factor": 1.4289643918866244,
+            "present_value": 205.09724212585778
+          }
+        ],
+        "pv_forecast_fcff": 981.712744581426,
+        "terminal_value": 6860.658080640001,
+        "terminal_year_fcff": 301.8689555481601,
+        "pv_terminal_value": 4801.139986128032,
+        "enterprise_value": 5782.852730709458,
+        "net_cash_debt_adjustment": 100.0,
+        "other_senior_claims": 0.0,
+        "equity_value": 5882.852730709458,
+        "diluted_shares": 100.0,
+        "fair_value_per_share": 58.82852730709458,
+        "exit_multiple": 12.0,
+        "exit_terminal_value": 3516.919870464001,
+        "exit_enterprise_value": 3442.8796500917188,
+        "exit_fair_value_per_share": 35.42879650091719,
+        "terminal_method_difference": -23.399730806177395,
+        "current_price": 24.0,
+        "upside_downside": 1.4511886377956076
+      }
+    },
+    "sensitivity": {
+      "wacc": [
+        0.064,
+        0.07400000000000001,
+        0.084,
+        0.094,
+        0.10400000000000001
+      ],
+      "terminal_growth": [
+        0.015000000000000001,
+        0.02,
+        0.025,
+        0.030000000000000002
+      ],
+      "values": [
+        [
+          40.18663586699924,
+          44.35834264027289,
+          49.59907231331003,
+          56.38045145380881
+        ],
+        [
+          33.50315493773406,
+          36.287021119109845,
+          39.638522024526694,
+          43.7511686046186
+        ],
+        [
+          28.757913080118595,
+          30.738981663798448,
+          33.05541836152738,
+          35.80038028063371
+        ],
+        [
+          25.21483563945557,
+          26.69123796511904,
+          28.381272598314332,
+          30.335009035502218
+        ],
+        [
+          22.468669552622103,
+          23.60794154939296,
+          24.891136074236087,
+          26.347426128731044
+        ]
+      ],
+      "validity": [
+        [
+          true,
+          true,
+          true,
+          true
+        ],
+        [
+          true,
+          true,
+          true,
+          true
+        ],
+        [
+          true,
+          true,
+          true,
+          true
+        ],
+        [
+          true,
+          true,
+          true,
+          true
+        ],
+        [
+          true,
+          true,
+          true,
+          true
+        ]
+      ],
+      "calculation": "Each cell is a full DCF recalculation; invalid cells have WACC <= terminal growth."
+    },
+    "reverse_dcf": {
+      "solved_variable": "Year-1 revenue growth (with resulting five-year revenue CAGR)",
+      "fixed_assumptions": {
+        "wacc": 0.084,
+        "year_5_fcff_margin": 0.15980555555555556,
+        "terminal_growth": 0.025,
+        "annual_dilution": 0.001
+      },
+      "search_bounds": {
+        "year_1_revenue_growth": [
+          -0.2,
+          0.5
+        ],
+        "residual_tolerance_per_share": 0.005
+      },
+      "converged": true,
+      "status": "CONVERGED",
+      "required_5y_revenue_cagr": -0.014227703912295664,
+      "required_year_1_revenue_growth": -0.06225585937500001,
+      "required_year_5_fcff_margin": 0.15980555555555556,
+      "terminal_growth": 0.025,
+      "wacc": 0.084,
+      "dilution": 0.001,
+      "residual_per_share": 0.0034545774928176343,
+      "iterations": 11
+    },
+    "cross_checks": {
+      "metrics": {
+        "forward_pe": 12.0,
+        "ev_revenue": 1.1,
+        "ev_ebitda": 18.0,
+        "fcf_yield": 0.0625,
+        "base_case_implied_value": 33.05541836152738
+      },
+      "notes": [],
+      "historical_peer_ranges": "Unavailable from the current verified data feed; no range was invented."
+    },
+    "risks": [
+      "Revenue growth may decelerate faster than the scenario path.",
+      "FCFF-margin convergence may stall; working-capital and capital-intensity needs may exceed the normalized margin.",
+      "Stock-based compensation and dilution may exceed the explicit annual dilution assumption.",
+      "A higher WACC or lower terminal growth materially reduces present value.",
+      "Cyclical normalization may still overstate mid-cycle economics."
+    ],
+    "fair_value_drivers": {
+      "raise": [
+        "higher sustained revenue growth",
+        "stronger FCFF conversion",
+        "lower dilution",
+        "lower WACC",
+        "stronger terminal economics"
+      ],
+      "lower": [
+        "lower growth",
+        "weaker margins",
+        "higher dilution",
+        "higher WACC",
+        "lower terminal growth"
+      ],
+      "highest_sensitivity": "WACC and terminal growth dominate the sensitivity grid; revenue growth and Year-5 FCFF margin dominate operating value."
+    },
+    "final_interpretation": {
+      "bear_to_bull_range": [
+        18.888421053555135,
+        58.82852730709458
+      ],
+      "base_fair_value": 33.05541836152738,
+      "text": "The explicit scenarios produce a fair-value range of $18.89\u2013$58.83 per share, with a $33.06 base-case estimate. This is a research estimate, not a recommendation, and is highly sensitive to discount rate, durable cash-flow margin, growth, and dilution."
+    },
+    "validation": {
+      "status": "PASSED",
+      "checks": {
+        "forecast_arithmetic": {
+          "passed": true,
+          "detail": "Explicit forecast PV equals the sum of recalculated annual FCFF present values."
+        },
+        "terminal_value": {
+          "passed": true,
+          "detail": "Enterprise value equals explicit forecast PV plus terminal-value PV."
+        },
+        "ev_to_equity_bridge": {
+          "passed": true,
+          "detail": "Equity value equals enterprise value plus cash less debt and other senior claims."
+        },
+        "share_count": {
+          "passed": true,
+          "detail": "Fair value uses a positive, forecast-diluted share count."
+        },
+        "scenario_ordering": {
+          "passed": true,
+          "detail": "Bear <= base <= bull."
+        },
+        "wacc_above_terminal_growth": {
+          "passed": true,
+          "detail": "All scenario and valid sensitivity calculations require WACC > terminal growth."
+        },
+        "reverse_dcf_convergence": {
+          "passed": true,
+          "detail": "CONVERGED"
+        },
+        "period_consistency": {
+          "passed": true,
+          "detail": "Revenue and FCFF both use Latest fiscal year."
+        },
+        "sensitivity_monotonicity": {
+          "passed": true,
+          "detail": "Higher WACC lowers value and higher terminal growth raises value for all valid cells."
+        },
+        "historical_fcff_reconciliation": {
+          "passed": true,
+          "detail": "NOPAT-based and CFO-based FCFF reconcile within tolerance."
+        },
+        "sbc_policy_identified": {
+          "passed": true,
+          "detail": "Selected policy: accounting-fcff."
+        },
+        "sbc_comparable_definitions": {
+          "passed": true,
+          "detail": "Both FCFF routes use the same explicit SBC policy."
+        },
+        "sbc_added_or_deducted_once": {
+          "passed": true,
+          "detail": "Added back to accounting FCFF; economic cost reflected through dilution"
+        },
+        "sbc_dilution_double_count": {
+          "passed": true,
+          "detail": "Accounting FCFF retains SBC and applies forecast dilution once."
+        }
+      },
+      "reasons": []
+    },
+    "internal_validation": {
+      "status": "PASSED",
+      "checks": {
+        "forecast_arithmetic": {
+          "passed": true,
+          "detail": "Explicit forecast PV equals the sum of recalculated annual FCFF present values."
+        },
+        "terminal_value": {
+          "passed": true,
+          "detail": "Enterprise value equals explicit forecast PV plus terminal-value PV."
+        },
+        "ev_to_equity_bridge": {
+          "passed": true,
+          "detail": "Equity value equals enterprise value plus cash less debt and other senior claims."
+        },
+        "share_count": {
+          "passed": true,
+          "detail": "Fair value uses a positive, forecast-diluted share count."
+        },
+        "scenario_ordering": {
+          "passed": true,
+          "detail": "Bear <= base <= bull."
+        },
+        "wacc_above_terminal_growth": {
+          "passed": true,
+          "detail": "All scenario and valid sensitivity calculations require WACC > terminal growth."
+        },
+        "reverse_dcf_convergence": {
+          "passed": true,
+          "detail": "CONVERGED"
+        },
+        "period_consistency": {
+          "passed": true,
+          "detail": "Revenue and FCFF both use Latest fiscal year."
+        },
+        "sensitivity_monotonicity": {
+          "passed": true,
+          "detail": "Higher WACC lowers value and higher terminal growth raises value for all valid cells."
+        },
+        "historical_fcff_reconciliation": {
+          "passed": true,
+          "detail": "NOPAT-based and CFO-based FCFF reconcile within tolerance."
+        },
+        "sbc_policy_identified": {
+          "passed": true,
+          "detail": "Selected policy: accounting-fcff."
+        },
+        "sbc_comparable_definitions": {
+          "passed": true,
+          "detail": "Both FCFF routes use the same explicit SBC policy."
+        },
+        "sbc_added_or_deducted_once": {
+          "passed": true,
+          "detail": "Added back to accounting FCFF; economic cost reflected through dilution"
+        },
+        "sbc_dilution_double_count": {
+          "passed": true,
+          "detail": "Accounting FCFF retains SBC and applies forecast dilution once."
+        }
+      },
+      "reasons": []
+    },
+    "fallback": {}
+  },
+  "JPM": {
+    "report_type": "intrinsic_valuation",
+    "security_type": "FINANCIAL_INSTITUTION",
+    "company_type": "Financial Institution",
+    "selected_method": "Residual-income or dividend-discount framework required",
+    "company": {
+      "name": "JPMorgan Chase",
+      "ticker": "JPM",
+      "security_type": "FINANCIAL_INSTITUTION",
+      "company_type": "Financial Institution",
+      "valuation_method": "Residual-income or dividend-discount framework required",
+      "as_of": "2026-07-23 12:00 EDT",
+      "current_market_price": 275.0
+    },
+    "valuation_method_selection": {
+      "company_type": "Financial Institution",
+      "selected_framework": "Residual-income or dividend-discount framework required",
+      "routing_evidence": [
+        "deterministic fixture"
+      ]
+    },
+    "data_quality": {
+      "status": "INSUFFICIENT_FOR_FAIR_VALUE",
+      "missing": [
+        "verified book-value, ROE, regulatory-capital, and payout history"
+      ],
+      "reason": "Debt and interest are operating inputs for financial institutions; an industrial-company FCFF DCF would be misleading."
+    },
+    "historical_base": {},
+    "historical_fcff_reconciliation": {},
+    "assumptions": {},
+    "discount_rate": {},
+    "scenarios": {},
+    "sensitivity": {},
+    "reverse_dcf": {},
+    "cross_checks": {},
+    "risks": [],
+    "fair_value_drivers": {},
+    "final_interpretation": {},
+    "validation": {
+      "status": "PROVISIONAL",
+      "checks": {
+        "framework_selection": {
+          "passed": true,
+          "detail": "The unsupported security type was not forced through a conventional company DCF."
+        }
+      },
+      "reasons": [
+        "Debt and interest are operating inputs for financial institutions; an industrial-company FCFF DCF would be misleading."
+      ]
+    },
+    "internal_validation": {
+      "status": "PROVISIONAL",
+      "checks": {
+        "framework_selection": {
+          "passed": true,
+          "detail": "The unsupported security type was not forced through a conventional company DCF."
+        }
+      },
+      "reasons": [
+        "Debt and interest are operating inputs for financial institutions; an industrial-company FCFF DCF would be misleading."
+      ]
+    },
+    "fallback": {
+      "detected_security_type": "FINANCIAL_INSTITUTION",
+      "why_standard_dcf_is_inappropriate": "Debt and interest are operating inputs for financial institutions; an industrial-company FCFF DCF would be misleading.",
+      "required_specialized_framework": "Residual-income or dividend-discount framework",
+      "missing_data": [
+        "verified book-value, ROE, regulatory-capital, and payout history"
+      ],
+      "next_implementation_stage": "Implement Residual-income or dividend-discount framework only after the required verified data is available."
+    }
+  }
+}

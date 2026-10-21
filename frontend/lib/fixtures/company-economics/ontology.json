@@ -1,0 +1,699 @@
+{
+  "archetypes": {
+    "ENTERPRISE_AI_SOFTWARE": {
+      "display_name": "Enterprise AI Platform",
+      "revenue_model_description": "Enterprise software / platform contracts",
+      "economic_structure_steps": [
+        "Customer Acquisition",
+        "Initial Deployment",
+        "Production Adoption",
+        "Expansion Across Organization",
+        "Higher Revenue per Customer"
+      ],
+      "driver_descriptions": [
+        "New Customer Acquisition",
+        "Existing Customer Expansion"
+      ]
+    },
+    "TRADITIONAL_SAAS": {
+      "display_name": "Usage-Based Enterprise Software",
+      "revenue_model_description": "Recurring software subscriptions and usage",
+      "economic_structure_steps": [
+        "Customer Acquisition",
+        "Seat or Usage Adoption",
+        "Retention",
+        "Expansion",
+        "Recurring Revenue"
+      ],
+      "driver_descriptions": [
+        "Subscriber Growth",
+        "Seat Expansion",
+        "Revenue per Account"
+      ]
+    },
+    "FABLESS_SEMICONDUCTOR": {
+      "display_name": "Fabless Semiconductor",
+      "revenue_model_description": "Semiconductor design with outsourced fabrication and packaging",
+      "economic_structure_steps": [
+        "AI / Compute Demand",
+        "Orders",
+        "Foundry / Packaging / Memory Capacity",
+        "Shippable Units \u00d7 ASP",
+        "Revenue"
+      ],
+      "driver_descriptions": [
+        "Unit Growth",
+        "Average Selling Price",
+        "Product Mix"
+      ]
+    },
+    "SEMICONDUCTOR_FOUNDRY": {
+      "display_name": "Semiconductor Foundry",
+      "revenue_model_description": "Contract wafer fabrication",
+      "economic_structure_steps": [
+        "Customer Designs",
+        "Wafer Starts",
+        "Fab Capacity and Utilization",
+        "Node Mix \u00d7 Pricing",
+        "Revenue"
+      ],
+      "driver_descriptions": [
+        "Wafer Volume",
+        "Pricing",
+        "Advanced-Node Mix"
+      ]
+    },
+    "HYPERSCALER_CLOUD_PLATFORM": {
+      "display_name": "Hyperscale Cloud Platform",
+      "revenue_model_description": "Cloud infrastructure and software consumption",
+      "economic_structure_steps": [
+        "Workload Demand",
+        "Compute / Power / Datacenter Capacity",
+        "Deployed Workloads",
+        "Cloud Spend",
+        "Revenue"
+      ],
+      "driver_descriptions": [
+        "Cloud Workloads",
+        "Cloud Spend",
+        "Software Seats"
+      ]
+    },
+    "CONSUMER_PLATFORM": {
+      "display_name": "Consumer Platform",
+      "revenue_model_description": "Consumer engagement monetized through advertising, subscriptions, or transactions",
+      "economic_structure_steps": [
+        "User Acquisition",
+        "Engagement",
+        "Monetizable Inventory",
+        "Revenue per User",
+        "Revenue"
+      ],
+      "driver_descriptions": [
+        "User Growth",
+        "Engagement",
+        "Revenue per User",
+        "Advertising Inventory"
+      ]
+    },
+    "RETAIL_PHYSICAL_NETWORK": {
+      "display_name": "Physical Retail Network",
+      "revenue_model_description": "Warehouse / store sales plus membership economics",
+      "economic_structure_steps": [
+        "Warehouse Expansion",
+        "Sales per Warehouse",
+        "Membership Economics",
+        "Revenue",
+        "Cash Flow"
+      ],
+      "driver_descriptions": [
+        "Warehouse Expansion",
+        "Comparable Sales",
+        "Membership Growth"
+      ]
+    },
+    "BANK": {
+      "display_name": "Diversified Bank",
+      "revenue_model_description": "Spread and fee income on a regulated balance sheet",
+      "economic_structure_steps": [
+        "Deposits / Funding",
+        "Earning Assets \u00d7 Net Interest Spread",
+        "Fee Income",
+        "Revenue",
+        "Credit Costs and Capital",
+        "Earnings"
+      ],
+      "driver_descriptions": [
+        "Earning Assets",
+        "Net Interest Spread",
+        "Fee Income"
+      ]
+    },
+    "INDUSTRIAL": {
+      "display_name": "Industrial Producer",
+      "revenue_model_description": "Physical production and backlog conversion",
+      "economic_structure_steps": [
+        "Demand / Backlog",
+        "Production Capacity",
+        "Volume \u00d7 Pricing \u00d7 Mix",
+        "Revenue",
+        "Cash Conversion"
+      ],
+      "driver_descriptions": [
+        "Volume",
+        "Pricing",
+        "Product Mix",
+        "Backlog Conversion"
+      ]
+    },
+    "PHARMA_BIOTECH": {
+      "display_name": "Pharmaceutical / Biotechnology",
+      "revenue_model_description": "Drug portfolio monetized across patients and indications",
+      "economic_structure_steps": [
+        "Pipeline and Approvals",
+        "Manufacturing",
+        "Patient Adoption",
+        "Pricing \u00d7 Portfolio",
+        "Revenue"
+      ],
+      "driver_descriptions": [
+        "Patient Growth",
+        "Pricing",
+        "Drug Portfolio"
+      ]
+    },
+    "COMMODITY_PRODUCER": {
+      "display_name": "Commodity Producer",
+      "revenue_model_description": "Production volume monetized at externally determined prices",
+      "economic_structure_steps": [
+        "Reserves / Resources",
+        "Production Capacity",
+        "Output \u00d7 Realized Price",
+        "Revenue",
+        "Cash Flow"
+      ],
+      "driver_descriptions": [
+        "Production Volume",
+        "Realized Commodity Price"
+      ]
+    },
+    "PAYMENT_NETWORK": {
+      "display_name": "Payment Network",
+      "revenue_model_description": "Payment flows monetized through a take rate",
+      "economic_structure_steps": [
+        "Consumer and Merchant Activity",
+        "Payment Volume",
+        "Network Take Rate",
+        "Revenue",
+        "Operating Cash Flow"
+      ],
+      "driver_descriptions": [
+        "Payment Volume",
+        "Take Rate"
+      ]
+    },
+    "MARKETPLACE_PLATFORM": {
+      "display_name": "Marketplace Platform",
+      "revenue_model_description": "Two-sided marketplace bookings monetized through a take rate",
+      "economic_structure_steps": [
+        "Buyer Demand + Supplier Liquidity",
+        "Gross Bookings",
+        "Take Rate",
+        "Revenue",
+        "Cash Flow"
+      ],
+      "driver_descriptions": [
+        "Gross Bookings",
+        "Take Rate",
+        "Active Users"
+      ]
+    },
+    "UTILITY_INFRASTRUCTURE": {
+      "display_name": "Utility / Infrastructure",
+      "revenue_model_description": "Regulated or contracted infrastructure capacity",
+      "economic_structure_steps": [
+        "Capital Investment",
+        "Approved Capacity / Rate Base",
+        "Utilization \u00d7 Allowed Pricing",
+        "Revenue",
+        "Regulated Return"
+      ],
+      "driver_descriptions": [
+        "Capacity",
+        "Utilization",
+        "Allowed Pricing"
+      ]
+    },
+    "GENERIC_OPERATING_COMPANY": {
+      "display_name": "Operating Company",
+      "revenue_model_description": "Operating revenue from volume, pricing, and mix",
+      "economic_structure_steps": [
+        "Demand",
+        "Volume \u00d7 Pricing \u00d7 Mix",
+        "Revenue",
+        "Margins",
+        "Cash Flow"
+      ],
+      "driver_descriptions": [
+        "Volume",
+        "Pricing",
+        "Product Mix"
+      ]
+    }
+  },
+  "constraints": {
+    "DEPLOYMENT_CAPACITY": {
+      "display_name": "Deployment Capacity",
+      "economic_mechanism_steps": [
+        "More Customers",
+        "More Deployments Required",
+        "More Engineering / Deployment Resources",
+        "Potential Human-Capital Bottleneck"
+      ],
+      "why_it_matters": "Implementation resources limit how quickly contracted demand becomes production revenue.",
+      "direct_kpis": [
+        "deployment_time",
+        "deployment_headcount",
+        "deployment_capacity_growth"
+      ]
+    },
+    "SALES_CAPACITY": {
+      "display_name": "Sales Capacity",
+      "economic_mechanism_steps": [
+        "Sales Capacity",
+        "Operating Throughput",
+        "Revenue and Cash Conversion"
+      ],
+      "why_it_matters": "Go-to-market capacity limits customer acquisition and expansion.",
+      "direct_kpis": []
+    },
+    "TALENT": {
+      "display_name": "Talent",
+      "economic_mechanism_steps": [
+        "Talent",
+        "Operating Throughput",
+        "Revenue and Cash Conversion"
+      ],
+      "why_it_matters": "Specialized labor availability limits product and delivery capacity.",
+      "direct_kpis": []
+    },
+    "CUSTOMER_ADOPTION": {
+      "display_name": "Customer Adoption",
+      "economic_mechanism_steps": [
+        "Customer Adoption",
+        "Operating Throughput",
+        "Revenue and Cash Conversion"
+      ],
+      "why_it_matters": "Customer willingness and readiness limit demand conversion.",
+      "direct_kpis": [
+        "customers",
+        "users",
+        "members",
+        "payment_volume",
+        "gross_bookings",
+        "customer_growth",
+        "user_growth",
+        "membership_growth",
+        "transaction_growth",
+        "bookings_growth"
+      ]
+    },
+    "CHURN": {
+      "display_name": "Churn",
+      "economic_mechanism_steps": [
+        "Churn",
+        "Operating Throughput",
+        "Revenue and Cash Conversion"
+      ],
+      "why_it_matters": "Customer losses offset gross additions and expansion.",
+      "direct_kpis": [
+        "net_revenue_retention",
+        "churn"
+      ]
+    },
+    "MARKET_SATURATION": {
+      "display_name": "Market Saturation",
+      "economic_mechanism_steps": [
+        "Market Saturation",
+        "Operating Throughput",
+        "Revenue and Cash Conversion"
+      ],
+      "why_it_matters": "A shrinking pool of incremental customers reduces unit growth.",
+      "direct_kpis": []
+    },
+    "COMPUTE_CAPACITY": {
+      "display_name": "Compute Capacity",
+      "economic_mechanism_steps": [
+        "Compute Capacity",
+        "Operating Throughput",
+        "Revenue and Cash Conversion"
+      ],
+      "why_it_matters": "Available accelerators and compute infrastructure cap workload deployment.",
+      "direct_kpis": [
+        "compute_capacity",
+        "compute_capacity_growth"
+      ]
+    },
+    "POWER_CAPACITY": {
+      "display_name": "Power Capacity",
+      "economic_mechanism_steps": [
+        "Power Capacity",
+        "Operating Throughput",
+        "Revenue and Cash Conversion"
+      ],
+      "why_it_matters": "Electrical interconnection and power availability cap usable infrastructure.",
+      "direct_kpis": [
+        "power_capacity",
+        "power_capacity_growth"
+      ]
+    },
+    "DATACENTER_CAPACITY": {
+      "display_name": "Datacenter Capacity",
+      "economic_mechanism_steps": [
+        "Datacenter Capacity",
+        "Operating Throughput",
+        "Revenue and Cash Conversion"
+      ],
+      "why_it_matters": "Ready facilities cap installed compute and cloud capacity.",
+      "direct_kpis": [
+        "datacenter_capacity",
+        "datacenter_capacity_growth"
+      ]
+    },
+    "FOUNDRY_CAPACITY": {
+      "display_name": "Foundry Capacity",
+      "economic_mechanism_steps": [
+        "Foundry Capacity",
+        "Operating Throughput",
+        "Revenue and Cash Conversion"
+      ],
+      "why_it_matters": "External wafer supply caps shippable chip volume.",
+      "direct_kpis": [
+        "foundry_capacity",
+        "foundry_capacity_growth"
+      ]
+    },
+    "ADVANCED_PACKAGING": {
+      "display_name": "Advanced Packaging / Supply Capacity",
+      "economic_mechanism_steps": [
+        "Accelerator Demand",
+        "Wafer Output",
+        "Advanced Packaging + Memory",
+        "Shippable Systems"
+      ],
+      "why_it_matters": "Packaging throughput caps finished high-performance systems.",
+      "direct_kpis": [
+        "packaging_capacity",
+        "packaging_capacity_growth"
+      ]
+    },
+    "MEMORY_SUPPLY": {
+      "display_name": "Memory Supply",
+      "economic_mechanism_steps": [
+        "Memory Supply",
+        "Operating Throughput",
+        "Revenue and Cash Conversion"
+      ],
+      "why_it_matters": "Specialized memory availability caps complete system shipments.",
+      "direct_kpis": [
+        "memory_supply",
+        "memory_supply_growth"
+      ]
+    },
+    "FAB_CAPACITY": {
+      "display_name": "Fab Capacity",
+      "economic_mechanism_steps": [
+        "Fab Capacity",
+        "Operating Throughput",
+        "Revenue and Cash Conversion"
+      ],
+      "why_it_matters": "Installed fabrication capacity caps wafer output.",
+      "direct_kpis": [
+        "fab_capacity",
+        "fab_capacity_growth",
+        "wafer_volume"
+      ]
+    },
+    "EQUIPMENT_AVAILABILITY": {
+      "display_name": "Equipment Availability",
+      "economic_mechanism_steps": [
+        "Equipment Availability",
+        "Operating Throughput",
+        "Revenue and Cash Conversion"
+      ],
+      "why_it_matters": "Long-lead manufacturing equipment delays capacity additions.",
+      "direct_kpis": []
+    },
+    "CAPITAL_INTENSITY": {
+      "display_name": "Capital Intensity",
+      "economic_mechanism_steps": [
+        "Capital Intensity",
+        "Operating Throughput",
+        "Revenue and Cash Conversion"
+      ],
+      "why_it_matters": "Required investment can absorb cash and slow economic scaling.",
+      "direct_kpis": [
+        "capex"
+      ]
+    },
+    "STORE_EXPANSION": {
+      "display_name": "Productive Warehouse Expansion",
+      "economic_mechanism_steps": [
+        "Target Markets",
+        "Suitable Sites and Permits",
+        "New Warehouses",
+        "Productive Network Growth"
+      ],
+      "why_it_matters": "The pace of productive new locations limits physical network growth.",
+      "direct_kpis": [
+        "store_count",
+        "store_growth"
+      ]
+    },
+    "REAL_ESTATE": {
+      "display_name": "Real Estate",
+      "economic_mechanism_steps": [
+        "Real Estate",
+        "Operating Throughput",
+        "Revenue and Cash Conversion"
+      ],
+      "why_it_matters": "Suitable sites and permitting limit network expansion.",
+      "direct_kpis": []
+    },
+    "LOGISTICS": {
+      "display_name": "Logistics",
+      "economic_mechanism_steps": [
+        "Logistics",
+        "Operating Throughput",
+        "Revenue and Cash Conversion"
+      ],
+      "why_it_matters": "Distribution throughput limits inventory availability and store productivity.",
+      "direct_kpis": [
+        "distribution_capacity",
+        "distribution_capacity_growth"
+      ]
+    },
+    "LABOR_CAPACITY": {
+      "display_name": "Labor Capacity",
+      "economic_mechanism_steps": [
+        "Labor Capacity",
+        "Operating Throughput",
+        "Revenue and Cash Conversion"
+      ],
+      "why_it_matters": "Hiring and productivity limit service or production throughput.",
+      "direct_kpis": []
+    },
+    "DEPOSITS": {
+      "display_name": "Deposit Funding",
+      "economic_mechanism_steps": [
+        "Customer Deposits",
+        "Stable Funding",
+        "Earning Assets",
+        "Spread and Fee Economics"
+      ],
+      "why_it_matters": "Stable deposits limit balance-sheet funding capacity.",
+      "direct_kpis": [
+        "deposits",
+        "deposit_growth"
+      ]
+    },
+    "FUNDING_COST": {
+      "display_name": "Funding Cost",
+      "economic_mechanism_steps": [
+        "Funding Cost",
+        "Operating Throughput",
+        "Revenue and Cash Conversion"
+      ],
+      "why_it_matters": "The cost of funding compresses spread economics.",
+      "direct_kpis": [
+        "net_interest_margin",
+        "funding_cost"
+      ]
+    },
+    "REGULATORY_CAPITAL": {
+      "display_name": "Regulatory Capital",
+      "economic_mechanism_steps": [
+        "Regulatory Capital",
+        "Operating Throughput",
+        "Revenue and Cash Conversion"
+      ],
+      "why_it_matters": "Capital requirements cap risk-weighted asset growth and distributions.",
+      "direct_kpis": [
+        "cet1_ratio"
+      ]
+    },
+    "CREDIT_QUALITY": {
+      "display_name": "Credit Quality",
+      "economic_mechanism_steps": [
+        "Credit Quality",
+        "Operating Throughput",
+        "Revenue and Cash Conversion"
+      ],
+      "why_it_matters": "Losses consume earnings and capital as underwriting weakens.",
+      "direct_kpis": [
+        "charge_offs"
+      ]
+    },
+    "BACKLOG_EXECUTION": {
+      "display_name": "Backlog Execution",
+      "economic_mechanism_steps": [
+        "Backlog Execution",
+        "Operating Throughput",
+        "Revenue and Cash Conversion"
+      ],
+      "why_it_matters": "Operational throughput limits conversion of orders into revenue and cash.",
+      "direct_kpis": [
+        "backlog",
+        "backlog_growth"
+      ]
+    },
+    "PRODUCTION_CAPACITY": {
+      "display_name": "Production Capacity",
+      "economic_mechanism_steps": [
+        "Production Capacity",
+        "Operating Throughput",
+        "Revenue and Cash Conversion"
+      ],
+      "why_it_matters": "Installed productive capacity caps physical output.",
+      "direct_kpis": [
+        "production_volume",
+        "production_growth",
+        "production_capacity_growth"
+      ]
+    },
+    "RAW_MATERIALS": {
+      "display_name": "Raw Materials",
+      "economic_mechanism_steps": [
+        "Raw Materials",
+        "Operating Throughput",
+        "Revenue and Cash Conversion"
+      ],
+      "why_it_matters": "Input availability and cost limit production and margins.",
+      "direct_kpis": []
+    },
+    "PIPELINE": {
+      "display_name": "Pipeline",
+      "economic_mechanism_steps": [
+        "Pipeline",
+        "Operating Throughput",
+        "Revenue and Cash Conversion"
+      ],
+      "why_it_matters": "Future growth depends on successful product or drug development.",
+      "direct_kpis": [
+        "pipeline_milestones"
+      ]
+    },
+    "PATENT_EXPIRY": {
+      "display_name": "Patent Expiry",
+      "economic_mechanism_steps": [
+        "Patent Expiry",
+        "Operating Throughput",
+        "Revenue and Cash Conversion"
+      ],
+      "why_it_matters": "Loss of exclusivity exposes revenue to substitution.",
+      "direct_kpis": [
+        "patent_expiry"
+      ]
+    },
+    "REGULATORY_APPROVAL": {
+      "display_name": "Regulatory Approval",
+      "economic_mechanism_steps": [
+        "Regulatory Approval",
+        "Operating Throughput",
+        "Revenue and Cash Conversion"
+      ],
+      "why_it_matters": "Approval and rule constraints limit launch, pricing, or participation.",
+      "direct_kpis": [
+        "regulatory_milestones"
+      ]
+    },
+    "MANUFACTURING_CAPACITY": {
+      "display_name": "Manufacturing Capacity",
+      "economic_mechanism_steps": [
+        "Manufacturing Capacity",
+        "Operating Throughput",
+        "Revenue and Cash Conversion"
+      ],
+      "why_it_matters": "Validated manufacturing limits supply of approved products.",
+      "direct_kpis": [
+        "manufacturing_capacity",
+        "manufacturing_capacity_growth"
+      ]
+    },
+    "CONTENT_SUPPLY": {
+      "display_name": "Content Supply",
+      "economic_mechanism_steps": [
+        "Content Supply",
+        "Operating Throughput",
+        "Revenue and Cash Conversion"
+      ],
+      "why_it_matters": "Content availability limits engagement and monetizable inventory.",
+      "direct_kpis": []
+    },
+    "DISTRIBUTION": {
+      "display_name": "Distribution",
+      "economic_mechanism_steps": [
+        "Distribution",
+        "Operating Throughput",
+        "Revenue and Cash Conversion"
+      ],
+      "why_it_matters": "Channel access limits reach and product availability.",
+      "direct_kpis": []
+    },
+    "INVENTORY": {
+      "display_name": "Inventory",
+      "economic_mechanism_steps": [
+        "Inventory",
+        "Operating Throughput",
+        "Revenue and Cash Conversion"
+      ],
+      "why_it_matters": "Inventory imbalance can signal demand mismatch or constrain fulfillment.",
+      "direct_kpis": [
+        "inventory"
+      ]
+    },
+    "CUSTOMER_CONCENTRATION": {
+      "display_name": "Customer Concentration",
+      "economic_mechanism_steps": [
+        "Customer Concentration",
+        "Operating Throughput",
+        "Revenue and Cash Conversion"
+      ],
+      "why_it_matters": "Reliance on few customers makes growth dependent on their demand.",
+      "direct_kpis": []
+    },
+    "SUPPLIER_CONCENTRATION": {
+      "display_name": "Supplier Concentration",
+      "economic_mechanism_steps": [
+        "Supplier Concentration",
+        "Operating Throughput",
+        "Revenue and Cash Conversion"
+      ],
+      "why_it_matters": "Reliance on few suppliers makes output vulnerable to their capacity.",
+      "direct_kpis": []
+    },
+    "PRICE_ELASTICITY": {
+      "display_name": "Price Elasticity",
+      "economic_mechanism_steps": [
+        "Price Elasticity",
+        "Operating Throughput",
+        "Revenue and Cash Conversion"
+      ],
+      "why_it_matters": "Demand response limits sustainable pricing or take-rate expansion.",
+      "direct_kpis": [
+        "take_rate",
+        "pricing"
+      ]
+    },
+    "UNKNOWN": {
+      "display_name": "Unknown",
+      "economic_mechanism_steps": [
+        "Unknown",
+        "Operating Throughput",
+        "Revenue and Cash Conversion"
+      ],
+      "why_it_matters": "Available evidence does not identify a defensible limiting mechanism.",
+      "direct_kpis": []
+    }
+  }
+}

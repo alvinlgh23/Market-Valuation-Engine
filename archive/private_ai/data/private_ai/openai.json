@@ -1,0 +1,384 @@
+{
+  "slug": "openai",
+  "file": "openai.json",
+  "company": "OpenAI",
+  "aliases": ["chatgpt"],
+  "last_updated": "2026-07-01",
+  "data_confidence": "Medium",
+  "evidence_quality": "Strong public reporting on valuation, revenue run-rate, products, and strategic partners; weak public disclosure on segment economics, retention, and cash.",
+  "sections": {
+    "business_scale": {
+      "Annual Recurring Revenue (ARR)": {
+        "value": "$12B annualized revenue run rate",
+        "status": "Reported",
+        "source": "Reuters / financial press reporting",
+        "source_date": "2025",
+        "confidence": "High",
+        "comment": "Run-rate revenue is used because audited private-company revenue statements are not available."
+      },
+      "Annual Revenue": {
+        "value": "$3.7B in 2024 revenue",
+        "status": "Reported",
+        "source": "The Information / financial press reporting",
+        "source_date": "2024",
+        "confidence": "Medium",
+        "comment": "Historical private revenue is widely referenced but not disclosed through SEC filings."
+      },
+      "Run-rate Revenue": {
+        "value": "$12B",
+        "status": "Reported",
+        "source": "Reuters / financial press reporting",
+        "source_date": "2025",
+        "confidence": "High"
+      },
+      "Revenue Growth": {
+        "value": "Rapid expansion from 2024 revenue base into double-digit-billion annualized run rate",
+        "status": "Estimated",
+        "source": "Manual comparison of reported 2024 revenue and later reported run-rate revenue",
+        "source_date": "2025",
+        "confidence": "Medium",
+        "comment": "The direction is clear; exact year-over-year growth depends on the reporting period."
+      },
+      "Revenue Mix": {
+        "value": "Not publicly disclosed",
+        "status": "Not Public",
+        "source": "OpenAI public disclosures",
+        "source_date": "2026-07-01",
+        "confidence": "N/A",
+        "reason": "OpenAI has not published audited segment-level revenue across consumer subscriptions, enterprise seats, and API usage."
+      },
+      "Enterprise %": {
+        "value": "Not publicly disclosed",
+        "status": "Not Public",
+        "source": "OpenAI public disclosures",
+        "source_date": "2026-07-01",
+        "confidence": "N/A",
+        "reason": "Enterprise revenue is discussed qualitatively, but no percentage of total revenue has been published."
+      },
+      "Consumer %": {
+        "value": "Not publicly disclosed",
+        "status": "Not Public",
+        "source": "OpenAI public disclosures",
+        "source_date": "2026-07-01",
+        "confidence": "N/A",
+        "reason": "ChatGPT consumer revenue is not broken out from enterprise and API revenue."
+      },
+      "API %": {
+        "value": "Not publicly disclosed",
+        "status": "Not Public",
+        "source": "OpenAI public disclosures",
+        "source_date": "2026-07-01",
+        "confidence": "N/A",
+        "reason": "API revenue is not separately published."
+      }
+    },
+    "customer_adoption": {
+      "Major Products": {
+        "value": ["ChatGPT", "ChatGPT Enterprise", "OpenAI API", "GPT model family", "reasoning model family", "Sora"],
+        "status": "Reported",
+        "source": "OpenAI product announcements",
+        "source_date": "2024-2026",
+        "confidence": "High"
+      },
+      "Major Customers": {
+        "value": "Enterprise, developer, government, and platform customers disclosed selectively",
+        "status": "Reported",
+        "source": "OpenAI customer announcements and case studies",
+        "source_date": "2024-2026",
+        "confidence": "Medium",
+        "comment": "Customer list is selective rather than a complete customer census."
+      },
+      "Monthly Active Users": {
+        "value": "Hundreds of millions of weekly users reported for ChatGPT",
+        "status": "Reported",
+        "source": "OpenAI public statements / public interviews",
+        "source_date": "2025",
+        "confidence": "Medium",
+        "comment": "OpenAI usually reports weekly active users rather than audited monthly active users."
+      },
+      "Developer Adoption": {
+        "value": "Broad API and developer ecosystem adoption",
+        "status": "Reported",
+        "source": "OpenAI developer platform disclosures",
+        "source_date": "2024-2026",
+        "confidence": "High"
+      },
+      "Enterprise Seats": {
+        "value": "Millions of business users reported",
+        "status": "Reported",
+        "source": "OpenAI public statements / financial press reporting",
+        "source_date": "2025",
+        "confidence": "Medium"
+      },
+      "Expansion": {
+        "value": "Not publicly disclosed",
+        "status": "Not Public",
+        "source": "OpenAI public disclosures",
+        "source_date": "2026-07-01",
+        "confidence": "N/A",
+        "reason": "Net revenue retention or expansion metrics are not published."
+      },
+      "Retention": {
+        "value": "Not publicly disclosed",
+        "status": "Not Public",
+        "source": "OpenAI public disclosures",
+        "source_date": "2026-07-01",
+        "confidence": "N/A",
+        "reason": "Cohort retention and churn metrics are not published."
+      }
+    },
+    "model_product": {
+      "Current Flagship Models": {
+        "value": "GPT-4o / GPT-4.1 family and o-series reasoning models",
+        "status": "Reported",
+        "source": "OpenAI model announcements",
+        "source_date": "2024-2026",
+        "confidence": "High"
+      },
+      "Reasoning Models": {
+        "value": "o-series reasoning models",
+        "status": "Reported",
+        "source": "OpenAI model announcements",
+        "source_date": "2024-2026",
+        "confidence": "High"
+      },
+      "Coding Models": {
+        "value": "Coding capability delivered through ChatGPT, API, and coding-product integrations",
+        "status": "Reported",
+        "source": "OpenAI product announcements",
+        "source_date": "2024-2026",
+        "confidence": "Medium"
+      },
+      "Multimodal": {
+        "value": "Text, vision, audio, and video generation products disclosed",
+        "status": "Reported",
+        "source": "OpenAI product announcements",
+        "source_date": "2024-2026",
+        "confidence": "High"
+      },
+      "Enterprise Platform": {
+        "value": "ChatGPT Enterprise and API platform",
+        "status": "Reported",
+        "source": "OpenAI product announcements",
+        "source_date": "2023-2026",
+        "confidence": "High"
+      },
+      "Consumer Platform": {
+        "value": "ChatGPT",
+        "status": "Reported",
+        "source": "OpenAI product announcements",
+        "source_date": "2022-2026",
+        "confidence": "High"
+      },
+      "API Position": {
+        "value": "Core frontier API provider",
+        "status": "Industry Estimate",
+        "source": "Manual industry assessment from product availability and developer ecosystem",
+        "source_date": "2026-07-01",
+        "confidence": "Medium"
+      },
+      "Benchmark Leadership": {
+        "value": "Generally treated as frontier; leadership varies by model and benchmark",
+        "status": "Industry Estimate",
+        "source": "Public benchmark releases and model evaluation coverage",
+        "source_date": "2026-07-01",
+        "confidence": "Medium"
+      },
+      "Product Roadmap": {
+        "value": "Assistant, enterprise workflow layer, API platform, multimodal generation, and agentic tooling",
+        "status": "Estimated",
+        "source": "Manual synthesis of product launches and company statements",
+        "source_date": "2026-07-01",
+        "confidence": "Medium"
+      }
+    },
+    "infrastructure": {
+      "Cloud Partners": {
+        "value": "Microsoft Azure; additional infrastructure initiatives reported",
+        "status": "Reported",
+        "source": "Microsoft / OpenAI partnership announcements and financial press reporting",
+        "source_date": "2019-2026",
+        "confidence": "High"
+      },
+      "GPU Partners": {
+        "value": "Nvidia ecosystem exposure through cloud and infrastructure partners",
+        "status": "Industry Estimate",
+        "source": "Industry reporting on frontier AI training infrastructure",
+        "source_date": "2025-2026",
+        "confidence": "Medium"
+      },
+      "Training Infrastructure": {
+        "value": "Large-scale frontier-model training infrastructure",
+        "status": "Reported",
+        "source": "OpenAI / Microsoft infrastructure statements",
+        "source_date": "2024-2026",
+        "confidence": "High"
+      },
+      "Inference Infrastructure": {
+        "value": "Large inference footprint from ChatGPT and API usage",
+        "status": "Estimated",
+        "source": "Manual estimate from product usage and API distribution",
+        "source_date": "2026-07-01",
+        "confidence": "Medium"
+      },
+      "Estimated Compute Spending": {
+        "value": "Multi-billion-dollar annual compute and infrastructure commitments",
+        "status": "Estimated",
+        "source": "Financial press reporting and manual infrastructure assessment",
+        "source_date": "2025-2026",
+        "confidence": "Medium"
+      },
+      "Capex Intensity": {
+        "value": "Substantial and rising",
+        "status": "Industry Estimate",
+        "source": "Manual assessment of training and inference requirements",
+        "source_date": "2026-07-01",
+        "confidence": "Medium"
+      },
+      "Known Infrastructure Investments": {
+        "value": "Large strategic cloud commitments and dedicated AI infrastructure planning reported",
+        "status": "Reported",
+        "source": "Microsoft announcements / financial press reporting",
+        "source_date": "2024-2026",
+        "confidence": "Medium"
+      }
+    },
+    "capital": {
+      "Latest Valuation": {
+        "value": "$300B post-money in 2025 financing",
+        "status": "Reported",
+        "source": "Reuters / financial press reporting",
+        "source_date": "2025",
+        "confidence": "High"
+      },
+      "Previous Valuation": {
+        "value": "$157B in 2024 financing",
+        "status": "Reported",
+        "source": "Reuters / financial press reporting",
+        "source_date": "2024",
+        "confidence": "High"
+      },
+      "Funding History": {
+        "value": "Microsoft strategic investment plus large 2024 and 2025 private financing rounds",
+        "status": "Reported",
+        "source": "Microsoft announcements / Reuters / financial press reporting",
+        "source_date": "2019-2025",
+        "confidence": "High"
+      },
+      "Known Investors": {
+        "value": ["Microsoft", "SoftBank", "Thrive", "Coatue", "Altimeter"],
+        "status": "Reported",
+        "source": "Financial press reporting",
+        "source_date": "2024-2025",
+        "confidence": "Medium"
+      },
+      "Strategic Investors": {
+        "value": ["Microsoft", "SoftBank"],
+        "status": "Reported",
+        "source": "Microsoft announcements / financial press reporting",
+        "source_date": "2019-2025",
+        "confidence": "High"
+      },
+      "Cash": {
+        "value": "Not publicly disclosed",
+        "status": "Not Public",
+        "source": "OpenAI public disclosures",
+        "source_date": "2026-07-01",
+        "confidence": "N/A",
+        "reason": "OpenAI does not publish audited balance-sheet cash."
+      },
+      "Runway": {
+        "value": "Not publicly disclosed",
+        "status": "Not Public",
+        "source": "OpenAI public disclosures",
+        "source_date": "2026-07-01",
+        "confidence": "N/A",
+        "reason": "Cash balance, burn, and committed infrastructure obligations are not disclosed in enough detail to calculate runway."
+      },
+      "Capital Requirements": {
+        "value": "Continued external funding or partner-financed infrastructure likely needed",
+        "status": "Estimated",
+        "source": "Manual assessment from compute intensity and financing history",
+        "source_date": "2026-07-01",
+        "confidence": "Medium"
+      }
+    },
+    "valuation": {
+      "Latest Valuation": {
+        "value": "$300B",
+        "status": "Reported",
+        "source": "Reuters / financial press reporting",
+        "source_date": "2025",
+        "confidence": "High"
+      },
+      "ARR Multiple": {
+        "value": "Approximately 25.0x",
+        "status": "Estimated",
+        "source": "Manual calculation from reported $300B valuation and $12B run-rate revenue",
+        "source_date": "2025",
+        "confidence": "Medium"
+      },
+      "Revenue Multiple": {
+        "value": "Approximately 81.1x 2024 revenue",
+        "status": "Estimated",
+        "source": "Manual calculation from reported $300B valuation and reported 2024 revenue",
+        "source_date": "2025",
+        "confidence": "Medium"
+      }
+    },
+    "competition": {
+      "Major Competitors": {
+        "value": ["Anthropic", "Google DeepMind", "Meta AI", "xAI", "Mistral", "Cohere", "Perplexity"],
+        "status": "Industry Estimate",
+        "source": "Manual competitive mapping",
+        "source_date": "2026-07-01",
+        "confidence": "High"
+      },
+      "Current Advantages": {
+        "value": ["Consumer distribution through ChatGPT", "Developer ecosystem", "Enterprise mindshare", "Frontier-model brand recognition"],
+        "status": "Industry Estimate",
+        "source": "Manual assessment from product adoption and public reporting",
+        "source_date": "2026-07-01",
+        "confidence": "Medium"
+      },
+      "Current Weaknesses": {
+        "value": ["Heavy compute dependency", "Complex capital structure", "Governance scrutiny", "Rising competition in coding and enterprise workflows"],
+        "status": "Industry Estimate",
+        "source": "Manual assessment from public reporting",
+        "source_date": "2026-07-01",
+        "confidence": "Medium"
+      },
+      "Strategic Position": {
+        "value": "Broadest private AI platform across consumer, enterprise, developer API, and infrastructure ambitions",
+        "status": "Industry Estimate",
+        "source": "Manual competitive assessment",
+        "source_date": "2026-07-01",
+        "confidence": "Medium"
+      }
+    }
+  },
+  "interpretations": {
+    "business_scale": "OpenAI has reached scale beyond a conventional venture-stage software company, but revenue quality cannot be evaluated like a public company because segment mix is not disclosed.",
+    "customer_adoption": "Adoption appears multi-channel: consumer distribution creates habit, enterprise seats create recurring revenue potential, and API usage embeds OpenAI into developer workflows.",
+    "model_product": "The market values OpenAI as both a model lab and a distribution layer. Its key edge is the combination of frontier perception, consumer habit formation, enterprise conversion, and developer ecosystem gravity.",
+    "infrastructure": "Growth is structurally tied to compute availability. Revenue scale is meaningful, but model leadership and inference delivery require infrastructure commitments that can absorb large amounts of capital.",
+    "capital": "Expansion appears funding-dependent because infrastructure commitments scale faster than normal SaaS operating costs.",
+    "valuation": "Current valuation assumes continued enterprise expansion, durable consumer engagement, sustained frontier-model leadership, and infrastructure scaling without permanently impairing unit economics.",
+    "competition": "OpenAI is differentiated by distribution breadth, but competition is rising across enterprise trust, open models, coding workflows, and real-time data integrations."
+  },
+  "strengthen": [
+    "Enterprise ARR accelerates with disclosed retention and expansion evidence",
+    "API usage expands without visible gross-margin deterioration",
+    "Inference cost per query declines",
+    "Compute partnerships expand on terms that preserve strategic flexibility",
+    "Major enterprise or government wins become recurring revenue rather than pilots"
+  ],
+  "weaken": [
+    "Revenue growth slows from the current run-rate trajectory",
+    "Enterprise churn rises or usage-based expansion weakens",
+    "Capital requirements increase faster than revenue",
+    "Model competitiveness declines on reasoning, coding, or multimodal benchmarks",
+    "Regulatory or governance restrictions limit product deployment"
+  ],
+  "final_interpretation": "OpenAI continues to demonstrate unusual scale for a private AI company, supported by consumer distribution, enterprise conversion, API adoption, and frontier-model perception. The valuation embeds expectations for continued execution across enterprise adoption, model performance, and infrastructure scaling. The primary risks remain compute intensity, capital requirements, governance complexity, and intensifying competition."
+}

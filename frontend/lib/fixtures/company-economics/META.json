@@ -1,0 +1,844 @@
+{
+  "company_economics": {
+    "company": {
+      "name": "Meta Platforms",
+      "ticker": "META",
+      "as_of": "2025-12-31",
+      "security_type": "OPERATING_COMPANY",
+      "exchange": "",
+      "currency": "",
+      "country": "",
+      "quote_type": "",
+      "sector": "Communication Services",
+      "industry": "Internet Content & Information"
+    },
+    "classification": {
+      "primary_archetype": "CONSUMER_PLATFORM",
+      "secondary_archetypes": [],
+      "classification_confidence": "HIGH",
+      "routing_evidence": [
+        "business description contains 'social network'",
+        "business description contains 'social media'",
+        "business description contains 'digital advertising'",
+        "business description contains 'family of apps'",
+        "industry matches 'internet content & information'"
+      ],
+      "routing_evidence_ids": [
+        "E3",
+        "E4",
+        "E5",
+        "E6",
+        "E8",
+        "E13"
+      ],
+      "override_used": false,
+      "override_required": false,
+      "override_changes": []
+    },
+    "core_economic_question": "Can Meta Platforms deepen engagement and monetization without user adoption or content supply becoming binding?",
+    "growth_architecture": {
+      "primary_growth_equation": "Revenue \u2248 Users \u00d7 Engagement \u00d7 Monetization",
+      "primary_driver": {
+        "primitive": "USERS",
+        "importance": "PRIMARY",
+        "observability": "DIRECT",
+        "evidence_ids": [
+          "E16",
+          "E17"
+        ],
+        "confidence": "HIGH"
+      },
+      "secondary_drivers": [
+        {
+          "primitive": "ENGAGEMENT",
+          "importance": "SECONDARY",
+          "observability": "DIRECT",
+          "evidence_ids": [
+            "E18"
+          ],
+          "confidence": "MODERATE"
+        },
+        {
+          "primitive": "ARPU",
+          "importance": "SECONDARY",
+          "observability": "INDIRECT",
+          "evidence_ids": [],
+          "confidence": "LOW"
+        },
+        {
+          "primitive": "AD_INVENTORY",
+          "importance": "SECONDARY",
+          "observability": "INDIRECT",
+          "evidence_ids": [],
+          "confidence": "LOW"
+        }
+      ],
+      "direct_evidence_ids": [
+        "E16",
+        "E17",
+        "E18"
+      ],
+      "proxy_evidence_ids": [
+        "E7"
+      ],
+      "confidence": "MODERATE"
+    },
+    "constraints": {
+      "primary_constraint": {
+        "constraint": "CUSTOMER_ADOPTION",
+        "economic_mechanism": "Customer willingness and readiness limit demand conversion.",
+        "supporting_evidence_ids": [
+          "E7",
+          "E16",
+          "E17"
+        ],
+        "contrary_evidence_ids": [],
+        "direction": "EASING",
+        "confidence": "HIGH",
+        "data_gaps": [],
+        "inference": "Customer Adoption appears easing based on the cited operating and scaling evidence.",
+        "inference_evidence_ids": [
+          "E7",
+          "E16",
+          "E17"
+        ]
+      },
+      "secondary_constraints": [],
+      "candidate_constraints": [
+        "CONTENT_SUPPLY",
+        "REGULATORY_APPROVAL",
+        "PRICE_ELASTICITY"
+      ],
+      "unknown_constraints": [],
+      "constraint_interactions": [],
+      "previous_primary_constraint": "UNAVAILABLE",
+      "current_primary_constraint": "CUSTOMER_ADOPTION",
+      "constraint_transition": "UNAVAILABLE",
+      "transition_confidence": "INSUFFICIENT",
+      "transition_evidence_ids": []
+    },
+    "scaling_economics": {
+      "metrics": [
+        {
+          "name": "incremental_operating_margin",
+          "value": 0.68,
+          "unit": "decimal",
+          "current_period": "FY2025 vs FY2024",
+          "comparison_period": "Prior comparable period",
+          "interpretation": "Change in operating income divided by positive change in revenue",
+          "evidence_id": "E20"
+        },
+        {
+          "name": "revenue_per_employee",
+          "value": 2.4050632911392404,
+          "unit": "currency/employee",
+          "current_period": "FY2025 vs FY2024",
+          "comparison_period": "Prior comparable period",
+          "interpretation": "Revenue generated per employee",
+          "evidence_id": "E21"
+        }
+      ],
+      "interpretation": "Available archetype-relevant metrics indicate improving scaling.",
+      "confidence": "MODERATE"
+    },
+    "growth_sustainability": {
+      "current_revenue_growth": 0.152,
+      "primary_growth_engine": "USERS",
+      "primary_constraint": "CUSTOMER_ADOPTION",
+      "constraint_direction": "EASING",
+      "scaling_structure": "Available archetype-relevant metrics indicate improving scaling.",
+      "supporting_evidence_ids": [
+        "E16",
+        "E17",
+        "E18",
+        "E7",
+        "E20",
+        "E21"
+      ],
+      "contrary_evidence_ids": [],
+      "interpretation": "Current evidence supports continued growth because the observed growth engine remains active and the identified constraint is not tightening; maintaining the rate still requires the cited drivers to persist.",
+      "confidence": "MODERATE"
+    },
+    "falsification_conditions": [
+      {
+        "condition": "Engagement weakens",
+        "observable_metric": "engagement",
+        "rationale": "This would weaken the Revenue \u2248 Users \u00d7 Engagement \u00d7 Monetization growth mechanism or its cash conversion.",
+        "evidence_ids": [
+          "E16",
+          "E17",
+          "E18",
+          "E7"
+        ]
+      },
+      {
+        "condition": "ARPU growth masks user contraction",
+        "observable_metric": "ARPU",
+        "rationale": "This would weaken the Revenue \u2248 Users \u00d7 Engagement \u00d7 Monetization growth mechanism or its cash conversion.",
+        "evidence_ids": [
+          "E16",
+          "E17",
+          "E18",
+          "E7"
+        ]
+      }
+    ],
+    "financial_translation": {
+      "revenue_forecast": {
+        "state": "POSITIVE",
+        "reason": "Current evidence supports continued growth because the observed growth engine remains active and the identified constraint is not tightening; maintaining the rate still requires the cited drivers to persist.",
+        "evidence_ids": [
+          "E16",
+          "E17",
+          "E18",
+          "E7",
+          "E20",
+          "E21"
+        ]
+      },
+      "margin": {
+        "state": "POSITIVE",
+        "reason": "Change in operating income divided by positive change in revenue",
+        "evidence_ids": [
+          "E20"
+        ]
+      },
+      "capital_intensity": {
+        "state": "INSUFFICIENT_EVIDENCE",
+        "reason": "Comparable capex growth is unavailable.",
+        "evidence_ids": []
+      },
+      "fcff_conversion": {
+        "state": "INSUFFICIENT_EVIDENCE",
+        "reason": "Incremental FCF margin is unavailable.",
+        "evidence_ids": []
+      }
+    },
+    "valuation_assumption_review": {
+      "reviews": [
+        {
+          "assumption": "revenue_growth",
+          "dcf_value": 0.1368,
+          "state": "SUPPORTED",
+          "reason": "DCF Year-1 growth of 13.7% is compared with observed growth of 15.2%; Company Economics does not change it.",
+          "evidence_ids": [
+            "E16",
+            "E17",
+            "E18",
+            "E7"
+          ]
+        },
+        {
+          "assumption": "fcff_margin",
+          "dcf_value": 0.341,
+          "state": "SUPPORTED",
+          "reason": "DCF normalized FCFF margin of 34.1% is compared with observed FCFF margin of 32.1%; no mutation occurs.",
+          "evidence_ids": [
+            "E16",
+            "E17",
+            "E18",
+            "E7"
+          ]
+        }
+      ],
+      "mutates_dcf_inputs": false
+    },
+    "market_expectations_comparison": {
+      "state": "ROUGHLY_CONSISTENT",
+      "market_implied_revenue_cagr": 0.1064,
+      "market_implied_fcff_margin": 0.341,
+      "observed_economics": "Current evidence supports continued growth because the observed growth engine remains active and the identified constraint is not tightening; maintaining the rate still requires the cited drivers to persist.",
+      "reason": "Market-implied five-year growth of 10.6% is compared with observed growth of 15.2% and the diagnosed scaling structure.",
+      "evidence_ids": [
+        "E16",
+        "E17",
+        "E18",
+        "E7"
+      ]
+    },
+    "data_gaps": [
+      {
+        "missing_field": "arpu",
+        "related_driver": "ARPU",
+        "related_constraint": null,
+        "why_it_matters": "Direct observation would confirm the growth equation component.",
+        "confidence_impact": "Driver confidence remains LOW.",
+        "fallback_proxy_used": "revenue growth"
+      },
+      {
+        "missing_field": "ad_inventory",
+        "related_driver": "AD_INVENTORY",
+        "related_constraint": null,
+        "why_it_matters": "Direct observation would confirm the growth equation component.",
+        "confidence_impact": "Driver confidence remains LOW.",
+        "fallback_proxy_used": "revenue growth"
+      }
+    ],
+    "evidence_trace": [
+      {
+        "id": "E1",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "ticker",
+        "statement": "Ticker is reported as META.",
+        "value": "META",
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "security resolution / structured financial provider",
+        "source_type": "structured_data",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E2",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "company_name",
+        "statement": "Company Name is reported as Meta Platforms.",
+        "value": "Meta Platforms",
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "security resolution / structured financial provider",
+        "source_type": "structured_data",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E3",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "sector",
+        "statement": "Sector is reported as Communication Services.",
+        "value": "Communication Services",
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "security resolution / structured financial provider",
+        "source_type": "structured_data",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E4",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "industry",
+        "statement": "Industry is reported as Internet Content & Information.",
+        "value": "Internet Content & Information",
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "security resolution / structured financial provider",
+        "source_type": "structured_data",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E5",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "business_description",
+        "statement": "Business Description is reported as Operates social media and social network products monetized primarily through digital advertising across a family of apps..",
+        "value": "Operates social media and social network products monetized primarily through digital advertising across a family of apps.",
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "security resolution / structured financial provider",
+        "source_type": "structured_data",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E6",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "revenue",
+        "statement": "Revenue is reported as 190000.0.",
+        "value": 190000.0,
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E7",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "revenue_growth",
+        "statement": "Revenue Growth is reported as 0.152.",
+        "value": 0.152,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "IMPROVING",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E8",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "gross_margin",
+        "statement": "Gross Margin is reported as 0.82.",
+        "value": 0.82,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E9",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "operating_income",
+        "statement": "Operating Income is reported as 82000.0.",
+        "value": 82000.0,
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E10",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "operating_margin",
+        "statement": "Operating Margin is reported as 0.432.",
+        "value": 0.432,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E11",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "fcf",
+        "statement": "Fcf is reported as 61000.0.",
+        "value": 61000.0,
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E12",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "fcf_margin",
+        "statement": "Fcf Margin is reported as 0.321.",
+        "value": 0.321,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E13",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "capex",
+        "statement": "Capex is reported as 67000.0.",
+        "value": 67000.0,
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E14",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "capex_growth",
+        "statement": "Capex Growth is reported as 0.36.",
+        "value": 0.36,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "IMPROVING",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E15",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "employees",
+        "statement": "Employees is reported as 79000.",
+        "value": 79000,
+        "unit": "count",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E16",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "users",
+        "statement": "Users is reported as 3500.0.",
+        "value": 3500.0,
+        "unit": "count",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E17",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "user_growth",
+        "statement": "User Growth is reported as 0.06.",
+        "value": 0.06,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "IMPROVING",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E18",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "engagement",
+        "statement": "Engagement is reported as 1.04.",
+        "value": 1.04,
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E19",
+        "type": "INFERENCE",
+        "tier": "INDIRECT",
+        "metric": "business_model_classification",
+        "statement": "The supported primary business-model archetype is CONSUMER_PLATFORM.",
+        "value": null,
+        "unit": "",
+        "period": "Current structural profile",
+        "source": "Company Economics deterministic classifier",
+        "source_type": "model",
+        "source_nature": "INFERRED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": [
+          "E3",
+          "E4",
+          "E5",
+          "E6",
+          "E8",
+          "E13"
+        ]
+      },
+      {
+        "id": "E20",
+        "type": "PROXY",
+        "tier": "INDIRECT",
+        "metric": "incremental_operating_margin",
+        "statement": "Incremental Operating Margin is 0.6800.",
+        "value": 0.68,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "calculated from normalized company snapshot",
+        "source_type": "calculation",
+        "source_nature": "CALCULATED",
+        "direction": "UNKNOWN",
+        "confidence": "MODERATE",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E21",
+        "type": "PROXY",
+        "tier": "INDIRECT",
+        "metric": "revenue_per_employee",
+        "statement": "Revenue Per Employee is 2.4051.",
+        "value": 2.4050632911392404,
+        "unit": "currency/employee",
+        "period": "FY2025 vs FY2024",
+        "source": "calculated from normalized company snapshot",
+        "source_type": "calculation",
+        "source_nature": "CALCULATED",
+        "direction": "UNKNOWN",
+        "confidence": "MODERATE",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E22",
+        "type": "INFERENCE",
+        "tier": "INDIRECT",
+        "metric": "customer_adoption_diagnosis",
+        "statement": "Customer Adoption appears easing based on the cited operating and scaling evidence.",
+        "value": null,
+        "unit": "",
+        "period": "Current assessment",
+        "source": "Company Economics deterministic diagnosis",
+        "source_type": "model",
+        "source_nature": "INFERRED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": "CUSTOMER_ADOPTION",
+        "supporting_evidence_ids": [
+          "E7",
+          "E16",
+          "E17"
+        ]
+      },
+      {
+        "id": "E23",
+        "type": "INFERENCE",
+        "tier": "INDIRECT",
+        "metric": "price_elasticity_diagnosis",
+        "statement": "Price Elasticity appears easing based on the cited operating and scaling evidence.",
+        "value": null,
+        "unit": "",
+        "period": "Current assessment",
+        "source": "Company Economics deterministic diagnosis",
+        "source_type": "model",
+        "source_nature": "INFERRED",
+        "direction": "UNKNOWN",
+        "confidence": "LOW",
+        "related_driver": null,
+        "related_constraint": "PRICE_ELASTICITY",
+        "supporting_evidence_ids": [
+          "E7",
+          "E8"
+        ]
+      }
+    ],
+    "economic_graph": {
+      "nodes": [
+        {
+          "id": "revenue",
+          "label": "Revenue",
+          "type": "revenue"
+        },
+        {
+          "id": "users",
+          "label": "Users",
+          "type": "growth_driver"
+        },
+        {
+          "id": "engagement",
+          "label": "Engagement",
+          "type": "growth_driver"
+        },
+        {
+          "id": "arpu",
+          "label": "Arpu",
+          "type": "growth_driver"
+        },
+        {
+          "id": "ad_inventory",
+          "label": "Ad Inventory",
+          "type": "growth_driver"
+        },
+        {
+          "id": "customer_adoption",
+          "label": "Customer Adoption",
+          "type": "constraint"
+        },
+        {
+          "id": "margin",
+          "label": "Margin",
+          "type": "margin"
+        },
+        {
+          "id": "cash_flow",
+          "label": "Cash Flow",
+          "type": "cash_flow"
+        },
+        {
+          "id": "valuation",
+          "label": "Valuation Review",
+          "type": "valuation"
+        }
+      ],
+      "edges": [
+        {
+          "from": "users",
+          "to": "revenue",
+          "relationship": "drives"
+        },
+        {
+          "from": "engagement",
+          "to": "revenue",
+          "relationship": "drives"
+        },
+        {
+          "from": "arpu",
+          "to": "revenue",
+          "relationship": "drives"
+        },
+        {
+          "from": "ad_inventory",
+          "to": "revenue",
+          "relationship": "drives"
+        },
+        {
+          "from": "customer_adoption",
+          "to": "revenue",
+          "relationship": "limits"
+        },
+        {
+          "from": "revenue",
+          "to": "margin",
+          "relationship": "supports"
+        },
+        {
+          "from": "margin",
+          "to": "cash_flow",
+          "relationship": "converts_to"
+        },
+        {
+          "from": "cash_flow",
+          "to": "valuation",
+          "relationship": "supports"
+        }
+      ]
+    },
+    "validation": {
+      "status": "PROVISIONAL",
+      "checks": {
+        "company_identity_valid": true,
+        "archetype_valid": true,
+        "classification_evidence_exists": true,
+        "growth_equation_exists": true,
+        "growth_drivers_exist": true,
+        "primary_constraint_supported_or_unknown": true,
+        "evidence_ids_unique": true,
+        "facts_have_sources": true,
+        "facts_have_periods": true,
+        "facts_have_values": true,
+        "proxies_labeled": true,
+        "inferences_cite_evidence": true,
+        "classification_evidence_references_exist": true,
+        "high_confidence_is_justified": true,
+        "data_gaps_explicit": true,
+        "scaling_metrics_valid": true,
+        "falsification_conditions_exist": true,
+        "valuation_review_does_not_mutate": true,
+        "ticker_overrides_are_declarative": true,
+        "json_serializable": true,
+        "graph_node_types_valid": true,
+        "graph_edges_valid": true
+      },
+      "reasons": [
+        "Data gaps or UNKNOWN conclusions remain explicit."
+      ]
+    },
+    "data_quality": {
+      "classification": "HIGH",
+      "constraint_diagnosis": "HIGH",
+      "valuation": "AVAILABLE",
+      "overall": "PARTIAL",
+      "evidence_coverage": {
+        "facts": 18,
+        "proxies": 2,
+        "inferences": 3,
+        "gaps": 2
+      }
+    },
+    "qualitative_research_needed": false,
+    "qualitative_research_reason": "Current structured evidence supports the reported deterministic diagnosis.",
+    "company_economics_schema_version": "1.1"
+  }
+}

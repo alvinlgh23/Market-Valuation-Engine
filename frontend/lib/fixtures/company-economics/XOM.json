@@ -1,0 +1,800 @@
+{
+  "company_economics": {
+    "company": {
+      "name": "Exxon Mobil",
+      "ticker": "XOM",
+      "as_of": "2025-12-31",
+      "security_type": "OPERATING_COMPANY",
+      "exchange": "",
+      "currency": "",
+      "country": "",
+      "quote_type": "",
+      "sector": "Energy",
+      "industry": "Oil & Gas Integrated"
+    },
+    "classification": {
+      "primary_archetype": "COMMODITY_PRODUCER",
+      "secondary_archetypes": [],
+      "classification_confidence": "HIGH",
+      "routing_evidence": [
+        "business description contains 'oil and gas'",
+        "business description contains 'commodity producer'",
+        "industry matches 'oil & gas integrated'",
+        "sector 'Energy' is consistent with the archetype",
+        "declarative company routing preference"
+      ],
+      "routing_evidence_ids": [
+        "E3",
+        "E4",
+        "E5",
+        "E6",
+        "E8",
+        "E13"
+      ],
+      "override_used": true,
+      "override_required": false,
+      "override_changes": [
+        "preferred_archetype: COMMODITY_PRODUCER -> COMMODITY_PRODUCER",
+        "constraint_priority: PRODUCTION_CAPACITY, CAPITAL_INTENSITY"
+      ]
+    },
+    "core_economic_question": "Can Exxon Mobil expand production and cash generation without costs and capital requirements outrunning realized commodity prices?",
+    "growth_architecture": {
+      "primary_growth_equation": "Revenue \u2248 Production Volume \u00d7 Commodity Price",
+      "primary_driver": {
+        "primitive": "PRODUCTION_VOLUME",
+        "importance": "PRIMARY",
+        "observability": "DIRECT",
+        "evidence_ids": [
+          "E16"
+        ],
+        "confidence": "MODERATE"
+      },
+      "secondary_drivers": [
+        {
+          "primitive": "COMMODITY_PRICE",
+          "importance": "SECONDARY",
+          "observability": "DIRECT",
+          "evidence_ids": [
+            "E18"
+          ],
+          "confidence": "MODERATE"
+        }
+      ],
+      "direct_evidence_ids": [
+        "E16",
+        "E18"
+      ],
+      "proxy_evidence_ids": [
+        "E7"
+      ],
+      "confidence": "MODERATE"
+    },
+    "constraints": {
+      "primary_constraint": {
+        "constraint": "PRODUCTION_CAPACITY",
+        "economic_mechanism": "Installed productive capacity caps physical output.",
+        "supporting_evidence_ids": [
+          "E16",
+          "E17"
+        ],
+        "contrary_evidence_ids": [],
+        "direction": "EASING",
+        "confidence": "MODERATE",
+        "data_gaps": [],
+        "inference": "Production Capacity appears easing based on the cited operating and scaling evidence.",
+        "inference_evidence_ids": [
+          "E16",
+          "E17"
+        ]
+      },
+      "secondary_constraints": [],
+      "candidate_constraints": [
+        "CAPITAL_INTENSITY",
+        "RAW_MATERIALS",
+        "REGULATORY_APPROVAL"
+      ],
+      "unknown_constraints": [],
+      "constraint_interactions": [],
+      "previous_primary_constraint": "UNAVAILABLE",
+      "current_primary_constraint": "PRODUCTION_CAPACITY",
+      "constraint_transition": "UNAVAILABLE",
+      "transition_confidence": "INSUFFICIENT",
+      "transition_evidence_ids": []
+    },
+    "scaling_economics": {
+      "metrics": [
+        {
+          "name": "incremental_fcf_margin",
+          "value": -0.6,
+          "unit": "decimal",
+          "current_period": "FY2025 vs FY2024",
+          "comparison_period": "Prior comparable period",
+          "interpretation": "Change in FCF divided by positive change in revenue",
+          "evidence_id": "E20"
+        },
+        {
+          "name": "revenue_per_capex",
+          "value": 12.5,
+          "unit": "multiple",
+          "current_period": "FY2025 vs FY2024",
+          "comparison_period": "Prior comparable period",
+          "interpretation": "Revenue supported per unit of current capex",
+          "evidence_id": "E21"
+        }
+      ],
+      "interpretation": "Available scaling evidence is mixed or level-only; operating leverage needs confirmation.",
+      "confidence": "MODERATE"
+    },
+    "growth_sustainability": {
+      "current_revenue_growth": 0.014,
+      "primary_growth_engine": "PRODUCTION_VOLUME",
+      "primary_constraint": "PRODUCTION_CAPACITY",
+      "constraint_direction": "EASING",
+      "scaling_structure": "Available scaling evidence is mixed or level-only; operating leverage needs confirmation.",
+      "supporting_evidence_ids": [
+        "E16",
+        "E18",
+        "E7",
+        "E17",
+        "E20",
+        "E21"
+      ],
+      "contrary_evidence_ids": [],
+      "interpretation": "Current evidence supports continued growth because the observed growth engine remains active and the identified constraint is not tightening; maintaining the rate still requires the cited drivers to persist.",
+      "confidence": "MODERATE"
+    },
+    "falsification_conditions": [
+      {
+        "condition": "Production falls",
+        "observable_metric": "production",
+        "rationale": "This would weaken the Revenue \u2248 Production Volume \u00d7 Commodity Price growth mechanism or its cash conversion.",
+        "evidence_ids": [
+          "E16",
+          "E18",
+          "E17",
+          "E20"
+        ]
+      },
+      {
+        "condition": "Unit costs rise faster than realized prices",
+        "observable_metric": "unit",
+        "rationale": "This would weaken the Revenue \u2248 Production Volume \u00d7 Commodity Price growth mechanism or its cash conversion.",
+        "evidence_ids": [
+          "E16",
+          "E18",
+          "E17",
+          "E20"
+        ]
+      },
+      {
+        "condition": "Replacement capex rises",
+        "observable_metric": "replacement",
+        "rationale": "This would weaken the Revenue \u2248 Production Volume \u00d7 Commodity Price growth mechanism or its cash conversion.",
+        "evidence_ids": [
+          "E16",
+          "E18",
+          "E17",
+          "E20"
+        ]
+      }
+    ],
+    "financial_translation": {
+      "revenue_forecast": {
+        "state": "POSITIVE",
+        "reason": "Current evidence supports continued growth because the observed growth engine remains active and the identified constraint is not tightening; maintaining the rate still requires the cited drivers to persist.",
+        "evidence_ids": [
+          "E16",
+          "E18",
+          "E7",
+          "E17",
+          "E20",
+          "E21"
+        ]
+      },
+      "margin": {
+        "state": "INSUFFICIENT_EVIDENCE",
+        "reason": "Incremental operating margin is unavailable.",
+        "evidence_ids": []
+      },
+      "capital_intensity": {
+        "state": "INSUFFICIENT_EVIDENCE",
+        "reason": "Comparable capex growth is unavailable.",
+        "evidence_ids": []
+      },
+      "fcff_conversion": {
+        "state": "MIXED",
+        "reason": "Change in FCF divided by positive change in revenue",
+        "evidence_ids": [
+          "E20"
+        ]
+      }
+    },
+    "valuation_assumption_review": {
+      "reviews": [
+        {
+          "assumption": "revenue_growth",
+          "dcf_value": 0.0126,
+          "state": "SUPPORTED",
+          "reason": "DCF Year-1 growth of 1.3% is compared with observed growth of 1.4%; Company Economics does not change it.",
+          "evidence_ids": [
+            "E16",
+            "E18",
+            "E7",
+            "E17"
+          ]
+        },
+        {
+          "assumption": "fcff_margin",
+          "dcf_value": 0.114,
+          "state": "SUPPORTED",
+          "reason": "DCF normalized FCFF margin of 11.4% is compared with observed FCFF margin of 9.4%; no mutation occurs.",
+          "evidence_ids": [
+            "E16",
+            "E18",
+            "E7",
+            "E17"
+          ]
+        }
+      ],
+      "mutates_dcf_inputs": false
+    },
+    "market_expectations_comparison": {
+      "state": "ROUGHLY_CONSISTENT",
+      "market_implied_revenue_cagr": 0.0098,
+      "market_implied_fcff_margin": 0.114,
+      "observed_economics": "Current evidence supports continued growth because the observed growth engine remains active and the identified constraint is not tightening; maintaining the rate still requires the cited drivers to persist.",
+      "reason": "Market-implied five-year growth of 1.0% is compared with observed growth of 1.4% and the diagnosed scaling structure.",
+      "evidence_ids": [
+        "E16",
+        "E18",
+        "E7",
+        "E17"
+      ]
+    },
+    "data_gaps": [],
+    "evidence_trace": [
+      {
+        "id": "E1",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "ticker",
+        "statement": "Ticker is reported as XOM.",
+        "value": "XOM",
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "security resolution / structured financial provider",
+        "source_type": "structured_data",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E2",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "company_name",
+        "statement": "Company Name is reported as Exxon Mobil.",
+        "value": "Exxon Mobil",
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "security resolution / structured financial provider",
+        "source_type": "structured_data",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E3",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "sector",
+        "statement": "Sector is reported as Energy.",
+        "value": "Energy",
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "security resolution / structured financial provider",
+        "source_type": "structured_data",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E4",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "industry",
+        "statement": "Industry is reported as Oil & Gas Integrated.",
+        "value": "Oil & Gas Integrated",
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "security resolution / structured financial provider",
+        "source_type": "structured_data",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E5",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "business_description",
+        "statement": "Business Description is reported as Integrated oil and gas commodity producer..",
+        "value": "Integrated oil and gas commodity producer.",
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "security resolution / structured financial provider",
+        "source_type": "structured_data",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E6",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "revenue",
+        "statement": "Revenue is reported as 350000.0.",
+        "value": 350000.0,
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E7",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "revenue_growth",
+        "statement": "Revenue Growth is reported as 0.014.",
+        "value": 0.014,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "IMPROVING",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E8",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "gross_margin",
+        "statement": "Gross Margin is reported as 0.24.",
+        "value": 0.24,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E9",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "operating_income",
+        "statement": "Operating Income is reported as 52000.0.",
+        "value": 52000.0,
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E10",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "operating_margin",
+        "statement": "Operating Margin is reported as 0.149.",
+        "value": 0.149,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E11",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "fcf",
+        "statement": "Fcf is reported as 33000.0.",
+        "value": 33000.0,
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E12",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "fcf_margin",
+        "statement": "Fcf Margin is reported as 0.094.",
+        "value": 0.094,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E13",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "capex",
+        "statement": "Capex is reported as 28000.0.",
+        "value": 28000.0,
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E14",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "capex_growth",
+        "statement": "Capex Growth is reported as 0.08.",
+        "value": 0.08,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "IMPROVING",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E15",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "employees",
+        "statement": "Employees is reported as 62000.",
+        "value": 62000,
+        "unit": "count",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E16",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "production_volume",
+        "statement": "Production Volume is reported as 4.6.",
+        "value": 4.6,
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E17",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "production_growth",
+        "statement": "Production Growth is reported as 0.09.",
+        "value": 0.09,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "IMPROVING",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E18",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "realized_price",
+        "statement": "Realized Price is reported as 72.0.",
+        "value": 72.0,
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E19",
+        "type": "INFERENCE",
+        "tier": "INDIRECT",
+        "metric": "business_model_classification",
+        "statement": "The supported primary business-model archetype is COMMODITY_PRODUCER.",
+        "value": null,
+        "unit": "",
+        "period": "Current structural profile",
+        "source": "Company Economics deterministic classifier",
+        "source_type": "model",
+        "source_nature": "INFERRED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": [
+          "E3",
+          "E4",
+          "E5",
+          "E6",
+          "E8",
+          "E13"
+        ]
+      },
+      {
+        "id": "E20",
+        "type": "PROXY",
+        "tier": "INDIRECT",
+        "metric": "incremental_fcf_margin",
+        "statement": "Incremental Fcf Margin is -0.6000.",
+        "value": -0.6,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "calculated from normalized company snapshot",
+        "source_type": "calculation",
+        "source_nature": "CALCULATED",
+        "direction": "UNKNOWN",
+        "confidence": "MODERATE",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E21",
+        "type": "PROXY",
+        "tier": "INDIRECT",
+        "metric": "revenue_per_capex",
+        "statement": "Revenue Per Capex is 12.5000.",
+        "value": 12.5,
+        "unit": "multiple",
+        "period": "FY2025 vs FY2024",
+        "source": "calculated from normalized company snapshot",
+        "source_type": "calculation",
+        "source_nature": "CALCULATED",
+        "direction": "UNKNOWN",
+        "confidence": "MODERATE",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E22",
+        "type": "INFERENCE",
+        "tier": "INDIRECT",
+        "metric": "production_capacity_diagnosis",
+        "statement": "Production Capacity appears easing based on the cited operating and scaling evidence.",
+        "value": null,
+        "unit": "",
+        "period": "Current assessment",
+        "source": "Company Economics deterministic diagnosis",
+        "source_type": "model",
+        "source_nature": "INFERRED",
+        "direction": "UNKNOWN",
+        "confidence": "MODERATE",
+        "related_driver": null,
+        "related_constraint": "PRODUCTION_CAPACITY",
+        "supporting_evidence_ids": [
+          "E16",
+          "E17"
+        ]
+      },
+      {
+        "id": "E23",
+        "type": "INFERENCE",
+        "tier": "INDIRECT",
+        "metric": "capital_intensity_diagnosis",
+        "statement": "Capital Intensity appears stable based on the cited operating and scaling evidence.",
+        "value": null,
+        "unit": "",
+        "period": "Current assessment",
+        "source": "Company Economics deterministic diagnosis",
+        "source_type": "model",
+        "source_nature": "INFERRED",
+        "direction": "UNKNOWN",
+        "confidence": "MODERATE",
+        "related_driver": null,
+        "related_constraint": "CAPITAL_INTENSITY",
+        "supporting_evidence_ids": [
+          "E13",
+          "E21"
+        ]
+      }
+    ],
+    "economic_graph": {
+      "nodes": [
+        {
+          "id": "revenue",
+          "label": "Revenue",
+          "type": "revenue"
+        },
+        {
+          "id": "production_volume",
+          "label": "Production Volume",
+          "type": "growth_driver"
+        },
+        {
+          "id": "commodity_price",
+          "label": "Commodity Price",
+          "type": "growth_driver"
+        },
+        {
+          "id": "production_capacity",
+          "label": "Production Capacity",
+          "type": "constraint"
+        },
+        {
+          "id": "margin",
+          "label": "Margin",
+          "type": "margin"
+        },
+        {
+          "id": "cash_flow",
+          "label": "Cash Flow",
+          "type": "cash_flow"
+        },
+        {
+          "id": "valuation",
+          "label": "Valuation Review",
+          "type": "valuation"
+        }
+      ],
+      "edges": [
+        {
+          "from": "production_volume",
+          "to": "revenue",
+          "relationship": "drives"
+        },
+        {
+          "from": "commodity_price",
+          "to": "revenue",
+          "relationship": "drives"
+        },
+        {
+          "from": "production_capacity",
+          "to": "revenue",
+          "relationship": "limits"
+        },
+        {
+          "from": "revenue",
+          "to": "margin",
+          "relationship": "supports"
+        },
+        {
+          "from": "margin",
+          "to": "cash_flow",
+          "relationship": "converts_to"
+        },
+        {
+          "from": "cash_flow",
+          "to": "valuation",
+          "relationship": "supports"
+        }
+      ]
+    },
+    "validation": {
+      "status": "PASSED",
+      "checks": {
+        "company_identity_valid": true,
+        "archetype_valid": true,
+        "classification_evidence_exists": true,
+        "growth_equation_exists": true,
+        "growth_drivers_exist": true,
+        "primary_constraint_supported_or_unknown": true,
+        "evidence_ids_unique": true,
+        "facts_have_sources": true,
+        "facts_have_periods": true,
+        "facts_have_values": true,
+        "proxies_labeled": true,
+        "inferences_cite_evidence": true,
+        "classification_evidence_references_exist": true,
+        "high_confidence_is_justified": true,
+        "data_gaps_explicit": true,
+        "scaling_metrics_valid": true,
+        "falsification_conditions_exist": true,
+        "valuation_review_does_not_mutate": true,
+        "ticker_overrides_are_declarative": true,
+        "json_serializable": true,
+        "graph_node_types_valid": true,
+        "graph_edges_valid": true
+      },
+      "reasons": []
+    },
+    "data_quality": {
+      "classification": "HIGH",
+      "constraint_diagnosis": "MODERATE",
+      "valuation": "AVAILABLE",
+      "overall": "AVAILABLE",
+      "evidence_coverage": {
+        "facts": 18,
+        "proxies": 2,
+        "inferences": 3,
+        "gaps": 0
+      }
+    },
+    "qualitative_research_needed": false,
+    "qualitative_research_reason": "Current structured evidence supports the reported deterministic diagnosis.",
+    "company_economics_schema_version": "1.1"
+  }
+}

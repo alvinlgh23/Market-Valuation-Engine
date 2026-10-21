@@ -1,0 +1,885 @@
+{
+  "company_economics": {
+    "company": {
+      "name": "Eli Lilly",
+      "ticker": "LLY",
+      "as_of": "2025-12-31",
+      "security_type": "OPERATING_COMPANY",
+      "exchange": "",
+      "currency": "",
+      "country": "",
+      "quote_type": "",
+      "sector": "Healthcare",
+      "industry": "Drug Manufacturers"
+    },
+    "classification": {
+      "primary_archetype": "PHARMA_BIOTECH",
+      "secondary_archetypes": [],
+      "classification_confidence": "HIGH",
+      "routing_evidence": [
+        "business description contains 'pharmaceutical'",
+        "business description contains 'drug portfolio'",
+        "industry matches 'drug manufacturers'",
+        "sector 'Healthcare' is consistent with the archetype",
+        "declarative company routing preference"
+      ],
+      "routing_evidence_ids": [
+        "E3",
+        "E4",
+        "E5",
+        "E6",
+        "E8",
+        "E13"
+      ],
+      "override_used": true,
+      "override_required": false,
+      "override_changes": [
+        "preferred_archetype: PHARMA_BIOTECH -> PHARMA_BIOTECH",
+        "constraint_priority: MANUFACTURING_CAPACITY, PIPELINE, REGULATORY_APPROVAL"
+      ]
+    },
+    "core_economic_question": "Can Eli Lilly expand its patient and drug portfolio while pipeline, approval, patent, and manufacturing constraints are managed?",
+    "growth_architecture": {
+      "primary_growth_equation": "Revenue \u2248 Patients \u00d7 Pricing \u00d7 Drug Portfolio",
+      "primary_driver": {
+        "primitive": "PATIENTS",
+        "importance": "PRIMARY",
+        "observability": "DIRECT",
+        "evidence_ids": [
+          "E16",
+          "E17"
+        ],
+        "confidence": "HIGH"
+      },
+      "secondary_drivers": [
+        {
+          "primitive": "PRICING",
+          "importance": "SECONDARY",
+          "observability": "INDIRECT",
+          "evidence_ids": [],
+          "confidence": "LOW"
+        },
+        {
+          "primitive": "DRUG_PORTFOLIO",
+          "importance": "SECONDARY",
+          "observability": "DIRECT",
+          "evidence_ids": [
+            "E18"
+          ],
+          "confidence": "MODERATE"
+        }
+      ],
+      "direct_evidence_ids": [
+        "E16",
+        "E17",
+        "E18"
+      ],
+      "proxy_evidence_ids": [
+        "E7"
+      ],
+      "confidence": "MODERATE"
+    },
+    "constraints": {
+      "primary_constraint": {
+        "constraint": "MANUFACTURING_CAPACITY",
+        "economic_mechanism": "Validated manufacturing limits supply of approved products.",
+        "supporting_evidence_ids": [
+          "E19"
+        ],
+        "contrary_evidence_ids": [],
+        "direction": "EASING",
+        "confidence": "LOW",
+        "data_gaps": [],
+        "inference": "Manufacturing Capacity appears easing based on the cited operating and scaling evidence.",
+        "inference_evidence_ids": [
+          "E19"
+        ]
+      },
+      "secondary_constraints": [],
+      "candidate_constraints": [
+        "PIPELINE",
+        "REGULATORY_APPROVAL",
+        "PATENT_EXPIRY",
+        "DISTRIBUTION"
+      ],
+      "unknown_constraints": [],
+      "constraint_interactions": [],
+      "previous_primary_constraint": "UNAVAILABLE",
+      "current_primary_constraint": "MANUFACTURING_CAPACITY",
+      "constraint_transition": "UNAVAILABLE",
+      "transition_confidence": "INSUFFICIENT",
+      "transition_evidence_ids": []
+    },
+    "scaling_economics": {
+      "metrics": [
+        {
+          "name": "incremental_operating_margin",
+          "value": 0.5714285714285714,
+          "unit": "decimal",
+          "current_period": "FY2025 vs FY2024",
+          "comparison_period": "Prior comparable period",
+          "interpretation": "Change in operating income divided by positive change in revenue",
+          "evidence_id": "E22"
+        },
+        {
+          "name": "revenue_per_employee",
+          "value": 1.2553191489361701,
+          "unit": "currency/employee",
+          "current_period": "FY2025 vs FY2024",
+          "comparison_period": "Prior comparable period",
+          "interpretation": "Revenue generated per employee",
+          "evidence_id": "E23"
+        }
+      ],
+      "interpretation": "Available archetype-relevant metrics indicate improving scaling.",
+      "confidence": "MODERATE"
+    },
+    "growth_sustainability": {
+      "current_revenue_growth": 0.311,
+      "primary_growth_engine": "PATIENTS",
+      "primary_constraint": "MANUFACTURING_CAPACITY",
+      "constraint_direction": "EASING",
+      "scaling_structure": "Available archetype-relevant metrics indicate improving scaling.",
+      "supporting_evidence_ids": [
+        "E16",
+        "E17",
+        "E18",
+        "E7",
+        "E19",
+        "E22",
+        "E23"
+      ],
+      "contrary_evidence_ids": [],
+      "interpretation": "Current evidence supports continued growth because the observed growth engine remains active and the identified constraint is not tightening; maintaining the rate still requires the cited drivers to persist.",
+      "confidence": "MODERATE"
+    },
+    "falsification_conditions": [
+      {
+        "condition": "Pipeline milestones fail",
+        "observable_metric": "pipeline",
+        "rationale": "This would weaken the Revenue \u2248 Patients \u00d7 Pricing \u00d7 Drug Portfolio growth mechanism or its cash conversion.",
+        "evidence_ids": [
+          "E16",
+          "E17",
+          "E18",
+          "E19"
+        ]
+      },
+      {
+        "condition": "Patient growth slows",
+        "observable_metric": "patient",
+        "rationale": "This would weaken the Revenue \u2248 Patients \u00d7 Pricing \u00d7 Drug Portfolio growth mechanism or its cash conversion.",
+        "evidence_ids": [
+          "E16",
+          "E17",
+          "E18",
+          "E19"
+        ]
+      },
+      {
+        "condition": "Loss of exclusivity arrives without replacement",
+        "observable_metric": "loss",
+        "rationale": "This would weaken the Revenue \u2248 Patients \u00d7 Pricing \u00d7 Drug Portfolio growth mechanism or its cash conversion.",
+        "evidence_ids": [
+          "E16",
+          "E17",
+          "E18",
+          "E19"
+        ]
+      }
+    ],
+    "financial_translation": {
+      "revenue_forecast": {
+        "state": "POSITIVE",
+        "reason": "Current evidence supports continued growth because the observed growth engine remains active and the identified constraint is not tightening; maintaining the rate still requires the cited drivers to persist.",
+        "evidence_ids": [
+          "E16",
+          "E17",
+          "E18",
+          "E7",
+          "E19",
+          "E22",
+          "E23"
+        ]
+      },
+      "margin": {
+        "state": "POSITIVE",
+        "reason": "Change in operating income divided by positive change in revenue",
+        "evidence_ids": [
+          "E22"
+        ]
+      },
+      "capital_intensity": {
+        "state": "INSUFFICIENT_EVIDENCE",
+        "reason": "Comparable capex growth is unavailable.",
+        "evidence_ids": []
+      },
+      "fcff_conversion": {
+        "state": "INSUFFICIENT_EVIDENCE",
+        "reason": "Incremental FCF margin is unavailable.",
+        "evidence_ids": []
+      }
+    },
+    "valuation_assumption_review": {
+      "reviews": [
+        {
+          "assumption": "revenue_growth",
+          "dcf_value": 0.2799,
+          "state": "SUPPORTED",
+          "reason": "DCF Year-1 growth of 28.0% is compared with observed growth of 31.1%; Company Economics does not change it.",
+          "evidence_ids": [
+            "E16",
+            "E17",
+            "E18",
+            "E7"
+          ]
+        },
+        {
+          "assumption": "fcff_margin",
+          "dcf_value": 0.24,
+          "state": "SUPPORTED",
+          "reason": "DCF normalized FCFF margin of 24.0% is compared with observed FCFF margin of 22.0%; no mutation occurs.",
+          "evidence_ids": [
+            "E16",
+            "E17",
+            "E18",
+            "E7"
+          ]
+        }
+      ],
+      "mutates_dcf_inputs": false
+    },
+    "market_expectations_comparison": {
+      "state": "BELOW_SUPPORTED_ECONOMICS",
+      "market_implied_revenue_cagr": 0.21769999999999998,
+      "market_implied_fcff_margin": 0.24,
+      "observed_economics": "Current evidence supports continued growth because the observed growth engine remains active and the identified constraint is not tightening; maintaining the rate still requires the cited drivers to persist.",
+      "reason": "Market-implied five-year growth of 21.8% is compared with observed growth of 31.1% and the diagnosed scaling structure.",
+      "evidence_ids": [
+        "E16",
+        "E17",
+        "E18",
+        "E7"
+      ]
+    },
+    "data_gaps": [
+      {
+        "missing_field": "pricing",
+        "related_driver": "PRICING",
+        "related_constraint": null,
+        "why_it_matters": "Direct observation would confirm the growth equation component.",
+        "confidence_impact": "Driver confidence remains LOW.",
+        "fallback_proxy_used": "revenue growth"
+      }
+    ],
+    "evidence_trace": [
+      {
+        "id": "E1",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "ticker",
+        "statement": "Ticker is reported as LLY.",
+        "value": "LLY",
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "security resolution / structured financial provider",
+        "source_type": "structured_data",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E2",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "company_name",
+        "statement": "Company Name is reported as Eli Lilly.",
+        "value": "Eli Lilly",
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "security resolution / structured financial provider",
+        "source_type": "structured_data",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E3",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "sector",
+        "statement": "Sector is reported as Healthcare.",
+        "value": "Healthcare",
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "security resolution / structured financial provider",
+        "source_type": "structured_data",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E4",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "industry",
+        "statement": "Industry is reported as Drug Manufacturers.",
+        "value": "Drug Manufacturers",
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "security resolution / structured financial provider",
+        "source_type": "structured_data",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E5",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "business_description",
+        "statement": "Business Description is reported as Pharmaceutical company developing and manufacturing drug portfolio products..",
+        "value": "Pharmaceutical company developing and manufacturing drug portfolio products.",
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "security resolution / structured financial provider",
+        "source_type": "structured_data",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E6",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "revenue",
+        "statement": "Revenue is reported as 59000.0.",
+        "value": 59000.0,
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E7",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "revenue_growth",
+        "statement": "Revenue Growth is reported as 0.311.",
+        "value": 0.311,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "IMPROVING",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E8",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "gross_margin",
+        "statement": "Gross Margin is reported as 0.82.",
+        "value": 0.82,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E9",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "operating_income",
+        "statement": "Operating Income is reported as 21000.0.",
+        "value": 21000.0,
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E10",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "operating_margin",
+        "statement": "Operating Margin is reported as 0.356.",
+        "value": 0.356,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E11",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "fcf",
+        "statement": "Fcf is reported as 13000.0.",
+        "value": 13000.0,
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E12",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "fcf_margin",
+        "statement": "Fcf Margin is reported as 0.22.",
+        "value": 0.22,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E13",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "capex",
+        "statement": "Capex is reported as 6500.0.",
+        "value": 6500.0,
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E14",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "capex_growth",
+        "statement": "Capex Growth is reported as 0.48.",
+        "value": 0.48,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "IMPROVING",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E15",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "employees",
+        "statement": "Employees is reported as 47000.",
+        "value": 47000,
+        "unit": "count",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E16",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "patients",
+        "statement": "Patients is reported as 100.0.",
+        "value": 100.0,
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E17",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "patient_growth",
+        "statement": "Patient Growth is reported as 0.38.",
+        "value": 0.38,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "IMPROVING",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E18",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "pipeline_milestones",
+        "statement": "Pipeline Milestones is reported as 7.",
+        "value": 7,
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E19",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "manufacturing_capacity_growth",
+        "statement": "Manufacturing Capacity Growth is reported as 0.3.",
+        "value": 0.3,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "IMPROVING",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E20",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "regulatory_milestones",
+        "statement": "Regulatory Milestones is reported as 4.",
+        "value": 4,
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E21",
+        "type": "INFERENCE",
+        "tier": "INDIRECT",
+        "metric": "business_model_classification",
+        "statement": "The supported primary business-model archetype is PHARMA_BIOTECH.",
+        "value": null,
+        "unit": "",
+        "period": "Current structural profile",
+        "source": "Company Economics deterministic classifier",
+        "source_type": "model",
+        "source_nature": "INFERRED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": [
+          "E3",
+          "E4",
+          "E5",
+          "E6",
+          "E8",
+          "E13"
+        ]
+      },
+      {
+        "id": "E22",
+        "type": "PROXY",
+        "tier": "INDIRECT",
+        "metric": "incremental_operating_margin",
+        "statement": "Incremental Operating Margin is 0.5714.",
+        "value": 0.5714285714285714,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "calculated from normalized company snapshot",
+        "source_type": "calculation",
+        "source_nature": "CALCULATED",
+        "direction": "UNKNOWN",
+        "confidence": "MODERATE",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E23",
+        "type": "PROXY",
+        "tier": "INDIRECT",
+        "metric": "revenue_per_employee",
+        "statement": "Revenue Per Employee is 1.2553.",
+        "value": 1.2553191489361701,
+        "unit": "currency/employee",
+        "period": "FY2025 vs FY2024",
+        "source": "calculated from normalized company snapshot",
+        "source_type": "calculation",
+        "source_nature": "CALCULATED",
+        "direction": "UNKNOWN",
+        "confidence": "MODERATE",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E24",
+        "type": "INFERENCE",
+        "tier": "INDIRECT",
+        "metric": "manufacturing_capacity_diagnosis",
+        "statement": "Manufacturing Capacity appears easing based on the cited operating and scaling evidence.",
+        "value": null,
+        "unit": "",
+        "period": "Current assessment",
+        "source": "Company Economics deterministic diagnosis",
+        "source_type": "model",
+        "source_nature": "INFERRED",
+        "direction": "UNKNOWN",
+        "confidence": "LOW",
+        "related_driver": null,
+        "related_constraint": "MANUFACTURING_CAPACITY",
+        "supporting_evidence_ids": [
+          "E19"
+        ]
+      },
+      {
+        "id": "E25",
+        "type": "INFERENCE",
+        "tier": "INDIRECT",
+        "metric": "pipeline_diagnosis",
+        "statement": "Pipeline appears stable based on the cited operating and scaling evidence.",
+        "value": null,
+        "unit": "",
+        "period": "Current assessment",
+        "source": "Company Economics deterministic diagnosis",
+        "source_type": "model",
+        "source_nature": "INFERRED",
+        "direction": "UNKNOWN",
+        "confidence": "LOW",
+        "related_driver": null,
+        "related_constraint": "PIPELINE",
+        "supporting_evidence_ids": [
+          "E18"
+        ]
+      },
+      {
+        "id": "E26",
+        "type": "INFERENCE",
+        "tier": "INDIRECT",
+        "metric": "regulatory_approval_diagnosis",
+        "statement": "Regulatory Approval appears stable based on the cited operating and scaling evidence.",
+        "value": null,
+        "unit": "",
+        "period": "Current assessment",
+        "source": "Company Economics deterministic diagnosis",
+        "source_type": "model",
+        "source_nature": "INFERRED",
+        "direction": "UNKNOWN",
+        "confidence": "LOW",
+        "related_driver": null,
+        "related_constraint": "REGULATORY_APPROVAL",
+        "supporting_evidence_ids": [
+          "E20"
+        ]
+      }
+    ],
+    "economic_graph": {
+      "nodes": [
+        {
+          "id": "revenue",
+          "label": "Revenue",
+          "type": "revenue"
+        },
+        {
+          "id": "patients",
+          "label": "Patients",
+          "type": "growth_driver"
+        },
+        {
+          "id": "pricing",
+          "label": "Pricing",
+          "type": "growth_driver"
+        },
+        {
+          "id": "drug_portfolio",
+          "label": "Drug Portfolio",
+          "type": "growth_driver"
+        },
+        {
+          "id": "manufacturing_capacity",
+          "label": "Manufacturing Capacity",
+          "type": "constraint"
+        },
+        {
+          "id": "margin",
+          "label": "Margin",
+          "type": "margin"
+        },
+        {
+          "id": "cash_flow",
+          "label": "Cash Flow",
+          "type": "cash_flow"
+        },
+        {
+          "id": "valuation",
+          "label": "Valuation Review",
+          "type": "valuation"
+        }
+      ],
+      "edges": [
+        {
+          "from": "patients",
+          "to": "revenue",
+          "relationship": "drives"
+        },
+        {
+          "from": "pricing",
+          "to": "revenue",
+          "relationship": "drives"
+        },
+        {
+          "from": "drug_portfolio",
+          "to": "revenue",
+          "relationship": "drives"
+        },
+        {
+          "from": "manufacturing_capacity",
+          "to": "revenue",
+          "relationship": "limits"
+        },
+        {
+          "from": "revenue",
+          "to": "margin",
+          "relationship": "supports"
+        },
+        {
+          "from": "margin",
+          "to": "cash_flow",
+          "relationship": "converts_to"
+        },
+        {
+          "from": "cash_flow",
+          "to": "valuation",
+          "relationship": "supports"
+        }
+      ]
+    },
+    "validation": {
+      "status": "PROVISIONAL",
+      "checks": {
+        "company_identity_valid": true,
+        "archetype_valid": true,
+        "classification_evidence_exists": true,
+        "growth_equation_exists": true,
+        "growth_drivers_exist": true,
+        "primary_constraint_supported_or_unknown": true,
+        "evidence_ids_unique": true,
+        "facts_have_sources": true,
+        "facts_have_periods": true,
+        "facts_have_values": true,
+        "proxies_labeled": true,
+        "inferences_cite_evidence": true,
+        "classification_evidence_references_exist": true,
+        "high_confidence_is_justified": true,
+        "data_gaps_explicit": true,
+        "scaling_metrics_valid": true,
+        "falsification_conditions_exist": true,
+        "valuation_review_does_not_mutate": true,
+        "ticker_overrides_are_declarative": true,
+        "json_serializable": true,
+        "graph_node_types_valid": true,
+        "graph_edges_valid": true
+      },
+      "reasons": [
+        "Data gaps or UNKNOWN conclusions remain explicit."
+      ]
+    },
+    "data_quality": {
+      "classification": "HIGH",
+      "constraint_diagnosis": "LOW",
+      "valuation": "AVAILABLE",
+      "overall": "PARTIAL",
+      "evidence_coverage": {
+        "facts": 20,
+        "proxies": 2,
+        "inferences": 4,
+        "gaps": 1
+      }
+    },
+    "qualitative_research_needed": false,
+    "qualitative_research_reason": "Current structured evidence supports the reported deterministic diagnosis.",
+    "company_economics_schema_version": "1.1"
+  }
+}

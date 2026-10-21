@@ -1,0 +1,210 @@
+{
+  "slug": "anthropic",
+  "file": "anthropic.json",
+  "company": "Anthropic",
+  "aliases": ["claude"],
+  "last_updated": "2026-07-01",
+  "data_confidence": "Medium",
+  "evidence_quality": "Strong reporting on funding, valuation, cloud partners, Claude products, and enterprise/developer momentum; weak disclosure on segment revenue, retention, cash, and runway.",
+  "sections": {
+    "business_scale": {
+      "Annual Recurring Revenue (ARR)": {
+        "value": "$4B annualized revenue run rate",
+        "status": "Industry Estimate",
+        "source": "Financial press reporting",
+        "source_date": "2025",
+        "confidence": "Medium",
+        "comment": "ARR has been reported in private-market coverage but is not audited public data."
+      },
+      "Annual Revenue": {
+        "value": "Not publicly disclosed",
+        "status": "Not Public",
+        "source": "Anthropic public disclosures",
+        "source_date": "2026-07-01",
+        "confidence": "N/A",
+        "reason": "Anthropic does not publish audited annual revenue."
+      },
+      "Revenue Mix": {
+        "value": "Not publicly disclosed",
+        "status": "Not Public",
+        "source": "Anthropic public disclosures",
+        "source_date": "2026-07-01",
+        "confidence": "N/A",
+        "reason": "Enterprise, consumer, API, and cloud marketplace revenue are not broken out."
+      },
+      "Revenue Growth": {
+        "value": "Rapid expansion from a smaller base",
+        "status": "Reported",
+        "source": "Financial press reporting",
+        "source_date": "2025",
+        "confidence": "Medium"
+      }
+    },
+    "customer_adoption": {
+      "Major Products": {
+        "value": ["Claude", "Claude API", "Claude Code", "Claude for Teams / Enterprise"],
+        "status": "Reported",
+        "source": "Anthropic product announcements",
+        "source_date": "2024-2026",
+        "confidence": "High"
+      },
+      "Developer Adoption": {
+        "value": "Claude Code has become a visible developer workflow product",
+        "status": "Reported",
+        "source": "Anthropic product announcements and developer communications",
+        "source_date": "2025-2026",
+        "confidence": "High"
+      },
+      "Major Customers": {
+        "value": "Enterprise and cloud-platform customers disclosed selectively",
+        "status": "Reported",
+        "source": "Anthropic customer announcements and cloud partner disclosures",
+        "source_date": "2024-2026",
+        "confidence": "Medium"
+      },
+      "Retention / Expansion": {
+        "value": "Not publicly disclosed",
+        "status": "Not Public",
+        "source": "Anthropic public disclosures",
+        "source_date": "2026-07-01",
+        "confidence": "N/A",
+        "reason": "Net retention, churn, and expansion metrics are not published."
+      }
+    },
+    "model_product": {
+      "Current Flagship Models": {
+        "value": "Claude model family",
+        "status": "Reported",
+        "source": "Anthropic model announcements",
+        "source_date": "2024-2026",
+        "confidence": "High"
+      },
+      "Coding Models": {
+        "value": "Claude Code and coding-capable Claude models",
+        "status": "Reported",
+        "source": "Anthropic product announcements",
+        "source_date": "2025-2026",
+        "confidence": "High"
+      },
+      "API Position": {
+        "value": "Competitive frontier API, especially in enterprise and coding workflows",
+        "status": "Industry Estimate",
+        "source": "Manual assessment from product availability and cloud distribution",
+        "source_date": "2026-07-01",
+        "confidence": "Medium"
+      },
+      "Benchmark Leadership": {
+        "value": "Often near the frontier; leadership varies by model and benchmark",
+        "status": "Industry Estimate",
+        "source": "Public benchmark releases and model evaluation coverage",
+        "source_date": "2026-07-01",
+        "confidence": "Medium"
+      }
+    },
+    "infrastructure": {
+      "Cloud Partners": {
+        "value": ["Amazon Web Services", "Google Cloud"],
+        "status": "Reported",
+        "source": "Amazon / Google / Anthropic partnership announcements",
+        "source_date": "2023-2026",
+        "confidence": "High"
+      },
+      "Training Infrastructure": {
+        "value": "Frontier-model training infrastructure supported by strategic cloud partners",
+        "status": "Reported",
+        "source": "Cloud partner announcements",
+        "source_date": "2023-2026",
+        "confidence": "High"
+      },
+      "Estimated Compute Spending": {
+        "value": "Multi-billion-dollar compute needs likely",
+        "status": "Estimated",
+        "source": "Manual assessment from frontier-model training requirements",
+        "source_date": "2026-07-01",
+        "confidence": "Medium"
+      }
+    },
+    "capital": {
+      "Latest Valuation": {
+        "value": "$61.5B post-money in 2025 financing",
+        "status": "Reported",
+        "source": "Financial press reporting",
+        "source_date": "2025",
+        "confidence": "High"
+      },
+      "Funding History": {
+        "value": "More than $10B in strategic and financial commitments reported across rounds",
+        "status": "Reported",
+        "source": "Amazon / Google announcements and financial press reporting",
+        "source_date": "2023-2025",
+        "confidence": "High"
+      },
+      "Known Investors": {
+        "value": ["Amazon", "Google", "Menlo Ventures", "Lightspeed", "Salesforce Ventures"],
+        "status": "Reported",
+        "source": "Funding announcements and financial press reporting",
+        "source_date": "2023-2025",
+        "confidence": "Medium"
+      },
+      "Cash / Runway": {
+        "value": "Not publicly disclosed",
+        "status": "Not Public",
+        "source": "Anthropic public disclosures",
+        "source_date": "2026-07-01",
+        "confidence": "N/A",
+        "reason": "Cash balance, burn, and committed compute obligations are not disclosed in enough detail to calculate runway."
+      }
+    },
+    "valuation": {
+      "Latest Valuation": {
+        "value": "$61.5B",
+        "status": "Reported",
+        "source": "Financial press reporting",
+        "source_date": "2025",
+        "confidence": "High"
+      },
+      "ARR Multiple": {
+        "value": "Approximately 15.4x",
+        "status": "Estimated",
+        "source": "Manual calculation from reported valuation and estimated ARR",
+        "source_date": "2025",
+        "confidence": "Medium"
+      }
+    },
+    "competition": {
+      "Major Competitors": {
+        "value": ["OpenAI", "Google DeepMind", "Meta AI", "xAI", "Mistral", "Cohere"],
+        "status": "Industry Estimate",
+        "source": "Manual competitive mapping",
+        "source_date": "2026-07-01",
+        "confidence": "High"
+      },
+      "Current Advantages": {
+        "value": ["Enterprise trust positioning", "Coding workflow traction", "Safety-focused brand", "Strategic backing from Amazon and Google"],
+        "status": "Industry Estimate",
+        "source": "Manual assessment from product and partner evidence",
+        "source_date": "2026-07-01",
+        "confidence": "Medium"
+      },
+      "Current Weaknesses": {
+        "value": ["Less consumer distribution than OpenAI", "Heavy compute needs", "Need to prove durable enterprise retention", "Cloud partner concentration"],
+        "status": "Industry Estimate",
+        "source": "Manual competitive assessment",
+        "source_date": "2026-07-01",
+        "confidence": "Medium"
+      }
+    }
+  },
+  "interpretations": {
+    "business_scale": "Anthropic appears to be scaling through enterprise, API, cloud, and developer workflows, but exact segment economics remain unavailable.",
+    "customer_adoption": "Growth appears enterprise- and developer-led, with Claude Code strengthening the developer workflow narrative.",
+    "model_product": "The market values Anthropic as the strongest private counterweight to OpenAI, especially around enterprise trust and coding.",
+    "infrastructure": "Anthropic's growth is compute-constrained, but multi-cloud backing may reduce dependence on a single infrastructure channel.",
+    "capital": "Expansion remains capital intensive and partly partner-financed.",
+    "valuation": "Valuation assumes durable frontier-model leadership and conversion of developer/enterprise momentum into recurring revenue.",
+    "competition": "Anthropic is differentiated by trust, coding, and strategic partners, but still faces distribution and compute-scale disadvantages versus larger platforms."
+  },
+  "strengthen": ["Claude Code revenue and usage continue expanding", "Enterprise retention and expansion are disclosed", "Cloud marketplace usage broadens", "Gross margin improves as inference costs decline"],
+  "weaken": ["Developer adoption shifts toward competing coding agents", "Enterprise pilots fail to convert into recurring contracts", "Strategic cloud terms become less favorable", "Capital needs rise without matching revenue acceleration"],
+  "final_interpretation": "Anthropic has built one of the clearest enterprise and developer narratives among private AI labs. The core thesis depends on continued ARR expansion, Claude Code adoption, and sustained competitiveness in frontier reasoning and coding models."
+}

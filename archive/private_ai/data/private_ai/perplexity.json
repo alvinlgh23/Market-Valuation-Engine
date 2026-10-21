@@ -1,0 +1,185 @@
+{
+  "slug": "perplexity",
+  "file": "perplexity.json",
+  "company": "Perplexity",
+  "aliases": ["perplexity-ai"],
+  "last_updated": "2026-07-01",
+  "data_confidence": "Medium",
+  "evidence_quality": "Moderate evidence on product adoption, valuation trajectory, and ARR range; limited disclosure on retention, margin, enterprise scale, and detailed revenue mix.",
+  "sections": {
+    "business_scale": {
+      "ARR": {
+        "value": "$100M-plus ARR range",
+        "status": "Reported",
+        "source": "Financial press reporting",
+        "source_date": "2024-2025",
+        "confidence": "Medium",
+        "comment": "ARR reporting is private-market coverage rather than audited disclosure."
+      },
+      "Annual Revenue": {
+        "value": "Not publicly disclosed in audited form",
+        "status": "Not Public",
+        "source": "Perplexity public disclosures",
+        "source_date": "2026-07-01",
+        "confidence": "N/A",
+        "reason": "Perplexity does not publish audited annual revenue."
+      },
+      "Revenue Mix": {
+        "value": "Subscriptions and enterprise/research products appear material; exact mix not disclosed",
+        "status": "Estimated",
+        "source": "Manual assessment from product lineup and press reporting",
+        "source_date": "2026-07-01",
+        "confidence": "Low",
+        "reason": "Consumer, enterprise, API, and partnership revenue percentages are not published."
+      }
+    },
+    "customer_adoption": {
+      "Major Products": {
+        "value": ["Perplexity answer engine", "Perplexity Pro", "Enterprise Pro", "Deep Research"],
+        "status": "Reported",
+        "source": "Perplexity product announcements",
+        "source_date": "2023-2026",
+        "confidence": "High"
+      },
+      "Monthly Active Users": {
+        "value": "Reported user scale varies by source",
+        "status": "Low confidence",
+        "source": "Financial and technology press reporting",
+        "source_date": "2024-2026",
+        "confidence": "Low",
+        "reason": "Perplexity does not publish a consistently audited MAU series."
+      },
+      "Major Customers": {
+        "value": "Enterprise product available; customer scale not fully disclosed",
+        "status": "Reported",
+        "source": "Perplexity product announcements",
+        "source_date": "2024-2026",
+        "confidence": "Medium"
+      },
+      "Retention / Expansion": {
+        "value": "Not publicly disclosed",
+        "status": "Not Public",
+        "source": "Perplexity public disclosures",
+        "source_date": "2026-07-01",
+        "confidence": "N/A",
+        "reason": "Retention, churn, and net expansion metrics are not published."
+      }
+    },
+    "model_product": {
+      "Current Flagship Products": {
+        "value": "AI-native answer engine and research workflow products",
+        "status": "Reported",
+        "source": "Perplexity product announcements",
+        "source_date": "2023-2026",
+        "confidence": "High"
+      },
+      "API / Model Position": {
+        "value": "Model orchestration and search/research workflow layer rather than pure foundation-model lab",
+        "status": "Industry Estimate",
+        "source": "Manual assessment from product architecture and public materials",
+        "source_date": "2026-07-01",
+        "confidence": "Medium"
+      },
+      "Product Roadmap": {
+        "value": "AI search, research workflows, distribution partnerships, and publisher/content relationships",
+        "status": "Estimated",
+        "source": "Manual synthesis of launches and public statements",
+        "source_date": "2026-07-01",
+        "confidence": "Medium"
+      }
+    },
+    "infrastructure": {
+      "Cloud Partners": {
+        "value": "Not fully disclosed",
+        "status": "Not Public",
+        "source": "Perplexity public disclosures",
+        "source_date": "2026-07-01",
+        "confidence": "N/A",
+        "reason": "Perplexity does not publish complete cloud or model-provider dependency details."
+      },
+      "Inference Infrastructure": {
+        "value": "Usage-cost sensitive inference layer for answer generation",
+        "status": "Estimated",
+        "source": "Manual assessment from product design",
+        "source_date": "2026-07-01",
+        "confidence": "Medium"
+      },
+      "Capex Intensity": {
+        "value": "Lower than frontier training labs but still inference-cost sensitive",
+        "status": "Estimated",
+        "source": "Manual assessment from model-orchestration business model",
+        "source_date": "2026-07-01",
+        "confidence": "Medium"
+      }
+    },
+    "capital": {
+      "Latest Valuation": {
+        "value": "Multi-billion-dollar private valuation reported",
+        "status": "Reported",
+        "source": "Financial press reporting",
+        "source_date": "2024-2025",
+        "confidence": "Medium"
+      },
+      "Funding History": {
+        "value": "Hundreds of millions of dollars reported across rounds",
+        "status": "Reported",
+        "source": "Funding announcements and financial press reporting",
+        "source_date": "2024-2025",
+        "confidence": "Medium"
+      },
+      "Cash / Runway": {
+        "value": "Not publicly disclosed",
+        "status": "Not Public",
+        "source": "Perplexity public disclosures",
+        "source_date": "2026-07-01",
+        "confidence": "N/A",
+        "reason": "Cash balance, burn, and committed inference obligations are not published."
+      }
+    },
+    "valuation": {
+      "Revenue Multiple": {
+        "value": "Not reliably calculable",
+        "status": "Low confidence",
+        "source": "Manual assessment",
+        "source_date": "2026-07-01",
+        "confidence": "Low",
+        "reason": "ARR and valuation are reported ranges rather than a single audited basis."
+      }
+    },
+    "competition": {
+      "Major Competitors": {
+        "value": ["Google", "Microsoft", "OpenAI", "Anthropic", "Meta AI"],
+        "status": "Industry Estimate",
+        "source": "Manual competitive mapping",
+        "source_date": "2026-07-01",
+        "confidence": "High"
+      },
+      "Current Advantages": {
+        "value": ["Focused AI search experience", "Consumer brand in answer engines", "Fast product iteration"],
+        "status": "Industry Estimate",
+        "source": "Manual competitive assessment",
+        "source_date": "2026-07-01",
+        "confidence": "Medium"
+      },
+      "Current Weaknesses": {
+        "value": ["Incumbent search distribution pressure", "Third-party model dependency", "Unclear long-term margins"],
+        "status": "Industry Estimate",
+        "source": "Manual competitive assessment",
+        "source_date": "2026-07-01",
+        "confidence": "Medium"
+      }
+    }
+  },
+  "interpretations": {
+    "business_scale": "Perplexity is scaling from a much smaller revenue base than OpenAI or Anthropic, so usage quality and paid conversion matter more than absolute scale.",
+    "customer_adoption": "Growth appears consumer- and search-workflow-led, with enterprise monetization still developing.",
+    "model_product": "The company is best understood as an AI-native search and research workflow platform rather than a full-stack frontier training lab.",
+    "infrastructure": "Its constraint is less about training the largest model and more about serving high-quality answers economically.",
+    "capital": "Funding needs are tied to distribution, content relationships, and inference costs.",
+    "valuation": "Valuation assumes AI-native search becomes a durable product category rather than a feature absorbed by incumbents.",
+    "competition": "Perplexity is differentiated by focus and product velocity but faces strong incumbent distribution pressure."
+  },
+  "strengthen": ["Paid consumer conversion improves", "Enterprise research adoption expands", "Distribution partnerships create repeat usage", "Inference cost per query declines"],
+  "weaken": ["Google, Microsoft, or OpenAI absorb the answer-engine use case", "Consumer usage fails to convert into paid retention", "Inference costs rise faster than subscription revenue", "Publisher or copyright disputes restrict product quality"],
+  "final_interpretation": "Perplexity has a distinct product narrative around AI-native search and research workflows. The thesis is not that it outspends frontier labs on training, but that it can own a valuable user habit in answer generation."
+}

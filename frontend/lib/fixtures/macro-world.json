@@ -1,0 +1,1510 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-08-03T13:19:06-04:00",
+  "data_state": "CACHED",
+  "supported_regions": [
+    "US",
+    "JP",
+    "KR",
+    "SG",
+    "EURO_AREA"
+  ],
+  "coverage": {
+    "US": {
+      "name": "United States",
+      "availability": "AVAILABLE",
+      "engines": [
+        "Central Bank Compass",
+        "US Inflation Pressure"
+      ]
+    },
+    "JP": {
+      "name": "Japan",
+      "availability": "PARTIAL",
+      "engines": [
+        "Central Bank Compass"
+      ]
+    },
+    "KR": {
+      "name": "South Korea",
+      "availability": "PARTIAL",
+      "engines": [
+        "KOSPI Multi-Factor Signal Monitor"
+      ]
+    },
+    "SG": {
+      "name": "Singapore",
+      "availability": "PARTIAL",
+      "engines": [
+        "Central Bank Compass",
+        "Shadow S$NEER Proxy"
+      ]
+    },
+    "EURO_AREA": {
+      "name": "Euro Area",
+      "availability": "PARTIAL",
+      "engines": [
+        "Central Bank Compass"
+      ]
+    }
+  },
+  "regions": {
+    "US": {
+      "id": "US",
+      "name": "United States",
+      "available": true,
+      "availability": "AVAILABLE",
+      "framework": "Federal Funds Rate",
+      "brief": "Federal Funds Rate: TIGHTENING. Hawkish bias with high model confidence.",
+      "as_of": "2026-07-22",
+      "freshness": "CURRENT",
+      "confidence": "HIGH",
+      "components": [
+        {
+          "id": "policy",
+          "label": "Policy",
+          "state": "TIGHTENING",
+          "summary": "US policy probability model",
+          "confidence": "HIGH",
+          "evidence_ids": [
+            "us-inflation-0",
+            "us-inflation-1",
+            "us-inflation-2",
+            "us-labor-0",
+            "us-labor-1",
+            "us-growth-0",
+            "us-financial-0",
+            "us-financial-1",
+            "us-currency-0"
+          ],
+          "gaps": []
+        },
+        {
+          "id": "inflation",
+          "label": "Inflation",
+          "state": "HIGH",
+          "summary": "Inflation data supports a hawkish stance.",
+          "confidence": "MODERATE",
+          "evidence_ids": [
+            "us-inflation-0",
+            "us-inflation-1",
+            "us-inflation-2"
+          ],
+          "gaps": []
+        },
+        {
+          "id": "labor",
+          "label": "Labor",
+          "state": "LOW",
+          "summary": "Labor data does not create a strong easing case.",
+          "confidence": "MODERATE",
+          "evidence_ids": [
+            "us-labor-0",
+            "us-labor-1"
+          ],
+          "gaps": []
+        },
+        {
+          "id": "growth",
+          "label": "Growth",
+          "state": "LOW",
+          "summary": "Growth data does not create a strong easing case.",
+          "confidence": "MODERATE",
+          "evidence_ids": [
+            "us-growth-0"
+          ],
+          "gaps": []
+        },
+        {
+          "id": "financial",
+          "label": "Markets & Financial Conditions",
+          "state": "LOW",
+          "summary": "Financial stress data does not create a strong easing case.",
+          "confidence": "MODERATE",
+          "evidence_ids": [
+            "us-financial-0",
+            "us-financial-1"
+          ],
+          "gaps": []
+        },
+        {
+          "id": "currency",
+          "label": "FX",
+          "state": "LOW",
+          "summary": "Currency pressure does not create a strong tightening case.",
+          "confidence": "MODERATE",
+          "evidence_ids": [
+            "us-currency-0"
+          ],
+          "gaps": []
+        }
+      ],
+      "evidence": [
+        {
+          "id": "us-inflation-0",
+          "label": "Core PCE YoY",
+          "value": "3.41%",
+          "classification": "HIGH",
+          "evidence_type": "FACT",
+          "source": "Central Bank Compass",
+          "source_path": "Centralbank-Compass/central-bank-compass",
+          "period": "2026-07-22",
+          "freshness": "CURRENT",
+          "note": "Core PCE YoY is above the high threshold, so it adds tightening pressure."
+        },
+        {
+          "id": "us-inflation-1",
+          "label": "Headline Inflation YoY",
+          "value": "3.73%",
+          "classification": "HIGH",
+          "evidence_type": "FACT",
+          "source": "Central Bank Compass",
+          "source_path": "Centralbank-Compass/central-bank-compass",
+          "period": "2026-07-22",
+          "freshness": "CURRENT",
+          "note": "Headline inflation is above the high threshold, reinforcing tightening pressure."
+        },
+        {
+          "id": "us-inflation-2",
+          "label": "Inflation Trend, 3M Change in YoY Rate",
+          "value": "0.36",
+          "classification": "ACCELERATING",
+          "evidence_type": "FACT",
+          "source": "Central Bank Compass",
+          "source_path": "Centralbank-Compass/central-bank-compass",
+          "period": "2026-07-22",
+          "freshness": "CURRENT",
+          "note": "The year-over-year inflation rate has risen over the last three months, supporting a tightening candidate only if other blocks are calm."
+        },
+        {
+          "id": "us-labor-0",
+          "label": "Unemployment Gap from 12M Low",
+          "value": "0.10",
+          "classification": "LOW",
+          "evidence_type": "FACT",
+          "source": "Central Bank Compass",
+          "source_path": "Centralbank-Compass/central-bank-compass",
+          "period": "2026-07-22",
+          "freshness": "CURRENT",
+          "note": "Unemployment is close to its recent low, so labor weakness adds little easing pressure."
+        },
+        {
+          "id": "us-labor-1",
+          "label": "Initial Claims YoY",
+          "value": "-14.22%",
+          "classification": "LOW",
+          "evidence_type": "FACT",
+          "source": "Central Bank Compass",
+          "source_path": "Centralbank-Compass/central-bank-compass",
+          "period": "2026-07-22",
+          "freshness": "CURRENT",
+          "note": "Claims are not higher than a year ago, so they do not add easing pressure."
+        },
+        {
+          "id": "us-growth-0",
+          "label": "GDP Growth YoY",
+          "value": "2.68%",
+          "classification": "LOW",
+          "evidence_type": "FACT",
+          "source": "Central Bank Compass",
+          "source_path": "Centralbank-Compass/central-bank-compass",
+          "period": "2026-07-22",
+          "freshness": "CURRENT",
+          "note": "Growth is above the weak-growth threshold, so it adds little easing pressure."
+        },
+        {
+          "id": "us-financial-0",
+          "label": "VIX",
+          "value": "16.64",
+          "classification": "LOW",
+          "evidence_type": "FACT",
+          "source": "Central Bank Compass",
+          "source_path": "Centralbank-Compass/central-bank-compass",
+          "period": "2026-07-22",
+          "freshness": "CURRENT",
+          "note": "Market stress is below the moderate threshold, so it adds little easing pressure."
+        },
+        {
+          "id": "us-financial-1",
+          "label": "Credit Spread Change, 6M",
+          "value": "-0.03",
+          "classification": "LOW",
+          "evidence_type": "FACT",
+          "source": "Central Bank Compass",
+          "source_path": "Centralbank-Compass/central-bank-compass",
+          "period": "2026-07-22",
+          "freshness": "CURRENT",
+          "note": "Credit spreads have not widened, limiting financial-stress pressure."
+        },
+        {
+          "id": "us-currency-0",
+          "label": "Broad Dollar Index YoY Change",
+          "value": "1.03%",
+          "classification": "LOW",
+          "evidence_type": "FACT",
+          "source": "Central Bank Compass",
+          "source_path": "Centralbank-Compass/central-bank-compass",
+          "period": "2026-07-22",
+          "freshness": "CURRENT",
+          "note": "Broad Dollar Index YoY Change is not adding meaningful tightening pressure."
+        }
+      ],
+      "engines": [
+        {
+          "name": "Central Bank Compass",
+          "role": "Policy, inflation, growth, financial and FX blocks",
+          "status": "CACHED"
+        }
+      ],
+      "gaps": []
+    },
+    "JP": {
+      "id": "JP",
+      "name": "Japan",
+      "available": true,
+      "availability": "PARTIAL",
+      "framework": "Policy Rate and Yield Curve / Normalization Framework",
+      "brief": "Policy Rate and Yield Curve / Normalization Framework: EASING BIAS. Dovish bias with moderate model confidence.",
+      "as_of": "2026-07-17",
+      "freshness": "CURRENT",
+      "confidence": "MODERATE",
+      "components": [
+        {
+          "id": "policy",
+          "label": "Policy",
+          "state": "EASING BIAS",
+          "summary": "BOJ normalization pressure",
+          "confidence": "MODERATE",
+          "evidence_ids": [
+            "jp-inflation-0",
+            "jp-inflation-1",
+            "jp-inflation-2",
+            "jp-labor-0",
+            "jp-growth-0",
+            "jp-financial-1",
+            "jp-currency-0"
+          ],
+          "gaps": []
+        },
+        {
+          "id": "inflation",
+          "label": "Inflation",
+          "state": "LOW",
+          "summary": "Inflation data does not create a strong tightening case.",
+          "confidence": "MODERATE",
+          "evidence_ids": [
+            "jp-inflation-0",
+            "jp-inflation-1",
+            "jp-inflation-2"
+          ],
+          "gaps": []
+        },
+        {
+          "id": "labor",
+          "label": "Labor",
+          "state": "LOW",
+          "summary": "Labor data does not create a strong easing case.",
+          "confidence": "MODERATE",
+          "evidence_ids": [
+            "jp-labor-0"
+          ],
+          "gaps": []
+        },
+        {
+          "id": "growth",
+          "label": "Growth",
+          "state": "HIGH",
+          "summary": "Growth data supports easier policy.",
+          "confidence": "MODERATE",
+          "evidence_ids": [
+            "jp-growth-0"
+          ],
+          "gaps": []
+        },
+        {
+          "id": "financial",
+          "label": "Markets & Financial Conditions",
+          "state": "LOW",
+          "summary": "Financial stress data does not create a strong easing case.",
+          "confidence": "MODERATE",
+          "evidence_ids": [
+            "jp-financial-1"
+          ],
+          "gaps": []
+        },
+        {
+          "id": "currency",
+          "label": "FX",
+          "state": "MODERATE",
+          "summary": "Currency pressure adds some tightening pressure through imported-inflation risk.",
+          "confidence": "MODERATE",
+          "evidence_ids": [
+            "jp-currency-0"
+          ],
+          "gaps": []
+        }
+      ],
+      "evidence": [
+        {
+          "id": "jp-inflation-0",
+          "label": "CPI ex Fresh Food YoY",
+          "value": "-0.40%",
+          "classification": "LOW",
+          "evidence_type": "FACT",
+          "source": "Central Bank Compass",
+          "source_path": "Centralbank-Compass/central-bank-compass",
+          "period": "2026-07-17",
+          "freshness": "CURRENT",
+          "note": "CPI ex Fresh Food YoY is below the moderate threshold, so it adds little tightening pressure."
+        },
+        {
+          "id": "jp-inflation-1",
+          "label": "Headline Inflation YoY",
+          "value": "-0.40%",
+          "classification": "LOW",
+          "evidence_type": "FACT",
+          "source": "Central Bank Compass",
+          "source_path": "Centralbank-Compass/central-bank-compass",
+          "period": "2026-07-17",
+          "freshness": "CURRENT",
+          "note": "Headline inflation is below the moderate threshold, limiting broad price-pressure concerns."
+        },
+        {
+          "id": "jp-inflation-2",
+          "label": "Inflation Trend, 3M Change in YoY Rate",
+          "value": "-0.00",
+          "classification": "STABLE",
+          "evidence_type": "FACT",
+          "source": "Central Bank Compass",
+          "source_path": "Centralbank-Compass/central-bank-compass",
+          "period": "2026-07-17",
+          "freshness": "CURRENT",
+          "note": "The year-over-year inflation rate is broadly stable, which argues for restrictive patience rather than an automatic hike."
+        },
+        {
+          "id": "jp-labor-0",
+          "label": "Unemployment Gap from 12M Low",
+          "value": "0.10",
+          "classification": "LOW",
+          "evidence_type": "FACT",
+          "source": "Central Bank Compass",
+          "source_path": "Centralbank-Compass/central-bank-compass",
+          "period": "2026-07-17",
+          "freshness": "CURRENT",
+          "note": "Unemployment is close to its recent low, so labor weakness adds little easing pressure."
+        },
+        {
+          "id": "jp-growth-0",
+          "label": "GDP Growth YoY",
+          "value": "0.32%",
+          "classification": "HIGH",
+          "evidence_type": "FACT",
+          "source": "Central Bank Compass",
+          "source_path": "Centralbank-Compass/central-bank-compass",
+          "period": "2026-07-17",
+          "freshness": "CURRENT",
+          "note": "Growth is below the weak-growth threshold, adding clear easing pressure."
+        },
+        {
+          "id": "jp-financial-1",
+          "label": "Long-Term Yield Stress Proxy",
+          "value": "2.67%",
+          "classification": "LOW",
+          "evidence_type": "PROXY",
+          "source": "Central Bank Compass",
+          "source_path": "Centralbank-Compass/central-bank-compass",
+          "period": "2026-07-17",
+          "freshness": "CURRENT",
+          "note": "A long-term yield is available, but without a stress threshold it does not add easing pressure."
+        },
+        {
+          "id": "jp-currency-0",
+          "label": "USD/JPY YoY Change",
+          "value": "12.99%",
+          "classification": "HIGH",
+          "evidence_type": "FACT",
+          "source": "Central Bank Compass",
+          "source_path": "Centralbank-Compass/central-bank-compass",
+          "period": "2026-07-17",
+          "freshness": "CURRENT",
+          "note": "USD/JPY YoY Change is beyond the high-pressure threshold, adding imported-inflation or tightening pressure."
+        }
+      ],
+      "engines": [
+        {
+          "name": "Central Bank Compass",
+          "role": "Policy, inflation, growth, financial and FX blocks",
+          "status": "CACHED"
+        }
+      ],
+      "gaps": [
+        "wage growth",
+        "inflation expectations",
+        "Wage growth",
+        "Inflation expectations",
+        "BOJ balance-sheet trend"
+      ]
+    },
+    "KR": {
+      "id": "KR",
+      "name": "South Korea",
+      "available": true,
+      "availability": "PARTIAL",
+      "framework": "KOSPI market, export and USD/KRW factor monitor",
+      "brief": "Export and market transmission structure is mapped, but no current KOSPI sweep is persisted. Active pressure is therefore not classified.",
+      "as_of": "2025-12-31",
+      "freshness": "STRUCTURAL",
+      "confidence": "LOW",
+      "components": [
+        {
+          "id": "policy",
+          "label": "Policy",
+          "state": "NOT AVAILABLE",
+          "summary": "No Bank of Korea policy model is integrated.",
+          "confidence": "INSUFFICIENT",
+          "evidence_ids": [],
+          "gaps": [
+            "BOK policy model"
+          ]
+        },
+        {
+          "id": "inflation",
+          "label": "Inflation",
+          "state": "NOT AVAILABLE",
+          "summary": "No Korean inflation engine is integrated.",
+          "confidence": "INSUFFICIENT",
+          "evidence_ids": [],
+          "gaps": [
+            "Korean CPI and inflation framework"
+          ]
+        },
+        {
+          "id": "fx",
+          "label": "FX",
+          "state": "FRAMEWORK ONLY",
+          "summary": "USD/KRW is a configured KOSPI factor; no current sweep is persisted.",
+          "confidence": "LOW",
+          "evidence_ids": [],
+          "gaps": [
+            "Current USD/KRW factor result"
+          ]
+        },
+        {
+          "id": "markets",
+          "label": "Markets",
+          "state": "STRUCTURAL",
+          "summary": "KOSPI, semiconductor leaders, cultural exports, consumption and foreign flows are modeled.",
+          "confidence": "LOW",
+          "evidence_ids": [
+            "kr-export-total",
+            "kr-semi-export"
+          ],
+          "gaps": [
+            "Current econometric sweep",
+            "Current foreign-flow series"
+          ]
+        },
+        {
+          "id": "transmission",
+          "label": "Transmission",
+          "state": "INSUFFICIENT",
+          "summary": "US rate and USD channels are structurally plausible but not classified as active.",
+          "confidence": "INSUFFICIENT",
+          "evidence_ids": [],
+          "gaps": [
+            "Aligned current US/KR market observations"
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "id": "kr-export-total",
+          "label": "Total exports",
+          "value": "$709.7B",
+          "classification": "2025 ANNUAL",
+          "evidence_type": "FACT",
+          "source": "MOTIR annual exports via KOSPI monitor",
+          "source_path": "KOSPI/KOSPI_Backend_v2.py",
+          "period": "2025-12-31",
+          "freshness": "STRUCTURAL",
+          "note": "Annual snapshot; not a current market sweep."
+        },
+        {
+          "id": "kr-semi-export",
+          "label": "Semiconductor exports",
+          "value": "$173.4B",
+          "classification": "2025 ANNUAL",
+          "evidence_type": "FACT",
+          "source": "MOTIR/MSIT ICT exports via KOSPI monitor",
+          "source_path": "KOSPI/KOSPI_Backend_v2.py",
+          "period": "2025-12-31",
+          "freshness": "STRUCTURAL",
+          "note": "The dashboard's detailed export categories mix 2024 and 2025 periods."
+        }
+      ],
+      "engines": [
+        {
+          "name": "KOSPI Multi-Factor Signal Monitor",
+          "role": "Market, export, FX and flow relationships",
+          "status": "STRUCTURAL_ONLY"
+        }
+      ],
+      "gaps": [
+        "Bank of Korea policy",
+        "Korean inflation",
+        "Current KOSPI sweep",
+        "Current foreign flows"
+      ]
+    },
+    "SG": {
+      "id": "SG",
+      "name": "Singapore",
+      "available": true,
+      "availability": "PARTIAL",
+      "framework": "Singapore Dollar Nominal Effective Exchange Rate Policy Band",
+      "brief": "Singapore Dollar Nominal Effective Exchange Rate Policy Band: HOLD. Neutral bias with low model confidence.",
+      "as_of": "2026-07-17",
+      "freshness": "CURRENT",
+      "confidence": "LOW",
+      "components": [
+        {
+          "id": "policy",
+          "label": "Policy",
+          "state": "HOLD",
+          "summary": "The model says Monetary Authority of Singapore has a balanced case for waiting.",
+          "confidence": "LOW",
+          "evidence_ids": [
+            "sg-inflation-0",
+            "sg-inflation-1",
+            "sg-inflation-2",
+            "sg-growth-0",
+            "sg-growth-1",
+            "sg-currency-0"
+          ],
+          "gaps": []
+        },
+        {
+          "id": "inflation",
+          "label": "Inflation",
+          "state": "LOW",
+          "summary": "Inflation data does not create a strong tightening case.",
+          "confidence": "MODERATE",
+          "evidence_ids": [
+            "sg-inflation-0",
+            "sg-inflation-1",
+            "sg-inflation-2"
+          ],
+          "gaps": []
+        },
+        {
+          "id": "labor",
+          "label": "Labor",
+          "state": "LOW",
+          "summary": "Labor data does not create a strong easing case.",
+          "confidence": "INSUFFICIENT",
+          "evidence_ids": [],
+          "gaps": [
+            "No usable labor observation in the cached engine output."
+          ]
+        },
+        {
+          "id": "growth",
+          "label": "Growth",
+          "state": "LOW",
+          "summary": "Growth data does not create a strong easing case.",
+          "confidence": "MODERATE",
+          "evidence_ids": [
+            "sg-growth-0",
+            "sg-growth-1"
+          ],
+          "gaps": []
+        },
+        {
+          "id": "financial",
+          "label": "Markets & Financial Conditions",
+          "state": "LOW",
+          "summary": "Financial stress data does not create a strong easing case.",
+          "confidence": "INSUFFICIENT",
+          "evidence_ids": [],
+          "gaps": [
+            "No usable markets & financial conditions observation in the cached engine output."
+          ]
+        },
+        {
+          "id": "currency",
+          "label": "FX",
+          "state": "LOW",
+          "summary": "Currency pressure does not create a strong tightening case.",
+          "confidence": "MODERATE",
+          "evidence_ids": [
+            "sg-currency-0",
+            "sg-neer-framework"
+          ],
+          "gaps": [
+            "No persisted current shadow-NEER snapshot; official band position is unavailable."
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "id": "sg-inflation-0",
+          "label": "MAS Core / Primary Inflation YoY",
+          "value": "0.90%",
+          "classification": "LOW",
+          "evidence_type": "FACT",
+          "source": "Central Bank Compass",
+          "source_path": "Centralbank-Compass/central-bank-compass",
+          "period": "2026-07-17",
+          "freshness": "CURRENT",
+          "note": "MAS Core / Primary Inflation YoY is below the moderate threshold, so it adds little tightening pressure."
+        },
+        {
+          "id": "sg-inflation-1",
+          "label": "Headline Inflation YoY",
+          "value": "0.90%",
+          "classification": "LOW",
+          "evidence_type": "FACT",
+          "source": "Central Bank Compass",
+          "source_path": "Centralbank-Compass/central-bank-compass",
+          "period": "2026-07-17",
+          "freshness": "CURRENT",
+          "note": "Headline inflation is below the moderate threshold, limiting broad price-pressure concerns."
+        },
+        {
+          "id": "sg-inflation-2",
+          "label": "Inflation Trend, 3M Change in YoY Rate",
+          "value": "-1.49",
+          "classification": "COOLING",
+          "evidence_type": "FACT",
+          "source": "Central Bank Compass",
+          "source_path": "Centralbank-Compass/central-bank-compass",
+          "period": "2026-07-17",
+          "freshness": "CURRENT",
+          "note": "The year-over-year inflation rate has fallen over the last three months, reducing the case for further tightening."
+        },
+        {
+          "id": "sg-growth-0",
+          "label": "GDP Growth YoY",
+          "value": "3.51%",
+          "classification": "LOW",
+          "evidence_type": "FACT",
+          "source": "Central Bank Compass",
+          "source_path": "Centralbank-Compass/central-bank-compass",
+          "period": "2026-07-17",
+          "freshness": "CURRENT",
+          "note": "Growth is above the weak-growth threshold, so it adds little easing pressure."
+        },
+        {
+          "id": "sg-growth-1",
+          "label": "PMI / External Demand Proxy",
+          "value": "3.94%",
+          "classification": "LOW",
+          "evidence_type": "PROXY",
+          "source": "Central Bank Compass",
+          "source_path": "Centralbank-Compass/central-bank-compass",
+          "period": "2026-07-17",
+          "freshness": "CURRENT",
+          "note": "External demand growth is positive enough to limit growth-weakness pressure."
+        },
+        {
+          "id": "sg-currency-0",
+          "label": "USD/SGD YoY Change",
+          "value": "1.41%",
+          "classification": "LOW",
+          "evidence_type": "FACT",
+          "source": "Central Bank Compass",
+          "source_path": "Centralbank-Compass/central-bank-compass",
+          "period": "2026-07-17",
+          "freshness": "CURRENT",
+          "note": "USD/SGD YoY Change is not adding meaningful tightening pressure."
+        },
+        {
+          "id": "sg-neer-framework",
+          "label": "Shadow S$NEER basket",
+          "value": "12 currency proxy",
+          "classification": "STRUCTURAL PROXY",
+          "evidence_type": "PROXY",
+          "source": "Shadow S$NEER Proxy",
+          "source_path": "NEER/SGD.py",
+          "period": "2026-04-14",
+          "freshness": "STRUCTURAL",
+          "note": "Proxy basket, centre, slope and band are modelling assumptions; MAS does not disclose the official basket or band parameters."
+        }
+      ],
+      "engines": [
+        {
+          "name": "Central Bank Compass",
+          "role": "Policy, inflation, growth, financial and FX blocks",
+          "status": "CACHED"
+        },
+        {
+          "name": "Shadow S$NEER Proxy",
+          "role": "Transparent currency-policy mechanism",
+          "status": "STRUCTURAL_ONLY"
+        }
+      ],
+      "gaps": [
+        "MAS core inflation",
+        "official SGD NEER policy-band position",
+        "MAS core inflation source",
+        "Official SGD NEER band position",
+        "Current shadow-NEER snapshot"
+      ]
+    },
+    "EURO_AREA": {
+      "id": "EURO_AREA",
+      "name": "Euro Area",
+      "available": true,
+      "availability": "PARTIAL",
+      "framework": "ECB Policy Rates",
+      "brief": "ECB Policy Rates: HOLD. Dovish bias with moderate model confidence.",
+      "as_of": "2026-07-17",
+      "freshness": "CURRENT",
+      "confidence": "MODERATE",
+      "components": [
+        {
+          "id": "policy",
+          "label": "Policy",
+          "state": "HOLD",
+          "summary": "The model says European Central Bank should lean easier, but the evidence is not strong enough for an outright easing signal.",
+          "confidence": "MODERATE",
+          "evidence_ids": [
+            "euro_area-inflation-0",
+            "euro_area-inflation-1",
+            "euro_area-inflation-2",
+            "euro_area-labor-0",
+            "euro_area-labor-1",
+            "euro_area-growth-0",
+            "euro_area-growth-1",
+            "euro_area-financial-0",
+            "euro_area-currency-0"
+          ],
+          "gaps": []
+        },
+        {
+          "id": "inflation",
+          "label": "Inflation",
+          "state": "STICKY",
+          "summary": "Domestic inflation persistence argues for patience and limits rapid ECB easing.",
+          "confidence": "MODERATE",
+          "evidence_ids": [
+            "euro_area-inflation-0",
+            "euro_area-inflation-1",
+            "euro_area-inflation-2"
+          ],
+          "gaps": []
+        },
+        {
+          "id": "labor",
+          "label": "Labor",
+          "state": "LOW",
+          "summary": "Eurozone labor slack data does not create a strong easing case.",
+          "confidence": "MODERATE",
+          "evidence_ids": [
+            "euro_area-labor-0",
+            "euro_area-labor-1"
+          ],
+          "gaps": []
+        },
+        {
+          "id": "growth",
+          "label": "Growth",
+          "state": "HIGH",
+          "summary": "Eurozone growth data supports easier policy.",
+          "confidence": "MODERATE",
+          "evidence_ids": [
+            "euro_area-growth-0",
+            "euro_area-growth-1"
+          ],
+          "gaps": []
+        },
+        {
+          "id": "financial",
+          "label": "Markets & Financial Conditions",
+          "state": "LOW",
+          "summary": "Eurozone financial and fragmentation stress data does not create a strong easing case.",
+          "confidence": "MODERATE",
+          "evidence_ids": [
+            "euro_area-financial-0"
+          ],
+          "gaps": []
+        },
+        {
+          "id": "currency",
+          "label": "FX",
+          "state": "LOW",
+          "summary": "Currency pressure does not create a strong tightening case.",
+          "confidence": "MODERATE",
+          "evidence_ids": [
+            "euro_area-currency-0"
+          ],
+          "gaps": []
+        }
+      ],
+      "evidence": [
+        {
+          "id": "euro_area-inflation-0",
+          "label": "Core HICP YoY",
+          "value": "2.55%",
+          "classification": "STICKY",
+          "evidence_type": "FACT",
+          "source": "Central Bank Compass",
+          "source_path": "Centralbank-Compass/central-bank-compass",
+          "period": "2026-07-17",
+          "freshness": "CURRENT",
+          "note": "Core HICP remains above a target-consistent comfort zone, limiting the case for aggressive easing."
+        },
+        {
+          "id": "euro_area-inflation-1",
+          "label": "Headline HICP YoY",
+          "value": "2.73%",
+          "classification": "MODERATE",
+          "evidence_type": "FACT",
+          "source": "Central Bank Compass",
+          "source_path": "Centralbank-Compass/central-bank-compass",
+          "period": "2026-07-17",
+          "freshness": "CURRENT",
+          "note": "Headline HICP is moderately above target and does not alone justify a HIGH inflation block."
+        },
+        {
+          "id": "euro_area-inflation-2",
+          "label": "Inflation Trend, HICP 3M Change in YoY Rate",
+          "value": "0.14",
+          "classification": "STABLE",
+          "evidence_type": "FACT",
+          "source": "Central Bank Compass",
+          "source_path": "Centralbank-Compass/central-bank-compass",
+          "period": "2026-07-17",
+          "freshness": "CURRENT",
+          "note": "The year-over-year inflation rate is broadly stable, which argues for restrictive patience rather than an automatic hike."
+        },
+        {
+          "id": "euro_area-labor-0",
+          "label": "Eurozone Unemployment Rate",
+          "value": "6.70%",
+          "classification": "MODERATE",
+          "evidence_type": "FACT",
+          "source": "Central Bank Compass",
+          "source_path": "Centralbank-Compass/central-bank-compass",
+          "period": "2026-07-17",
+          "freshness": "CURRENT",
+          "note": "The unemployment level gauges area-wide labor slack without using a US payroll proxy."
+        },
+        {
+          "id": "euro_area-labor-1",
+          "label": "Unemployment Gap from 12M Low",
+          "value": "0.10",
+          "classification": "LOW",
+          "evidence_type": "FACT",
+          "source": "Central Bank Compass",
+          "source_path": "Centralbank-Compass/central-bank-compass",
+          "period": "2026-07-17",
+          "freshness": "CURRENT",
+          "note": "Unemployment is close to its recent low, so labor weakness adds little easing pressure."
+        },
+        {
+          "id": "euro_area-growth-0",
+          "label": "Eurozone Real GDP Growth YoY",
+          "value": "0.48%",
+          "classification": "HIGH",
+          "evidence_type": "FACT",
+          "source": "Central Bank Compass",
+          "source_path": "Centralbank-Compass/central-bank-compass",
+          "period": "2026-07-17",
+          "freshness": "CURRENT",
+          "note": "Growth is below the weak-growth threshold, adding clear easing pressure."
+        },
+        {
+          "id": "euro_area-growth-1",
+          "label": "Eurozone Business Confidence Index YoY Change",
+          "value": "-1.78%",
+          "classification": "HIGH",
+          "evidence_type": "FACT",
+          "source": "Central Bank Compass",
+          "source_path": "Centralbank-Compass/central-bank-compass",
+          "period": "2026-07-17",
+          "freshness": "CURRENT",
+          "note": "This is the year-over-year change in a normalized confidence index, not a PMI diffusion-index level. External demand is contracting, reinforcing growth weakness."
+        },
+        {
+          "id": "euro_area-financial-0",
+          "label": "Italy-Germany 10Y Sovereign Spread Proxy",
+          "value": "0.82",
+          "classification": "LOW",
+          "evidence_type": "PROXY",
+          "source": "Central Bank Compass",
+          "source_path": "Centralbank-Compass/central-bank-compass",
+          "period": "2026-07-17",
+          "freshness": "CURRENT",
+          "note": "Peripheral sovereign spreads are contained and do not signal acute Eurozone financial stress."
+        },
+        {
+          "id": "euro_area-currency-0",
+          "label": "EUR/USD YoY Change",
+          "value": "-2.97%",
+          "classification": "LOW",
+          "evidence_type": "FACT",
+          "source": "Central Bank Compass",
+          "source_path": "Centralbank-Compass/central-bank-compass",
+          "period": "2026-07-17",
+          "freshness": "CURRENT",
+          "note": "EUR/USD YoY Change is not adding meaningful tightening pressure."
+        }
+      ],
+      "engines": [
+        {
+          "name": "Central Bank Compass",
+          "role": "Policy, inflation, growth, financial and FX blocks",
+          "status": "CACHED"
+        }
+      ],
+      "gaps": [
+        "Services inflation",
+        "Wage growth",
+        "Bank lending stress"
+      ]
+    }
+  },
+  "transmissions": [
+    {
+      "id": "jp-us-yen-carry",
+      "source": "JP",
+      "target": "US",
+      "label": "Yen carry \u2192 US risk assets",
+      "mechanism": "JPY funding conditions and Japanese yields can alter leveraged global risk appetite.",
+      "structural_state": "ESTABLISHED",
+      "current_state": "WATCH",
+      "summary": "Current classification uses only cached JPY/JGB and US financial-condition evidence.",
+      "confidence": "MODERATE",
+      "evidence_ids": [
+        "jp-financial-1",
+        "jp-currency-0",
+        "us-financial-0",
+        "us-financial-1"
+      ],
+      "caveat": "A transmission channel is not proof that it caused an observed market move."
+    },
+    {
+      "id": "us-jp-rate-fx",
+      "source": "US",
+      "target": "JP",
+      "label": "US rates \u2192 USD/JPY \u2192 BOJ pressure",
+      "mechanism": "US/Japan rate conditions transmit through USD/JPY and imported inflation pressure.",
+      "structural_state": "ESTABLISHED",
+      "current_state": "ACTIVE",
+      "summary": "The Compass explicitly models US rates, USD/JPY and BOJ normalization pressure.",
+      "confidence": "MODERATE",
+      "evidence_ids": [
+        "us-inflation-0",
+        "us-inflation-1",
+        "us-inflation-2",
+        "us-labor-0",
+        "us-labor-1",
+        "us-growth-0",
+        "us-financial-0",
+        "us-financial-1",
+        "us-currency-0",
+        "jp-inflation-0",
+        "jp-inflation-1",
+        "jp-inflation-2",
+        "jp-labor-0",
+        "jp-growth-0",
+        "jp-financial-1",
+        "jp-currency-0"
+      ],
+      "caveat": "Direction is model context, not a forecast of the exchange rate."
+    },
+    {
+      "id": "us-eu-rate-fx",
+      "source": "US",
+      "target": "EURO_AREA",
+      "label": "Fed/ECB divergence \u2192 EUR/USD",
+      "mechanism": "Relative policy and growth conditions can transmit through EUR/USD and regional financial conditions.",
+      "structural_state": "ESTABLISHED",
+      "current_state": "ACTIVE",
+      "summary": "Both policy frameworks are integrated; several Euro Area financial subcomponents remain missing.",
+      "confidence": "MODERATE",
+      "evidence_ids": [
+        "us-inflation-0",
+        "us-inflation-1",
+        "us-inflation-2",
+        "us-labor-0",
+        "us-labor-1",
+        "us-growth-0",
+        "us-financial-0",
+        "us-financial-1",
+        "us-currency-0",
+        "euro_area-inflation-0",
+        "euro_area-inflation-1",
+        "euro_area-inflation-2",
+        "euro_area-labor-0",
+        "euro_area-labor-1",
+        "euro_area-growth-0",
+        "euro_area-growth-1",
+        "euro_area-financial-0",
+        "euro_area-currency-0"
+      ],
+      "caveat": "The Euro Area is a monetary union; this does not represent every EU member's fiscal conditions."
+    },
+    {
+      "id": "us-kr-dollar-kospi",
+      "source": "US",
+      "target": "KR",
+      "label": "US rates/USD \u2192 KRW and KOSPI",
+      "mechanism": "Dollar and funding conditions can affect USD/KRW, foreign flows and export-sensitive Korean equities.",
+      "structural_state": "ESTABLISHED",
+      "current_state": "INSUFFICIENT",
+      "summary": "The KOSPI monitor defines the channel, but its current sweep and foreign-flow data are not persisted.",
+      "confidence": "LOW",
+      "evidence_ids": [
+        "us-inflation-0",
+        "us-inflation-1",
+        "us-inflation-2",
+        "us-labor-0",
+        "us-labor-1",
+        "us-growth-0",
+        "us-financial-0",
+        "us-financial-1",
+        "us-currency-0",
+        "kr-export-total",
+        "kr-semi-export"
+      ],
+      "caveat": "Structural plausibility is not an active-signal claim and Granger tests are not causal proof."
+    },
+    {
+      "id": "us-sg-dollar-neer",
+      "source": "US",
+      "target": "SG",
+      "label": "USD conditions \u2192 SGD policy pressure",
+      "mechanism": "Global dollar conditions and trade-weighted FX pressure interact with Singapore's exchange-rate policy framework.",
+      "structural_state": "ESTABLISHED",
+      "current_state": "INSUFFICIENT",
+      "summary": "A current official or shadow-NEER band position is unavailable.",
+      "confidence": "LOW",
+      "evidence_ids": [
+        "us-inflation-0",
+        "us-inflation-1",
+        "us-inflation-2",
+        "us-labor-0",
+        "us-labor-1",
+        "us-growth-0",
+        "us-financial-0",
+        "us-financial-1",
+        "us-currency-0",
+        "sg-neer-framework"
+      ],
+      "caveat": "The S$NEER basket, centre, slope and width are explicit proxy assumptions."
+    }
+  ],
+  "evidence_index": {
+    "us-inflation-0": {
+      "id": "us-inflation-0",
+      "label": "Core PCE YoY",
+      "value": "3.41%",
+      "classification": "HIGH",
+      "evidence_type": "FACT",
+      "source": "Central Bank Compass",
+      "source_path": "Centralbank-Compass/central-bank-compass",
+      "period": "2026-07-22",
+      "freshness": "CURRENT",
+      "note": "Core PCE YoY is above the high threshold, so it adds tightening pressure."
+    },
+    "us-inflation-1": {
+      "id": "us-inflation-1",
+      "label": "Headline Inflation YoY",
+      "value": "3.73%",
+      "classification": "HIGH",
+      "evidence_type": "FACT",
+      "source": "Central Bank Compass",
+      "source_path": "Centralbank-Compass/central-bank-compass",
+      "period": "2026-07-22",
+      "freshness": "CURRENT",
+      "note": "Headline inflation is above the high threshold, reinforcing tightening pressure."
+    },
+    "us-inflation-2": {
+      "id": "us-inflation-2",
+      "label": "Inflation Trend, 3M Change in YoY Rate",
+      "value": "0.36",
+      "classification": "ACCELERATING",
+      "evidence_type": "FACT",
+      "source": "Central Bank Compass",
+      "source_path": "Centralbank-Compass/central-bank-compass",
+      "period": "2026-07-22",
+      "freshness": "CURRENT",
+      "note": "The year-over-year inflation rate has risen over the last three months, supporting a tightening candidate only if other blocks are calm."
+    },
+    "us-labor-0": {
+      "id": "us-labor-0",
+      "label": "Unemployment Gap from 12M Low",
+      "value": "0.10",
+      "classification": "LOW",
+      "evidence_type": "FACT",
+      "source": "Central Bank Compass",
+      "source_path": "Centralbank-Compass/central-bank-compass",
+      "period": "2026-07-22",
+      "freshness": "CURRENT",
+      "note": "Unemployment is close to its recent low, so labor weakness adds little easing pressure."
+    },
+    "us-labor-1": {
+      "id": "us-labor-1",
+      "label": "Initial Claims YoY",
+      "value": "-14.22%",
+      "classification": "LOW",
+      "evidence_type": "FACT",
+      "source": "Central Bank Compass",
+      "source_path": "Centralbank-Compass/central-bank-compass",
+      "period": "2026-07-22",
+      "freshness": "CURRENT",
+      "note": "Claims are not higher than a year ago, so they do not add easing pressure."
+    },
+    "us-growth-0": {
+      "id": "us-growth-0",
+      "label": "GDP Growth YoY",
+      "value": "2.68%",
+      "classification": "LOW",
+      "evidence_type": "FACT",
+      "source": "Central Bank Compass",
+      "source_path": "Centralbank-Compass/central-bank-compass",
+      "period": "2026-07-22",
+      "freshness": "CURRENT",
+      "note": "Growth is above the weak-growth threshold, so it adds little easing pressure."
+    },
+    "us-financial-0": {
+      "id": "us-financial-0",
+      "label": "VIX",
+      "value": "16.64",
+      "classification": "LOW",
+      "evidence_type": "FACT",
+      "source": "Central Bank Compass",
+      "source_path": "Centralbank-Compass/central-bank-compass",
+      "period": "2026-07-22",
+      "freshness": "CURRENT",
+      "note": "Market stress is below the moderate threshold, so it adds little easing pressure."
+    },
+    "us-financial-1": {
+      "id": "us-financial-1",
+      "label": "Credit Spread Change, 6M",
+      "value": "-0.03",
+      "classification": "LOW",
+      "evidence_type": "FACT",
+      "source": "Central Bank Compass",
+      "source_path": "Centralbank-Compass/central-bank-compass",
+      "period": "2026-07-22",
+      "freshness": "CURRENT",
+      "note": "Credit spreads have not widened, limiting financial-stress pressure."
+    },
+    "us-currency-0": {
+      "id": "us-currency-0",
+      "label": "Broad Dollar Index YoY Change",
+      "value": "1.03%",
+      "classification": "LOW",
+      "evidence_type": "FACT",
+      "source": "Central Bank Compass",
+      "source_path": "Centralbank-Compass/central-bank-compass",
+      "period": "2026-07-22",
+      "freshness": "CURRENT",
+      "note": "Broad Dollar Index YoY Change is not adding meaningful tightening pressure."
+    },
+    "jp-inflation-0": {
+      "id": "jp-inflation-0",
+      "label": "CPI ex Fresh Food YoY",
+      "value": "-0.40%",
+      "classification": "LOW",
+      "evidence_type": "FACT",
+      "source": "Central Bank Compass",
+      "source_path": "Centralbank-Compass/central-bank-compass",
+      "period": "2026-07-17",
+      "freshness": "CURRENT",
+      "note": "CPI ex Fresh Food YoY is below the moderate threshold, so it adds little tightening pressure."
+    },
+    "jp-inflation-1": {
+      "id": "jp-inflation-1",
+      "label": "Headline Inflation YoY",
+      "value": "-0.40%",
+      "classification": "LOW",
+      "evidence_type": "FACT",
+      "source": "Central Bank Compass",
+      "source_path": "Centralbank-Compass/central-bank-compass",
+      "period": "2026-07-17",
+      "freshness": "CURRENT",
+      "note": "Headline inflation is below the moderate threshold, limiting broad price-pressure concerns."
+    },
+    "jp-inflation-2": {
+      "id": "jp-inflation-2",
+      "label": "Inflation Trend, 3M Change in YoY Rate",
+      "value": "-0.00",
+      "classification": "STABLE",
+      "evidence_type": "FACT",
+      "source": "Central Bank Compass",
+      "source_path": "Centralbank-Compass/central-bank-compass",
+      "period": "2026-07-17",
+      "freshness": "CURRENT",
+      "note": "The year-over-year inflation rate is broadly stable, which argues for restrictive patience rather than an automatic hike."
+    },
+    "jp-labor-0": {
+      "id": "jp-labor-0",
+      "label": "Unemployment Gap from 12M Low",
+      "value": "0.10",
+      "classification": "LOW",
+      "evidence_type": "FACT",
+      "source": "Central Bank Compass",
+      "source_path": "Centralbank-Compass/central-bank-compass",
+      "period": "2026-07-17",
+      "freshness": "CURRENT",
+      "note": "Unemployment is close to its recent low, so labor weakness adds little easing pressure."
+    },
+    "jp-growth-0": {
+      "id": "jp-growth-0",
+      "label": "GDP Growth YoY",
+      "value": "0.32%",
+      "classification": "HIGH",
+      "evidence_type": "FACT",
+      "source": "Central Bank Compass",
+      "source_path": "Centralbank-Compass/central-bank-compass",
+      "period": "2026-07-17",
+      "freshness": "CURRENT",
+      "note": "Growth is below the weak-growth threshold, adding clear easing pressure."
+    },
+    "jp-financial-1": {
+      "id": "jp-financial-1",
+      "label": "Long-Term Yield Stress Proxy",
+      "value": "2.67%",
+      "classification": "LOW",
+      "evidence_type": "PROXY",
+      "source": "Central Bank Compass",
+      "source_path": "Centralbank-Compass/central-bank-compass",
+      "period": "2026-07-17",
+      "freshness": "CURRENT",
+      "note": "A long-term yield is available, but without a stress threshold it does not add easing pressure."
+    },
+    "jp-currency-0": {
+      "id": "jp-currency-0",
+      "label": "USD/JPY YoY Change",
+      "value": "12.99%",
+      "classification": "HIGH",
+      "evidence_type": "FACT",
+      "source": "Central Bank Compass",
+      "source_path": "Centralbank-Compass/central-bank-compass",
+      "period": "2026-07-17",
+      "freshness": "CURRENT",
+      "note": "USD/JPY YoY Change is beyond the high-pressure threshold, adding imported-inflation or tightening pressure."
+    },
+    "kr-export-total": {
+      "id": "kr-export-total",
+      "label": "Total exports",
+      "value": "$709.7B",
+      "classification": "2025 ANNUAL",
+      "evidence_type": "FACT",
+      "source": "MOTIR annual exports via KOSPI monitor",
+      "source_path": "KOSPI/KOSPI_Backend_v2.py",
+      "period": "2025-12-31",
+      "freshness": "STRUCTURAL",
+      "note": "Annual snapshot; not a current market sweep."
+    },
+    "kr-semi-export": {
+      "id": "kr-semi-export",
+      "label": "Semiconductor exports",
+      "value": "$173.4B",
+      "classification": "2025 ANNUAL",
+      "evidence_type": "FACT",
+      "source": "MOTIR/MSIT ICT exports via KOSPI monitor",
+      "source_path": "KOSPI/KOSPI_Backend_v2.py",
+      "period": "2025-12-31",
+      "freshness": "STRUCTURAL",
+      "note": "The dashboard's detailed export categories mix 2024 and 2025 periods."
+    },
+    "sg-inflation-0": {
+      "id": "sg-inflation-0",
+      "label": "MAS Core / Primary Inflation YoY",
+      "value": "0.90%",
+      "classification": "LOW",
+      "evidence_type": "FACT",
+      "source": "Central Bank Compass",
+      "source_path": "Centralbank-Compass/central-bank-compass",
+      "period": "2026-07-17",
+      "freshness": "CURRENT",
+      "note": "MAS Core / Primary Inflation YoY is below the moderate threshold, so it adds little tightening pressure."
+    },
+    "sg-inflation-1": {
+      "id": "sg-inflation-1",
+      "label": "Headline Inflation YoY",
+      "value": "0.90%",
+      "classification": "LOW",
+      "evidence_type": "FACT",
+      "source": "Central Bank Compass",
+      "source_path": "Centralbank-Compass/central-bank-compass",
+      "period": "2026-07-17",
+      "freshness": "CURRENT",
+      "note": "Headline inflation is below the moderate threshold, limiting broad price-pressure concerns."
+    },
+    "sg-inflation-2": {
+      "id": "sg-inflation-2",
+      "label": "Inflation Trend, 3M Change in YoY Rate",
+      "value": "-1.49",
+      "classification": "COOLING",
+      "evidence_type": "FACT",
+      "source": "Central Bank Compass",
+      "source_path": "Centralbank-Compass/central-bank-compass",
+      "period": "2026-07-17",
+      "freshness": "CURRENT",
+      "note": "The year-over-year inflation rate has fallen over the last three months, reducing the case for further tightening."
+    },
+    "sg-growth-0": {
+      "id": "sg-growth-0",
+      "label": "GDP Growth YoY",
+      "value": "3.51%",
+      "classification": "LOW",
+      "evidence_type": "FACT",
+      "source": "Central Bank Compass",
+      "source_path": "Centralbank-Compass/central-bank-compass",
+      "period": "2026-07-17",
+      "freshness": "CURRENT",
+      "note": "Growth is above the weak-growth threshold, so it adds little easing pressure."
+    },
+    "sg-growth-1": {
+      "id": "sg-growth-1",
+      "label": "PMI / External Demand Proxy",
+      "value": "3.94%",
+      "classification": "LOW",
+      "evidence_type": "PROXY",
+      "source": "Central Bank Compass",
+      "source_path": "Centralbank-Compass/central-bank-compass",
+      "period": "2026-07-17",
+      "freshness": "CURRENT",
+      "note": "External demand growth is positive enough to limit growth-weakness pressure."
+    },
+    "sg-currency-0": {
+      "id": "sg-currency-0",
+      "label": "USD/SGD YoY Change",
+      "value": "1.41%",
+      "classification": "LOW",
+      "evidence_type": "FACT",
+      "source": "Central Bank Compass",
+      "source_path": "Centralbank-Compass/central-bank-compass",
+      "period": "2026-07-17",
+      "freshness": "CURRENT",
+      "note": "USD/SGD YoY Change is not adding meaningful tightening pressure."
+    },
+    "sg-neer-framework": {
+      "id": "sg-neer-framework",
+      "label": "Shadow S$NEER basket",
+      "value": "12 currency proxy",
+      "classification": "STRUCTURAL PROXY",
+      "evidence_type": "PROXY",
+      "source": "Shadow S$NEER Proxy",
+      "source_path": "NEER/SGD.py",
+      "period": "2026-04-14",
+      "freshness": "STRUCTURAL",
+      "note": "Proxy basket, centre, slope and band are modelling assumptions; MAS does not disclose the official basket or band parameters."
+    },
+    "euro_area-inflation-0": {
+      "id": "euro_area-inflation-0",
+      "label": "Core HICP YoY",
+      "value": "2.55%",
+      "classification": "STICKY",
+      "evidence_type": "FACT",
+      "source": "Central Bank Compass",
+      "source_path": "Centralbank-Compass/central-bank-compass",
+      "period": "2026-07-17",
+      "freshness": "CURRENT",
+      "note": "Core HICP remains above a target-consistent comfort zone, limiting the case for aggressive easing."
+    },
+    "euro_area-inflation-1": {
+      "id": "euro_area-inflation-1",
+      "label": "Headline HICP YoY",
+      "value": "2.73%",
+      "classification": "MODERATE",
+      "evidence_type": "FACT",
+      "source": "Central Bank Compass",
+      "source_path": "Centralbank-Compass/central-bank-compass",
+      "period": "2026-07-17",
+      "freshness": "CURRENT",
+      "note": "Headline HICP is moderately above target and does not alone justify a HIGH inflation block."
+    },
+    "euro_area-inflation-2": {
+      "id": "euro_area-inflation-2",
+      "label": "Inflation Trend, HICP 3M Change in YoY Rate",
+      "value": "0.14",
+      "classification": "STABLE",
+      "evidence_type": "FACT",
+      "source": "Central Bank Compass",
+      "source_path": "Centralbank-Compass/central-bank-compass",
+      "period": "2026-07-17",
+      "freshness": "CURRENT",
+      "note": "The year-over-year inflation rate is broadly stable, which argues for restrictive patience rather than an automatic hike."
+    },
+    "euro_area-labor-0": {
+      "id": "euro_area-labor-0",
+      "label": "Eurozone Unemployment Rate",
+      "value": "6.70%",
+      "classification": "MODERATE",
+      "evidence_type": "FACT",
+      "source": "Central Bank Compass",
+      "source_path": "Centralbank-Compass/central-bank-compass",
+      "period": "2026-07-17",
+      "freshness": "CURRENT",
+      "note": "The unemployment level gauges area-wide labor slack without using a US payroll proxy."
+    },
+    "euro_area-labor-1": {
+      "id": "euro_area-labor-1",
+      "label": "Unemployment Gap from 12M Low",
+      "value": "0.10",
+      "classification": "LOW",
+      "evidence_type": "FACT",
+      "source": "Central Bank Compass",
+      "source_path": "Centralbank-Compass/central-bank-compass",
+      "period": "2026-07-17",
+      "freshness": "CURRENT",
+      "note": "Unemployment is close to its recent low, so labor weakness adds little easing pressure."
+    },
+    "euro_area-growth-0": {
+      "id": "euro_area-growth-0",
+      "label": "Eurozone Real GDP Growth YoY",
+      "value": "0.48%",
+      "classification": "HIGH",
+      "evidence_type": "FACT",
+      "source": "Central Bank Compass",
+      "source_path": "Centralbank-Compass/central-bank-compass",
+      "period": "2026-07-17",
+      "freshness": "CURRENT",
+      "note": "Growth is below the weak-growth threshold, adding clear easing pressure."
+    },
+    "euro_area-growth-1": {
+      "id": "euro_area-growth-1",
+      "label": "Eurozone Business Confidence Index YoY Change",
+      "value": "-1.78%",
+      "classification": "HIGH",
+      "evidence_type": "FACT",
+      "source": "Central Bank Compass",
+      "source_path": "Centralbank-Compass/central-bank-compass",
+      "period": "2026-07-17",
+      "freshness": "CURRENT",
+      "note": "This is the year-over-year change in a normalized confidence index, not a PMI diffusion-index level. External demand is contracting, reinforcing growth weakness."
+    },
+    "euro_area-financial-0": {
+      "id": "euro_area-financial-0",
+      "label": "Italy-Germany 10Y Sovereign Spread Proxy",
+      "value": "0.82",
+      "classification": "LOW",
+      "evidence_type": "PROXY",
+      "source": "Central Bank Compass",
+      "source_path": "Centralbank-Compass/central-bank-compass",
+      "period": "2026-07-17",
+      "freshness": "CURRENT",
+      "note": "Peripheral sovereign spreads are contained and do not signal acute Eurozone financial stress."
+    },
+    "euro_area-currency-0": {
+      "id": "euro_area-currency-0",
+      "label": "EUR/USD YoY Change",
+      "value": "-2.97%",
+      "classification": "LOW",
+      "evidence_type": "FACT",
+      "source": "Central Bank Compass",
+      "source_path": "Centralbank-Compass/central-bank-compass",
+      "period": "2026-07-17",
+      "freshness": "CURRENT",
+      "note": "EUR/USD YoY Change is not adding meaningful tightening pressure."
+    }
+  },
+  "disclaimer": "Deterministic research context only. No recommendations. Facts, proxies and inferences are labeled separately."
+}

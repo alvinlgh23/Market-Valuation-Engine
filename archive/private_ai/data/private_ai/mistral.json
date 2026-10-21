@@ -1,0 +1,57 @@
+{
+  "slug": "mistral",
+  "file": "mistral.json",
+  "company": "Mistral AI",
+  "aliases": ["mistral-ai"],
+  "last_updated": "2026-07-01",
+  "data_confidence": "Medium",
+  "evidence_quality": "Good evidence on products, open/efficient model positioning, European strategic relevance, and funding; limited disclosure on ARR, retention, cash, and revenue mix.",
+  "sections": {
+    "business_scale": {
+      "ARR": {"value": "Not publicly disclosed", "status": "Not Public", "source": "Mistral AI public disclosures", "source_date": "2026-07-01", "confidence": "N/A", "reason": "Mistral has not published ARR."},
+      "Annual Revenue": {"value": "Not publicly disclosed", "status": "Not Public", "source": "Mistral AI public disclosures", "source_date": "2026-07-01", "confidence": "N/A", "reason": "Mistral does not publish audited annual revenue."},
+      "Revenue Mix": {"value": "API, enterprise, and platform partnerships appear relevant; exact mix not disclosed", "status": "Estimated", "source": "Manual assessment from product lineup and partner announcements", "source_date": "2026-07-01", "confidence": "Low"}
+    },
+    "customer_adoption": {
+      "Major Products": {"value": ["Le Chat", "La Plateforme", "Mistral model family", "Codestral"], "status": "Reported", "source": "Mistral AI product announcements", "source_date": "2024-2026", "confidence": "High"},
+      "Major Customers": {"value": "Enterprise and public-sector customers disclosed selectively", "status": "Reported", "source": "Mistral AI announcements and partner materials", "source_date": "2024-2026", "confidence": "Medium"},
+      "Retention / Expansion": {"value": "Not publicly disclosed", "status": "Not Public", "source": "Mistral AI public disclosures", "source_date": "2026-07-01", "confidence": "N/A", "reason": "Retention, churn, and expansion metrics are not published."}
+    },
+    "model_product": {
+      "Current Flagship Models": {"value": "Mistral frontier and open-weight model families", "status": "Reported", "source": "Mistral AI model announcements", "source_date": "2024-2026", "confidence": "High"},
+      "Coding Models": {"value": "Codestral and coding-capable model releases", "status": "Reported", "source": "Mistral AI product announcements", "source_date": "2024-2026", "confidence": "High"},
+      "API Position": {"value": "European frontier API and open/efficient model provider", "status": "Industry Estimate", "source": "Manual competitive assessment", "source_date": "2026-07-01", "confidence": "Medium"},
+      "Benchmark Leadership": {"value": "Competitive in selected model categories; not consistently dominant across all frontier benchmarks", "status": "Industry Estimate", "source": "Public model releases and benchmark coverage", "source_date": "2026-07-01", "confidence": "Medium"}
+    },
+    "infrastructure": {
+      "Cloud Partners": {"value": "Partnerships disclosed selectively", "status": "Reported", "source": "Mistral AI partner announcements", "source_date": "2024-2026", "confidence": "Medium"},
+      "Estimated Compute Spending": {"value": "Material but not publicly quantified", "status": "Estimated", "source": "Manual assessment from model-development strategy", "source_date": "2026-07-01", "confidence": "Low", "reason": "Compute contracts and training costs are not published."},
+      "Capex Intensity": {"value": "Lower than the largest US frontier labs but still compute-dependent", "status": "Estimated", "source": "Manual infrastructure assessment", "source_date": "2026-07-01", "confidence": "Medium"}
+    },
+    "capital": {
+      "Latest Valuation": {"value": "Multi-billion-dollar private valuation reported", "status": "Reported", "source": "Financial press reporting", "source_date": "2024-2025", "confidence": "Medium"},
+      "Funding History": {"value": "Large European AI funding rounds reported", "status": "Reported", "source": "Official funding announcements and financial press reporting", "source_date": "2023-2025", "confidence": "Medium"},
+      "Cash / Runway": {"value": "Not publicly disclosed", "status": "Not Public", "source": "Mistral AI public disclosures", "source_date": "2026-07-01", "confidence": "N/A", "reason": "Cash and burn metrics are not published."}
+    },
+    "valuation": {
+      "Revenue Multiple": {"value": "Not reliably calculable", "status": "Not Public", "source": "Mistral AI public disclosures", "source_date": "2026-07-01", "confidence": "N/A", "reason": "Revenue and ARR are not disclosed in enough detail."}
+    },
+    "competition": {
+      "Major Competitors": {"value": ["OpenAI", "Anthropic", "Meta AI", "Google DeepMind", "Cohere"], "status": "Industry Estimate", "source": "Manual competitive mapping", "source_date": "2026-07-01", "confidence": "High"},
+      "Current Advantages": {"value": ["European strategic positioning", "Open/efficient model reputation", "Enterprise and public-sector relevance"], "status": "Industry Estimate", "source": "Manual competitive assessment", "source_date": "2026-07-01", "confidence": "Medium"},
+      "Current Weaknesses": {"value": ["Smaller capital base than US hyperscaler-backed labs", "Revenue disclosure limited", "Compute access must keep pace"], "status": "Industry Estimate", "source": "Manual competitive assessment", "source_date": "2026-07-01", "confidence": "Medium"}
+    }
+  },
+  "interpretations": {
+    "business_scale": "Mistral should be analyzed through enterprise traction, platform usage, and strategic European relevance until revenue disclosure improves.",
+    "customer_adoption": "Adoption evidence is selective and product-led rather than fully quantified.",
+    "model_product": "Mistral is differentiated by efficient/open model positioning and European frontier AI credibility.",
+    "infrastructure": "Compute remains a constraint, but the strategy is not identical to the largest closed frontier labs.",
+    "capital": "Capital needs remain meaningful because model competition requires ongoing training and inference investment.",
+    "valuation": "Valuation cannot be normalized without better revenue disclosure.",
+    "competition": "Mistral is strategically important but must prove commercial durability against larger platforms."
+  },
+  "strengthen": ["Enterprise platform usage is disclosed", "Revenue growth becomes public", "Model releases maintain benchmark relevance", "Strategic European customers expand"],
+  "weaken": ["Open model competitors erode differentiation", "Compute access limits model cadence", "Enterprise adoption remains narrow", "Revenue disclosure stays limited"],
+  "final_interpretation": "Mistral is best understood as a strategically important European frontier AI lab with open and efficient model differentiation. The thesis depends on converting technical credibility into durable enterprise and platform revenue."
+}

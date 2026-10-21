@@ -1,0 +1,191 @@
+{
+  "slug": "xai",
+  "file": "xai.json",
+  "company": "xAI",
+  "aliases": ["grok"],
+  "last_updated": "2026-07-01",
+  "data_confidence": "Low to Medium",
+  "evidence_quality": "Strong public evidence on Grok, X distribution, funding, and Memphis compute buildout; weak public evidence on revenue, retention, enterprise adoption, and margins.",
+  "sections": {
+    "business_scale": {
+      "ARR": {
+        "value": "Not publicly disclosed",
+        "status": "Not Public",
+        "source": "xAI public disclosures",
+        "source_date": "2026-07-01",
+        "confidence": "N/A",
+        "reason": "xAI has not published ARR or recurring revenue metrics."
+      },
+      "Annual Revenue": {
+        "value": "Not publicly disclosed",
+        "status": "Not Public",
+        "source": "xAI public disclosures",
+        "source_date": "2026-07-01",
+        "confidence": "N/A",
+        "reason": "xAI does not publish audited revenue."
+      },
+      "Revenue Mix": {
+        "value": "Not publicly disclosed",
+        "status": "Not Public",
+        "source": "xAI public disclosures",
+        "source_date": "2026-07-01",
+        "confidence": "N/A",
+        "reason": "Revenue mix between X subscriptions, API, enterprise, and other channels is not disclosed."
+      }
+    },
+    "customer_adoption": {
+      "Major Products": {
+        "value": ["Grok", "Grok API", "X-integrated AI features"],
+        "status": "Reported",
+        "source": "xAI product announcements",
+        "source_date": "2023-2026",
+        "confidence": "High"
+      },
+      "Consumer Platform": {
+        "value": "Grok distribution through X",
+        "status": "Reported",
+        "source": "xAI / X product announcements",
+        "source_date": "2023-2026",
+        "confidence": "High"
+      },
+      "Developer Adoption": {
+        "value": "API available; adoption scale not disclosed",
+        "status": "Reported",
+        "source": "xAI developer documentation",
+        "source_date": "2024-2026",
+        "confidence": "Medium"
+      },
+      "Enterprise Customers": {
+        "value": "Not publicly disclosed",
+        "status": "Not Public",
+        "source": "xAI public disclosures",
+        "source_date": "2026-07-01",
+        "confidence": "N/A",
+        "reason": "xAI has not published a recurring enterprise customer base or enterprise revenue mix."
+      }
+    },
+    "model_product": {
+      "Current Flagship Models": {
+        "value": "Grok model family",
+        "status": "Reported",
+        "source": "xAI model announcements",
+        "source_date": "2023-2026",
+        "confidence": "High"
+      },
+      "Multimodal": {
+        "value": "Grok multimodal capabilities reported by xAI",
+        "status": "Reported",
+        "source": "xAI model announcements",
+        "source_date": "2024-2026",
+        "confidence": "Medium"
+      },
+      "Benchmark Leadership": {
+        "value": "Benchmark claims vary by model release; independent durability not established",
+        "status": "Industry Estimate",
+        "source": "xAI benchmark releases and external model coverage",
+        "source_date": "2026-07-01",
+        "confidence": "Low"
+      }
+    },
+    "infrastructure": {
+      "Training Infrastructure": {
+        "value": "Colossus supercomputer buildout in Memphis",
+        "status": "Reported",
+        "source": "xAI / local government / infrastructure press reporting",
+        "source_date": "2024-2026",
+        "confidence": "High"
+      },
+      "GPU Partners": {
+        "value": "Nvidia GPUs reported in Colossus buildout",
+        "status": "Reported",
+        "source": "xAI and infrastructure press reporting",
+        "source_date": "2024-2026",
+        "confidence": "High"
+      },
+      "Estimated Compute Spending": {
+        "value": "Multi-billion-dollar infrastructure needs likely",
+        "status": "Estimated",
+        "source": "Manual assessment from reported Colossus scale and funding needs",
+        "source_date": "2026-07-01",
+        "confidence": "Medium"
+      },
+      "Known Infrastructure Investments": {
+        "value": "Memphis data-center and power infrastructure buildout",
+        "status": "Reported",
+        "source": "Local government and infrastructure press reporting",
+        "source_date": "2024-2026",
+        "confidence": "High"
+      }
+    },
+    "capital": {
+      "Funding History": {
+        "value": "Multi-billion-dollar debt and equity financings reported",
+        "status": "Reported",
+        "source": "Morgan Stanley / financial press reporting",
+        "source_date": "2025",
+        "confidence": "Medium"
+      },
+      "Latest Valuation": {
+        "value": "Reported private valuations vary by transaction and reporting source",
+        "status": "Low confidence",
+        "source": "Financial press reporting",
+        "source_date": "2024-2026",
+        "confidence": "Low",
+        "reason": "xAI valuation reports differ across primary financing, secondary transactions, and affiliated-entity discussions."
+      },
+      "Cash / Runway": {
+        "value": "Not publicly disclosed",
+        "status": "Not Public",
+        "source": "xAI public disclosures",
+        "source_date": "2026-07-01",
+        "confidence": "N/A",
+        "reason": "Cash, burn, and committed infrastructure liabilities are not published."
+      }
+    },
+    "valuation": {
+      "Revenue Multiple": {
+        "value": "Not calculable",
+        "status": "Not Public",
+        "source": "xAI public disclosures",
+        "source_date": "2026-07-01",
+        "confidence": "N/A",
+        "reason": "Revenue and stable valuation inputs are not public enough to calculate a meaningful multiple."
+      }
+    },
+    "competition": {
+      "Major Competitors": {
+        "value": ["OpenAI", "Anthropic", "Google DeepMind", "Meta AI", "Perplexity"],
+        "status": "Industry Estimate",
+        "source": "Manual competitive mapping",
+        "source_date": "2026-07-01",
+        "confidence": "High"
+      },
+      "Current Advantages": {
+        "value": ["X distribution", "Potential real-time data access", "Aggressive infrastructure buildout", "Affiliated ecosystem capital"],
+        "status": "Industry Estimate",
+        "source": "Manual assessment from public reporting",
+        "source_date": "2026-07-01",
+        "confidence": "Medium"
+      },
+      "Current Weaknesses": {
+        "value": ["Limited public revenue disclosure", "Enterprise positioning less clear", "Platform dependence", "Need for sustained benchmark proof"],
+        "status": "Industry Estimate",
+        "source": "Manual competitive assessment",
+        "source_date": "2026-07-01",
+        "confidence": "Medium"
+      }
+    }
+  },
+  "interpretations": {
+    "business_scale": "xAI cannot yet be evaluated through disclosed recurring revenue. The evidence base is stronger for product distribution and infrastructure ambition than for revenue quality.",
+    "customer_adoption": "Adoption appears distribution-led through X rather than clearly enterprise-led.",
+    "model_product": "The product narrative centers on Grok and real-time platform integration.",
+    "infrastructure": "Growth is likely constrained by compute access, power, and deployment efficiency.",
+    "capital": "Expansion appears funding-dependent because infrastructure ambition is large and revenue disclosure is limited.",
+    "valuation": "Valuation context should be treated as low confidence until revenue and transaction details are clearer.",
+    "competition": "xAI is an aggressive frontier challenger with distribution and compute ambitions, but less public evidence on recurring commercial quality."
+  },
+  "strengthen": ["Grok paid conversion and retention are disclosed", "API adoption expands beyond affiliated platforms", "Enterprise customers are announced with recurring contracts", "Compute expansion improves model competitiveness"],
+  "weaken": ["Revenue disclosure remains unavailable while capital needs rise", "Model competitiveness does not improve", "Compute bottlenecks or power constraints emerge", "X distribution does not convert into durable paid usage"],
+  "final_interpretation": "xAI is best understood as a capital-intensive frontier challenger rather than a conventional private software company. The strongest evidence is infrastructure ambition and distribution through X; the weakest evidence is disclosed recurring revenue, retention, and enterprise depth."
+}

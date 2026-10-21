@@ -1,0 +1,42 @@
+{
+  "name": "market-structure-os-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "smoke:macro": "node scripts/macro-world-smoke.mjs",
+    "smoke:macro-correction": "node scripts/macro-correction-smoke.mjs",
+    "smoke:research": "node scripts/research-capability-smoke.mjs",
+    "test:charts": "node scripts/chart-normalization-test.mjs",
+    "test:fair-value-scale": "node scripts/fair-value-scale-test.mjs",
+    "test:macro": "node scripts/macro-coverage-test.mjs",
+    "smoke:visualizations": "node scripts/visualization-smoke.mjs",
+    "smoke:companies": "node scripts/universal-company-smoke.mjs",
+    "smoke:markets": "node scripts/markets-phase3-smoke.mjs",
+    "smoke:dashboard": "node scripts/dashboard-phase4-smoke.mjs",
+    "smoke:valuation": "node scripts/valuation-phase5-smoke.mjs",
+    "smoke:phase6": "node scripts/phase6-product-smoke.mjs"
+  },
+  "dependencies": {
+    "next": "^16.2.9",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "recharts": "2.12.7"
+  },
+  "devDependencies": {
+    "@types/node": "20.14.10",
+    "@types/react": "18.3.3",
+    "@types/react-dom": "18.3.0",
+    "autoprefixer": "10.4.19",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.2.9",
+    "playwright": "^1.61.1",
+    "postcss": "8.4.39",
+    "tailwindcss": "3.4.4",
+    "typescript": "5.5.3"
+  }
+}

@@ -1,0 +1,924 @@
+{
+  "company_economics": {
+    "company": {
+      "name": "Bank of America",
+      "ticker": "BAC",
+      "as_of": "2025-12-31",
+      "security_type": "OPERATING_COMPANY",
+      "exchange": "",
+      "currency": "",
+      "country": "",
+      "quote_type": "",
+      "sector": "Financial Services",
+      "industry": "Banks - Diversified"
+    },
+    "classification": {
+      "primary_archetype": "BANK",
+      "secondary_archetypes": [],
+      "classification_confidence": "HIGH",
+      "routing_evidence": [
+        "business description contains 'bank holding company'",
+        "business description contains 'commercial banking'",
+        "industry matches 'banks - diversified'",
+        "sector 'Financial Services' is consistent with the archetype"
+      ],
+      "routing_evidence_ids": [
+        "E3",
+        "E4",
+        "E5",
+        "E6",
+        "E8"
+      ],
+      "override_used": false,
+      "override_required": false,
+      "override_changes": []
+    },
+    "core_economic_question": "Can Bank of America grow earning assets and fee income while preserving low-cost funding, credit quality, and regulatory capital?",
+    "growth_architecture": {
+      "primary_growth_equation": "Revenue \u2248 Earning Assets \u00d7 Net Interest Spread + Fees",
+      "primary_driver": {
+        "primitive": "ASSETS",
+        "importance": "PRIMARY",
+        "observability": "DIRECT",
+        "evidence_ids": [
+          "E13",
+          "E14"
+        ],
+        "confidence": "HIGH"
+      },
+      "secondary_drivers": [
+        {
+          "primitive": "NET_INTEREST_SPREAD",
+          "importance": "SECONDARY",
+          "observability": "DIRECT",
+          "evidence_ids": [
+            "E18"
+          ],
+          "confidence": "MODERATE"
+        },
+        {
+          "primitive": "FEES",
+          "importance": "SECONDARY",
+          "observability": "INDIRECT",
+          "evidence_ids": [],
+          "confidence": "LOW"
+        }
+      ],
+      "direct_evidence_ids": [
+        "E13",
+        "E14",
+        "E18"
+      ],
+      "proxy_evidence_ids": [
+        "E7"
+      ],
+      "confidence": "MODERATE"
+    },
+    "constraints": {
+      "primary_constraint": {
+        "constraint": "DEPOSITS",
+        "economic_mechanism": "Stable deposits limit balance-sheet funding capacity.",
+        "supporting_evidence_ids": [
+          "E16",
+          "E17"
+        ],
+        "contrary_evidence_ids": [],
+        "direction": "EASING",
+        "confidence": "MODERATE",
+        "data_gaps": [],
+        "inference": "Deposits appears easing based on the cited operating and scaling evidence.",
+        "inference_evidence_ids": [
+          "E16",
+          "E17"
+        ]
+      },
+      "secondary_constraints": [],
+      "candidate_constraints": [
+        "FUNDING_COST",
+        "REGULATORY_CAPITAL",
+        "CREDIT_QUALITY"
+      ],
+      "unknown_constraints": [],
+      "constraint_interactions": [],
+      "previous_primary_constraint": "UNAVAILABLE",
+      "current_primary_constraint": "DEPOSITS",
+      "constraint_transition": "UNAVAILABLE",
+      "transition_confidence": "INSUFFICIENT",
+      "transition_evidence_ids": []
+    },
+    "scaling_economics": {
+      "metrics": [
+        {
+          "name": "revenue_per_assets",
+          "value": 0.031818181818181815,
+          "unit": "multiple",
+          "current_period": "FY2025 vs FY2024",
+          "comparison_period": "Prior comparable period",
+          "interpretation": "Asset turnover",
+          "evidence_id": "E23"
+        },
+        {
+          "name": "loan_growth",
+          "value": null,
+          "unit": "decimal",
+          "current_period": "FY2025 vs FY2024",
+          "comparison_period": "Prior comparable period",
+          "interpretation": "Loan Growth",
+          "evidence_id": null
+        },
+        {
+          "name": "deposit_growth",
+          "value": null,
+          "unit": "decimal",
+          "current_period": "FY2025 vs FY2024",
+          "comparison_period": "Prior comparable period",
+          "interpretation": "Deposit Growth",
+          "evidence_id": null
+        }
+      ],
+      "interpretation": "Available scaling evidence is mixed or level-only; operating leverage needs confirmation.",
+      "confidence": "LOW"
+    },
+    "growth_sustainability": {
+      "current_revenue_growth": 0.071,
+      "primary_growth_engine": "ASSETS",
+      "primary_constraint": "DEPOSITS",
+      "constraint_direction": "EASING",
+      "scaling_structure": "Available scaling evidence is mixed or level-only; operating leverage needs confirmation.",
+      "supporting_evidence_ids": [
+        "E13",
+        "E14",
+        "E18",
+        "E7",
+        "E16",
+        "E17",
+        "E23"
+      ],
+      "contrary_evidence_ids": [],
+      "interpretation": "Current evidence supports continued growth because the observed growth engine remains active and the identified constraint is not tightening; maintaining the rate still requires the cited drivers to persist.",
+      "confidence": "MODERATE"
+    },
+    "falsification_conditions": [
+      {
+        "condition": "Deposit funding weakens",
+        "observable_metric": "deposit",
+        "rationale": "This would weaken the Revenue \u2248 Earning Assets \u00d7 Net Interest Spread + Fees growth mechanism or its cash conversion.",
+        "evidence_ids": [
+          "E13",
+          "E14",
+          "E18",
+          "E16"
+        ]
+      },
+      {
+        "condition": "Credit losses accelerate",
+        "observable_metric": "credit",
+        "rationale": "This would weaken the Revenue \u2248 Earning Assets \u00d7 Net Interest Spread + Fees growth mechanism or its cash conversion.",
+        "evidence_ids": [
+          "E13",
+          "E14",
+          "E18",
+          "E16"
+        ]
+      },
+      {
+        "condition": "Capital headroom contracts",
+        "observable_metric": "capital",
+        "rationale": "This would weaken the Revenue \u2248 Earning Assets \u00d7 Net Interest Spread + Fees growth mechanism or its cash conversion.",
+        "evidence_ids": [
+          "E13",
+          "E14",
+          "E18",
+          "E16"
+        ]
+      }
+    ],
+    "financial_translation": {
+      "revenue_forecast": {
+        "state": "POSITIVE",
+        "reason": "Current evidence supports continued growth because the observed growth engine remains active and the identified constraint is not tightening; maintaining the rate still requires the cited drivers to persist.",
+        "evidence_ids": [
+          "E13",
+          "E14",
+          "E18",
+          "E7",
+          "E16",
+          "E17",
+          "E23"
+        ]
+      },
+      "margin": {
+        "state": "INSUFFICIENT_EVIDENCE",
+        "reason": "Incremental operating margin is unavailable.",
+        "evidence_ids": []
+      },
+      "capital_intensity": {
+        "state": "INSUFFICIENT_EVIDENCE",
+        "reason": "Comparable capex growth is unavailable.",
+        "evidence_ids": []
+      },
+      "fcff_conversion": {
+        "state": "INSUFFICIENT_EVIDENCE",
+        "reason": "Incremental FCF margin is unavailable.",
+        "evidence_ids": []
+      }
+    },
+    "valuation_assumption_review": {
+      "reviews": [
+        {
+          "assumption": "revenue_growth",
+          "dcf_value": 0.0639,
+          "state": "SUPPORTED",
+          "reason": "DCF Year-1 growth of 6.4% is compared with observed growth of 7.1%; Company Economics does not change it.",
+          "evidence_ids": [
+            "E13",
+            "E14",
+            "E18",
+            "E7"
+          ]
+        },
+        {
+          "assumption": "fcff_margin",
+          "dcf_value": 0.02,
+          "state": "SUPPORTED",
+          "reason": "DCF normalized FCFF margin of 2.0% is compared with observed FCFF margin of 0.0%; no mutation occurs.",
+          "evidence_ids": [
+            "E13",
+            "E14",
+            "E18",
+            "E7"
+          ]
+        }
+      ],
+      "mutates_dcf_inputs": false
+    },
+    "market_expectations_comparison": {
+      "state": "ROUGHLY_CONSISTENT",
+      "market_implied_revenue_cagr": 0.049699999999999994,
+      "market_implied_fcff_margin": 0.02,
+      "observed_economics": "Current evidence supports continued growth because the observed growth engine remains active and the identified constraint is not tightening; maintaining the rate still requires the cited drivers to persist.",
+      "reason": "Market-implied five-year growth of 5.0% is compared with observed growth of 7.1% and the diagnosed scaling structure.",
+      "evidence_ids": [
+        "E13",
+        "E14",
+        "E18",
+        "E7"
+      ]
+    },
+    "data_gaps": [
+      {
+        "missing_field": "fees",
+        "related_driver": "FEES",
+        "related_constraint": null,
+        "why_it_matters": "Direct observation would confirm the growth equation component.",
+        "confidence_impact": "Driver confidence remains LOW.",
+        "fallback_proxy_used": "revenue growth"
+      },
+      {
+        "missing_field": "loan_growth",
+        "related_driver": null,
+        "related_constraint": null,
+        "why_it_matters": "Required to evaluate archetype-specific scaling economics.",
+        "confidence_impact": "Scaling confidence is reduced.",
+        "fallback_proxy_used": null
+      },
+      {
+        "missing_field": "deposit_growth",
+        "related_driver": null,
+        "related_constraint": null,
+        "why_it_matters": "Required to evaluate archetype-specific scaling economics.",
+        "confidence_impact": "Scaling confidence is reduced.",
+        "fallback_proxy_used": null
+      }
+    ],
+    "evidence_trace": [
+      {
+        "id": "E1",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "ticker",
+        "statement": "Ticker is reported as BAC.",
+        "value": "BAC",
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "security resolution / structured financial provider",
+        "source_type": "structured_data",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E2",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "company_name",
+        "statement": "Company Name is reported as Bank of America.",
+        "value": "Bank of America",
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "security resolution / structured financial provider",
+        "source_type": "structured_data",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E3",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "sector",
+        "statement": "Sector is reported as Financial Services.",
+        "value": "Financial Services",
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "security resolution / structured financial provider",
+        "source_type": "structured_data",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E4",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "industry",
+        "statement": "Industry is reported as Banks - Diversified.",
+        "value": "Banks - Diversified",
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "security resolution / structured financial provider",
+        "source_type": "structured_data",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E5",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "business_description",
+        "statement": "Business Description is reported as Bank holding company providing deposits, lending, commercial banking, wealth, and fee services..",
+        "value": "Bank holding company providing deposits, lending, commercial banking, wealth, and fee services.",
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "security resolution / structured financial provider",
+        "source_type": "structured_data",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E6",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "revenue",
+        "statement": "Revenue is reported as 105000.0.",
+        "value": 105000.0,
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E7",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "revenue_growth",
+        "statement": "Revenue Growth is reported as 0.071.",
+        "value": 0.071,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "IMPROVING",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E8",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "gross_margin",
+        "statement": "Gross Margin is reported as 0.0.",
+        "value": 0.0,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E9",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "operating_income",
+        "statement": "Operating Income is reported as 36000.0.",
+        "value": 36000.0,
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E10",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "operating_margin",
+        "statement": "Operating Margin is reported as 0.343.",
+        "value": 0.343,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E11",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "fcf",
+        "statement": "Fcf is reported as 0.0.",
+        "value": 0.0,
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E12",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "fcf_margin",
+        "statement": "Fcf Margin is reported as 0.0.",
+        "value": 0.0,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E13",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "assets",
+        "statement": "Assets is reported as 3300000.0.",
+        "value": 3300000.0,
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E14",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "asset_growth",
+        "statement": "Asset Growth is reported as 0.04.",
+        "value": 0.04,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "IMPROVING",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E15",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "employees",
+        "statement": "Employees is reported as 213000.",
+        "value": 213000,
+        "unit": "count",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E16",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "deposits",
+        "statement": "Deposits is reported as 1950000.0.",
+        "value": 1950000.0,
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E17",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "deposit_growth",
+        "statement": "Deposit Growth is reported as 0.02.",
+        "value": 0.02,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "IMPROVING",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E18",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "net_interest_margin",
+        "statement": "Net Interest Margin is reported as 0.021.",
+        "value": 0.021,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E19",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "loan_growth",
+        "statement": "Loan Growth is reported as 0.01.",
+        "value": 0.01,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "STABLE",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E20",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "cet1_ratio",
+        "statement": "Cet1 Ratio is reported as 0.119.",
+        "value": 0.119,
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E21",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "charge_offs",
+        "statement": "Charge Offs is reported as 0.006.",
+        "value": 0.006,
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E22",
+        "type": "INFERENCE",
+        "tier": "INDIRECT",
+        "metric": "business_model_classification",
+        "statement": "The supported primary business-model archetype is BANK.",
+        "value": null,
+        "unit": "",
+        "period": "Current structural profile",
+        "source": "Company Economics deterministic classifier",
+        "source_type": "model",
+        "source_nature": "INFERRED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": [
+          "E3",
+          "E4",
+          "E5",
+          "E6",
+          "E8"
+        ]
+      },
+      {
+        "id": "E23",
+        "type": "PROXY",
+        "tier": "INDIRECT",
+        "metric": "revenue_per_assets",
+        "statement": "Revenue Per Assets is 0.0318.",
+        "value": 0.031818181818181815,
+        "unit": "multiple",
+        "period": "FY2025 vs FY2024",
+        "source": "calculated from normalized company snapshot",
+        "source_type": "calculation",
+        "source_nature": "CALCULATED",
+        "direction": "UNKNOWN",
+        "confidence": "MODERATE",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E24",
+        "type": "INFERENCE",
+        "tier": "INDIRECT",
+        "metric": "deposits_diagnosis",
+        "statement": "Deposits appears easing based on the cited operating and scaling evidence.",
+        "value": null,
+        "unit": "",
+        "period": "Current assessment",
+        "source": "Company Economics deterministic diagnosis",
+        "source_type": "model",
+        "source_nature": "INFERRED",
+        "direction": "UNKNOWN",
+        "confidence": "MODERATE",
+        "related_driver": null,
+        "related_constraint": "DEPOSITS",
+        "supporting_evidence_ids": [
+          "E16",
+          "E17"
+        ]
+      },
+      {
+        "id": "E25",
+        "type": "INFERENCE",
+        "tier": "INDIRECT",
+        "metric": "funding_cost_diagnosis",
+        "statement": "Funding Cost appears stable based on the cited operating and scaling evidence.",
+        "value": null,
+        "unit": "",
+        "period": "Current assessment",
+        "source": "Company Economics deterministic diagnosis",
+        "source_type": "model",
+        "source_nature": "INFERRED",
+        "direction": "UNKNOWN",
+        "confidence": "LOW",
+        "related_driver": null,
+        "related_constraint": "FUNDING_COST",
+        "supporting_evidence_ids": [
+          "E18"
+        ]
+      },
+      {
+        "id": "E26",
+        "type": "INFERENCE",
+        "tier": "INDIRECT",
+        "metric": "regulatory_capital_diagnosis",
+        "statement": "Regulatory Capital appears stable based on the cited operating and scaling evidence.",
+        "value": null,
+        "unit": "",
+        "period": "Current assessment",
+        "source": "Company Economics deterministic diagnosis",
+        "source_type": "model",
+        "source_nature": "INFERRED",
+        "direction": "UNKNOWN",
+        "confidence": "LOW",
+        "related_driver": null,
+        "related_constraint": "REGULATORY_CAPITAL",
+        "supporting_evidence_ids": [
+          "E20"
+        ]
+      },
+      {
+        "id": "E27",
+        "type": "INFERENCE",
+        "tier": "INDIRECT",
+        "metric": "credit_quality_diagnosis",
+        "statement": "Credit Quality appears stable based on the cited operating and scaling evidence.",
+        "value": null,
+        "unit": "",
+        "period": "Current assessment",
+        "source": "Company Economics deterministic diagnosis",
+        "source_type": "model",
+        "source_nature": "INFERRED",
+        "direction": "UNKNOWN",
+        "confidence": "LOW",
+        "related_driver": null,
+        "related_constraint": "CREDIT_QUALITY",
+        "supporting_evidence_ids": [
+          "E21"
+        ]
+      }
+    ],
+    "economic_graph": {
+      "nodes": [
+        {
+          "id": "revenue",
+          "label": "Revenue",
+          "type": "revenue"
+        },
+        {
+          "id": "assets",
+          "label": "Assets",
+          "type": "growth_driver"
+        },
+        {
+          "id": "net_interest_spread",
+          "label": "Net Interest Spread",
+          "type": "growth_driver"
+        },
+        {
+          "id": "fees",
+          "label": "Fees",
+          "type": "growth_driver"
+        },
+        {
+          "id": "deposits",
+          "label": "Deposits",
+          "type": "constraint"
+        },
+        {
+          "id": "margin",
+          "label": "Margin",
+          "type": "margin"
+        },
+        {
+          "id": "cash_flow",
+          "label": "Cash Flow",
+          "type": "cash_flow"
+        },
+        {
+          "id": "valuation",
+          "label": "Valuation Review",
+          "type": "valuation"
+        }
+      ],
+      "edges": [
+        {
+          "from": "assets",
+          "to": "revenue",
+          "relationship": "drives"
+        },
+        {
+          "from": "net_interest_spread",
+          "to": "revenue",
+          "relationship": "drives"
+        },
+        {
+          "from": "fees",
+          "to": "revenue",
+          "relationship": "drives"
+        },
+        {
+          "from": "deposits",
+          "to": "revenue",
+          "relationship": "limits"
+        },
+        {
+          "from": "revenue",
+          "to": "margin",
+          "relationship": "supports"
+        },
+        {
+          "from": "margin",
+          "to": "cash_flow",
+          "relationship": "converts_to"
+        },
+        {
+          "from": "cash_flow",
+          "to": "valuation",
+          "relationship": "supports"
+        }
+      ]
+    },
+    "validation": {
+      "status": "PROVISIONAL",
+      "checks": {
+        "company_identity_valid": true,
+        "archetype_valid": true,
+        "classification_evidence_exists": true,
+        "growth_equation_exists": true,
+        "growth_drivers_exist": true,
+        "primary_constraint_supported_or_unknown": true,
+        "evidence_ids_unique": true,
+        "facts_have_sources": true,
+        "facts_have_periods": true,
+        "facts_have_values": true,
+        "proxies_labeled": true,
+        "inferences_cite_evidence": true,
+        "classification_evidence_references_exist": true,
+        "high_confidence_is_justified": true,
+        "data_gaps_explicit": true,
+        "scaling_metrics_valid": true,
+        "falsification_conditions_exist": true,
+        "valuation_review_does_not_mutate": true,
+        "ticker_overrides_are_declarative": true,
+        "json_serializable": true,
+        "graph_node_types_valid": true,
+        "graph_edges_valid": true
+      },
+      "reasons": [
+        "Data gaps or UNKNOWN conclusions remain explicit."
+      ]
+    },
+    "data_quality": {
+      "classification": "HIGH",
+      "constraint_diagnosis": "MODERATE",
+      "valuation": "AVAILABLE",
+      "overall": "PARTIAL",
+      "evidence_coverage": {
+        "facts": 21,
+        "proxies": 1,
+        "inferences": 5,
+        "gaps": 3
+      }
+    },
+    "qualitative_research_needed": false,
+    "qualitative_research_reason": "Current structured evidence supports the reported deterministic diagnosis.",
+    "company_economics_schema_version": "1.1"
+  }
+}

@@ -4,6 +4,71 @@ This changelog summarizes the evolution of the Market Intelligence System based 
 
 ## Unreleased
 
+### Company Economics Engine
+
+- Replaced the six-fixture production company surface with on-demand universal ticker resolution, explicit research states, Yahoo-to-SEC structured-provider failover, and a schema-versioned structural profile cache.
+- Added deterministic metadata/industry/structural classification across 15 reusable archetypes, override-dependency diagnostics, and a rule preventing financial proxies from being promoted to confirmed primary constraints.
+- Added CLI and `/api/research` resolve/analyze/open/index flows plus frontend resolved, analyzing, partial, insufficient-data, unsupported, stale, and failed states.
+- Expanded the regression matrix to 16 fixtures and added live structured-provider validation for AMD, CRM, META, WMT, BAC, CAT, XOM, LLY, V, and UBER.
+- Added a typed, deterministic company-economic domain model with a normalized `CompanySnapshot`.
+- Added 15 reusable archetypes, composable growth primitives, a reusable constraint registry, and small declarative overrides.
+- Added FACT / PROXY / INFERENCE provenance, REPORTED / CALCULATED / DERIVED_PROXY / INFERRED source nature, period/source metadata, evidence references, and structured data gaps.
+- Added growth architecture, archetype-relevant scaling economics, safe incremental margins, constraint direction/interaction, sustainability, falsification, and financial translation engines.
+- Added read-only DCF assumption review and reverse-DCF market-expectation comparison. Company Economics never mutates valuation assumptions.
+- Added schema-versioned pure JSON, terminal output, frontend-ready causal graph, structural cache metadata, and comprehensive validation.
+- Added no-op qualitative-provider and future extractor interfaces with no LLM/API dependency.
+- Added `economics` and `company-economics` CLI aliases; `company` includes the economics layer by default.
+- Added deterministic fixtures for PLTR, NVDA, TSM, MSFT, JPM, COST, AMD, CRM, META, WMT, BAC, CAT, XOM, LLY, V, and UBER and 36 focused Company Economics/universal-company tests.
+- Allowed intrinsic valuation to accept an already-collected data object so economics and valuation can reuse provider data without changing valuation math.
+
+### Intrinsic Valuation Engine
+
+- Added a company-type-aware Stage 1 valuation engine separate from Company Intelligence.
+- Added five-year FCFF DCF support for mature operating companies.
+- Added revenue-to-FCFF convergence DCF support for growth software companies.
+- Added cycle-adjusted DCF support using normalized mid-cycle economics for cyclical companies.
+- Added traceable bear, base, and bull assumptions with source, basis, confidence, scenario, and period metadata.
+- Added transparent WACC construction, Gordon-growth terminal value, and exit-multiple reconciliation.
+- Added reverse DCF with fixed-assumption disclosure, economic search bounds, residual error, boundary checks, and explicit non-convergence states.
+- Added fully recalculated WACC/terminal-growth sensitivity tables with invalid-cell and monotonicity validation.
+- Added JSON-only output and manual overrides for revenue growth, Year-5 FCFF margin, WACC, and terminal growth.
+- Added friendly non-zero CLI errors for invalid valuation options without tracebacks.
+- Added period-basis disclosure and annual/TTM mismatch validation.
+- Added graceful specialized-framework fallbacks for financial institutions, REITs, pre-profit companies, ETFs/funds, SPACs, and unresolved securities.
+- Added internal checks for forecast arithmetic, terminal value, EV-to-equity reconciliation, diluted shares, scenario ordering, reverse DCF, period consistency, and sensitivity behavior.
+
+### US Inflation Pressure Engine
+
+- Replaced CLI option `8` with `US Inflation Pressure Engine`.
+- Added equivalent `inflation`, `cpi`, and `inflation-pressure` command aliases.
+- Added a forward 3–6 month framework covering wages, shelter/rent, services, energy, goods, headline/core CPI, and headline/core PCE.
+- Added explicit threshold and trend evidence, unavailable-data labels, Fed sensitivity, market implications, and measurable view-change conditions.
+- Preserved the former Private AI code and data under `archive/private_ai/`, with no active CLI route.
+
+### Evidence-first company intelligence report
+
+- Added `company_report.py` for a deeper company-level report.
+- Reworked mature operating-company output around business fundamentals, valuation reality, price action versus fundamentals, narrative conviction, positioning / overheat risk, strengthening conditions, weakening conditions, and final interpretation.
+- Added TTM revenue, prior revenue, revenue growth, operating margin change, TTM FCF, FCF growth, FCF margin, FCF yield, relative strength versus SPY, 200MA distance, and valuation decomposition.
+- Added explicit unavailable-data handling for missing revenue, margin, FCF, valuation, estimate, and price fields.
+- Preserved non-recommendation language and avoided using quality scores as the main report output.
+
+### Risk regime and defensive rotation monitor
+
+- Added `risk_regime.py` as a standalone Risk Regime & Defensive Rotation Monitor.
+- Added narrative-first classification for:
+  - `Healthy Rotation`
+  - `Narrow Leadership Unwind`
+  - `Broad Risk-Off`
+  - `Liquidity / Inflation Stress`
+- Added evidence matrix using US market structure, momentum/high-beta weakness, defensive sector relative strength, global equity confirmation, EWL / Switzerland defensive proxy, HYG vs LQD credit stress, volatility, Treasury hedge behavior, gold, and USD pressure.
+- Added graceful unavailable-data handling so missing proxies do not break the report.
+- Added mock examples for all four risk regimes through `python3 risk_regime.py`.
+- Integrated the monitor into the macro and full reports.
+- Added risk-regime context to sector, company, and ticker risk commands.
+- Added `Risk Regime & Defensive Rotation` as option `7` in the CLI menu with `risk-regime`, `regime`, `rotation`, and `defensive-rotation` aliases.
+- Documented that EWL / Switzerland is one defensive global proxy, not a standalone trading signal.
+
 ### Market intelligence extensions
 
 - Added a full-report extension layer after the final market interpretation.

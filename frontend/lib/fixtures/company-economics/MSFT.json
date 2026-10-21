@@ -1,0 +1,1010 @@
+{
+  "company_economics": {
+    "company": {
+      "name": "Microsoft",
+      "ticker": "MSFT",
+      "as_of": "2025-12-31",
+      "security_type": "OPERATING_COMPANY",
+      "exchange": "",
+      "currency": "",
+      "country": "",
+      "quote_type": "",
+      "sector": "Technology",
+      "industry": "Software - Infrastructure"
+    },
+    "classification": {
+      "primary_archetype": "HYPERSCALER_CLOUD_PLATFORM",
+      "secondary_archetypes": [
+        "TRADITIONAL_SAAS",
+        "ENTERPRISE_AI_SOFTWARE"
+      ],
+      "classification_confidence": "HIGH",
+      "routing_evidence": [
+        "business description contains 'hyperscale'",
+        "capex intensity reinforces the metadata route's physical capacity economics",
+        "declarative company routing preference"
+      ],
+      "routing_evidence_ids": [
+        "E3",
+        "E4",
+        "E5",
+        "E6",
+        "E8",
+        "E13"
+      ],
+      "override_used": true,
+      "override_required": true,
+      "override_changes": [
+        "preferred_archetype: TRADITIONAL_SAAS -> HYPERSCALER_CLOUD_PLATFORM",
+        "constraint_priority: COMPUTE_CAPACITY, POWER_CAPACITY, DATACENTER_CAPACITY",
+        "secondary_archetypes: TRADITIONAL_SAAS"
+      ]
+    },
+    "core_economic_question": "Can Microsoft convert infrastructure investment into workload and revenue growth before physical capacity and capital intensity constrain returns?",
+    "growth_architecture": {
+      "primary_growth_equation": "Revenue \u2248 Cloud Workloads \u00d7 Cloud Spend + Software Monetization",
+      "primary_driver": {
+        "primitive": "WORKLOADS",
+        "importance": "PRIMARY",
+        "observability": "DIRECT",
+        "evidence_ids": [
+          "E17",
+          "E18"
+        ],
+        "confidence": "HIGH"
+      },
+      "secondary_drivers": [
+        {
+          "primitive": "CLOUD_SPEND",
+          "importance": "SECONDARY",
+          "observability": "DIRECT",
+          "evidence_ids": [
+            "E17"
+          ],
+          "confidence": "MODERATE"
+        },
+        {
+          "primitive": "SEATS",
+          "importance": "SECONDARY",
+          "observability": "INDIRECT",
+          "evidence_ids": [],
+          "confidence": "LOW"
+        }
+      ],
+      "direct_evidence_ids": [
+        "E17",
+        "E18",
+        "E17"
+      ],
+      "proxy_evidence_ids": [
+        "E7"
+      ],
+      "confidence": "MODERATE"
+    },
+    "constraints": {
+      "primary_constraint": {
+        "constraint": "COMPUTE_CAPACITY",
+        "economic_mechanism": "Available accelerators and compute infrastructure cap workload deployment.",
+        "supporting_evidence_ids": [
+          "E19"
+        ],
+        "contrary_evidence_ids": [
+          "E23"
+        ],
+        "direction": "MIXED",
+        "confidence": "MODERATE",
+        "data_gaps": [],
+        "inference": "Compute Capacity appears mixed based on the cited operating and scaling evidence.",
+        "inference_evidence_ids": [
+          "E19",
+          "E23"
+        ]
+      },
+      "secondary_constraints": [
+        {
+          "constraint": "POWER_CAPACITY",
+          "economic_mechanism": "Electrical interconnection and power availability cap usable infrastructure.",
+          "supporting_evidence_ids": [
+            "E20"
+          ],
+          "contrary_evidence_ids": [
+            "E23"
+          ],
+          "direction": "MIXED",
+          "confidence": "MODERATE",
+          "data_gaps": [],
+          "inference": "Power Capacity appears mixed based on the cited operating and scaling evidence.",
+          "inference_evidence_ids": [
+            "E20",
+            "E23"
+          ]
+        },
+        {
+          "constraint": "DATACENTER_CAPACITY",
+          "economic_mechanism": "Ready facilities cap installed compute and cloud capacity.",
+          "supporting_evidence_ids": [
+            "E21"
+          ],
+          "contrary_evidence_ids": [
+            "E23"
+          ],
+          "direction": "MIXED",
+          "confidence": "MODERATE",
+          "data_gaps": [],
+          "inference": "Datacenter Capacity appears mixed based on the cited operating and scaling evidence.",
+          "inference_evidence_ids": [
+            "E21",
+            "E23"
+          ]
+        }
+      ],
+      "candidate_constraints": [
+        "CUSTOMER_ADOPTION",
+        "CAPITAL_INTENSITY"
+      ],
+      "unknown_constraints": [],
+      "constraint_interactions": [
+        "COMPUTE_CAPACITY and POWER_CAPACITY may jointly limit conversion of demand into revenue; interaction evidence is currently indirect."
+      ],
+      "previous_primary_constraint": "UNAVAILABLE",
+      "current_primary_constraint": "COMPUTE_CAPACITY",
+      "constraint_transition": "UNAVAILABLE",
+      "transition_confidence": "INSUFFICIENT",
+      "transition_evidence_ids": []
+    },
+    "scaling_economics": {
+      "metrics": [
+        {
+          "name": "revenue_growth_minus_capex_growth",
+          "value": -0.273,
+          "unit": "decimal",
+          "current_period": "FY2025 vs FY2024",
+          "comparison_period": "Prior comparable period",
+          "interpretation": "Revenue growth less capex growth",
+          "evidence_id": "E23"
+        },
+        {
+          "name": "incremental_fcf_margin",
+          "value": 0.2222222222222222,
+          "unit": "decimal",
+          "current_period": "FY2025 vs FY2024",
+          "comparison_period": "Prior comparable period",
+          "interpretation": "Change in FCF divided by positive change in revenue",
+          "evidence_id": "E24"
+        },
+        {
+          "name": "revenue_per_capex",
+          "value": 4.390625,
+          "unit": "multiple",
+          "current_period": "FY2025 vs FY2024",
+          "comparison_period": "Prior comparable period",
+          "interpretation": "Revenue supported per unit of current capex",
+          "evidence_id": "E25"
+        }
+      ],
+      "interpretation": "Available archetype-relevant metrics indicate improving scaling.",
+      "confidence": "MODERATE"
+    },
+    "growth_sustainability": {
+      "current_revenue_growth": 0.147,
+      "primary_growth_engine": "WORKLOADS",
+      "primary_constraint": "COMPUTE_CAPACITY",
+      "constraint_direction": "MIXED",
+      "scaling_structure": "Available archetype-relevant metrics indicate improving scaling.",
+      "supporting_evidence_ids": [
+        "E17",
+        "E18",
+        "E7",
+        "E19",
+        "E23",
+        "E24",
+        "E25"
+      ],
+      "contrary_evidence_ids": [
+        "E23"
+      ],
+      "interpretation": "Current growth evidence and constraint direction are mixed; no durable-growth conclusion is forced.",
+      "confidence": "LOW"
+    },
+    "falsification_conditions": [
+      {
+        "condition": "Capex growth persists without cloud acceleration",
+        "observable_metric": "capex",
+        "rationale": "This would weaken the Revenue \u2248 Cloud Workloads \u00d7 Cloud Spend + Software Monetization growth mechanism or its cash conversion.",
+        "evidence_ids": [
+          "E17",
+          "E18",
+          "E19",
+          "E23"
+        ]
+      },
+      {
+        "condition": "Capacity additions fail to lift utilization",
+        "observable_metric": "capacity",
+        "rationale": "This would weaken the Revenue \u2248 Cloud Workloads \u00d7 Cloud Spend + Software Monetization growth mechanism or its cash conversion.",
+        "evidence_ids": [
+          "E17",
+          "E18",
+          "E19",
+          "E23"
+        ]
+      }
+    ],
+    "financial_translation": {
+      "revenue_forecast": {
+        "state": "POSITIVE",
+        "reason": "Current growth evidence and constraint direction are mixed; no durable-growth conclusion is forced.",
+        "evidence_ids": [
+          "E17",
+          "E18",
+          "E7",
+          "E19",
+          "E23",
+          "E24",
+          "E25"
+        ]
+      },
+      "margin": {
+        "state": "INSUFFICIENT_EVIDENCE",
+        "reason": "Incremental operating margin is unavailable.",
+        "evidence_ids": []
+      },
+      "capital_intensity": {
+        "state": "NEGATIVE",
+        "reason": "Revenue growth less capex growth",
+        "evidence_ids": [
+          "E23"
+        ]
+      },
+      "fcff_conversion": {
+        "state": "POSITIVE",
+        "reason": "Change in FCF divided by positive change in revenue",
+        "evidence_ids": [
+          "E24"
+        ]
+      }
+    },
+    "valuation_assumption_review": {
+      "reviews": [
+        {
+          "assumption": "revenue_growth",
+          "dcf_value": 0.1323,
+          "state": "SUPPORTED",
+          "reason": "DCF Year-1 growth of 13.2% is compared with observed growth of 14.7%; Company Economics does not change it.",
+          "evidence_ids": [
+            "E17",
+            "E18",
+            "E7",
+            "E19"
+          ]
+        },
+        {
+          "assumption": "fcff_margin",
+          "dcf_value": 0.312,
+          "state": "SUPPORTED",
+          "reason": "DCF normalized FCFF margin of 31.2% is compared with observed FCFF margin of 29.2%; no mutation occurs.",
+          "evidence_ids": [
+            "E17",
+            "E18",
+            "E7",
+            "E19"
+          ]
+        }
+      ],
+      "mutates_dcf_inputs": false
+    },
+    "market_expectations_comparison": {
+      "state": "ROUGHLY_CONSISTENT",
+      "market_implied_revenue_cagr": 0.10289999999999999,
+      "market_implied_fcff_margin": 0.312,
+      "observed_economics": "Current growth evidence and constraint direction are mixed; no durable-growth conclusion is forced.",
+      "reason": "Market-implied five-year growth of 10.3% is compared with observed growth of 14.7% and the diagnosed scaling structure.",
+      "evidence_ids": [
+        "E17",
+        "E18",
+        "E7",
+        "E19"
+      ]
+    },
+    "data_gaps": [
+      {
+        "missing_field": "seats",
+        "related_driver": "SEATS",
+        "related_constraint": null,
+        "why_it_matters": "Direct observation would confirm the growth equation component.",
+        "confidence_impact": "Driver confidence remains LOW.",
+        "fallback_proxy_used": "revenue growth"
+      }
+    ],
+    "evidence_trace": [
+      {
+        "id": "E1",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "ticker",
+        "statement": "Ticker is reported as MSFT.",
+        "value": "MSFT",
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "security resolution / structured financial provider",
+        "source_type": "structured_data",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E2",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "company_name",
+        "statement": "Company Name is reported as Microsoft.",
+        "value": "Microsoft",
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "security resolution / structured financial provider",
+        "source_type": "structured_data",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E3",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "sector",
+        "statement": "Sector is reported as Technology.",
+        "value": "Technology",
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "security resolution / structured financial provider",
+        "source_type": "structured_data",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E4",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "industry",
+        "statement": "Industry is reported as Software - Infrastructure.",
+        "value": "Software - Infrastructure",
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "security resolution / structured financial provider",
+        "source_type": "structured_data",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E5",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "business_description",
+        "statement": "Business Description is reported as Cloud computing hyperscale platform plus subscription software..",
+        "value": "Cloud computing hyperscale platform plus subscription software.",
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "security resolution / structured financial provider",
+        "source_type": "structured_data",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E6",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "revenue",
+        "statement": "Revenue is reported as 281000.0.",
+        "value": 281000.0,
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E7",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "revenue_growth",
+        "statement": "Revenue Growth is reported as 0.147.",
+        "value": 0.147,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "IMPROVING",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E8",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "gross_margin",
+        "statement": "Gross Margin is reported as 0.69.",
+        "value": 0.69,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E9",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "operating_income",
+        "statement": "Operating Income is reported as 128000.0.",
+        "value": 128000.0,
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E10",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "operating_margin",
+        "statement": "Operating Margin is reported as 0.456.",
+        "value": 0.456,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E11",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "fcf",
+        "statement": "Fcf is reported as 82000.0.",
+        "value": 82000.0,
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E12",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "fcf_margin",
+        "statement": "Fcf Margin is reported as 0.292.",
+        "value": 0.292,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E13",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "capex",
+        "statement": "Capex is reported as 64000.0.",
+        "value": 64000.0,
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E14",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "capex_growth",
+        "statement": "Capex Growth is reported as 0.42.",
+        "value": 0.42,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "IMPROVING",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E15",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "employees",
+        "statement": "Employees is reported as 228000.",
+        "value": 228000,
+        "unit": "count",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E16",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "employee_growth",
+        "statement": "Employee Growth is reported as 0.03.",
+        "value": 0.03,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "IMPROVING",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E17",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "cloud_growth",
+        "statement": "Cloud Growth is reported as 0.29.",
+        "value": 0.29,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "IMPROVING",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E18",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "workloads",
+        "statement": "Workloads is reported as 100.0.",
+        "value": 100.0,
+        "unit": "currency",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E19",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "compute_capacity_growth",
+        "statement": "Compute Capacity Growth is reported as 0.34.",
+        "value": 0.34,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "IMPROVING",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E20",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "power_capacity_growth",
+        "statement": "Power Capacity Growth is reported as 0.2.",
+        "value": 0.2,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "IMPROVING",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E21",
+        "type": "FACT",
+        "tier": "DIRECT",
+        "metric": "datacenter_capacity_growth",
+        "statement": "Datacenter Capacity Growth is reported as 0.25.",
+        "value": 0.25,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "deterministic fixture",
+        "source_type": "fixture",
+        "source_nature": "REPORTED",
+        "direction": "IMPROVING",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E22",
+        "type": "INFERENCE",
+        "tier": "INDIRECT",
+        "metric": "business_model_classification",
+        "statement": "The supported primary business-model archetype is HYPERSCALER_CLOUD_PLATFORM.",
+        "value": null,
+        "unit": "",
+        "period": "Current structural profile",
+        "source": "Company Economics deterministic classifier",
+        "source_type": "model",
+        "source_nature": "INFERRED",
+        "direction": "UNKNOWN",
+        "confidence": "HIGH",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": [
+          "E3",
+          "E4",
+          "E5",
+          "E6",
+          "E8",
+          "E13"
+        ]
+      },
+      {
+        "id": "E23",
+        "type": "PROXY",
+        "tier": "INDIRECT",
+        "metric": "revenue_growth_minus_capex_growth",
+        "statement": "Revenue Growth Minus Capex Growth is -0.2730.",
+        "value": -0.273,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "calculated from normalized company snapshot",
+        "source_type": "calculation",
+        "source_nature": "DERIVED_PROXY",
+        "direction": "DETERIORATING",
+        "confidence": "MODERATE",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E24",
+        "type": "PROXY",
+        "tier": "INDIRECT",
+        "metric": "incremental_fcf_margin",
+        "statement": "Incremental Fcf Margin is 0.2222.",
+        "value": 0.2222222222222222,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "calculated from normalized company snapshot",
+        "source_type": "calculation",
+        "source_nature": "CALCULATED",
+        "direction": "UNKNOWN",
+        "confidence": "MODERATE",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E25",
+        "type": "PROXY",
+        "tier": "INDIRECT",
+        "metric": "revenue_per_capex",
+        "statement": "Revenue Per Capex is 4.3906.",
+        "value": 4.390625,
+        "unit": "multiple",
+        "period": "FY2025 vs FY2024",
+        "source": "calculated from normalized company snapshot",
+        "source_type": "calculation",
+        "source_nature": "CALCULATED",
+        "direction": "UNKNOWN",
+        "confidence": "MODERATE",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": []
+      },
+      {
+        "id": "E26",
+        "type": "INFERENCE",
+        "tier": "INDIRECT",
+        "metric": "compute_capacity_diagnosis",
+        "statement": "Compute Capacity appears mixed based on the cited operating and scaling evidence.",
+        "value": null,
+        "unit": "",
+        "period": "Current assessment",
+        "source": "Company Economics deterministic diagnosis",
+        "source_type": "model",
+        "source_nature": "INFERRED",
+        "direction": "UNKNOWN",
+        "confidence": "MODERATE",
+        "related_driver": null,
+        "related_constraint": "COMPUTE_CAPACITY",
+        "supporting_evidence_ids": [
+          "E19",
+          "E23"
+        ]
+      },
+      {
+        "id": "E27",
+        "type": "INFERENCE",
+        "tier": "INDIRECT",
+        "metric": "power_capacity_diagnosis",
+        "statement": "Power Capacity appears mixed based on the cited operating and scaling evidence.",
+        "value": null,
+        "unit": "",
+        "period": "Current assessment",
+        "source": "Company Economics deterministic diagnosis",
+        "source_type": "model",
+        "source_nature": "INFERRED",
+        "direction": "UNKNOWN",
+        "confidence": "MODERATE",
+        "related_driver": null,
+        "related_constraint": "POWER_CAPACITY",
+        "supporting_evidence_ids": [
+          "E20",
+          "E23"
+        ]
+      },
+      {
+        "id": "E28",
+        "type": "INFERENCE",
+        "tier": "INDIRECT",
+        "metric": "datacenter_capacity_diagnosis",
+        "statement": "Datacenter Capacity appears mixed based on the cited operating and scaling evidence.",
+        "value": null,
+        "unit": "",
+        "period": "Current assessment",
+        "source": "Company Economics deterministic diagnosis",
+        "source_type": "model",
+        "source_nature": "INFERRED",
+        "direction": "UNKNOWN",
+        "confidence": "MODERATE",
+        "related_driver": null,
+        "related_constraint": "DATACENTER_CAPACITY",
+        "supporting_evidence_ids": [
+          "E21",
+          "E23"
+        ]
+      },
+      {
+        "id": "E29",
+        "type": "INFERENCE",
+        "tier": "INDIRECT",
+        "metric": "customer_adoption_diagnosis",
+        "statement": "Customer Adoption appears easing based on the cited operating and scaling evidence.",
+        "value": null,
+        "unit": "",
+        "period": "Current assessment",
+        "source": "Company Economics deterministic diagnosis",
+        "source_type": "model",
+        "source_nature": "INFERRED",
+        "direction": "UNKNOWN",
+        "confidence": "LOW",
+        "related_driver": null,
+        "related_constraint": "CUSTOMER_ADOPTION",
+        "supporting_evidence_ids": [
+          "E7"
+        ]
+      },
+      {
+        "id": "E30",
+        "type": "INFERENCE",
+        "tier": "INDIRECT",
+        "metric": "capital_intensity_diagnosis",
+        "statement": "Capital Intensity appears tightening based on the cited operating and scaling evidence.",
+        "value": null,
+        "unit": "",
+        "period": "Current assessment",
+        "source": "Company Economics deterministic diagnosis",
+        "source_type": "model",
+        "source_nature": "INFERRED",
+        "direction": "UNKNOWN",
+        "confidence": "MODERATE",
+        "related_driver": null,
+        "related_constraint": "CAPITAL_INTENSITY",
+        "supporting_evidence_ids": [
+          "E13",
+          "E25",
+          "E23"
+        ]
+      }
+    ],
+    "economic_graph": {
+      "nodes": [
+        {
+          "id": "revenue",
+          "label": "Revenue",
+          "type": "revenue"
+        },
+        {
+          "id": "workloads",
+          "label": "Workloads",
+          "type": "growth_driver"
+        },
+        {
+          "id": "cloud_spend",
+          "label": "Cloud Spend",
+          "type": "growth_driver"
+        },
+        {
+          "id": "seats",
+          "label": "Seats",
+          "type": "growth_driver"
+        },
+        {
+          "id": "compute_capacity",
+          "label": "Compute Capacity",
+          "type": "constraint"
+        },
+        {
+          "id": "margin",
+          "label": "Margin",
+          "type": "margin"
+        },
+        {
+          "id": "cash_flow",
+          "label": "Cash Flow",
+          "type": "cash_flow"
+        },
+        {
+          "id": "valuation",
+          "label": "Valuation Review",
+          "type": "valuation"
+        }
+      ],
+      "edges": [
+        {
+          "from": "workloads",
+          "to": "revenue",
+          "relationship": "drives"
+        },
+        {
+          "from": "cloud_spend",
+          "to": "revenue",
+          "relationship": "drives"
+        },
+        {
+          "from": "seats",
+          "to": "revenue",
+          "relationship": "drives"
+        },
+        {
+          "from": "compute_capacity",
+          "to": "revenue",
+          "relationship": "limits"
+        },
+        {
+          "from": "revenue",
+          "to": "margin",
+          "relationship": "supports"
+        },
+        {
+          "from": "margin",
+          "to": "cash_flow",
+          "relationship": "converts_to"
+        },
+        {
+          "from": "cash_flow",
+          "to": "valuation",
+          "relationship": "supports"
+        }
+      ]
+    },
+    "validation": {
+      "status": "PROVISIONAL",
+      "checks": {
+        "company_identity_valid": true,
+        "archetype_valid": true,
+        "classification_evidence_exists": true,
+        "growth_equation_exists": true,
+        "growth_drivers_exist": true,
+        "primary_constraint_supported_or_unknown": true,
+        "evidence_ids_unique": true,
+        "facts_have_sources": true,
+        "facts_have_periods": true,
+        "facts_have_values": true,
+        "proxies_labeled": true,
+        "inferences_cite_evidence": true,
+        "classification_evidence_references_exist": true,
+        "high_confidence_is_justified": true,
+        "data_gaps_explicit": true,
+        "scaling_metrics_valid": true,
+        "falsification_conditions_exist": true,
+        "valuation_review_does_not_mutate": true,
+        "ticker_overrides_are_declarative": true,
+        "json_serializable": true,
+        "graph_node_types_valid": true,
+        "graph_edges_valid": true
+      },
+      "reasons": [
+        "Data gaps or UNKNOWN conclusions remain explicit."
+      ]
+    },
+    "data_quality": {
+      "classification": "HIGH",
+      "constraint_diagnosis": "MODERATE",
+      "valuation": "AVAILABLE",
+      "overall": "PARTIAL",
+      "evidence_coverage": {
+        "facts": 21,
+        "proxies": 3,
+        "inferences": 6,
+        "gaps": 1
+      }
+    },
+    "qualitative_research_needed": false,
+    "qualitative_research_reason": "Current structured evidence supports the reported deterministic diagnosis.",
+    "company_economics_schema_version": "1.1"
+  }
+}

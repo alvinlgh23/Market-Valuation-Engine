@@ -1,0 +1,192 @@
+{
+  "slug": "thinking-machines",
+  "file": "thinking_machines.json",
+  "company": "Thinking Machines Lab",
+  "aliases": ["thinking machines", "thinking-machines-lab", "thinkingmachines"],
+  "last_updated": "2026-07-01",
+  "data_confidence": "Low",
+  "evidence_quality": "Limited public operating evidence; current public evidence is concentrated in founding team, financing reports, and broad research ambition rather than products, customers, or revenue.",
+  "sections": {
+    "business_scale": {
+      "ARR": {
+        "value": "Not publicly disclosed",
+        "status": "Not Public",
+        "source": "Thinking Machines Lab public disclosures",
+        "source_date": "2026-07-01",
+        "confidence": "N/A",
+        "reason": "No ARR has been published."
+      },
+      "Annual Revenue": {
+        "value": "Not publicly disclosed",
+        "status": "Not Public",
+        "source": "Thinking Machines Lab public disclosures",
+        "source_date": "2026-07-01",
+        "confidence": "N/A",
+        "reason": "No audited or reported revenue base has been published."
+      },
+      "Revenue Mix": {
+        "value": "Not publicly disclosed",
+        "status": "Not Public",
+        "source": "Thinking Machines Lab public disclosures",
+        "source_date": "2026-07-01",
+        "confidence": "N/A",
+        "reason": "No product revenue mix has been disclosed."
+      }
+    },
+    "customer_adoption": {
+      "Major Products": {
+        "value": "Not publicly disclosed",
+        "status": "Not Public",
+        "source": "Thinking Machines Lab public disclosures",
+        "source_date": "2026-07-01",
+        "confidence": "N/A",
+        "reason": "No flagship public product has been disclosed in enough detail for commercial analysis."
+      },
+      "Major Customers": {
+        "value": "Not publicly disclosed",
+        "status": "Not Public",
+        "source": "Thinking Machines Lab public disclosures",
+        "source_date": "2026-07-01",
+        "confidence": "N/A",
+        "reason": "No enterprise or developer customer base has been published."
+      },
+      "Developer Adoption": {
+        "value": "Not publicly disclosed",
+        "status": "Not Public",
+        "source": "Thinking Machines Lab public disclosures",
+        "source_date": "2026-07-01",
+        "confidence": "N/A",
+        "reason": "Developer platform usage has not been disclosed."
+      }
+    },
+    "model_product": {
+      "Current Flagship Models": {
+        "value": "Not publicly disclosed",
+        "status": "Not Public",
+        "source": "Thinking Machines Lab public disclosures",
+        "source_date": "2026-07-01",
+        "confidence": "N/A",
+        "reason": "No public flagship model has been released or disclosed with benchmark evidence."
+      },
+      "Product Roadmap": {
+        "value": "Frontier AI research and product development",
+        "status": "Reported",
+        "source": "Company public materials",
+        "source_date": "2025-2026",
+        "confidence": "Medium"
+      },
+      "Benchmark Leadership": {
+        "value": "Not publicly disclosed",
+        "status": "Not Public",
+        "source": "Public benchmark coverage",
+        "source_date": "2026-07-01",
+        "confidence": "N/A",
+        "reason": "No public benchmark track record has been established."
+      }
+    },
+    "infrastructure": {
+      "Cloud Partners": {
+        "value": "Not publicly disclosed",
+        "status": "Not Public",
+        "source": "Thinking Machines Lab public disclosures",
+        "source_date": "2026-07-01",
+        "confidence": "N/A",
+        "reason": "Cloud or compute partners have not been disclosed."
+      },
+      "Training Infrastructure": {
+        "value": "Not publicly disclosed",
+        "status": "Not Public",
+        "source": "Thinking Machines Lab public disclosures",
+        "source_date": "2026-07-01",
+        "confidence": "N/A",
+        "reason": "Training cluster scale has not been published."
+      },
+      "Estimated Compute Spending": {
+        "value": "Likely significant if frontier training is pursued",
+        "status": "Estimated",
+        "source": "Manual assessment from frontier AI research strategy",
+        "source_date": "2026-07-01",
+        "confidence": "Low",
+        "reason": "The company has not disclosed compute contracts or training roadmap details."
+      }
+    },
+    "capital": {
+      "Funding History": {
+        "value": "Large seed/private financing reported",
+        "status": "Reported",
+        "source": "Financial press reporting",
+        "source_date": "2025",
+        "confidence": "Medium"
+      },
+      "Known Investors": {
+        "value": "Reported investors vary by financing source",
+        "status": "Low confidence",
+        "source": "Financial press reporting",
+        "source_date": "2025",
+        "confidence": "Low",
+        "reason": "Complete cap table has not been publicly verified."
+      },
+      "Cash / Runway": {
+        "value": "Not publicly disclosed",
+        "status": "Not Public",
+        "source": "Thinking Machines Lab public disclosures",
+        "source_date": "2026-07-01",
+        "confidence": "N/A",
+        "reason": "Cash balance, burn, and runway have not been published."
+      }
+    },
+    "valuation": {
+      "Latest Valuation": {
+        "value": "Private valuation reporting is limited",
+        "status": "Low confidence",
+        "source": "Financial press reporting",
+        "source_date": "2025",
+        "confidence": "Low",
+        "reason": "Valuation details are not consistently reported or independently verifiable."
+      },
+      "Revenue Multiple": {
+        "value": "Not calculable",
+        "status": "Not Public",
+        "source": "Thinking Machines Lab public disclosures",
+        "source_date": "2026-07-01",
+        "confidence": "N/A",
+        "reason": "No public revenue base exists for a multiple calculation."
+      }
+    },
+    "competition": {
+      "Major Competitors": {
+        "value": ["OpenAI", "Anthropic", "Google DeepMind", "Meta AI", "xAI", "Mistral"],
+        "status": "Industry Estimate",
+        "source": "Manual competitive mapping",
+        "source_date": "2026-07-01",
+        "confidence": "Medium"
+      },
+      "Current Advantages": {
+        "value": ["Founder and research-team credibility", "Ability to define a fresh product direction"],
+        "status": "Industry Estimate",
+        "source": "Manual assessment from founding team and public materials",
+        "source_date": "2026-07-01",
+        "confidence": "Low"
+      },
+      "Current Weaknesses": {
+        "value": ["No disclosed revenue base", "No disclosed customer base", "No public benchmark record", "Likely compute and capital needs"],
+        "status": "Industry Estimate",
+        "source": "Manual assessment from missing public evidence",
+        "source_date": "2026-07-01",
+        "confidence": "Medium"
+      }
+    }
+  },
+  "interpretations": {
+    "business_scale": "Thinking Machines Lab should not be analyzed through revenue scale until revenue evidence exists.",
+    "customer_adoption": "Customer and adoption evidence is unavailable; any commercial thesis is premature until products, users, or contracts are disclosed.",
+    "model_product": "The market appears to value team quality and technical potential more than current product traction.",
+    "infrastructure": "If the company pursues frontier-model training, access to capital and compute will become a central constraint.",
+    "capital": "Expansion is best treated as funding-dependent until product revenue is disclosed.",
+    "valuation": "Any valuation context rests on team quality and expected future output, not disclosed revenue or customer adoption.",
+    "competition": "The company is currently a pre-commercial frontier AI lab competing for talent, compute, and future product relevance."
+  },
+  "strengthen": ["Flagship product is released with clear user adoption", "Enterprise or developer customers are disclosed", "Benchmarks show durable model differentiation", "Compute partnerships are announced"],
+  "weaken": ["Product launches are delayed", "No customer traction is disclosed after launch", "Model results fail to differentiate from larger labs", "Capital needs rise before commercial validation"],
+  "final_interpretation": "Thinking Machines Lab should not be forced into a revenue or valuation framework before the evidence exists. The current narrative is built around team credibility, research ambition, and future product optionality."
+}

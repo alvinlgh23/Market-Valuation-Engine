@@ -1,0 +1,96 @@
+import assert from "node:assert/strict";
+import { chromium } from "playwright";
+import { spawn } from "node:child_process";
+import { mkdtemp, writeFile, mkdir } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+
+const temp = await mkdtemp(path.join(os.tmpdir(), "chainstox-p62-"));
+const stateFile = path.join(temp, "state.json");
+const output = path.resolve("artifacts/phase6-2");
+await mkdir(output, { recursive: true });
+const state = value => writeFile(stateFile, JSON.stringify(value));
+await state({ strength: .42 });
+const base = "http://127.0.0.1:3012";
+const server = spawn(process.execPath, ["node_modules/next/dist/bin/next", "start", "-H", "127.0.0.1", "-p", "3012"], { env: { ...process.env, CHAINSTOX_PYTHON_EXECUTABLE: path.resolve("../tests/phase6_2_python_bridge.py"), CHAINSTOX_TEST_MODE: "1", CHAINSTOX_TEST_STATE: stateFile }, stdio: ["ignore", "pipe", "pipe"] });
+let logs = ""; server.stdout.on("data", d => logs += d); server.stderr.on("data", d => logs += d);
+let browser;
+try {
+  for (let i = 0; i < 60; i++) { try { if ((await fetch(base)).ok) break; } catch {} await new Promise(r => setTimeout(r, 250)); }
+  const api = async (url, options) => { const r = await fetch(base + url, options); return { status: r.status, body: await r.json() }; };
+  assert.equal((await api("/api/research?action=invalid")).status, 400);
+  assert.equal((await api("/api/research", { method: "POST", body: "{" })).status, 400);
+  assert.equal((await api("/api/research", { method: "POST", body: "null" })).status, 400);
+  assert.equal((await api("/api/research?action=valuation-analyze&ticker=NOT%20VALID")).body.status, "UNSUPPORTED_SECURITY");
+  assert.equal((await api("/api/research?action=company-resolve&ticker=MSFT")).body.resolution.ticker, "MSFT");
+  assert.equal((await api("/api/research", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "company-analyze", ticker: "MSFT" }) })).status, 200);
+  assert.equal((await api("/api/research?action=valuation-analyze&ticker=TSM")).body.report.company.ticker, "TSM");
+  assert.equal((await api("/api/research?action=valuation-analyze&ticker=JPM")).body.status, "FRAMEWORK_REQUIRED");
+  assert.equal((await api("/api/research?action=valuation-analyze&ticker=MISS")).body.status, "INSUFFICIENT_DATA");
+  const full = (await api("/api/research?scope=full")).body;
+  assert(Math.abs(full.data.modules.core_market.payload.sectors[0].rel_6m - .42) < 1e-10);
+  const curve = full.data.market_transmission.rates.metrics.find(x => x.key === "us_10y_5y");
+  assert.equal(curve.label, "10Y–5Y curve"); assert.equal(curve.maturity_metadata.period_alignment, "MISMATCH");
+  browser = await chromium.launch({ headless: true });
+  const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+  page.setDefaultTimeout(15000);
+  const errors = []; page.on("pageerror", e => errors.push(e.message));
+  await page.goto(base + "/markets?sector=semiconductors", { waitUntil: "networkidle" });
+  await page.locator(".market-state-strip").getByText("+42.0%", { exact: true }).waitFor();
+  await page.screenshot({ path: path.join(output, "01-python-sector-42.png") });
+  await state({ strength: -.17 });
+  await page.getByRole("button", { name: "Refresh measurements" }).click();
+  await page.locator(".market-state-strip").getByText("-17.0%", { exact: true }).waitFor();
+  await page.screenshot({ path: path.join(output, "02-python-sector-minus17.png") });
+  await state({ empty: true });
+  await page.getByRole("button", { name: "Refresh measurements" }).click();
+  await page.waitForFunction(() => document.querySelector(".market-state-strip article strong")?.textContent === "Unavailable");
+  await page.screenshot({ path: path.join(output, "03-sector-unavailable-structure-retained.png") });
+  await page.goto(base + "/valuation", { waitUntil: "networkidle" });
+  await page.getByRole("button", { name: "Open valuation" }).click();
+  await page.getByText("Enter a ticker or company name.").waitFor();
+  await page.getByLabel("Analyze a company valuation").fill("SPY");
+  await page.getByRole("button", { name: "Open valuation" }).click();
+  await page.getByText(/UNSUPPORTED: Fund/).waitFor();
+  await page.screenshot({ path: path.join(output, "04-search-unsupported.png") });
+  await page.getByLabel("Analyze a company valuation").fill("TSM");
+  await page.getByRole("button", { name: "Open valuation" }).click();
+  await page.waitForURL("**/valuation/TSM");
+  await page.locator(".valuation-range-surface").waitFor();
+  await page.screenshot({ path: path.join(output, "05-dynamic-nonfixture-tsm.png") });
+  await page.goto(base + "/valuation/PLTR?fixture=1&from=company&view=reverse-dcf", { waitUntil: "networkidle" });
+  await page.getByText("Market price cannot be reconciled within tested bounds").waitFor();
+  await page.getByRole("link", { name: "Sensitivity", exact: true }).click();
+  await page.waitForURL(url => url.searchParams.get("view") === "sensitivity");
+  await page.getByText("WACC × Terminal Growth").waitFor();
+  assert(new URL(page.url()).searchParams.get("fixture") === "1");
+  assert(new URL(page.url()).searchParams.get("from") === "company");
+  await page.reload(); await page.getByText("WACC × Terminal Growth").waitFor();
+  await page.goBack(); await page.getByText("Market price cannot be reconciled within tested bounds").waitFor();
+  await page.goForward(); await page.getByText("WACC × Terminal Growth").waitFor();
+  for (const [ticker, label] of [["MSFT", "passed"], ["PLTR", "provisional"], ["FAIL", "failed"], ["MISS", "missing-input"], ["JPM", "framework"], ["NOPRICE", "missing-price"]]) {
+    await page.goto(`${base}/valuation/${ticker}`, { waitUntil: "networkidle" });
+    if (["FAIL", "MISS"].includes(ticker)) { await page.getByRole("heading", { name: "Fair value withheld", exact: true }).waitFor(); assert.equal(await page.locator(".valuation-range-surface").count(), 0); assert(!await page.locator(".valuation-read-panel").textContent().then(x => x.includes("base-case estimate"))); }
+    if (ticker === "PLTR") await page.locator(".valuation-range-surface").getByText("Provisional", { exact: true }).waitFor();
+    await page.screenshot({ path: path.join(output, `06-${label}.png`) });
+  }
+  await page.goto(base + "/macro/rates", { waitUntil: "networkidle" });
+  await page.getByLabel("Curve maturity provenance").getByText("10Y–5Y curve", { exact: true }).waitFor();
+  await page.getByLabel("Curve maturity provenance").getByText(/MISMATCH/).waitFor();
+  await page.screenshot({ path: path.join(output, "07-curve-maturity.png") });
+  await state({ failure: true });
+  const stale = await api("/api/research?action=valuation-analyze&ticker=TSM&refresh=1");
+  assert.equal(stale.body.meta.data_state, "STALE"); assert.equal(stale.body.meta.error_code, "MISSING_DEPENDENCY");
+  const failure = await api("/api/research?action=valuation-analyze&ticker=ERROR");
+  assert.equal(failure.status, 502); assert.equal(failure.body.meta.error_code, "MISSING_DEPENDENCY");
+  const staleResearch = await api("/api/research?refresh=1");
+  assert.equal(staleResearch.body.meta.data_state, "STALE");
+  await page.goto(base + "/valuation/ERROR", { waitUntil: "networkidle" });
+  await page.getByText(/MISSING_DEPENDENCY/).waitFor();
+  await page.screenshot({ path: path.join(output, "08-runtime-error.png") });
+  assert.deepEqual(errors, []);
+  console.log("Phase 6.2: Python computation → research system → actual API → Markets UI changed +42.0% to -17.0%; empty output withheld metrics. Search, status, maturity, cache/error contracts and Back/Forward/reload passed.");
+} finally {
+  if (browser) await browser.close(); server.kill("SIGTERM");
+  await writeFile(path.join(output, "server.log"), logs);
+}
