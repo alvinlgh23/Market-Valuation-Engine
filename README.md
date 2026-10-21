@@ -1,10 +1,10 @@
-# Market Intelligence System
+# CHAINSTOX
 
 ## CHAINSTOX Macro World
 
 The macro frontend is backed by a normalized research-engine integration spanning the United States, Japan, South Korea, Singapore, and the Euro Area. See [MACRO_WORLD_AUDIT.md](MACRO_WORLD_AUDIT.md) for the coverage matrix, proxy disclosures, transmission ontology, CLI examples, and known data gaps.
 
-A live Yahoo Finance market commentary system for reading how capital moves through markets.
+A market intelligence and valuation research system for reading how capital moves through markets.
 
 The model is designed to explain:
 
@@ -68,6 +68,8 @@ python model.py company NVDA
 python model.py economics PLTR
 python model.py company-economics NVDA --json
 python model.py stock MU
+python model.py risk NVDA
+python model.py conclusion
 python model.py inflation
 python model.py cpi
 python model.py inflation-pressure
@@ -202,7 +204,7 @@ Classifications:
 
 The monitor influences sector and company interpretation by raising or lowering the required evidence for dip-buying, momentum continuation, and valuation discipline. It is not a trading signal.
 
-Some macro indicators such as Fed Funds, M2, Reverse Repo, CPI, and credit spreads need external or manual data feeds for a complete institutional-grade stack.
+Some macro inputs remain provider-dependent or unavailable; reports disclose missing evidence and data gaps.
 
 ## Integrated Research Frontend
 
@@ -221,3 +223,145 @@ npm run dev
 Open `http://localhost:3000` for the integrated command center and `/macro` for the world, country, transmission, Central Bank Compass, Shadow S$NEER, and KOSPI workspaces. `GET /api/research` serves the bundled last-valid payload; `?refresh=1` requests a live Python refresh and falls back cleanly if a source fails.
 
 The complete engine audit is in `CHAINSTOX_TOOL_INVENTORY.md`; before/after frontend parity and deliberate gaps are in `CHAINSTOX_UI_COVERAGE.md`. Research calculations remain in Python. The frontend does not recreate formulas, add an LLM, or emit buy/sell recommendations.
+
+## API Backend
+
+The CLI can also run behind a FastAPI service.
+
+Install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+Start the API locally:
+
+```bash
+uvicorn api.main:app --reload
+```
+
+Endpoints:
+
+```text
+GET  /health
+GET  /v1/modes
+POST /v1/analyze
+```
+
+Example request:
+
+```bash
+curl -X POST http://127.0.0.1:8000/v1/analyze \
+  -H "Content-Type: application/json" \
+  -d '{"mode":"company","input":"NVDA"}'
+```
+
+Supported API modes:
+
+- `macro`
+- `full`
+- `sectors`
+- `sectors_all`
+- `sector`
+- `company`
+- `risk`
+- `overheat`
+- `conclusion`
+
+Supported API aliases:
+
+- `1` -> `macro`
+- `2` -> `sectors`
+- `3`, `theme`, `sector-condition`, `check-sector` -> `sector`
+- `4`, `stock`, `company-condition`, `check-company` -> `company`
+- `5` -> `risk`
+- `6` -> `full`
+- `sectors-all`, `all-sectors` -> `sectors_all`
+
+`POST /v1/analyze` also accepts `{"mode":"sectors","input":"all"}` as an alias
+for `python model.py sectors all`.
+
+Security model:
+
+- no arbitrary shell execution
+- strict mode whitelist
+- ticker validation with uppercase `A-Z`, 1-6 characters
+- sector whitelist
+- subprocess execution uses an argument array
+- timeout protection via `ANALYSIS_TIMEOUT_SECONDS`
+- output length cap via `MAX_OUTPUT_CHARS`
+
+Reliability layer:
+
+- in-memory response cache enabled by default
+- default cache TTL is 15 minutes via `CACHE_TTL_SECONDS=900`
+- cache key is normalized `mode + input`, for example `macro`, `sectors_all`, `company_NVDA`
+- `company`, `risk`, and `overheat` can use `COMPANY_CACHE_TTL_SECONDS` when a shorter TTL is desired
+- lightweight per-IP rate limiting defaults to `RATE_LIMIT_PER_MINUTE=10`
+- timeout errors return a friendly `504` response without stack traces
+- Yahoo Finance `429` / provider rate-limit failures return `503`
+- temporary provider/network failures return `503`
+
+Every analysis response includes:
+
+```json
+{
+  "ok": true,
+  "cached": false,
+  "duration_ms": 1234,
+  "timestamp_utc": "2026-06-12T00:00:00+00:00"
+}
+```
+
+Error responses use the same metadata shape:
+
+```json
+{
+  "ok": false,
+  "cached": false,
+  "duration_ms": 5000,
+  "timestamp_utc": "2026-06-12T00:00:00+00:00",
+  "error": "Market data provider is temporarily rate-limited. Please try again later."
+}
+```
+
+Expanded health check:
+
+```json
+{
+  "status": "ok",
+  "service": "market-intelligence-api",
+  "version": "v1",
+  "cache_enabled": true
+}
+```
+
+Future hooks are intentionally isolated in `api/cache.py` and `api/rate_limit.py`
+so Redis, Postgres, or background jobs can be added later without changing the
+research engine.
+
+## Render Deployment
+
+This repository includes `render.yaml`.
+
+Recommended Render settings:
+
+```text
+Service type: Web Service
+Build command: pip install -r requirements.txt
+Start command: uvicorn api.main:app --host 0.0.0.0 --port $PORT
+```
+
+Environment variables:
+
+```text
+ANALYSIS_TIMEOUT_SECONDS=90
+MAX_OUTPUT_CHARS=60000
+CACHE_ENABLED=true
+CACHE_TTL_SECONDS=900
+COMPANY_CACHE_TTL_SECONDS=900
+RATE_LIMIT_PER_MINUTE=10
+```
+
+No database is required for the first API version. The backend returns live
+stdout reports from the existing CLI and does not store user requests.

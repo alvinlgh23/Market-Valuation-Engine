@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: market-intelligence-api
+    runtime: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn api.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: ANALYSIS_TIMEOUT_SECONDS
+        value: "90"
+      - key: MAX_OUTPUT_CHARS
+        value: "60000"
