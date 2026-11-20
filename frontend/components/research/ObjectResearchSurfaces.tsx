@@ -21,7 +21,7 @@ function display(value: unknown) {
 function Badge({ value }: { value: string }) { return <StatusBadge value={value} />; }
 
 export function ObjectHeader({ eyebrow, title: heading, summary }: { eyebrow: string; title: string; summary: string; state?: string }) {
-  return <header className="engine-module-header object-page-header"><div><span>{eyebrow}</span><h1>{heading}</h1><p>{summary}</p></div></header>;
+  return <header className="engine-module-header object-page-header"><div><span>{eyebrow}</span><h1>{heading}</h1>{summary ? <p>{summary}</p> : null}</div></header>;
 }
 
 function RecordGrid({ record, limit }: { record: Record<string, unknown>; limit?: number }) {
@@ -49,7 +49,7 @@ export function MacroResearch({ section, system }: { section: string; system: Re
   };
   const selected = Object.fromEntries((keys[section] ?? Object.keys(macro)).map((key) => [key, macro[key]]));
   const evidence = component ? US.evidence.filter((item) => component.evidence_ids.includes(item.id)) : [];
-  return <div className="engine-module"><ObjectHeader eyebrow={`MACRO / ${section.toUpperCase()}`} title={section === "central-banks" ? "Central banks" : title(section)} summary={component?.summary ?? `A focused view of available ${section.replaceAll("-", " ")} observations. Missing coverage remains explicit.`} state={system.modules.core_market.state} />
+  return <div className="engine-module"><ObjectHeader eyebrow={`MACRO / ${section.toUpperCase()}`} title={section === "central-banks" ? "Central banks" : title(section)} summary={component?.summary ?? ""} state={system.modules.core_market.state} />
     {Object.keys(selected).length ? <RecordGrid record={selected} /> : null}
     <section className="object-section"><header><div><span>MECHANISM</span><h2>{component?.state ?? "Regional policy frameworks"}</h2></div><Link href="/macro/world?region=US">Open regional research →</Link></header><p className="object-narrative">{component?.summary ?? "Open an integrated economy to inspect its policy framework, model state, confidence, watch conditions, and source evidence."}</p></section>
     <section className="engine-ledger"><header><h2>Evidence and provenance</h2><span>{evidence.length || "Regional"} records</span></header>{evidence.map((item) => <article key={item.id}><strong>{item.label}</strong><Badge value={item.evidence_type} /><span>{item.value} · {item.source}</span></article>)}{!evidence.length ? Object.values(system.world.regions).map((region) => <article key={region.id}><strong>{region.name}</strong><Badge value={region.availability} /><span>{region.brief}</span></article>) : null}</section>
@@ -69,7 +69,7 @@ export function MarketsResearch({ section, system }: { section: string; system: 
   if (section === "defensive-rotation") return <DefensiveRotationSurface risk={risk} state={system.modules.core_market.state} />;
   if (section === "breadth") return <MarketsRotationSurface sectorList={sectorList} selectedSector="semiconductors" view="breadth" selectedNodeId={null} />;
   if (section === "crowding") return <MarketsRotationSurface sectorList={sectorList} selectedSector="semiconductors" view="positioning" selectedNodeId={null} />;
-  return <div className="engine-module"><ObjectHeader eyebrow={`MARKETS / ${section.toUpperCase().replaceAll("-", " ")}`} title={title(section)} summary="Cross-asset market structure with coverage-gated conclusions." state={system.modules.core_market.state} /><RecordGrid record={fragility} /></div>;
+  return <div className="engine-module"><ObjectHeader eyebrow={`MARKETS / ${section.toUpperCase().replaceAll("-", " ")}`} title={title(section)} summary="Cross-asset market structure." state={system.modules.core_market.state} /><RecordGrid record={fragility} /></div>;
 }
 
 export function SectorResearch({ sector, system }: { sector: string; system: ResearchSystem }) {
@@ -225,7 +225,7 @@ function MarketsRotationSurface({ sectorList, selectedSector, view, selectedNode
   if (!selected) return <section className="valuation-framework-state"><h1>Sector unavailable</h1><p>No structural research object matches {selectedSector}.</p><Link href="/markets">Return to sector overview →</Link></section>;
   if (view === "report") return <div className="engine-module"><SectorReport sector={selected} /></div>;
   return <div className="engine-module markets-research-surface">
-    <ObjectHeader eyebrow="MARKETS / SECTOR ROTATION" title="Where leadership is moving" summary="Sector Rotation is the bridge between macro regime and company research: compare leadership, then open a sector, structure node, evidence, or company." state={selected.sourceState} />
+    <ObjectHeader eyebrow="MARKETS / SECTOR ROTATION" title="Where leadership is moving" summary="Relative strength of sector and theme ETFs against SPY over one, three and six months." state={selected.sourceState} />
     <div className={`markets-topology${hasPositioningPoints(sectorList) ? "" : " markets-topology-table-only"}`}>
       {hasPositioningPoints(sectorList) ? <RotationMap selected={selected} sectorList={sectorList} /> : null}
       <RotationTable sectorList={sectorList} />
@@ -244,7 +244,7 @@ function MarketsRotationSurface({ sectorList, selectedSector, view, selectedNode
 
 function DefensiveRotationSurface({ risk, state }: { risk: Record<string, unknown>; state: string }) {
   const evidence = (risk.evidence ?? {}) as Record<string, { label?: string; detail?: string }>;
-  return <div className="engine-module"><ObjectHeader eyebrow="MARKETS / DEFENSIVE ROTATION" title="Risk regime in market context" summary="This view reuses the existing risk-regime engine output as a market-rotation lens. No duplicate computation." state={state} /><section className="defensive-rotation-grid">{Object.entries(evidence).map(([key, item]) => <article key={key}><span>{title(key)}</span><strong>{item?.label ?? "Unavailable"}</strong><p>{item?.detail ?? "No detail available from current risk-regime payload."}</p></article>)}</section><section className="object-section"><header><div><span>CONTEXT BRIDGE</span><h2>Macro risk → market defensives</h2></div><Link href="/macro/risk">Open Macro Risk Regime →</Link></header><p className="object-narrative">{String(risk.sector_context ?? "Sector weakness should be compared against defensive rotation and breadth before calling it broad risk-off.")}</p></section></div>;
+  return <div className="engine-module"><ObjectHeader eyebrow="MARKETS / DEFENSIVE ROTATION" title="Risk regime in market context" summary="Whether recent weakness is rotation inside equities or a broad move away from risk." state={state} /><section className="defensive-rotation-grid">{Object.entries(evidence).map(([key, item]) => <article key={key}><span>{title(key)}</span><strong>{item?.label ?? "Unavailable"}</strong><p>{item?.detail ?? "No detail available from current risk-regime payload."}</p></article>)}</section><section className="object-section"><header><div><span>CONTEXT BRIDGE</span><h2>Macro risk → market defensives</h2></div><Link href="/macro/risk">Open Macro Risk Regime →</Link></header><p className="object-narrative">{String(risk.sector_context ?? "Sector weakness should be compared against defensive rotation and breadth before calling it broad risk-off.")}</p></section></div>;
 }
 
 export function CompanyIndex() {
@@ -272,7 +272,7 @@ export function FullMarketBrief({ system }: { system: ResearchSystem }) {
     ["Sector rotation", system.modules.core_market.payload?.sectors],
     ["Inflation pressure", system.modules.inflation.payload],
   ] as const;
-  return <div className="engine-module full-market-brief"><ObjectHeader eyebrow="DASHBOARD / REPORT MODE" title="Full market brief" summary="A deliberate long-form view of the same normalized research snapshot used across the interactive workspaces." state="CACHED" />
+  return <div className="engine-module full-market-brief"><ObjectHeader eyebrow="DASHBOARD / REPORT MODE" title="Full market brief" summary="The full written report from the same data as the other pages." state="CACHED" />
     <div className="report-mode-notice"><strong>REPORT MODE</strong><span>Interactive investigation remains available through Macro, Markets, Companies, and Valuation.</span><Link href="/">Return to dashboard →</Link></div>
     {sections.map(([heading, payload], index) => <section className="object-section report-data-section" key={heading}><header><div><span>SECTION {String(index + 1).padStart(2, "0")}</span><h2>{heading}</h2></div></header><pre>{JSON.stringify(payload ?? { state: "UNAVAILABLE" }, null, 2)}</pre></section>)}
   </div>;

@@ -486,7 +486,7 @@ def dashboard_from(world: dict[str, Any], inflation: dict[str, Any] | None, core
                 value = yield_return_to_bps(core_macro.get("tyx_level"), value)
             if value is not None:
                 formatted = f"{value:+.2f} bp 3M" if key == "tyx_3m" else f"{value * 100:+.2f}% 3M"
-                changed.insert(0, {"label": label, "value": formatted, "period": "available observation window", "interpretation": "Observed market change", "href": href})
+                changed.insert(0, {"label": label, "value": formatted, "period": "3-month change", "interpretation": "Observed market change", "href": href})
 
     priorities = []
     for profile in (us, jp, euro, sg, kr):

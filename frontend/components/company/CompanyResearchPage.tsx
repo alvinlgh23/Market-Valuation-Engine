@@ -103,7 +103,7 @@ export function CompanyResearchPage({ company, dataState = "FIXTURE", initialWor
       <div className="company-control-surface">
         <header className="snapshot-identity">
           <div><span>{company.ticker} / {company.name.toUpperCase()}</span><h1>{company.name}</h1><p>{company.archetype}</p></div>
-          <div className="snapshot-system-meta"><span>AS OF / {company.asOf}</span><span>SCHEMA / {company.raw.company_economics_schema_version}</span><span>VALIDATION / {company.raw.validation.status}</span></div>
+          <div className="snapshot-system-meta"><span>Data as of {String(company.asOf).slice(0, 10)}</span><span title={company.raw.validation.status}>Checks: {displayStatus(company.raw.validation.status)}</span></div>
         </header>
 
         <section className="snapshot-question">

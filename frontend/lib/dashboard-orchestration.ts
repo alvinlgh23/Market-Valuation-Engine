@@ -76,8 +76,8 @@ export function dashboardChanges(system: ResearchSystem): DashboardPriority[] {
     rank: index + 1,
     object: String(item.label || "Research object"),
     label: String(item.value || "Observed change"),
-    current: String(item.period || system.generated_at),
-    why: `Observed ${item.label || "research"} change classified ${item.interpretation || "available"} by the source module.`,
+    current: String(item.period || ""),
+    why: item.interpretation && item.interpretation !== "Observed market change" ? String(item.interpretation) : "",
     href: href(item, "/macro"),
     state: String(item.interpretation || "OBSERVED")
   }));

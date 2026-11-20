@@ -70,7 +70,7 @@ export function ResearchDashboard({ system }: { system: ResearchSystem; onModule
     <div className="command-center-primary">
       <section className="command-panel what-changed-panel">
         <PanelHeader code="WHAT CHANGED" title="Actual observed changes" />
-        <div className="ranked-command-list">{changes.map((item) => <Link href={item.href} key={`${item.object}-${item.rank}`}><b>{String(item.rank).padStart(2, "0")}</b><div><span>{item.object}</span><strong>{item.label}</strong><p>{item.why}</p><small>{item.current}</small></div><Badge state={item.state} /></Link>)}</div>
+        <div className="ranked-command-list">{changes.map((item) => <Link href={item.href} key={`${item.object}-${item.rank}`}><b>{String(item.rank).padStart(2, "0")}</b><div><span>{item.object}</span><strong>{item.label}</strong>{item.why ? <p>{item.why}</p> : null}{item.current ? <small>{item.current}</small> : null}</div>{item.state !== "Observed market change" ? <Badge state={item.state} /> : null}</Link>)}</div>
       </section>
       <section className="command-panel priority-panel">
         <PanelHeader code="RESEARCH PRIORITY" title="Where to inspect next" />
@@ -112,6 +112,6 @@ export function ResearchDashboard({ system }: { system: ResearchSystem; onModule
       </section>
     </div>
 
-    <footer className="system-dashboard-footer"><span>{system.disclaimer}</span><span>DASHBOARD → PRIORITY → MECHANISM → EVIDENCE</span></footer>
+    <footer className="system-dashboard-footer"><span>{system.disclaimer}</span></footer>
   </div>;
 }
