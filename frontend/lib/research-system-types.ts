@@ -100,6 +100,10 @@ export type InflationMetric = {
   endpoint: string | null;
 };
 
+export type LiquidityScore = { name: string; score: number | null; label: string | null; as_of?: string | null };
+export type EnvironmentFactor = { state: string; direction: number | null; readings: Record<string, unknown>; source: string; as_of: string | null; secondary: Array<Record<string, unknown>>; notes: string[]; confidence: string };
+export type EnvironmentLayer = { schema_version: string; as_of: string | null; factors: Record<string, EnvironmentFactor>; contradictions: Array<{ factors: string[]; text: string }>; tail_risk: Record<string, boolean>; risk_regime: Record<string, unknown> };
+
 export type ResearchSystem = {
   schema_version: string;
   generated_at: string;
@@ -120,6 +124,7 @@ export type ResearchSystem = {
   };
   world: MacroWorld;
   market_transmission: MarketTransmission;
+  environment?: EnvironmentLayer;
   modules: {
     inflation: EngineResult<{ metrics: Record<string, InflationMetric>; available: number; total: number; states: Record<string, string>; near_term: string; medium_term: string; horizon_reason: string; fed_sensitivity: string; common_month: string; latest_source: string; validation: Record<string, unknown>; provisional: boolean }>;
     core_market: EngineResult<Record<string, unknown>>;

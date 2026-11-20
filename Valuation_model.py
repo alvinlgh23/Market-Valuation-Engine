@@ -573,13 +573,9 @@ def risk_perception_label(vix_level):
 
 
 def carry_condition_label(usdjpy_3m, vix_level):
-    if usdjpy_3m is None and vix_level is None:
-        return "Unavailable"
-    if (usdjpy_3m is not None and usdjpy_3m < -0.03) or (vix_level is not None and vix_level > 24):
-        return "Unwind Risk"
-    if usdjpy_3m is not None and usdjpy_3m > 0.02 and (vix_level is None or vix_level < 20):
-        return "Supportive"
-    return "Neutral"
+    """CLI wording for the single yen-carry definition in environment.yen_carry_state."""
+    from environment import yen_carry_state
+    return {"INSUFFICIENT": "Unavailable", "UNWIND_RISK": "Unwind Risk", "ACCUMULATING": "Supportive", "STABLE": "Neutral"}[yen_carry_state(usdjpy_3m, vix_level)]
 
 
 def m2_trend_label(m2_trend):
@@ -2615,6 +2611,20 @@ def intensity_label(score, low="Low", mid="Moderate", high="High", extreme="Extr
     return low
 
 
+def policy_liquidity_text():
+    """Compass policy liquidity for the CLI, shown beside the market score (checklist 3.5)."""
+    try:
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            from macro_world import build_world
+            compass = build_world(["US"])["regions"]["US"]["engine_specific"]["central_bank_compass"]
+        liquidity = compass.get("liquidity") or {}
+        if liquidity.get("score") is None:
+            return "Unavailable"
+        return f"{liquidity.get('classification')} ({liquidity['score']:.0f}/100, Compass data as of {compass.get('latest')})"
+    except Exception as exc:  # noqa: BLE001 - display only
+        return f"Unavailable ({type(exc).__name__})"
+
+
 def print_global_liquidity_conditions(data):
     dxy_rising = data["dxy_3m"] is not None and data["dxy_3m"] > 0
     dxy_label = "Unavailable" if data.get("dxy_3m") is None else "Rising" if dxy_rising else "Falling / Stable"
@@ -2628,7 +2638,8 @@ def print_global_liquidity_conditions(data):
     print("GLOBAL LIQUIDITY CONDITIONS")
     print("=================================================")
     print()
-    print(f"Liquidity Regime: {liquidity_regime_label(data['liquidity_score'])}")
+    print(f"Market Liquidity (price-based): {liquidity_regime_label(data['liquidity_score'])} ({data['liquidity_score']:.0f}/100)")
+    print(f"Policy Liquidity (Compass): {policy_liquidity_text()}")
     print(f"Risk Perception: {risk_perception_label(data['vix_level'])}")
     print(f"Carry Conditions: {carry_condition_label(data.get('usdjpy_3m'), data['vix_level'])}")
     print()

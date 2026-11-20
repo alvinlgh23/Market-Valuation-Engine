@@ -3263,3 +3263,8 @@ body {
 .markets-topology.markets-topology-table-only { grid-template-columns: 1fr; }
 .sector-research-table > header, .sector-research-table > a { min-width: 0; }
 .missing-summary { margin: 32px 0 0; padding-top: 12px; border-top: 1px solid var(--research-line); color: var(--research-faint); font: 12px/1.5 var(--font-research); }
+
+/* Policy and market liquidity side by side (checklist 3.5). */
+.liquidity-pair { margin: 6px 0 0; font: 13px/1.5 var(--font-research); color: var(--research-muted); }
+.liquidity-pair strong { color: var(--research-text); font-weight: 560; }
+.liquidity-pair-disagree { color: var(--research-caution); }

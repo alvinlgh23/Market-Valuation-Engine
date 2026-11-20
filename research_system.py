@@ -17,6 +17,7 @@ from typing import Any, Callable
 from macro_world import build_world
 from research_capabilities import capability_payload
 from signal_history import record_module
+from environment import CARRY_EDGE_STATE, build_environment, fetch_cftc_jpy
 
 
 ROOT = Path(__file__).resolve().parent
@@ -542,6 +543,45 @@ def dashboard_from(world: dict[str, Any], inflation: dict[str, Any] | None, core
     }
 
 
+def with_two_liquidity_scores(dashboard: dict[str, Any], environment: dict[str, Any]) -> dict[str, Any]:
+    """Checklist 3.5: wherever liquidity is shown, show policy and market liquidity together."""
+    readings = environment["factors"]["liquidity"]["readings"]
+    policy, market = readings["policy_liquidity"], readings["market_liquidity"]
+    def score(item):
+        return "unavailable" if item["score"] is None else f"{item['score']:.0f}/100"
+    for read in dashboard.get("reads", []):
+        if read.get("id") == "liquidity":
+            read["value"] = f"Policy {policy['label'] or 'unavailable'} · Market {market['label'] or 'unavailable'}"
+            read["context"] = (f"{policy['name']}: {policy['label'] or 'unavailable'}, {score(policy)}. "
+                               f"{market['name']}: {market['label'] or 'unavailable'}, {score(market)}."
+                               + (" The two disagree and are not merged." if readings.get("relation") in {"DIFFERENT", "OPPOSITE"} else ""))
+            read["liquidity_relation"] = readings.get("relation")
+    return dashboard
+
+
+def kospi_edge_summary(kospi: dict[str, Any]) -> str:
+    """Edge summary written from the current KOSPI sweep rather than a fixed sentence."""
+    sweep = kospi.get("sweep") or {}
+    factors = {item.get("key"): item for item in sweep.get("results") or []}
+    macro, flow, tech = factors.get("macro") or {}, factors.get("foreign_flow") or {}, factors.get("tech") or {}
+    parts = [f"KOSPI sweep {str(sweep.get('timestamp') or 'date unavailable')[:10]}"]
+    if macro:
+        parts.append(f"USD/KRW factor {macro.get('strength', 'unclassified')} (corr {macro.get('corr', 0):+.2f}, adjusted p {macro.get('pval', 1):.2f})")
+    if tech:
+        parts.append(f"semiconductor factor {tech.get('strength', 'unclassified')} (corr {tech.get('corr', 0):+.2f})")
+    flow_obs = int((flow.get("detail") or {}).get("obs") or 0)
+    parts.append("foreign-flow series unavailable" if not flow_obs else f"foreign-flow factor {flow.get('strength', 'unclassified')}")
+    return "; ".join(parts) + "."
+
+
+def neer_edge_summary(neer: dict[str, Any]) -> str:
+    current = neer.get("current") or {}
+    deviation = current.get("deviation_pct")
+    return (f"Shadow S$NEER {neer.get('as_of') or 'date unavailable'}: {current.get('band_state') or 'band state unavailable'}"
+            f"{'' if deviation is None else f', {deviation:+.2f}% from the estimated centre'}. The official MAS basket and band are undisclosed; "
+            "the safe-haven test failed (data/neer_safe_haven.json), so this edge is not used for global risk.")
+
+
 def build_research_system(refresh: bool = False) -> dict[str, Any]:
     world = build_world()
     inflation_result = isolated("inflation", build_inflation, refresh=refresh)
@@ -631,14 +671,25 @@ def build_research_system(refresh: bool = False) -> dict[str, Any]:
         if edge.get("id") == "us-kr-dollar-kospi" and kospi_result["payload"]:
             edge.update({
                 "current_state": "WATCH", "confidence": "MODERATE",
-                "summary": "A current KOSPI factor sweep and USD/KRW factor history are cached, but the macro factor has no significant signal and reliable current foreign-flow data remain unavailable.",
+                "summary": kospi_edge_summary(kospi_result["payload"]),
                 "evidence_ids": list(dict.fromkeys(edge.get("evidence_ids", []) + ["kr-kospi-sweep", "kr-kospi-volatility"])),
             })
         if edge.get("id") == "us-sg-dollar-neer" and neer_result["payload"]:
             edge.update({
                 "current_state": "WATCH", "confidence": "MODERATE",
-                "summary": "A current 12-cross shadow S$NEER proxy and USD/SGD evidence are cached; the official MAS basket and band position remain unavailable.",
+                "summary": neer_edge_summary(neer_result["payload"]),
                 "evidence_ids": list(dict.fromkeys(edge.get("evidence_ids", []) + ["sg-neer-current"])),
+            })
+    cftc_result = isolated("cftc", fetch_cftc_jpy, refresh=refresh)
+    environment = build_environment(core_result["payload"], world, inflation_result["payload"], kospi_result["payload"], cftc_result["payload"])
+    carry = environment["factors"]["yen_carry"]
+    for edge in world.get("transmissions", []):
+        if edge.get("id") == "jp-us-yen-carry":
+            readings = carry["readings"]
+            usdjpy_3m = readings.get("usdjpy_3m")
+            edge.update({
+                "current_state": CARRY_EDGE_STATE[readings["carry_state"]],
+                "summary": f"Yen carry: {carry['state']}. USD/JPY {'3-month change unavailable' if usdjpy_3m is None else f'{usdjpy_3m:+.1%} over three months'}, VIX {'unavailable' if readings.get('vix_level') is None else f"{readings['vix_level']:.1f}"}.",
             })
     market_transmission = build_market_transmission(world, core_result["payload"], states)
     world_history = record_module("world", world, "LIVE") if refresh else {"state": "SKIPPED", "written": 0, "error": None}
@@ -652,9 +703,10 @@ def build_research_system(refresh: bool = False) -> dict[str, Any]:
             "inflation": inflation_result.get("history"), "core_market": core_result.get("history"),
             "neer": neer_result.get("history"), "kospi": kospi_result.get("history"), "world": world_history,
         },
-        "dashboard": dashboard_from(world, inflation_result["payload"], core_result["payload"], states, companies),
+        "dashboard": with_two_liquidity_scores(dashboard_from(world, inflation_result["payload"], core_result["payload"], states, companies), environment),
         "world": world,
         "market_transmission": market_transmission,
+        "environment": environment,
         "modules": {
             "inflation": inflation_result,
             "core_market": core_result,

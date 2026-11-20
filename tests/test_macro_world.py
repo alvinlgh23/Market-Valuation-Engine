@@ -56,11 +56,20 @@ def test_cached_compass_adapter_preserves_evidence_and_gaps():
 
 
 def test_transmission_state_rules_are_deterministic():
-    engine = MacroTransmissionEngine()
-    assert engine.yen_carry_state(profile("JP"), profile("US")) == "DORMANT"
-    assert engine.yen_carry_state(profile("JP", fx="HIGH"), profile("US")) == "WATCH"
-    assert engine.yen_carry_state(profile("JP", fx="HIGH", financial="HIGH"), profile("US")) == "ACTIVE"
-    assert engine.yen_carry_state(profile("JP", evidence=False), profile("US")) == "INSUFFICIENT"
+    # Checklist 3.6: yen carry has one definition (environment.yen_carry_state). The world
+    # engine only states the structure; the current state is filled in by research_system.
+    from environment import CARRY_EDGE_STATE, yen_carry_state
+    edges = {edge["id"]: edge for edge in build_world()["transmissions"]}
+    assert edges["jp-us-yen-carry"]["current_state"] == "INSUFFICIENT"
+    assert not hasattr(MacroTransmissionEngine, "yen_carry_state")
+    assert yen_carry_state(None, None) == "INSUFFICIENT"
+    assert yen_carry_state(-0.031, 15) == "UNWIND_RISK"
+    assert yen_carry_state(0.01, 24.5) == "UNWIND_RISK"
+    assert yen_carry_state(0.021, 19.9) == "ACCUMULATING"
+    assert yen_carry_state(0.021, None) == "ACCUMULATING"
+    assert yen_carry_state(0.021, 20) == "STABLE"
+    assert yen_carry_state(0.0, 18) == "STABLE"
+    assert CARRY_EDGE_STATE["UNWIND_RISK"] == "ACTIVE" and CARRY_EDGE_STATE["STABLE"] == "DORMANT"
 
 
 def test_freshness_and_period_mismatch_lower_inference_quality():

@@ -323,7 +323,16 @@ def observations_from_world(world: dict[str, Any], source_state: str) -> list[Ob
     return [item for item in output if item]
 
 
+def observations_from_cftc(payload: dict[str, Any], source_state: str) -> list[Observation]:
+    day = payload.get("as_of")
+    source = payload.get("source") or "CFTC"
+    output = [observation(f"cftc.jpy.{key}", day, payload.get(key), source=source, source_state=source_state)
+              for key in ("leveraged_net", "leveraged_long", "leveraged_short", "open_interest")]
+    return [item for item in output if item]
+
+
 EXTRACTORS: dict[str, Callable[[dict[str, Any], str], list[Observation]]] = {
+    "cftc": observations_from_cftc,
     "core-market": observations_from_core_market,
     "inflation": observations_from_inflation,
     "neer": observations_from_neer,

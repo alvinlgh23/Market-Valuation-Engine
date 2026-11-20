@@ -77,7 +77,8 @@ class TestMacroExperience:
     def test_transmission_states_separate_structure_from_current_state(self):
         edges = {item["id"]: item for item in self.system["world"]["transmissions"]}
         assert edges["jp-us-yen-carry"]["structural_state"]
-        assert edges["jp-us-yen-carry"]["current_state"] == "WATCH"
+        # The fixture's core feed has no USD/JPY or VIX, so the single carry definition is INSUFFICIENT.
+        assert edges["jp-us-yen-carry"]["current_state"] == "INSUFFICIENT"
         assert edges["us-kr-dollar-kospi"]["current_state"] == "WATCH"
         assert edges["us-sg-dollar-neer"]["current_state"] == "WATCH"
 
