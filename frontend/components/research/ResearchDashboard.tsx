@@ -14,7 +14,7 @@ import type { ResearchSystem } from "../../lib/research-system-types";
 
 function stateClass(value: string) { return value.toLowerCase().replaceAll(" ", "-").replaceAll("/", "-").replaceAll("_", "-"); }
 function Badge({ state }: { state?: string }) { const value = state || "UNAVAILABLE"; return <span className={`system-badge system-badge-${stateClass(value)}`}>{value}</span>; }
-function timestamp(value: string) { return value.replace("T", " ").replace(/([+-]\d\d:\d\d|Z)$/, " UTC"); }
+function timestamp(value: string) { return value.replace("T", " "); }
 
 function PanelHeader({ code, title, action }: { code: string; title: string; action?: { label: string; href: string } }) {
   return <header className="command-panel-header"><div><span>{code}</span><h2>{title}</h2></div>{action ? <Link href={action.href}>{action.label}</Link> : null}</header>;
@@ -26,7 +26,7 @@ export function ResearchDashboard({ system }: { system: ResearchSystem; onModule
   const changes = dashboardChanges(system);
   const priorities = dashboardPriorities(system);
   const tensions = dashboardTensions(system);
-  const leaders = marketLeadershipSummary();
+  const leaders = marketLeadershipSummary(system);
   const companies = recentCompanyRows(system);
   const freshness = system.dashboard.freshness.slice(0, 7);
   const watch = system.dashboard.watch_conditions.slice(0, 5);

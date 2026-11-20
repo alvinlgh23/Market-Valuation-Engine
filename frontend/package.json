@@ -19,7 +19,9 @@
     "smoke:markets": "node scripts/markets-phase3-smoke.mjs",
     "smoke:dashboard": "node scripts/dashboard-phase4-smoke.mjs",
     "smoke:valuation": "node scripts/valuation-phase5-smoke.mjs",
-    "smoke:phase6": "node scripts/phase6-product-smoke.mjs"
+    "smoke:phase6": "node scripts/phase6-product-smoke.mjs",
+    "smoke:phase7": "node scripts/phase7-evidence-smoke.mjs",
+    "smoke:phase8": "node scripts/phase8-operational-smoke.mjs"
   },
   "dependencies": {
     "next": "^16.2.9",

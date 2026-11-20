@@ -38,6 +38,8 @@ from datetime import datetime, timedelta, timezone
 
 import yfinance as yf
 
+from data_sources.market_history import fetch_yahoo_history
+
 from company_report import print_company_intelligence_report
 from company_economics import (
     build_company_economics,
@@ -272,6 +274,7 @@ MACRO_FALLBACKS = {
 
 DEFAULT_PROVIDER_CACHE_TTL_SECONDS = 3600
 _PROVIDER_CACHE = {}
+_MARKET_PROVIDER_DIAGNOSTICS = {}
 
 
 def pct(v):
@@ -399,17 +402,40 @@ def fetch_history(ticker, period="1y"):
     if cached is not None:
         return cached
     try:
-        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
-            hist = yf.download(ticker, period=period, interval="1d", progress=False, auto_adjust=True)
-        if hist.empty:
+        import pandas as pd
+
+        result = fetch_yahoo_history(ticker, period=period)
+        _MARKET_PROVIDER_DIAGNOSTICS[cache_key] = result.to_dict()
+        if not result.observations:
             return None
-        if hasattr(hist.columns, "levels"):
-            hist.columns = hist.columns.get_level_values(0)
-        hist = hist.dropna()
+        hist = pd.DataFrame(
+            {"Close": [item.value for item in result.observations]},
+            index=pd.to_datetime([item.date for item in result.observations]),
+        )
         provider_cache_set(cache_key, hist)
         return hist
-    except Exception:
+    except Exception as exc:
+        _MARKET_PROVIDER_DIAGNOSTICS[cache_key] = {
+            "ticker": ticker,
+            "provider": "Yahoo Finance chart API",
+            "provider_status": "INVALID",
+            "source_status": "INVALID",
+            "error": f"{type(exc).__name__}: {exc}",
+        }
         return None
+
+
+def market_provider_diagnostics(include_observations=False):
+    """Return compact typed provider outcomes unless replay rows are requested."""
+    output = {}
+    for key, value in _MARKET_PROVIDER_DIAGNOSTICS.items():
+        item = dict(value)
+        observations = item.get("observations") or []
+        item["observation_count"] = len(observations)
+        if not include_observations:
+            item.pop("observations", None)
+        output[key] = item
+    return output
 
 
 def fetch_ticker_info(ticker_obj):
@@ -1262,6 +1288,7 @@ def compute_sectors():
             "score": score,
             "as_of": str(hist.index[-1])[:10],
             "source": "Yahoo Finance / Python sector engine",
+            "provider_diagnostic": market_provider_diagnostics().get(f"history:{ticker}:1y", {}),
         })
     return sorted(rows, key=lambda row: row["score"], reverse=True)
 

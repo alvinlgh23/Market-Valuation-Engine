@@ -19,6 +19,29 @@ export interface RawEvidenceItem {
   related_driver?: string | null;
   related_constraint?: string | null;
   supporting_evidence_ids: string[];
+  source_id?: string | null;
+  source_url?: string | null;
+  provider_status?: string;
+  retrieved_at?: string | null;
+  observation_date?: string | null;
+  fiscal_period_start?: string | null;
+  fiscal_period_end?: string | null;
+  fiscal_year?: number | string | null;
+  filing_date?: string | null;
+  currency?: string | null;
+  raw_concept?: string | null;
+  normalized_concept?: string | null;
+  transformation?: string | null;
+  coverage_status?: string;
+  validation_status?: string;
+  staleness_status?: string;
+  limitation?: string | null;
+  entity_identifier?: string | null;
+  source_status?: string;
+  source_locator?: string | null;
+  extraction_method?: string | null;
+  definition_version?: string | null;
+  revision_status?: string | null;
 }
 
 export interface RawDataGap {
@@ -48,6 +71,24 @@ export interface RawConstraint {
   data_gaps: RawDataGap[];
   inference: string;
   inference_evidence_ids: string[];
+  constraint_status?: string;
+  direction_status?: string;
+}
+
+export interface RawResearchClaim {
+  claim_id: string;
+  entity_identifier: string;
+  mechanism: string;
+  relationship: string;
+  claim_type: string;
+  direct_evidence_ids: string[];
+  proxy_evidence_ids: string[];
+  counterevidence_ids: string[];
+  constraint_status: string;
+  direction_status: string;
+  causal_status: string;
+  limitations: string[];
+  classification_version: string;
 }
 
 export interface RawCompanyEconomics {
@@ -75,6 +116,7 @@ export interface RawCompanyEconomics {
     primary_constraint: RawConstraint;
     secondary_constraints: RawConstraint[];
     candidate_constraints: string[];
+    candidate_assessments?: RawConstraint[];
     unknown_constraints: string[];
     constraint_interactions: string[];
   };
@@ -138,6 +180,29 @@ export interface RawCompanyEconomics {
   qualitative_research_needed?: boolean;
   qualitative_research_reason?: string;
   company_economics_schema_version: string;
+  research_claims?: RawResearchClaim[];
+  evidence_registry?: Record<string, Record<string, unknown>>;
+  classification_version?: string;
+  operational_research?: OperationalResearch;
+}
+
+export interface OperationalResearch {
+  assumption_tensions?: Array<{ metric: string; observation_period: string; historical_growth: number | null; model_assumption: number | null; state: string; limitation: string; action: string }>;
+  security_unit_evidence?: { ordinary_shares_per_ads: number; source_url: string; source_locator: string; source_period: string; limitation: string } | null;
+  coverage: string;
+  limitation: string;
+  security_unit_status: string;
+  next_questions: string[];
+  mutates_dcf_inputs: boolean;
+  series: Array<{
+    definition: { id: string; issuer: string; name: string; definition: string; category: string; scope: string; measurement: string; unit: string; currency: string | null; version: string; limitation: string; mechanism: string };
+    observations: Array<{ id: string; period: string; period_start: string | null; period_end: string; revision_status: string; evidence: { value: number; source_name: string; source_url: string; source_locator: string; retrieved_at: string; filing_date: string; validation_status: string; extraction_method: string } }>;
+    changes: Array<{ status: string; absolute: number | null; growth: number | null; reasons: string[] }>;
+    constraint_status: string;
+    direction_status: string;
+    counterevidence: string[];
+    falsification: string;
+  }>;
 }
 
 export interface CompanyEconomicsPayload {
@@ -162,7 +227,7 @@ export interface CompanyEconomicsOntology {
 export interface EvidenceViewModel extends RawEvidenceItem {
   label: string;
   valueLabel: string;
-  typeLabel: "Direct" | "Proxy" | "Inference";
+  typeLabel: "Direct" | "Proxy" | "Inference" | "Fixture";
   usedIn: string[];
 }
 
@@ -182,7 +247,7 @@ export interface CompanyResearchViewModel {
   scalingMetrics: Array<RawCompanyEconomics["scaling_economics"]["metrics"][number] & { label: string; valueLabel: string }>;
   evidence: EvidenceViewModel[];
   evidenceById: Record<string, EvidenceViewModel>;
-  evidenceCounts: { all: number; direct: number; proxy: number; inference: number; gaps: number };
+  evidenceCounts: { all: number; direct: number; proxy: number; inference: number; observed: number; unverified: number; counter: number; stale: number; gaps: number };
   dataGaps: Array<RawDataGap & { label: string }>;
   availableMetrics: Set<string>;
 }

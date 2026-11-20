@@ -113,7 +113,15 @@ def build_core_market() -> dict[str, Any]:
         "sector_rows": len(sectors or []),
         "rule": "Do not publish a regime label unless cross-asset coverage is at least 50%, four core macro inputs exist, and sector rankings are populated.",
     }
-    return {"macro": macro, "fragility": fragility, "catalysts": catalysts, "risk": risk, "sectors": sectors, "data_quality": quality}
+    return {
+        "macro": macro,
+        "fragility": fragility,
+        "catalysts": catalysts,
+        "risk": risk,
+        "sectors": sectors,
+        "data_quality": quality,
+        "provider_diagnostics": market.market_provider_diagnostics(),
+    }
 
 
 def subprocess_json(command: list[str], cwd: Path, timeout: int = 120) -> Any:
@@ -227,6 +235,12 @@ def typed_metric(
         formatted = f"${value:,.1f}bn"
     else:
         formatted = f"{value:,.2f}"
+    normalized_state = str(source_state or "UNKNOWN").upper()
+    source_status = {
+        "LIVE": "OBSERVED_LIVE",
+        "CACHED": "OBSERVED_CACHED",
+        "STALE": "OBSERVED_STALE",
+    }.get(normalized_state, "HISTORICAL_REPORTED" if period else "OBSERVED_CACHED")
     return {
         "key": key,
         "label": label,
@@ -237,6 +251,13 @@ def typed_metric(
         "source": source,
         "source_state": source_state,
         "confidence": confidence,
+        "provider_status": "OK",
+        "source_status": source_status,
+        "retrieved_at": datetime.now().astimezone().isoformat(timespec="seconds"),
+        "observation_date": period,
+        "validation_status": "VALID",
+        "staleness_status": "STALE" if normalized_state == "STALE" else "CURRENT" if normalized_state == "LIVE" else "UNKNOWN",
+        "limitation": "Observation date is unavailable from the upstream module." if not period else None,
     }
 
 
@@ -450,7 +471,7 @@ def dashboard_from(world: dict[str, Any], inflation: dict[str, Any] | None, core
         {"id": "risk", "label": "Risk Regime", "value": risk.get("regime", "Unavailable") if core_valid else "Insufficient evidence", "context": risk.get("summary", "Live cross-asset risk context is not cached."), "state": states["core_market"] if core_valid else "INSUFFICIENT", "href": "/macro/risk"},
         {"id": "liquidity", "label": "US Liquidity", "value": next((item["state"] for item in us["components"] if item["id"] == "liquidity"), "Unavailable"), "context": next((item["summary"] for item in us["components"] if item["id"] == "liquidity"), "No liquidity block."), "state": us["freshness"], "href": "/macro/liquidity"},
         {"id": "japan", "label": "Japan / BOJ", "value": jp["components"][0]["state"], "context": jp["brief"], "state": jp["confidence"], "href": "/macro/world?region=JP&detail=policy"},
-        {"id": "breadth", "label": "Sector Leadership", "value": sectors[0]["name"] if sectors and core_valid else "Insufficient evidence", "context": f"{sectors[0]['ticker']} leads the current live sector ranking." if sectors and core_valid else "A sector ranking is withheld until the live breadth inputs pass coverage checks.", "state": states["core_market"] if core_valid else "INSUFFICIENT", "href": "/markets"},
+        {"id": "breadth", "label": "Sector Leadership", "value": sectors[0]["name"] if sectors and core_valid else "Insufficient evidence", "context": f"{sectors[0]['ticker']} leads this engine-ranked snapshot; observation {sectors[0].get('as_of') or 'date unavailable'}; source state {states['core_market']}. Relative strength does not establish crowding or breadth." if sectors and core_valid else "A sector ranking is withheld until the source coverage checks pass.", "state": states["core_market"] if core_valid else "INSUFFICIENT", "href": "/markets"},
     ]
 
     changed = []
@@ -495,7 +516,7 @@ def dashboard_from(world: dict[str, Any], inflation: dict[str, Any] | None, core
     freshness = [
         {"module": "Macro World / Compass", "state": world["data_state"], "as_of": max(filter(None, (item.get("as_of") for item in regions.values())))},
         {"module": "US Inflation", "state": states["inflation"], "as_of": inflation.get("latest_source") if inflation else None},
-        {"module": "Market / Risk / Rotation", "state": states["core_market"], "as_of": "Current refresh" if core else None},
+        {"module": "Market / Risk / Rotation", "state": states["core_market"], "as_of": max((row.get("as_of") or "" for row in sectors), default=None), "context": "Latest sector observation date; not the response-generation time or a date for every macro input."},
         {"module": "Singapore NEER", "state": states["neer"], "as_of": None},
         {"module": "Korea KOSPI", "state": states["kospi"], "as_of": kr.get("as_of")},
         {"module": "Company Economics", "state": "CACHED" if companies else "NOT_ANALYZED", "as_of": max((item.get("last_analyzed") or "" for item in companies), default=None)},

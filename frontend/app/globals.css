@@ -3219,3 +3219,16 @@ body {
   .signal-table article { grid-template-columns: 72px 74px 1fr; }
   .signal-table p { font-size: 13px; }
 }
+/* Operational evidence stays readable in both the snapshot and narrow inspector. */
+.operational-research { padding: 24px; border: 1px solid #455057; min-width: 0; line-height: 1.6; }
+.operational-research > header { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin-bottom: 16px; }
+.operational-research > header strong { font-size: 18px; }
+.operational-research > header span { color: #a7adab; font-size: 12px; }
+.operational-research p { margin: 12px 0; overflow-wrap: anywhere; }
+.operational-research details { margin: 12px 0; border-top: 1px solid #303a3f; padding-top: 10px; }
+.operational-research summary { cursor: pointer; font-weight: 600; }
+.operational-research summary:focus-visible { outline: 2px solid #b8ac77; outline-offset: 4px; }
+.operational-research table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 13px; }
+.operational-research td, .operational-research th { padding: 10px 8px; text-align: left; vertical-align: top; overflow-wrap: anywhere; border-bottom: 1px solid #303a3f; }
+.operational-research a { text-decoration: underline; text-underline-offset: 3px; }
+.operational-research caption { text-align: left; color: #a7adab; padding: 8px; }

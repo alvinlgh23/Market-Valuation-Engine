@@ -411,7 +411,7 @@ def collect_valuation_data(ticker: str) -> dict:
         else _pick(info, "freeCashflow")
     )
     latest_cash = cash[0] if cash else _pick(info, "totalCash", default=0)
-    latest_debt = debt[0] if debt else _pick(info, "totalDebt", default=0)
+    latest_debt = debt[0] if debt else _pick(info, "totalDebt")
     diluted_shares = shares[0] if shares else _pick(info, "sharesOutstanding")
     market_cap = _pick(info, "marketCap")
     price = _latest_price(ticker_obj, info)
@@ -482,7 +482,7 @@ def collect_valuation_data(ticker: str) -> dict:
         "interest_expense": latest_interest_expense,
         "after_tax_interest": after_tax_interest,
         "cash": latest_cash if _number(latest_cash) else 0,
-        "debt": latest_debt if _number(latest_debt) else 0,
+        "debt": latest_debt if _number(latest_debt) else None,
         "shares": diluted_shares,
         "market_cap": market_cap,
         "tax_rate": tax_rate,
@@ -503,6 +503,8 @@ def collect_valuation_data(ticker: str) -> dict:
 
 def _required_data_missing(data: dict) -> list[str]:
     missing = []
+    if not _number(data.get("debt")):
+        missing.append("verified total debt (missing is not zero)")
     if not _number(data["latest_revenue"]) or data["latest_revenue"] <= 0:
         missing.append("latest annual revenue")
     if not _number(data["latest_fcff"]):
@@ -1110,6 +1112,17 @@ def build_valuation_report(ticker: str, overrides: dict | None = None, data: dic
         report["_data"] = data
         return report
 
+    from security_units import valuation_unit_gate
+    unit_gate = valuation_unit_gate(data)
+    report["security_unit_validation"] = unit_gate
+    if not unit_gate["passed"]:
+        reason = " ".join(unit_gate["reasons"])
+        report["data_quality"] = {"status": "SECURITY_UNIT_AMBIGUITY", "reason": reason, "missing": ["validated security-unit bridge"]}
+        report["validation"] = {"status": "FAILED", "checks": {"security_units": unit_gate}, "reasons": [reason]}
+        report["internal_validation"] = report["validation"]
+        report["final_interpretation"] = {"text": "Fair value withheld: " + reason}
+        report["_data"] = data
+        return report
     debt_coverage = data.get("debt_coverage")
     if debt_coverage is not None and debt_coverage != "COMPLETE":
         provenance = data.get("debt_provenance") or {}

@@ -313,7 +313,20 @@ class UniversalCompanyResearchEngine:
 
     @staticmethod
     def _public_profile(payload: dict[str, Any]) -> dict[str, Any]:
-        return {key: value for key, value in payload.items() if key != "normalized_snapshot"}
+        public = {key: value for key, value in payload.items() if key != "normalized_snapshot"}
+        if payload.get("normalized_snapshot") and payload.get("company_economics", {}).get("classification_version") != "phase8.1-evidence-authority-v2":
+            from copy import deepcopy
+            snapshot = CompanySnapshot(**deepcopy(payload["normalized_snapshot"]))
+            public.update(build_company_economics(snapshot).to_dict())
+        # Older saved financial profiles remain dated; attach separately dated
+        # operational context without relabeling the cache as a live refresh.
+        economics = public.get("company_economics")
+        if isinstance(economics, dict) and not economics.get("operational_research"):
+            from operational_research import build_operational_research
+            ticker = economics.get("company", {}).get("ticker")
+            if ticker:
+                public["company_economics"] = {**economics, "operational_research": build_operational_research(ticker)}
+        return public
 
     @staticmethod
     def _data_quality(payload: dict[str, Any] | None) -> dict[str, Any]:
@@ -331,6 +344,8 @@ class UniversalCompanyResearchEngine:
             return {"status": resolution.research_state.value, "ticker": resolution.ticker, "resolution": resolution.to_dict(), "profile": None, "data_quality": {}, "errors": [resolution.reason] + ([resolution.error] if resolution.error else [])}
         try:
             snapshot = snapshot_from_valuation_data(resolution._provider_data or {})
+            from data_sources.operational_evidence import enrich_snapshot
+            snapshot = enrich_snapshot(snapshot)
             valuation = None
             if resolution.security_type not in {SecurityType.FINANCIAL_INSTITUTION}:
                 try:

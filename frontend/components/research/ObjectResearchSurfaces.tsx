@@ -86,7 +86,7 @@ function sectorHref(sector: SectorResearchObject, view = "snapshot", node?: stri
 
 function SectorMetricStrip({ sector }: { sector: SectorResearchObject }) {
   return <section className="market-state-strip" aria-label={`${sector.name} current market state`}>
-    <article><span>6M Relative Strength</span><strong>{percent(sector.rel6m)}</strong><small>vs SPY</small></article>
+    <article><span>6M Relative Strength</span><strong>{percent(sector.rel6m)}</strong><small>vs SPY · {sector.lastUpdated} · {sector.sourceState}</small><small>{sector.measurementSource}</small></article>
     <article><span>Breadth</span><strong>{sector.breadth}</strong><small>{sector.breadthRatio == null ? "coverage unavailable" : `${Math.round(sector.breadthRatio * 100)}% participating`}</small></article>
     <article><span>Crowding</span><strong>{sector.crowding}</strong><small>separate from momentum</small></article>
     <article><span>Stage</span><strong>{sector.stage}</strong><small>{sector.momentum}</small></article>
@@ -99,6 +99,7 @@ function RotationMap({ selected, sectorList }: { selected: SectorResearchObject;
   const crowdingY = (sector: SectorResearchObject) => sector.crowding.toLowerCase().includes("elevated") ? 24 : sector.crowding.toLowerCase().includes("moderate") ? 50 : 74;
   return <section className="rotation-map-panel">
     <header><div><span>ROTATION MAP</span><h2>Leadership vs positioning risk</h2></div><small>{rotationAxis.x} / {rotationAxis.y}</small></header>
+    {!sectorList.some(sector => sector.rel6m != null && sector.crowding !== "Unavailable") ? <p role="status">Positioning plane unavailable: crowding measurements are missing. Dated relative strength is shown in the table; no crowding coordinate is invented.</p> : null}
     <div className="rotation-plane" role="img" aria-label="Sector rotation positioning plane">
       <span className="axis axis-x">Leadership / relative strength →</span><span className="axis axis-y">Crowding / extension ↑</span>
       {sectorList.filter(sector => sector.rel6m != null && sector.crowding !== "Unavailable").map((sector) => {
@@ -113,13 +114,14 @@ function RotationMap({ selected, sectorList }: { selected: SectorResearchObject;
 function RotationTable({ sectorList }: { sectorList: SectorResearchObject[] }) {
   return <section className="sector-research-table" aria-label="Sector rotation table">
     <header><span>Sector</span><span>1M</span><span>3M</span><span>6M RS</span><span>Breadth</span><span>Crowding</span><span>Stage</span><span>Theme</span></header>
-    {sectorList.map((sector) => <Link key={sector.slug} href={sectorHref(sector, "snapshot")}><strong>{sector.name}<small>{sector.ticker}</small></strong><span>{percent(sector.rel1m)}</span><span>{percent(sector.rel3m)}</span><span>{percent(sector.rel6m)}</span><span>{sector.breadth}</span><span>{sector.crowding}</span><span>{sector.stage}</span><span>{sector.primaryTheme}</span></Link>)}
+    {sectorList.map((sector) => <Link key={sector.slug} href={sectorHref(sector, "snapshot")} title={`${sector.measurementSource} · ${sector.measurementReason}`}><strong>{sector.name}<small>{sector.ticker} · {sector.lastUpdated} · {sector.sourceState}</small><small>{sector.measurementSource}</small></strong><span>{percent(sector.rel1m)}</span><span>{percent(sector.rel3m)}</span><span>{percent(sector.rel6m)}</span><span>{sector.breadth}</span><span>{sector.crowding}</span><span>{sector.stage}</span><span>{sector.primaryTheme}</span></Link>)}
   </section>;
 }
 
 function SectorSnapshot({ sector }: { sector: SectorResearchObject }) {
   return <section className="sector-snapshot-surface">
     <header><span>MARKETS / SECTOR SNAPSHOT</span><h1>{sector.name}</h1><p>{sector.currentRead}</p></header>
+    <p>{sector.measurementSource} · Observation {sector.lastUpdated} · {sector.sourceState}. {sector.measurementReason}</p>
     <SectorMetricStrip sector={sector} />
     <nav className="sector-actions">
       <Link className="primary" href={sectorHref(sector, "structure")}>Explore Sector Structure →</Link>
@@ -133,6 +135,7 @@ function SectorSnapshot({ sector }: { sector: SectorResearchObject }) {
 
 function SectorStructureMap({ sector, selectedNodeId }: { sector: SectorResearchObject; selectedNodeId: string | null }) {
   const selected = sector.structure.nodes.find((item) => item.id === selectedNodeId) ?? sector.structure.nodes[0];
+  if (!selected) return <section><h2>Structure unavailable</h2><p>No curated structural model for {sector.ticker}; its reported measurements remain available above.</p></section>;
   return <section className="sector-structure-workspace">
     <div className="sector-map-canvas">
       <header><div><span>STRUCTURAL SECTOR MAP</span><h2>{sector.structure.template}</h2></div><small>{sector.structure.status}</small></header>
@@ -164,7 +167,7 @@ function SectorNodeInspector({ sector, node }: { sector: SectorResearchObject; n
 
 function SectorLeadership({ sector }: { sector: SectorResearchObject }) {
   const max = Math.max(...sector.leaders.map((item) => Math.abs(item.relativeStrength ?? 0)), 0.01);
-  return <section className="sector-detail-panel"><header><span>LEADERSHIP</span><h2>Companies expressing the sector structure</h2></header><div className="sector-leadership-bars">{sector.leaders.map((leader) => <Link href={`/company/${leader.ticker}?from=markets&sector=${sector.slug}`} key={leader.ticker}><strong>{leader.ticker}<small>{leader.role}</small></strong><span><i style={{ width: `${Math.max(4, Math.abs((leader.relativeStrength ?? 0) / max) * 100)}%` }} /></span><b>{percent(leader.relativeStrength)}</b><em>{leader.condition}</em></Link>)}</div></section>;
+  return <section className="sector-detail-panel"><header><span>LEADERSHIP</span><h2>Companies expressing the sector structure</h2></header><div className="sector-leadership-bars">{sector.leaders.map((leader) => <Link href={`/company/${leader.ticker}?from=markets&sector=${sector.slug}`} key={leader.ticker}><strong>{leader.ticker}<small>{leader.role}</small></strong><span>{leader.relativeStrength != null && Number.isFinite(leader.relativeStrength) ? <i style={{ width: `${Math.abs(leader.relativeStrength / max) * 100}%` }} /> : null}</span><b>{percent(leader.relativeStrength)}</b><em>{leader.condition}</em></Link>)}</div></section>;
 }
 
 function SectorEvidenceView({ sector, kind }: { sector: SectorResearchObject; kind: "breadth" | "positioning" }) {

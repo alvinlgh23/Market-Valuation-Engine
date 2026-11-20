@@ -50,9 +50,8 @@ def _value(value, unit="") -> str:
     if unit == "multiple":
         return f"{value:.2f}x"
     if unit == "currency/employee":
-        # Offline fixtures express financial statements in millions; live
-        # normalized feeds generally use base currency units.
-        return f"${value:,.2f}M" if abs(value) < 10_000 else f"${value / 1_000_000:,.2f}M"
+        # Both fixture and provider statements are normalized to base units.
+        return f"{value:,.2f} currency units/employee"
     if unit == "count":
         return f"{value:,.0f}"
     return f"{value:,.2f}"
@@ -288,6 +287,8 @@ def render_company_economics_report(profile, valuation=None) -> str:
     easing = [item for item in cited if item.direction in {Direction.IMPROVING, Direction.ACCELERATING}]
     tightening = [item for item in cited if item.direction in {Direction.DETERIORATING, Direction.DECELERATING}]
     limitations = [f"- {_metric_label(name)} unavailable" for name in missing_direct]
+    if constraint.constraint.value == "UNKNOWN":
+        limitations.append("- Current entity-specific bottleneck evidence is unavailable; structural candidates are not verified constraints.")
     direction_label = _direction_label(constraint.direction, has_direct_constraint)
     if has_direct_constraint:
         conclusion = f"Direct operating evidence and financial proxies indicate that {constraint_meta.display_name.lower()} is {direction_label.lower()}."
@@ -318,6 +319,9 @@ def render_company_economics_report(profile, valuation=None) -> str:
         blocks.append("\n\n".join(secondary_lines))
     else:
         blocks.append("No secondary constraint is supported with sufficient evidence.")
+    for candidate in profile.constraints.candidate_assessments:
+        meta = CONSTRAINT_REGISTRY[candidate.constraint]
+        blocks.append(f"Structural candidate: {meta.display_name}\nBinding: {_human(candidate.constraint_status)}\nDirection: {_human(candidate.direction_status)}\n" + " → ".join(meta.economic_mechanism_steps))
 
     blocks.append(_section(7, "SCALING ECONOMICS"))
     scaling_lines = []

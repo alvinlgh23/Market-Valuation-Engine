@@ -6,8 +6,9 @@ import type { CompanyResearchViewModel } from "../../lib/company-economics-types
 import { humanize } from "../../lib/companyEconomicsAdapter";
 import { ResearchShell, type ResearchDataState } from "../research/ResearchShell";
 import { CompanyWorkspaces, type CompanyWorkspaceKind } from "./CompanyWorkspaces";
-import { ConfidenceLabel, DirectionLabel, ResearchLabel, Unavailable } from "./ResearchPrimitives";
+import { ResearchLabel, Unavailable } from "./ResearchPrimitives";
 import { ReportMode } from "./ReportMode";
+import { OperationalResearch } from "./OperationalResearch";
 
 function queryState(): { workspace: CompanyWorkspaceKind | null; node: string | null } {
   if (typeof window === "undefined") return { workspace: null, node: null };
@@ -111,6 +112,8 @@ export function CompanyResearchPage({ company, dataState = "FIXTURE", initialWor
 
         {company.raw.data_quality ? <section className="snapshot-quality-strip" aria-label="Company research quality"><div><span>Classification</span><strong>{humanize(company.raw.data_quality.classification)}</strong></div><div><span>Constraint diagnosis</span><strong>{humanize(company.raw.data_quality.constraint_diagnosis)}</strong></div><div><span>Valuation</span><strong>{humanize(company.raw.data_quality.valuation)}</strong></div><div><span>Overall research</span><strong>{humanize(company.raw.data_quality.overall)}</strong></div></section> : null}
 
+        <section className="snapshot-quality-strip" aria-label="Evidence qualification summary"><div><span>Observed</span><strong>{company.evidenceCounts.observed}</strong></div><div><span>Proxy / inference</span><strong>{company.evidenceCounts.proxy + company.evidenceCounts.inference}</strong></div><div><span>Unverified / stale</span><strong>{company.evidenceCounts.unverified} / {company.evidenceCounts.stale}</strong></div><div><span>Counterevidence</span><strong>{company.evidenceCounts.counter}</strong></div></section>
+
         {company.raw.qualitative_research_needed ? <section className="snapshot-qualitative-gap"><span>QUALITATIVE RESEARCH GAP</span><p>{company.raw.qualitative_research_reason}</p></section> : null}
 
         <div className="snapshot-research-grid">
@@ -123,7 +126,7 @@ export function CompanyResearchPage({ company, dataState = "FIXTURE", initialWor
           <section className="snapshot-constraint snapshot-block">
             <header><span>02</span><strong>Primary Constraint</strong><button type="button" onClick={() => { openWorkspace("economics"); setTimeout(() => selectNode(company.raw.economic_graph.nodes.find((node) => node.type === "constraint")?.id ?? ""), 0); }}>Inspect →</button></header>
             <h3>{company.primaryConstraint.label}</h3>
-            <dl><div><dt>State</dt><dd><DirectionLabel value={company.primaryConstraint.direction} /></dd></div><div><dt>Evidence</dt><dd>{company.primaryConstraint.basis}</dd></div><div><dt>Confidence</dt><dd><ConfidenceLabel value={company.primaryConstraint.confidence} /></dd></div></dl>
+            <dl><div><dt>Binding</dt><dd>{humanize(company.primaryConstraint.constraint_status || "EVIDENCE_INSUFFICIENT")}</dd></div><div><dt>Direction</dt><dd>{humanize(company.primaryConstraint.direction_status || company.primaryConstraint.direction)}</dd></div><div><dt>Evidence</dt><dd>{company.primaryConstraint.basis}</dd></div></dl>
           </section>
 
           <section className="snapshot-read snapshot-block">
@@ -136,10 +139,11 @@ export function CompanyResearchPage({ company, dataState = "FIXTURE", initialWor
             <header><span>04</span><strong>Valuation Read</strong><button type="button" onClick={() => openValuationObject()}>Open →</button></header>
             <h3>{marketRead}</h3>
             <p>{company.raw.market_expectations_comparison.reason}</p>
-            {company.raw.company.market_price == null ? <Unavailable reason="Current price unavailable in fixture" /> : null}
+            {company.raw.company.market_price == null ? <Unavailable reason={dataState === "FIXTURE" ? "Current price unavailable in fixture" : "Current price unavailable from provider"} /> : null}
           </section>
         </div>
 
+        <OperationalResearch research={company.raw.operational_research} />
         <footer className="snapshot-actions">
           <button className="snapshot-primary-action" type="button" onClick={() => openWorkspace("economics")}><span>Open Economic Map</span><small>Explore drivers, constraints, and outcomes</small><i>↗</i></button>
           <button type="button" onClick={() => openValuationObject()}><span>Open Valuation</span><small>Open the unified valuation object</small><i>↗</i></button>

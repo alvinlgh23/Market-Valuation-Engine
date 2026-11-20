@@ -1,5 +1,8 @@
 from pathlib import Path
+from unittest.mock import patch
+import json
 
+import research_system
 from research_system import build_research_system, coverage_state, yield_return_to_bps
 
 
@@ -10,7 +13,11 @@ class TestMacroExperience:
 
     @classmethod
     def setup_class(cls):
-        cls.system = build_research_system(refresh=False)
+        load_cache = research_system.load_cache
+        fixture = json.loads((Path(__file__).resolve().parents[1] / "frontend/lib/fixtures/research-system.json").read_text())
+        insufficient_core = fixture["modules"]["core_market"]["payload"]
+        with patch("research_system.load_cache", side_effect=lambda name: insufficient_core if name == "core-market" else load_cache(name)):
+            cls.system = build_research_system(refresh=False)
 
     def test_market_transmission_has_explicit_coverage_state(self):
         transmission = self.system["market_transmission"]

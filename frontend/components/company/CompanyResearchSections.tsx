@@ -140,7 +140,8 @@ export function ConstraintsSection({ company }: { company: CompanyResearchViewMo
         <p className="constraint-mechanism">{constraint.economic_mechanism}</p>
         <div className="constraint-metadata">
           <InlineMetric label="Evidence basis" value={constraint.basis} />
-          <InlineMetric label="Confidence" value={<ConfidenceLabel value={constraint.confidence} />} />
+          <InlineMetric label="Binding status" value={humanize(constraint.constraint_status || "EVIDENCE_INSUFFICIENT")} />
+          <InlineMetric label="Directional status" value={humanize(constraint.direction_status || constraint.direction)} />
           <InlineMetric label="Model interpretation" value={constraint.inference} />
         </div>
         <div className="constraint-evidence-grid">
@@ -150,6 +151,7 @@ export function ConstraintsSection({ company }: { company: CompanyResearchViewMo
         {constraint.data_gaps.length ? <div className="constraint-limitations"><ResearchLabel>Evidence limitations</ResearchLabel>{constraint.data_gaps.map((gap) => <p key={gap.missing_field}>— {humanize(gap.missing_field)} unavailable. {gap.confidence_impact}</p>)}</div> : null}
       </div>
       {company.secondaryConstraints.length ? <div className="secondary-constraints"><ResearchLabel>Secondary constraints</ResearchLabel>{company.secondaryConstraints.map((item) => <CompactConstraint key={item.constraint} constraint={item} />)}</div> : null}
+      {company.raw.constraints.candidate_assessments?.length ? <div className="secondary-constraints"><ResearchLabel>Structural candidates — not validated constraints</ResearchLabel>{company.raw.constraints.candidate_assessments.map((item) => <div className="secondary-constraint" key={item.constraint}><strong>{humanize(item.constraint)}</strong><p>{humanize(item.constraint_status || "STRUCTURAL_CANDIDATE")} · {humanize(item.direction_status || "DIRECTION_UNKNOWN")}</p><small>{item.inference}</small></div>)}</div> : null}
     </section>
   );
 }

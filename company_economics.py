@@ -24,12 +24,14 @@ from company_economics_registry import (
     ConstraintType,
     GrowthPrimitive,
 )
+from evidence_contracts import assess_constraint_claim
 
 
 COMPANY_ECONOMICS_SCHEMA_VERSION = "1.1"
 
 
 class EvidenceType(str, Enum):
+    FIXTURE = "FIXTURE"
     FACT = "FACT"
     PROXY = "PROXY"
     INFERENCE = "INFERENCE"
@@ -144,6 +146,7 @@ class CompanySnapshot:
     sources: dict[str, str] = field(default_factory=dict)
     source_nature: dict[str, SourceNature | str] = field(default_factory=dict)
     segments: list[dict] = field(default_factory=list)
+    evidence_envelopes: dict[str, dict[str, Any]] = field(default_factory=dict)
 
 
 @dataclass
@@ -164,6 +167,29 @@ class EvidenceItem:
     related_driver: str | None = None
     related_constraint: str | None = None
     supporting_evidence_ids: list[str] = field(default_factory=list)
+    source_id: str | None = None
+    source_url: str | None = None
+    provider_status: str = "OK"
+    retrieved_at: str | None = None
+    observation_date: str | None = None
+    fiscal_period_start: str | None = None
+    fiscal_period_end: str | None = None
+    fiscal_year: int | str | None = None
+    filing_date: str | None = None
+    currency: str | None = None
+    raw_concept: str | None = None
+    normalized_concept: str | None = None
+    transformation: str | None = None
+    coverage_status: str = "COMPLETE"
+    validation_status: str = "VALID"
+    staleness_status: str = "UNKNOWN"
+    limitation: str | None = None
+    entity_identifier: str | None = None
+    source_status: str = "HISTORICAL_REPORTED"
+    source_locator: str | None = None
+    extraction_method: str | None = None
+    definition_version: str | None = None
+    revision_status: str | None = None
 
 
 @dataclass
@@ -244,6 +270,8 @@ class ConstraintDiagnosis:
     data_gaps: list[DataGap]
     inference: str
     inference_evidence_ids: list[str]
+    constraint_status: str = "EVIDENCE_INSUFFICIENT"
+    direction_status: str = "DIRECTION_UNKNOWN"
 
 
 @dataclass
@@ -258,6 +286,7 @@ class ConstraintSet:
     constraint_transition: str = "UNAVAILABLE"
     transition_confidence: Confidence = Confidence.INSUFFICIENT
     transition_evidence_ids: list[str] = field(default_factory=list)
+    candidate_assessments: list[ConstraintDiagnosis] = field(default_factory=list)
 
 
 @dataclass
@@ -349,6 +378,10 @@ class CompanyEconomicsProfile:
     qualitative_research_needed: bool = False
     qualitative_research_reason: str = ""
     company_economics_schema_version: str = COMPANY_ECONOMICS_SCHEMA_VERSION
+    research_claims: list[dict[str, Any]] = field(default_factory=list)
+    evidence_registry: dict[str, dict[str, Any]] = field(default_factory=dict)
+    classification_version: str = "phase8.1-evidence-authority-v2"
+    operational_research: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self):
         return {"company_economics": _jsonable(self)}
@@ -480,6 +513,7 @@ def snapshot_from_valuation_data(data: dict) -> CompanySnapshot:
             "operating_margin": SourceNature.REPORTED if _number(provider_margin) else SourceNature.CALCULATED,
             "fcf_margin": SourceNature.CALCULATED,
         },
+        evidence_envelopes=data.get("evidence_envelopes") or {},
     )
 
 
@@ -650,26 +684,44 @@ def _metric_direction(name, value):
 
 def collect_base_evidence(snapshot: CompanySnapshot, ledger: EvidenceLedger):
     identity = {"ticker": snapshot.ticker, "company_name": snapshot.company_name, "sector": snapshot.sector or None, "industry": snapshot.industry or None, "business_description": snapshot.business_description or None}
+    from operational_research import load_series
+    series_ids = {definition.id for definition, _ in load_series(snapshot.ticker)}
+    aliases = {"customers": "pltr_customers", "wafer_volume": "tsm_shipments", "advanced_node_mix": "tsm_node_mix"}
     for name, value in {**identity, **snapshot.metrics, **snapshot.operational_metrics}.items():
         if value is None:
+            continue
+        if aliases.get(name) in series_ids:
             continue
         operational = name in snapshot.operational_metrics
         unit = "decimal" if any(word in name for word in ("growth", "margin", "rate", "yield", "utilization", "mix")) else "count" if name in {"employees", "customers", "users", "members", "store_count"} else "currency"
         nature = snapshot.source_nature.get(name, SourceNature.REPORTED)
         nature = nature if isinstance(nature, SourceNature) else SourceNature(nature)
+        envelope = snapshot.evidence_envelopes.get(name, {})
+        unit = envelope.get("unit") or ("text" if isinstance(value, str) else "shares" if name == "shares" else "employees" if name in {"employees", "deployment_headcount"} else "units" if name == "units" else "unknown" if name in {"wafer_volume", "fab_capacity"} else unit)
+        fixture = envelope.get("source_status") == "FIXTURE" or "fixture" in snapshot.sources.get(name, "").lower()
         ledger.add(
-            type=EvidenceType.FACT, tier=EvidenceTier.DIRECT, metric=name,
-            statement=f"{name.replace('_', ' ').title()} is reported as {value}.", value=value, unit=unit,
+            type=EvidenceType.FIXTURE if fixture else EvidenceType.FACT, tier=EvidenceTier.INDIRECT if fixture else EvidenceTier.DIRECT, metric=name,
+            statement=f"{name.replace('_', ' ').title()} {'is a synthetic fixture value of' if fixture else 'is reported as'} {value}.", value=value, unit=unit,
             period=snapshot.periods.get(name, snapshot.periods.get("revenue", "Latest available period")),
             source=snapshot.sources.get(name, "structured operational fixture" if operational else "security resolution / structured financial provider"),
-            source_type="fixture" if "fixture" in snapshot.sources.get(name, "") else "structured_data",
+            source_type=envelope.get("source_type", "fixture" if "fixture" in snapshot.sources.get(name, "") else "structured_data"),
             source_nature=nature, direction=_metric_direction(name, value), confidence=Confidence.HIGH,
+            source_id=envelope.get("source_id"), source_url=envelope.get("source_url"),
+            provider_status=envelope.get("provider_status", "OK"), retrieved_at=envelope.get("retrieved_at"),
+            observation_date=envelope.get("observation_date"), fiscal_period_start=envelope.get("fiscal_period_start"),
+            fiscal_period_end=envelope.get("fiscal_period_end"), fiscal_year=envelope.get("fiscal_year"),
+            filing_date=envelope.get("filing_date"), currency=envelope.get("currency") or snapshot.currency or None,
+            raw_concept=envelope.get("raw_concept"), normalized_concept=envelope.get("normalized_concept") or name,
+            transformation=envelope.get("transformation"), coverage_status=envelope.get("coverage_status", "COMPLETE"),
+            validation_status=envelope.get("validation_status", "VALID"), staleness_status=envelope.get("staleness_status", "UNKNOWN"),
+            limitation=envelope.get("limitation"), entity_identifier=envelope.get("entity_identifier") or snapshot.ticker,
+            source_status=envelope.get("source_status", "FIXTURE" if "fixture" in snapshot.sources.get(name, "") else "HISTORICAL_REPORTED"),
         )
 
 
 class GrowthArchitectureBuilder:
     DRIVER_KPIS = {
-        GrowthPrimitive.CUSTOMERS: ("customers", "customer_growth"), GrowthPrimitive.USERS: ("users", "user_growth"), GrowthPrimitive.SUBSCRIBERS: ("subscribers", "subscriber_growth"),
+        GrowthPrimitive.CUSTOMERS: ("customers", "customer_growth", "pltr_customers"), GrowthPrimitive.USERS: ("users", "user_growth"), GrowthPrimitive.SUBSCRIBERS: ("subscribers", "subscriber_growth"),
         GrowthPrimitive.SEATS: ("seats", "seat_growth"), GrowthPrimitive.ARPU: ("arpu", "arpu_growth"), GrowthPrimitive.REVENUE_PER_CUSTOMER: ("revenue_per_customer",),
         GrowthPrimitive.PRICING: ("pricing", "same_store_sales"), GrowthPrimitive.VOLUME: ("volume", "volume_growth"), GrowthPrimitive.UNITS: ("units", "unit_growth"),
         GrowthPrimitive.ASP: ("asp", "asp_growth"), GrowthPrimitive.PRODUCT_MIX: ("product_mix", "advanced_node_mix"), GrowthPrimitive.STORE_COUNT: ("store_count", "store_growth"),
@@ -686,7 +738,7 @@ class GrowthArchitectureBuilder:
         definition = ARCHETYPE_REGISTRY[classification.primary_archetype]
         drivers = []
         for index, primitive in enumerate(definition.growth_engines):
-            ids = ledger.ids_for(self.DRIVER_KPIS.get(primitive, ()))
+            ids = ledger.ids_for(self.DRIVER_KPIS.get(primitive, ()), [EvidenceType.FACT])
             if not ids:
                 gaps.append(DataGap(self.DRIVER_KPIS.get(primitive, (primitive.value.lower(),))[0], primitive.value, None, "Direct observation would confirm the growth equation component.", "Driver confidence remains LOW.", "revenue growth" if ledger.ids_for(("revenue_growth",)) else None))
             drivers.append(GrowthDriver(primitive, "PRIMARY" if index == 0 else "SECONDARY", EvidenceTier.DIRECT if ids else EvidenceTier.INDIRECT, ids, Confidence.HIGH if len(ids) >= 2 else Confidence.MODERATE if ids else Confidence.LOW))
@@ -717,18 +769,23 @@ class ScalingEconomicsAnalyzer:
         relevant = set(definition.scaling_metrics)
         relevant.update({name for name in calculations if name in definition.proxy_kpis})
         output = []
-        for name in relevant:
+        for name in sorted(relevant):
             value, unit, interpretation = calculations.get(name, (m.get(name), "decimal", name.replace("_", " ").title()))
             evidence_id = None
             if _number(value):
                 nature = SourceNature.DERIVED_PROXY if "_minus_" in name else SourceNature.CALCULATED
                 evidence = ledger.add(type=EvidenceType.PROXY, tier=EvidenceTier.INDIRECT, metric=name, statement=f"{name.replace('_', ' ').title()} is {value:.4f}.", value=value, unit=unit, period=p.get("revenue", "Latest available period"), source="calculated from normalized company snapshot", source_type="calculation", source_nature=nature, direction=_metric_direction(name, value), confidence=Confidence.MODERATE)
+                if any("fixture" in source.lower() for source in snapshot.sources.values()):
+                    evidence.source_status = "FIXTURE"
+                    evidence.limitation = "Calculated from synthetic fixture financials; not an observed company fact."
                 evidence_id = evidence.id
             else:
                 gaps.append(DataGap(name, None, None, "Required to evaluate archetype-specific scaling economics.", "Scaling confidence is reduced.", None))
             output.append(ScalingMetric(name, value, unit, p.get("revenue", "Latest available period"), "Prior comparable period" if len(revenues) > 1 else None, interpretation, evidence_id))
         available = [item for item in output if _number(item.value)]
-        if not available:
+        if any("fixture" in source.lower() for source in snapshot.sources.values()):
+            text, confidence = "Synthetic fixture scaling metrics are illustrative, not observed company economics.", Confidence.INSUFFICIENT
+        elif not available:
             text, confidence = "Relevant scaling metrics are unavailable; no scaling conclusion is forced.", Confidence.INSUFFICIENT
         else:
             positive = [item for item in available if ("minus" in item.name or "incremental" in item.name) and item.value > 0]
@@ -744,6 +801,8 @@ class ConstraintEvidenceCollector:
         ids = ledger.ids_for(definition.direct_kpis + definition.proxy_kpis)
         for evidence_id in ids:
             item = next(x for x in ledger.items if x.id == evidence_id)
+            if item.source_status == "FIXTURE" or item.type == EvidenceType.FIXTURE:
+                continue
             if item.direction == Direction.DETERIORATING:
                 contrary.append(evidence_id)
             else:
@@ -776,12 +835,8 @@ class ConstraintDiagnosisEngine:
         if explicit:
             try: return ConstraintDirection(explicit[0])
             except ValueError: pass
-        improving = sum(x.direction == Direction.IMPROVING for x in items)
-        deteriorating = sum(x.direction == Direction.DETERIORATING for x in items)
-        if improving and deteriorating: return ConstraintDirection.MIXED
-        if improving: return ConstraintDirection.EASING
-        if deteriorating: return ConstraintDirection.TIGHTENING
-        if items: return ConstraintDirection.STABLE
+        # Metric movement is not bottleneck movement. No demand/capacity
+        # sufficiency rule has been approved; retain unknown instead.
         return ConstraintDirection.UNKNOWN
 
     def diagnose(self, candidates, ledger):
@@ -793,10 +848,28 @@ class ConstraintDiagnosisEngine:
             direct_count = len(ledger.ids_for(CONSTRAINT_REGISTRY[constraint].direct_kpis))
             confidence = Confidence.HIGH if direct_count >= 2 and count >= 3 else Confidence.MODERATE if direct_count and count >= 2 else Confidence.LOW if count else Confidence.INSUFFICIENT
             refs = evidence.supporting_evidence_ids + evidence.contrary_evidence_ids
-            inference = f"{constraint.value.replace('_', ' ').title()} appears {direction.value.lower()} based on the cited operating and scaling evidence." if refs else f"There is insufficient evidence to diagnose {constraint.value.replace('_', ' ').lower()}."
+            direct_ids = [eid for eid in ledger.ids_for(CONSTRAINT_REGISTRY[constraint].direct_kpis) if any(x.id == eid and x.type == EvidenceType.FACT and x.source_status != "FIXTURE" for x in ledger.items)]
+            proxy_ids = [item for item in evidence.supporting_evidence_ids if item not in direct_ids]
+            direct_items = [next(item for item in ledger.items if item.id == evidence_id) for evidence_id in direct_ids]
+            proxy_items = [next(item for item in ledger.items if item.id == evidence_id) for evidence_id in proxy_ids]
+            evidence_current = not any(item.staleness_status == "STALE" for item in direct_items + proxy_items)
+            direct_direction = None
+            proxy_direction = None
+            claim = assess_constraint_claim(
+                claim_id=f"{constraint.value.lower()}-assessment", entity_identifier=next((item.entity_identifier for item in direct_items + proxy_items if item.entity_identifier), "UNKNOWN"),
+                mechanism=CONSTRAINT_REGISTRY[constraint].display_name, direct_ids=direct_ids, proxy_ids=proxy_ids,
+                counter_ids=evidence.contrary_evidence_ids, direct_direction=direct_direction,
+                proxy_direction=proxy_direction, evidence_current=evidence_current,
+            )
+            if direct_ids:
+                inference = f"{constraint.value.replace('_', ' ').title()} has direct measurements, but binding status is {claim.constraint_status.value.lower().replace('_', ' ')} and direction is {claim.direction_status.value.lower().replace('_', ' ')}."
+            elif proxy_ids:
+                inference = f"{constraint.value.replace('_', ' ').title()} remains unverified; cited proxies support only {claim.direction_status.value.lower().replace('_', ' ')}."
+            else:
+                inference = f"There is insufficient evidence to diagnose {constraint.value.replace('_', ' ').lower()}."
             if refs:
                 ledger.add(type=EvidenceType.INFERENCE, tier=EvidenceTier.INDIRECT, metric=f"{constraint.value.lower()}_diagnosis", statement=inference, period="Current assessment", source="Company Economics deterministic diagnosis", source_type="model", source_nature=SourceNature.INFERRED, direction=Direction.UNKNOWN, confidence=confidence, related_constraint=constraint.value, supporting_evidence_ids=refs)
-            diagnoses.append(ConstraintDiagnosis(constraint, CONSTRAINT_REGISTRY[constraint].mechanism, evidence.supporting_evidence_ids, evidence.contrary_evidence_ids, direction, confidence, evidence.data_gaps, inference, refs))
+            diagnoses.append(ConstraintDiagnosis(constraint, CONSTRAINT_REGISTRY[constraint].mechanism, evidence.supporting_evidence_ids, evidence.contrary_evidence_ids, direction, confidence, evidence.data_gaps, inference, refs, claim.constraint_status.value, claim.direction_status.value))
         # A financial proxy can rank candidate constraints, but cannot by itself
         # establish the primary bottleneck.  This keeps arbitrary companies at
         # UNKNOWN until a constraint-specific structured KPI is available.
@@ -804,18 +877,19 @@ class ConstraintDiagnosisEngine:
         for item in diagnoses:
             direct_ids = ledger.ids_for(CONSTRAINT_REGISTRY[item.constraint].direct_kpis)
             direct_items = [next(entry for entry in ledger.items if entry.id == evidence_id) for evidence_id in direct_ids]
-            if any(entry.direction != Direction.UNKNOWN for entry in direct_items):
+            if item.direction_status in {"OBSERVED_EASING", "OBSERVED_TIGHTENING"} and any(entry.source_status != "FIXTURE" for entry in direct_items):
                 supported.append(item)
         if supported:
             primary, secondary = supported[0], supported[1:3]
             candidate_only = [item.constraint for item in diagnoses if item not in supported]
         else:
-            primary = ConstraintDiagnosis(ConstraintType.UNKNOWN, CONSTRAINT_REGISTRY[ConstraintType.UNKNOWN].mechanism, [], [], ConstraintDirection.UNKNOWN, Confidence.INSUFFICIENT, [gap for d in diagnoses for gap in d.data_gaps], "Available evidence does not support a primary constraint.", [])
+            primary = ConstraintDiagnosis(ConstraintType.UNKNOWN, CONSTRAINT_REGISTRY[ConstraintType.UNKNOWN].mechanism, [], [], ConstraintDirection.UNKNOWN, Confidence.INSUFFICIENT, [gap for d in diagnoses for gap in d.data_gaps], "Available evidence does not support a primary constraint.", [], "STRUCTURAL_CANDIDATE", "DIRECTION_UNKNOWN")
             secondary, candidate_only = [], [item.constraint for item in diagnoses if item.constraint != ConstraintType.UNKNOWN]
         interactions = []
         if len(supported) >= 2:
             interactions.append(f"{supported[0].constraint.value} and {supported[1].constraint.value} may jointly limit conversion of demand into revenue; interaction evidence is currently indirect.")
-        return ConstraintSet(primary, secondary, candidate_only, [], interactions, current_primary_constraint=primary.constraint.value)
+        candidate_assessments = [item for item in diagnoses if item.constraint in candidate_only]
+        return ConstraintSet(primary, secondary, candidate_only, [], interactions, current_primary_constraint=primary.constraint.value, candidate_assessments=candidate_assessments)
 
 
 class GrowthSustainabilityInterpreter:
@@ -853,6 +927,8 @@ class FalsificationEngine:
 class FinancialTranslationEngine:
     def translate(self, snapshot, sustainability, constraints, scaling):
         ids = sustainability.supporting_evidence_ids
+        if any("fixture" in source.lower() for source in snapshot.sources.values()):
+            return FinancialTranslation(*[FinancialImplication(ImplicationState.INSUFFICIENT_EVIDENCE, "Synthetic fixture financials cannot substantiate a financial implication.", []) for _ in range(4)])
         if sustainability.confidence == Confidence.INSUFFICIENT:
             revenue_state = ImplicationState.INSUFFICIENT_EVIDENCE
         elif _number(sustainability.current_revenue_growth) and sustainability.current_revenue_growth > 0 and constraints.primary_constraint.direction != ConstraintDirection.TIGHTENING:
@@ -929,7 +1005,7 @@ def build_economic_graph(profile_parts):
 
 class CompanyEconomicsValidation:
     VALID_NODE_TYPES = {"growth_driver", "constraint", "resource", "revenue", "margin", "cash_flow", "valuation", "risk"}
-    VALID_RELATIONSHIPS = {"drives", "limits", "supports", "pressures", "converts_to", "depends_on"}
+    VALID_RELATIONSHIPS = {"drives", "limits", "supports", "pressures", "converts_to", "depends_on", "structural_exposure_not_causal_attribution"}
 
     def validate(self, profile):
         evidence_ids = [item.id for item in profile.evidence_trace]
@@ -970,8 +1046,23 @@ class CompanyEconomicsValidation:
 
 
 def build_company_economics(snapshot: CompanySnapshot, valuation_report: dict | None = None) -> CompanyEconomicsProfile:
+    # Keep illustrative financial inputs out of authoritative model comparisons.
+    if any("fixture" in source.lower() for source in snapshot.sources.values()):
+        valuation_report = None
     ledger, gaps = EvidenceLedger(), []
     collect_base_evidence(snapshot, ledger)
+    from operational_research import build_operational_research
+    operational_data = build_operational_research(snapshot.ticker, valuation_report)
+    for series in operational_data["series"]:
+        for observation in series["observations"]:
+            envelope = observation["evidence"]
+            item = ledger.add(type=EvidenceType.FACT, tier=EvidenceTier.DIRECT,
+                metric=series["definition"]["id"], statement=series["definition"]["definition"],
+                value=envelope["value"], unit=envelope["unit"], period=observation["period"],
+                source=envelope["source_name"], source_type=envelope["source_type"],
+                confidence=Confidence.HIGH, source_nature=SourceNature.REPORTED,
+                **{key: envelope[key] for key in ("source_id", "source_url", "retrieved_at", "observation_date", "fiscal_period_start", "fiscal_period_end", "filing_date", "currency", "raw_concept", "normalized_concept", "transformation", "limitation", "entity_identifier", "source_status", "validation_status", "staleness_status", "source_locator", "extraction_method", "definition_version", "revision_status")})
+            observation["ledger_id"] = item.id
     classification = BusinessModelClassifier().classify(snapshot)
     classification_refs = ledger.ids_for(("sector", "industry", "business_description", "gross_margin", "capex", "revenue"))
     classification.routing_evidence_ids = classification_refs
@@ -1033,6 +1124,56 @@ def build_company_economics(snapshot: CompanySnapshot, valuation_report: dict | 
         _deduplicate_gaps(gaps), ledger.items, graph, ValidationResult("PENDING", {}, []), data_quality,
         qualitative_needed, qualitative_reason,
     )
+    all_diagnoses = [constraints.primary_constraint, *constraints.secondary_constraints, *constraints.candidate_assessments]
+    profile.research_claims = [
+        {
+            "claim_id": f"{item.constraint.value.lower()}-assessment",
+            "entity_identifier": snapshot.ticker,
+            "mechanism": item.constraint.value,
+            "relationship": item.inference,
+            "claim_type": "STRUCTURAL_HYPOTHESIS" if item.constraint_status == "STRUCTURAL_CANDIDATE" else "CONTRADICTED" if item.constraint_status == "CONFLICTING_EVIDENCE" else "ECONOMIC_INFERENCE",
+            "direct_evidence_ids": ledger.ids_for(CONSTRAINT_REGISTRY[item.constraint].direct_kpis) if item.constraint in CONSTRAINT_REGISTRY else [],
+            "proxy_evidence_ids": [evidence_id for evidence_id in item.supporting_evidence_ids if evidence_id not in ledger.ids_for(CONSTRAINT_REGISTRY[item.constraint].direct_kpis)] if item.constraint in CONSTRAINT_REGISTRY else [],
+            "counterevidence_ids": item.contrary_evidence_ids,
+            "constraint_status": item.constraint_status,
+            "direction_status": item.direction_status,
+            "causal_status": "ASSOCIATION_ONLY" if item.supporting_evidence_ids else "STRUCTURALLY_PLAUSIBLE",
+            "limitations": [gap.why_it_matters for gap in item.data_gaps],
+            "classification_version": "phase8.1-evidence-authority-v2",
+        }
+        for item in all_diagnoses
+        if item.constraint != ConstraintType.UNKNOWN
+    ]
+    profile.operational_research = operational_data
+    profile.data_quality["evidence_coverage"]["facts"] = sum(item.type == EvidenceType.FACT for item in ledger.items)
+    profile.evidence_registry = {
+        item.id: next((o["evidence"] for series in profile.operational_research["series"] for o in series["observations"] if o["ledger_id"] == item.id), None) or snapshot.evidence_envelopes.get(item.metric, {
+            "source_id": item.source_id or item.id, "source_name": item.source, "source_url": item.source_url,
+            "source_type": item.source_type, "provider_status": item.provider_status,
+            "retrieved_at": item.retrieved_at, "observation_date": item.observation_date,
+            "fiscal_period_start": item.fiscal_period_start, "fiscal_period_end": item.fiscal_period_end,
+            "fiscal_year": item.fiscal_year, "filing_date": item.filing_date, "unit": item.unit,
+            "currency": item.currency, "value": item.value, "raw_concept": item.raw_concept,
+            "normalized_concept": item.normalized_concept or item.metric, "transformation": item.transformation,
+            "coverage_status": item.coverage_status, "validation_status": item.validation_status,
+            "staleness_status": item.staleness_status, "limitation": item.limitation,
+            "entity_identifier": item.entity_identifier or snapshot.ticker, "source_status": item.source_status,
+        })
+        for item in ledger.items
+    }
+    for series in profile.operational_research["series"]:
+        definition = series["definition"]
+        alias_nodes = {"pltr_customers": "customers", "tsm_shipments": "wafer_volume", "tsm_node_mix": "node_mix"}
+        old_id = alias_nodes.get(definition["id"])
+        if old_id:
+            graph["nodes"][:] = [node for node in graph["nodes"] if node["id"] != old_id]
+            for edge in graph["edges"]:
+                if edge["from"] == old_id:
+                    edge["from"] = definition["id"]
+                if edge["to"] == old_id:
+                    edge["to"] = definition["id"]
+        graph["nodes"].append({"id": definition["id"], "label": definition["name"] + " (reported)", "type": "growth_driver"})
+        graph["edges"].append({"from": definition["id"], "to": "revenue", "relationship": "structural_exposure_not_causal_attribution"})
     profile.validation = CompanyEconomicsValidation().validate(profile)
     return profile
 
@@ -1048,9 +1189,10 @@ def _deduplicate_gaps(gaps):
 
 def build_live_company_economics(ticker: str, include_valuation=True):
     from intrinsic_valuation import build_valuation_report, collect_valuation_data
+    from data_sources.operational_evidence import enrich_snapshot
 
     data = collect_valuation_data(ticker)
-    snapshot = snapshot_from_valuation_data(data)
+    snapshot = enrich_snapshot(snapshot_from_valuation_data(data))
     valuation = build_valuation_report(ticker, data=data) if include_valuation else None
     return build_company_economics(snapshot, valuation)
 

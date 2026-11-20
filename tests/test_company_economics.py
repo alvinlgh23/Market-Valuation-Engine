@@ -72,7 +72,8 @@ class CompanyEconomicsTests(unittest.TestCase):
             with self.subTest(ticker=ticker):
                 profile = build_company_economics(benchmark_snapshot(ticker))
                 self.assertEqual(profile.classification.primary_archetype, archetype)
-                self.assertEqual(profile.constraints.primary_constraint.constraint, constraint)
+                self.assertEqual(profile.constraints.primary_constraint.constraint, ConstraintType.UNKNOWN)
+                self.assertIn(constraint, profile.constraints.candidate_constraints)
 
     def test_hybrid_classification(self):
         result = build_company_economics(benchmark_snapshot("MSFT"))
@@ -145,12 +146,12 @@ class CompanyEconomicsTests(unittest.TestCase):
         snapshot = benchmark_snapshot("PLTR")
         snapshot.operational_metrics["deployment_capacity_growth"] = -.10
         profile = build_company_economics(snapshot)
-        self.assertIn(profile.constraints.primary_constraint.direction, {ConstraintDirection.MIXED, ConstraintDirection.TIGHTENING})
-        self.assertTrue(profile.constraints.primary_constraint.contrary_evidence_ids)
+        self.assertEqual(profile.constraints.primary_constraint.direction, ConstraintDirection.UNKNOWN)
+        self.assertEqual(profile.constraints.primary_constraint.direction_status, "DIRECTION_UNKNOWN")
 
     def test_confidence_is_rule_based(self):
         profile = build_company_economics(benchmark_snapshot("PLTR"))
-        self.assertEqual(profile.constraints.primary_constraint.confidence, Confidence.HIGH)
+        self.assertEqual(profile.constraints.primary_constraint.confidence, Confidence.INSUFFICIENT)
         empty = build_company_economics(CompanySnapshot("T", "Test", "2026-01-01"))
         self.assertEqual(empty.constraints.primary_constraint.confidence, Confidence.INSUFFICIENT)
 
@@ -170,11 +171,11 @@ class CompanyEconomicsTests(unittest.TestCase):
     def test_valuation_assumption_review(self):
         profile = build_company_economics(benchmark_snapshot("PLTR"), valuation_fixture(.30, .30))
         reviews = {item.assumption: item for item in profile.valuation_assumption_review.reviews}
-        self.assertEqual(reviews["revenue_growth"].state, ValuationReviewState.SUPPORTED)
+        self.assertEqual(reviews["revenue_growth"].state, ValuationReviewState.INSUFFICIENT_EVIDENCE)
 
     def test_market_expectations_comparison(self):
         profile = build_company_economics(benchmark_snapshot("PLTR"), valuation_fixture(implied_growth=.45))
-        self.assertEqual(profile.market_expectations_comparison.state, MarketExpectationState.ABOVE_SUPPORTED_ECONOMICS)
+        self.assertEqual(profile.market_expectations_comparison.state, MarketExpectationState.INSUFFICIENT_EVIDENCE)
 
     def test_json_schema_and_serialization(self):
         payload = build_company_economics(benchmark_snapshot("V")).to_dict()

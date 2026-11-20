@@ -1,0 +1,74 @@
+[
+  {
+    "ticker": "PLTR",
+    "mode": "fixture",
+    "providerStatus": null,
+    "journey": "PASS"
+  },
+  {
+    "ticker": "PLTR",
+    "mode": "provider",
+    "providerStatus": "PARTIAL",
+    "journey": "PASS"
+  },
+  {
+    "ticker": "TSM",
+    "mode": "fixture",
+    "providerStatus": null,
+    "journey": "PASS"
+  },
+  {
+    "ticker": "TSM",
+    "mode": "provider",
+    "providerStatus": "PARTIAL",
+    "journey": "PASS"
+  },
+  {
+    "ticker": "NVDA",
+    "mode": "fixture",
+    "providerStatus": null,
+    "journey": "PASS"
+  },
+  {
+    "ticker": "NVDA",
+    "mode": "provider",
+    "providerStatus": "PARTIAL",
+    "journey": "PASS"
+  },
+  {
+    "ticker": "AMD",
+    "mode": "fixture",
+    "providerStatus": null,
+    "journey": "PASS"
+  },
+  {
+    "ticker": "AMD",
+    "mode": "provider",
+    "providerStatus": "STALE",
+    "journey": "PASS"
+  },
+  {
+    "ticker": "MSFT",
+    "mode": "fixture",
+    "providerStatus": null,
+    "journey": "PASS"
+  },
+  {
+    "ticker": "MSFT",
+    "mode": "provider",
+    "providerStatus": "PARTIAL",
+    "journey": "PASS"
+  },
+  {
+    "ticker": "COST",
+    "mode": "fixture",
+    "providerStatus": null,
+    "journey": "PASS"
+  },
+  {
+    "ticker": "COST",
+    "mode": "provider",
+    "providerStatus": "PARTIAL",
+    "journey": "PASS"
+  }
+]

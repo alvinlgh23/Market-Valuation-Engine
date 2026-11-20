@@ -40,6 +40,8 @@ export interface SectorResearchObject {
   heat: string;
   sourceState: "CACHED" | "PARTIAL" | "STRUCTURAL_MODEL_PARTIAL" | "STALE" | "UNAVAILABLE";
   lastUpdated: string;
+  measurementSource?: string;
+  measurementReason?: string;
   leaders: Array<{ ticker: string; name: string; role: string; relativeStrength: number | null; condition: string }>;
   structure: {
     template: string;
@@ -399,7 +401,7 @@ export function percent(value: number | null): string {
   return `${sign}${(value * 100).toFixed(1)}%`;
 }
 
-export type SectorEngineRow = { ticker?: string; rel_1m?: number | null; rel_3m?: number | null; rel_6m?: number | null; as_of?: string };
+export type SectorEngineRow = { ticker?: string; name?: string; source?: string; validation_status?: string; validation_reason?: string; provider_diagnostic?: { provider_status?: string; source_status?: string }; rel_1m?: number | null; rel_3m?: number | null; rel_6m?: number | null; as_of?: string };
 
 export function integrateSectorEngineRows(rows: SectorEngineRow[] | undefined, state = "UNKNOWN"): SectorResearchObject[] {
   const byTicker = new Map<string, SectorEngineRow>();
@@ -411,18 +413,27 @@ export function integrateSectorEngineRows(rows: SectorEngineRow[] | undefined, s
     if (!prior || (normalized.as_of || "") > (prior.as_of || "")) byTicker.set(key, normalized);
   }
   const finite = (value: unknown) => typeof value === "number" && Number.isFinite(value) ? value : null;
-  return sectors.map((sector) => {
+  const catalog: SectorResearchObject[] = [...sectors];
+  for (const [ticker, row] of Array.from(byTicker)) {
+    if (catalog.some(sector => sector.ticker === ticker)) continue;
+    catalog.push({ slug: ticker.toLowerCase(), ticker, name: row.name || ticker, primaryTheme: "Unclassified", currentRead: "", rel1m: null, rel3m: null, rel6m: null, breadth: "Unavailable", breadthRatio: null, crowding: "Unavailable", crowdingBasis: "", momentum: "Unverified", stage: "Unavailable", heat: "Unavailable", sourceState: "PARTIAL", lastUpdated: "", leaders: [], structure: { template: "Structure not curated", status: "STRUCTURAL_MODEL_PARTIAL", summary: "Measurements are available independently of a curated structural map.", nodes: [], edges: [] }, evidence: [], dataGaps: ["No curated structural model for this ticker."], reportNotes: [] });
+  }
+  return catalog.map((sector) => {
     const row = byTicker.get(sector.ticker);
     const stale = state === "STALE" || (!!row?.as_of && Date.now() - Date.parse(row.as_of) > 7 * 86400_000);
+    const invalid = ["FAILED", "INVALID", "CONFLICT"].includes(row?.validation_status || "");
+    const reason = !row ? "No sector row in this snapshot." : invalid ? row.validation_reason || `Model validation: ${row.validation_status}` : `${row.provider_diagnostic?.provider_status ? `Provider status: ${row.provider_diagnostic.provider_status}. ` : ""}Missing horizon values are not supplied by the sector engine; breadth, crowding and stage require independent measurements.`;
     return {
       ...sector,
-      rel1m: finite(row?.rel_1m), rel3m: finite(row?.rel_3m), rel6m: finite(row?.rel_6m),
+      rel1m: invalid ? null : finite(row?.rel_1m), rel3m: invalid ? null : finite(row?.rel_3m), rel6m: invalid ? null : finite(row?.rel_6m),
       breadth: "Unavailable", breadthRatio: null, crowding: "Unavailable", crowdingBasis: "No current positioning measurements supplied.",
       momentum: "Unverified", stage: "Unavailable", heat: "Unavailable",
-      currentRead: row ? "Python relative strength is available; broader leadership and crowding conclusions require additional evidence." : "Structural sector map available; dynamic market measurements unavailable.",
+      currentRead: invalid ? `Measurement withheld: ${reason}` : row && [row.rel_1m, row.rel_3m, row.rel_6m].some(value => finite(value) != null) ? "Dated Python relative strength is available; broader leadership and crowding conclusions require additional evidence." : "Structural sector map available; no finite relative-strength measurements in this snapshot.",
       leaders: sector.leaders.map(leader => ({ ...leader, relativeStrength: null, condition: "Structural role; current leadership unverified" })),
-      sourceState: !row ? "UNAVAILABLE" : stale ? "STALE" : "PARTIAL",
+      sourceState: !row || invalid ? "UNAVAILABLE" : stale ? "STALE" : state === "CACHED" ? "CACHED" : "PARTIAL",
       lastUpdated: row?.as_of || "Observation date unavailable",
+      measurementSource: row?.source || "Source not supplied",
+      measurementReason: reason,
       evidence: sector.evidence.filter(item => !/relative strength|breadth|momentum|crowding/i.test(item.label)),
       reportNotes: ["Structural relationships are declarative. Dynamic numerical fields come only from supplied Python measurements.", `Engine state: ${state}; observation date: ${row?.as_of || "unknown"}.`],
     };

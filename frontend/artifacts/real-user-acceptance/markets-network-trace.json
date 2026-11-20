@@ -1,0 +1,31 @@
+[
+  {
+    "route": "/markets",
+    "stage": "server HTML",
+    "coreSnapshotId": "ea1f3660b07fe36c",
+    "sectorRows": 34
+  },
+  {
+    "request": "http://192.168.0.105:3000/api/research?scope=full",
+    "status": 200
+  },
+  {
+    "route": "/markets",
+    "stage": "normal browser",
+    "sectorRows": 34
+  },
+  {
+    "request": "http://192.168.0.105:3000/api/research?scope=full",
+    "status": 200
+  },
+  {
+    "route": "/markets?sector=semiconductors",
+    "observationDate": "2026-11-04",
+    "source": "Yahoo Finance / Python sector engine",
+    "relativeStrength6m": -0.11980533956958384
+  },
+  {
+    "request": "http://192.168.0.105:3000/api/research?scope=full",
+    "status": 200
+  }
+]

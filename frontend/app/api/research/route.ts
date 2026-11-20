@@ -1,11 +1,7 @@
 import { runPythonJson, runtimeError, PythonRuntimeError } from "../../../lib/python-runtime";
 import { NextRequest, NextResponse } from "next/server";
-import fixture from "../../../lib/fixtures/research-system.json";
 import { analyzeValuation, type ValuationOverrides } from "../../../lib/valuation-service";
-
-let memoryCache: { at: number; value: typeof fixture } | null = null;
-let researchInflight: Promise<typeof fixture> | null = null;
-const CACHE_MS = 15 * 60 * 1000;
+import { loadResearchSystem } from "../../../lib/research-server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -40,27 +36,9 @@ export async function GET(request: NextRequest) {
   const refresh = request.nextUrl.searchParams.get("refresh") === "1";
   const scope = request.nextUrl.searchParams.get("scope") || "full";
   if (action || !["full", "dashboard", "world"].includes(scope)) return NextResponse.json({ status: "FAILED", runtime_error: { code: "UNSUPPORTED_ACTION", message: "Unsupported research action or scope." } }, { status: 400 });
-  let full: typeof fixture;
-  let source = "BUNDLED_LAST_VALID";
-  if (memoryCache && !refresh && Date.now() - memoryCache.at < CACHE_MS) {
-    full = memoryCache.value;
-    source = "MEMORY_CACHE";
-  } else {
-    try {
-      const args = ["-B", "research_system.py", "full", "--json", ...(refresh ? ["--live"] : [])];
-      if (!researchInflight) researchInflight = runPythonJson<typeof fixture>(args).finally(() => { researchInflight = null; });
-      full = await researchInflight;
-      if (!full?.modules?.core_market || !full.dashboard || !full.world) throw new PythonRuntimeError("INVALID_JSON", "Malformed research payload.");
-      memoryCache = { at: Date.now(), value: full };
-      source = refresh ? "LIVE_REFRESH" : "PYTHON_CACHE";
-    } catch (error) {
-      const last = memoryCache?.value ?? fixture;
-      const failure = runtimeError(error);
-      return NextResponse.json({ data: scope === "dashboard" ? last.dashboard : scope === "world" ? last.world : last, meta: { source: memoryCache ? "MEMORY_CACHE" : source, data_state: "STALE", fallback: true, runtime_error: failure, error: failure.message } });
-    }
-  }
-  const data = scope === "dashboard" ? full.dashboard : scope === "world" ? full.world : full;
-  return NextResponse.json({ data, meta: { source, fallback: false, generated_at: full.generated_at } });
+  const result = await loadResearchSystem(refresh);
+  const full = result.data;
+  return NextResponse.json({ data: scope === "dashboard" ? full.dashboard : scope === "world" ? full.world : full, meta: result.meta });
 }
 
 export async function POST(request: NextRequest) {

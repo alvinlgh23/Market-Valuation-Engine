@@ -1,4 +1,4 @@
-import { sectorBySlug, sectors, percent } from "./market-research";
+import { integrateSectorEngineRows, percent, type SectorEngineRow } from "./market-research";
 import type { ResearchRow, ResearchSystem } from "./research-system-types";
 
 export type DashboardLink = {
@@ -48,19 +48,25 @@ function findRead(system: ResearchSystem, id: string) {
   return system.dashboard.reads.find((read) => read.id === id);
 }
 
+function measuredSectors(system: ResearchSystem) {
+  const rows = system.modules.core_market.payload?.sectors as SectorEngineRow[] | undefined;
+  const order = new Map((Array.isArray(rows) ? rows : []).map((row, index) => [row.ticker, index]));
+  return integrateSectorEngineRows(rows, system.modules.core_market.state).sort((a, b) => (order.get(a.ticker) ?? Infinity) - (order.get(b.ticker) ?? Infinity));
+}
+
 export function dashboardStateStrip(system: ResearchSystem): DashboardLink[] {
   const inflation = findRead(system, "inflation");
   const risk = findRead(system, "risk");
   const liquidity = findRead(system, "liquidity");
   const macro = findRead(system, "us-policy");
-  const leadership = sectorBySlug("semiconductors");
+  const leadership = measuredSectors(system).find(s => s.rel6m != null);
   const valuation = system.dashboard.valuation_flags.find((flag) => flag.state);
   return [
     { label: "Macro", state: value(macro), detail: detail(macro), href: href(macro, "/macro/world?region=US&detail=policy") },
     { label: "Inflation", state: value(inflation), detail: detail(inflation), href: href(inflation, "/macro/inflation") },
     { label: "Liquidity", state: value(liquidity), detail: detail(liquidity), href: href(liquidity, "/macro/liquidity") },
     { label: "Risk", state: value(risk), detail: detail(risk), href: href(risk, "/macro/risk") },
-    { label: "Leadership", state: leadership.name, detail: `${percent(leadership.rel6m)} 6M RS; ${leadership.breadth} breadth; ${leadership.crowding}.`, href: `/markets?sector=${leadership.slug}` },
+    { label: "Leadership", state: leadership?.name || "Unavailable", detail: leadership ? `${percent(leadership.rel6m)} 6M RS · ${leadership.lastUpdated} · ${leadership.sourceState}. Breadth and crowding unavailable.` : "No validated relative-strength observations in this snapshot.", href: leadership ? `/markets?sector=${leadership.slug}` : "/markets" },
     { label: "Valuation", state: valuation ? humanize(valuation.state) : "No aggregate flag", detail: valuation ? String(valuation.reason) : "Only recent company valuation flags are shown.", href: valuation?.ticker ? `/valuation/${valuation.ticker}` : href(valuation, "/valuation") }
   ];
 }
@@ -78,6 +84,7 @@ export function dashboardChanges(system: ResearchSystem): DashboardPriority[] {
 }
 
 export function dashboardPriorities(system: ResearchSystem): DashboardPriority[] {
+  const semis = measuredSectors(system).find(s => s.ticker === "SMH")!;
   const base = system.dashboard.research_priority.slice(0, 4).map((item, index) => ({
     rank: Number(item.rank || index + 1),
     object: String(item.module || "Research"),
@@ -92,9 +99,9 @@ export function dashboardPriorities(system: ResearchSystem): DashboardPriority[]
     {
       rank: base.length + 1,
       object: "Semiconductors",
-      label: "Leadership strong; crowding proxy elevated",
-      current: `${percent(sectorBySlug("semiconductors").rel6m)} 6M RS`,
-      why: "Phase 3 market bridge exposes leadership, breadth, and crowding as a direct sector research object.",
+      label: "Inspect dated relative strength; positioning unverified",
+      current: `${percent(semis.rel6m)} 6M RS · ${semis.lastUpdated}`,
+      why: "Relative strength does not establish breadth or crowding. Open the same cached sector observation.",
       href: "/markets?sector=semiconductors&view=positioning",
       state: "WATCH"
     },
@@ -113,7 +120,7 @@ export function dashboardPriorities(system: ResearchSystem): DashboardPriority[]
 export function dashboardTensions(system: ResearchSystem): ResearchTension[] {
   const macro = findRead(system, "us-policy");
   const risk = findRead(system, "risk");
-  const semis = sectorBySlug("semiconductors");
+  const semis = measuredSectors(system).find(s => s.ticker === "SMH")!;
   const inflation = findRead(system, "inflation");
   return [
     {
@@ -130,7 +137,7 @@ export function dashboardTensions(system: ResearchSystem): ResearchTension[] {
       objects: "Markets × Breadth",
       stateA: semis.breadth,
       stateB: semis.crowding,
-      interpretation: "Leadership remains positive, but breadth and crowding must be inspected separately rather than averaged into one read.",
+      interpretation: "Dated relative strength is separate from breadth and crowding; missing measurements cannot establish positive leadership or positioning.",
       confidence: semis.sourceState,
       href: "/markets?sector=semiconductors&view=breadth"
     },
@@ -155,11 +162,11 @@ export function dashboardTensions(system: ResearchSystem): ResearchTension[] {
   ];
 }
 
-export function marketLeadershipSummary() {
-  return sectors.slice(0, 4).map((sector) => ({
+export function marketLeadershipSummary(system: ResearchSystem) {
+  return measuredSectors(system).filter(s => s.rel6m != null).slice(0, 4).map((sector) => ({
     ticker: sector.ticker,
     name: sector.name,
-    rel6m: percent(sector.rel6m),
+    rel6m: `${percent(sector.rel6m)} · ${sector.lastUpdated} · ${sector.sourceState}`,
     breadth: sector.breadth,
     crowding: sector.crowding,
     href: `/markets?sector=${sector.slug}`
