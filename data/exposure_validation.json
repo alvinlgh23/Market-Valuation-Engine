@@ -1,0 +1,598 @@
+{
+  "schema_version": "1.0",
+  "method": "Weekly (W-FRI) proxy ETF return minus SPY regressed on each factor's weekly change; OLS with intercept; rolling 52-week windows every 4 weeks.",
+  "thresholds": {
+    "confirmed": "same sign, |t| >= 2, rolling agreement >= 0.6",
+    "downgraded": "opposite sign, |t| >= 2"
+  },
+  "factor_proxies": {
+    "long_rates": "weekly change in ^TNX (yield points)",
+    "fed_path": "weekly change in 2Y Treasury yield futures (2YY=F)",
+    "usd": "weekly return of DX-Y.NYB",
+    "credit": "weekly return of HYG minus IEF",
+    "volatility": "weekly change in ^VIX",
+    "oil": "weekly return of CL=F",
+    "inflation": "weekly return of TIP minus IEF (breakeven proxy)",
+    "growth": "weekly return of HG=F copper (growth proxy)",
+    "semis_cycle": "weekly return of SK Hynix + Samsung Electronics (the KOSPI engine's tech proxy)",
+    "yen_carry": "weekly return of JPY=X (USD/JPY)",
+    "liquidity": null
+  },
+  "results": {
+    "ENTERPRISE_AI_SOFTWARE": {
+      "long_rates": {
+        "status": "WEAK",
+        "direction": -1,
+        "proxy_etf": "IGV",
+        "beta": -0.013058813167335051,
+        "t_stat": -1.0481263430996892,
+        "rolling_sign_agreement": 0.6037735849056604,
+        "rolling_windows": 53,
+        "weeks": 260,
+        "first_week": "2021-12-03",
+        "last_week": "2026-11-20"
+      },
+      "fed_path": {
+        "status": "WEAK",
+        "direction": -1,
+        "proxy_etf": "IGV",
+        "beta": -0.005323444759811132,
+        "t_stat": -0.4714771937052719,
+        "rolling_sign_agreement": 0.49056603773584906,
+        "rolling_windows": 53,
+        "weeks": 260,
+        "first_week": "2021-12-03",
+        "last_week": "2026-11-20"
+      },
+      "credit": {
+        "status": "CONFIRMED",
+        "direction": 1,
+        "proxy_etf": "IGV",
+        "beta": 0.4085977038978541,
+        "t_stat": 2.5289116170729278,
+        "rolling_sign_agreement": 0.9811320754716981,
+        "rolling_windows": 53,
+        "weeks": 260,
+        "first_week": "2021-12-03",
+        "last_week": "2026-11-20"
+      },
+      "volatility": {
+        "status": "CONFIRMED",
+        "direction": -1,
+        "proxy_etf": "IGV",
+        "beta": -0.0013043207860080636,
+        "t_stat": -2.5388220371899677,
+        "rolling_sign_agreement": 0.8679245283018868,
+        "rolling_windows": 53,
+        "weeks": 260,
+        "first_week": "2021-12-03",
+        "last_week": "2026-11-20"
+      },
+      "yen_carry": {
+        "status": "WEAK",
+        "direction": 1,
+        "proxy_etf": "IGV",
+        "beta": -0.12762844873368628,
+        "t_stat": -1.055604226253503,
+        "rolling_sign_agreement": 0.3584905660377358,
+        "rolling_windows": 53,
+        "weeks": 260,
+        "first_week": "2021-12-03",
+        "last_week": "2026-11-20"
+      },
+      "liquidity": {
+        "status": "UNTESTED",
+        "reason": "no market proxy for this factor",
+        "direction": 1
+      }
+    },
+    "TRADITIONAL_SAAS": {
+      "long_rates": {
+        "status": "WEAK",
+        "direction": -1,
+        "proxy_etf": "IGV",
+        "beta": -0.013058813167335051,
+        "t_stat": -1.0481263430996892,
+        "rolling_sign_agreement": 0.6037735849056604,
+        "rolling_windows": 53,
+        "weeks": 260,
+        "first_week": "2021-12-03",
+        "last_week": "2026-11-20"
+      },
+      "credit": {
+        "status": "CONFIRMED",
+        "direction": 1,
+        "proxy_etf": "IGV",
+        "beta": 0.4085977038978541,
+        "t_stat": 2.5289116170729278,
+        "rolling_sign_agreement": 0.9811320754716981,
+        "rolling_windows": 53,
+        "weeks": 260,
+        "first_week": "2021-12-03",
+        "last_week": "2026-11-20"
+      },
+      "volatility": {
+        "status": "CONFIRMED",
+        "direction": -1,
+        "proxy_etf": "IGV",
+        "beta": -0.0013043207860080636,
+        "t_stat": -2.5388220371899677,
+        "rolling_sign_agreement": 0.8679245283018868,
+        "rolling_windows": 53,
+        "weeks": 260,
+        "first_week": "2021-12-03",
+        "last_week": "2026-11-20"
+      },
+      "yen_carry": {
+        "status": "WEAK",
+        "direction": 1,
+        "proxy_etf": "IGV",
+        "beta": -0.12762844873368628,
+        "t_stat": -1.055604226253503,
+        "rolling_sign_agreement": 0.3584905660377358,
+        "rolling_windows": 53,
+        "weeks": 260,
+        "first_week": "2021-12-03",
+        "last_week": "2026-11-20"
+      }
+    },
+    "FABLESS_SEMICONDUCTOR": {
+      "semis_cycle": {
+        "status": "CONFIRMED",
+        "direction": 1,
+        "proxy_etf": "SMH",
+        "beta": 0.33225503592316297,
+        "t_stat": 11.460979663510411,
+        "rolling_sign_agreement": 1.0,
+        "rolling_windows": 53,
+        "weeks": 260,
+        "first_week": "2021-12-03",
+        "last_week": "2026-11-20"
+      },
+      "long_rates": {
+        "status": "WEAK",
+        "direction": -1,
+        "proxy_etf": "SMH",
+        "beta": 0.007643150645284032,
+        "t_stat": 0.514507584008826,
+        "rolling_sign_agreement": 0.5283018867924528,
+        "rolling_windows": 53,
+        "weeks": 260,
+        "first_week": "2021-12-03",
+        "last_week": "2026-11-20"
+      },
+      "usd": {
+        "status": "CONFIRMED",
+        "direction": -1,
+        "proxy_etf": "SMH",
+        "beta": -0.5842445309843126,
+        "t_stat": -2.715518793939198,
+        "rolling_sign_agreement": 0.9811320754716981,
+        "rolling_windows": 53,
+        "weeks": 260,
+        "first_week": "2021-12-03",
+        "last_week": "2026-11-20"
+      },
+      "volatility": {
+        "status": "CONFIRMED",
+        "direction": -1,
+        "proxy_etf": "SMH",
+        "beta": -0.0037813842189790173,
+        "t_stat": -6.603248019992366,
+        "rolling_sign_agreement": 0.9056603773584906,
+        "rolling_windows": 53,
+        "weeks": 260,
+        "first_week": "2021-12-03",
+        "last_week": "2026-11-20"
+      },
+      "yen_carry": {
+        "status": "WEAK",
+        "direction": 1,
+        "proxy_etf": "SMH",
+        "beta": -0.08593986849855295,
+        "t_stat": -0.5962396876799393,
+        "rolling_sign_agreement": 0.4339622641509434,
+        "rolling_windows": 53,
+        "weeks": 260,
+        "first_week": "2021-12-03",
+        "last_week": "2026-11-20"
+      }
+    },
+    "SEMICONDUCTOR_FOUNDRY": {
+      "semis_cycle": {
+        "status": "CONFIRMED",
+        "direction": 1,
+        "proxy_etf": "SMH",
+        "beta": 0.33225503592316297,
+        "t_stat": 11.460979663510411,
+        "rolling_sign_agreement": 1.0,
+        "rolling_windows": 53,
+        "weeks": 260,
+        "first_week": "2021-12-03",
+        "last_week": "2026-11-20"
+      },
+      "usd": {
+        "status": "CONFIRMED",
+        "direction": -1,
+        "proxy_etf": "SMH",
+        "beta": -0.5842445309843126,
+        "t_stat": -2.715518793939198,
+        "rolling_sign_agreement": 0.9811320754716981,
+        "rolling_windows": 53,
+        "weeks": 260,
+        "first_week": "2021-12-03",
+        "last_week": "2026-11-20"
+      },
+      "volatility": {
+        "status": "CONFIRMED",
+        "direction": -1,
+        "proxy_etf": "SMH",
+        "beta": -0.0037813842189790173,
+        "t_stat": -6.603248019992366,
+        "rolling_sign_agreement": 0.9056603773584906,
+        "rolling_windows": 53,
+        "weeks": 260,
+        "first_week": "2021-12-03",
+        "last_week": "2026-11-20"
+      }
+    },
+    "HYPERSCALER_CLOUD_PLATFORM": {
+      "long_rates": {
+        "status": "WEAK",
+        "direction": -1,
+        "proxy_etf": "XLK",
+        "beta": 0.0022755171345636475,
+        "t_stat": 0.29160967890545597,
+        "rolling_sign_agreement": 0.5660377358490566,
+        "rolling_windows": 53,
+        "weeks": 260,
+        "first_week": "2021-12-03",
+        "last_week": "2026-11-20"
+      },
+      "usd": {
+        "status": "WEAK",
+        "direction": -1,
+        "proxy_etf": "XLK",
+        "beta": -0.16727340598528176,
+        "t_stat": -1.4659546250432578,
+        "rolling_sign_agreement": 0.7169811320754716,
+        "rolling_windows": 53,
+        "weeks": 260,
+        "first_week": "2021-12-03",
+        "last_week": "2026-11-20"
+      }
+    },
+    "CONSUMER_PLATFORM": {
+      "long_rates": {
+        "status": "WEAK",
+        "direction": -1,
+        "proxy_etf": "XLC",
+        "beta": -0.006496946494737685,
+        "t_stat": -0.8745295225377767,
+        "rolling_sign_agreement": 0.660377358490566,
+        "rolling_windows": 53,
+        "weeks": 260,
+        "first_week": "2021-12-03",
+        "last_week": "2026-11-20"
+      },
+      "credit": {
+        "status": "WEAK",
+        "direction": 1,
+        "proxy_etf": "XLC",
+        "beta": -0.09721441310136432,
+        "t_stat": -0.9993679822892718,
+        "rolling_sign_agreement": 0.11320754716981132,
+        "rolling_windows": 53,
+        "weeks": 260,
+        "first_week": "2021-12-03",
+        "last_week": "2026-11-20"
+      },
+      "volatility": {
+        "status": "WEAK",
+        "direction": -1,
+        "proxy_etf": "XLC",
+        "beta": 0.0005420192803923981,
+        "t_stat": 1.7592550853102968,
+        "rolling_sign_agreement": 0.33962264150943394,
+        "rolling_windows": 53,
+        "weeks": 260,
+        "first_week": "2021-12-03",
+        "last_week": "2026-11-20"
+      },
+      "yen_carry": {
+        "status": "DOWNGRADED",
+        "direction": 1,
+        "proxy_etf": "XLC",
+        "beta": -0.1527516208067668,
+        "t_stat": -2.1342190162395465,
+        "rolling_sign_agreement": 0.1320754716981132,
+        "rolling_windows": 53,
+        "weeks": 260,
+        "first_week": "2021-12-03",
+        "last_week": "2026-11-20"
+      }
+    },
+    "RETAIL_PHYSICAL_NETWORK": {
+      "oil": {
+        "status": "CONFIRMED",
+        "direction": -1,
+        "proxy_etf": "XRT",
+        "beta": -0.05261814817330472,
+        "t_stat": -2.1814838283807703,
+        "rolling_sign_agreement": 0.7924528301886793,
+        "rolling_windows": 53,
+        "weeks": 260,
+        "first_week": "2021-12-03",
+        "last_week": "2026-11-20"
+      },
+      "volatility": {
+        "status": "WEAK",
+        "direction": 1,
+        "proxy_etf": "XRT",
+        "beta": -4.682333630083206e-05,
+        "t_stat": -0.10550374767338717,
+        "rolling_sign_agreement": 0.3018867924528302,
+        "rolling_windows": 53,
+        "weeks": 260,
+        "first_week": "2021-12-03",
+        "last_week": "2026-11-20"
+      }
+    },
+    "BANK": {
+      "long_rates": {
+        "status": "WEAK",
+        "direction": 1,
+        "proxy_etf": "KBE",
+        "beta": 0.006340765035811865,
+        "t_stat": 0.47612315468742106,
+        "rolling_sign_agreement": 0.4716981132075472,
+        "rolling_windows": 53,
+        "weeks": 260,
+        "first_week": "2021-12-03",
+        "last_week": "2026-11-20"
+      },
+      "credit": {
+        "status": "CONFIRMED",
+        "direction": 1,
+        "proxy_etf": "KBE",
+        "beta": 0.41689229326984156,
+        "t_stat": 2.4154611781871624,
+        "rolling_sign_agreement": 0.6981132075471698,
+        "rolling_windows": 53,
+        "weeks": 260,
+        "first_week": "2021-12-03",
+        "last_week": "2026-11-20"
+      },
+      "volatility": {
+        "status": "WEAK",
+        "direction": -1,
+        "proxy_etf": "KBE",
+        "beta": -0.0004993645398122132,
+        "t_stat": -0.9011337399494289,
+        "rolling_sign_agreement": 0.7924528301886793,
+        "rolling_windows": 53,
+        "weeks": 260,
+        "first_week": "2021-12-03",
+        "last_week": "2026-11-20"
+      }
+    },
+    "INDUSTRIAL": {
+      "growth": {
+        "status": "WEAK",
+        "direction": 1,
+        "proxy_etf": "XLI",
+        "beta": 0.01194072213490766,
+        "t_stat": 0.5507950556860286,
+        "rolling_sign_agreement": 0.6226415094339622,
+        "rolling_windows": 53,
+        "weeks": 260,
+        "first_week": "2021-12-03",
+        "last_week": "2026-11-20"
+      },
+      "credit": {
+        "status": "WEAK",
+        "direction": 1,
+        "proxy_etf": "XLI",
+        "beta": 0.026291504107887907,
+        "t_stat": 0.34518331207493186,
+        "rolling_sign_agreement": 0.6792452830188679,
+        "rolling_windows": 53,
+        "weeks": 260,
+        "first_week": "2021-12-03",
+        "last_week": "2026-11-20"
+      },
+      "usd": {
+        "status": "WEAK",
+        "direction": -1,
+        "proxy_etf": "XLI",
+        "beta": 0.06615128287284625,
+        "t_stat": 0.7756877740155752,
+        "rolling_sign_agreement": 0.4528301886792453,
+        "rolling_windows": 53,
+        "weeks": 260,
+        "first_week": "2021-12-03",
+        "last_week": "2026-11-20"
+      }
+    },
+    "PHARMA_BIOTECH": {
+      "volatility": {
+        "status": "CONFIRMED",
+        "direction": 1,
+        "proxy_etf": "XLV",
+        "beta": 0.002318607669870396,
+        "t_stat": 6.292624173397551,
+        "rolling_sign_agreement": 1.0,
+        "rolling_windows": 53,
+        "weeks": 260,
+        "first_week": "2021-12-03",
+        "last_week": "2026-11-20"
+      },
+      "credit": {
+        "status": "CONFIRMED",
+        "direction": -1,
+        "proxy_etf": "XLV",
+        "beta": -0.7654039864914062,
+        "t_stat": -6.658145550087804,
+        "rolling_sign_agreement": 1.0,
+        "rolling_windows": 53,
+        "weeks": 260,
+        "first_week": "2021-12-03",
+        "last_week": "2026-11-20"
+      }
+    },
+    "COMMODITY_PRODUCER": {
+      "oil": {
+        "status": "CONFIRMED",
+        "direction": 1,
+        "proxy_etf": "XLE",
+        "beta": 0.4062140874457211,
+        "t_stat": 12.957003598559233,
+        "rolling_sign_agreement": 1.0,
+        "rolling_windows": 53,
+        "weeks": 260,
+        "first_week": "2021-12-03",
+        "last_week": "2026-11-20"
+      },
+      "inflation": {
+        "status": "CONFIRMED",
+        "direction": 1,
+        "proxy_etf": "XLE",
+        "beta": 1.9100882070304213,
+        "t_stat": 5.116451116323818,
+        "rolling_sign_agreement": 1.0,
+        "rolling_windows": 53,
+        "weeks": 260,
+        "first_week": "2021-12-03",
+        "last_week": "2026-11-20"
+      },
+      "usd": {
+        "status": "DOWNGRADED",
+        "direction": -1,
+        "proxy_etf": "XLE",
+        "beta": 0.717887489310334,
+        "t_stat": 2.8159979678794755,
+        "rolling_sign_agreement": 0.05660377358490566,
+        "rolling_windows": 53,
+        "weeks": 260,
+        "first_week": "2021-12-03",
+        "last_week": "2026-11-20"
+      }
+    },
+    "PAYMENT_NETWORK": {
+      "inflation": {
+        "status": "WEAK",
+        "direction": 1,
+        "proxy_etf": "IPAY",
+        "beta": -0.2153601398211219,
+        "t_stat": -0.9380284548930731,
+        "rolling_sign_agreement": 0.5471698113207547,
+        "rolling_windows": 53,
+        "weeks": 260,
+        "first_week": "2021-12-03",
+        "last_week": "2026-11-20"
+      },
+      "credit": {
+        "status": "CONFIRMED",
+        "direction": 1,
+        "proxy_etf": "IPAY",
+        "beta": 0.5073966321320367,
+        "t_stat": 3.848987778101054,
+        "rolling_sign_agreement": 0.9056603773584906,
+        "rolling_windows": 53,
+        "weeks": 260,
+        "first_week": "2021-12-03",
+        "last_week": "2026-11-20"
+      },
+      "usd": {
+        "status": "CONFIRMED",
+        "direction": -1,
+        "proxy_etf": "IPAY",
+        "beta": -0.619673335684984,
+        "t_stat": -4.2171747542893545,
+        "rolling_sign_agreement": 0.7547169811320755,
+        "rolling_windows": 53,
+        "weeks": 260,
+        "first_week": "2021-12-03",
+        "last_week": "2026-11-20"
+      }
+    },
+    "MARKETPLACE_PLATFORM": {
+      "credit": {
+        "status": "CONFIRMED",
+        "direction": 1,
+        "proxy_etf": "XLY",
+        "beta": 0.27382314175210315,
+        "t_stat": 2.8818093951775365,
+        "rolling_sign_agreement": 0.6415094339622641,
+        "rolling_windows": 53,
+        "weeks": 260,
+        "first_week": "2021-12-03",
+        "last_week": "2026-11-20"
+      },
+      "volatility": {
+        "status": "CONFIRMED",
+        "direction": -1,
+        "proxy_etf": "XLY",
+        "beta": -0.0006835726533455216,
+        "t_stat": -2.248447981272278,
+        "rolling_sign_agreement": 0.7924528301886793,
+        "rolling_windows": 53,
+        "weeks": 260,
+        "first_week": "2021-12-03",
+        "last_week": "2026-11-20"
+      },
+      "long_rates": {
+        "status": "CONFIRMED",
+        "direction": -1,
+        "proxy_etf": "XLY",
+        "beta": -0.015965246553847436,
+        "t_stat": -2.1864752241185457,
+        "rolling_sign_agreement": 0.9245283018867925,
+        "rolling_windows": 53,
+        "weeks": 260,
+        "first_week": "2021-12-03",
+        "last_week": "2026-11-20"
+      },
+      "yen_carry": {
+        "status": "WEAK",
+        "direction": 1,
+        "proxy_etf": "XLY",
+        "beta": -0.03319851316258643,
+        "t_stat": -0.46442189172938364,
+        "rolling_sign_agreement": 0.4716981132075472,
+        "rolling_windows": 53,
+        "weeks": 260,
+        "first_week": "2021-12-03",
+        "last_week": "2026-11-20"
+      }
+    },
+    "UTILITY_INFRASTRUCTURE": {
+      "long_rates": {
+        "status": "CONFIRMED",
+        "direction": -1,
+        "proxy_etf": "XLU",
+        "beta": -0.0431271931667225,
+        "t_stat": -3.7957139383098983,
+        "rolling_sign_agreement": 1.0,
+        "rolling_windows": 53,
+        "weeks": 260,
+        "first_week": "2021-12-03",
+        "last_week": "2026-11-20"
+      },
+      "volatility": {
+        "status": "CONFIRMED",
+        "direction": 1,
+        "proxy_etf": "XLU",
+        "beta": 0.0028563404529705965,
+        "t_stat": 6.309827730947561,
+        "rolling_sign_agreement": 1.0,
+        "rolling_windows": 53,
+        "weeks": 260,
+        "first_week": "2021-12-03",
+        "last_week": "2026-11-20"
+      }
+    },
+    "GENERIC_OPERATING_COMPANY": {}
+  },
+  "unavailable_tickers": {}
+}
