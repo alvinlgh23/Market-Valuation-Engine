@@ -294,6 +294,21 @@ class SecurityResolver:
         )
 
 
+def valuation_outcome(report: dict[str, Any] | None, state: str, *, error: Exception | None = None, reason: str | None = None) -> dict[str, Any]:
+    """Describe what happened to the valuation step without altering any valuation result."""
+    outcome: dict[str, Any] = {"state": state, "error_type": None, "message": reason}
+    if error is not None:
+        outcome.update(error_type=type(error).__name__, message=str(error) or type(error).__name__)
+    if report is not None:
+        outcome.update(
+            report_validation=(report.get("validation") or {}).get("status"),
+            data_quality=(report.get("data_quality") or {}).get("status"),
+            has_base_assumptions=bool((report.get("assumptions") or {}).get("base")),
+            reverse_dcf_status=(report.get("reverse_dcf") or {}).get("status"),
+        )
+    return outcome
+
+
 class UniversalCompanyResearchEngine:
     """Canonical resolve -> snapshot -> economics -> valuation review -> cache flow."""
 
@@ -347,21 +362,27 @@ class UniversalCompanyResearchEngine:
             from data_sources.operational_evidence import enrich_snapshot
             snapshot = enrich_snapshot(snapshot)
             valuation = None
+            valuation_status = valuation_outcome(None, "NOT_APPLICABLE", reason="Financial institutions use a separate framework; company DCF is not run.")
             if resolution.security_type not in {SecurityType.FINANCIAL_INSTITUTION}:
                 try:
                     from intrinsic_valuation import build_valuation_report
                     valuation = build_valuation_report(resolution.ticker, data=resolution._provider_data)
-                except Exception:
+                    valuation_status = valuation_outcome(valuation, "COMPLETED")
+                except Exception as valuation_exc:
                     valuation = None
+                    valuation_status = valuation_outcome(None, "FAILED", error=valuation_exc)
             profile_object = build_company_economics(snapshot, valuation)
             profile = profile_object.to_dict()
+            profile["valuation_status"] = valuation_status
             quality_state = profile["company_economics"].get("data_quality", {}).get("overall", "PARTIAL")
             state = ResearchState.AVAILABLE if quality_state == "AVAILABLE" else ResearchState.INSUFFICIENT_DATA if quality_state == "INSUFFICIENT_DATA" else ResearchState.PARTIAL
             cached_payload = self.cache.save(resolution.ticker, profile, snapshot, state, "LIVE_STRUCTURED_PROVIDER")
             return {
                 "status": state.value, "ticker": resolution.ticker, "resolution": resolution.to_dict(),
                 "profile": self._public_profile(cached_payload), "last_analyzed": cached_payload["cache_metadata"]["last_analyzed"],
-                "data_quality": self._data_quality(cached_payload), "source": "LIVE_STRUCTURED_PROVIDER", "errors": [],
+                "data_quality": self._data_quality(cached_payload), "source": "LIVE_STRUCTURED_PROVIDER",
+                "errors": [f"Valuation failed: {valuation_status['error_type']}: {valuation_status['message']}"] if valuation_status["state"] == "FAILED" else [],
+                "valuation_status": valuation_status,
             }
         except Exception as exc:
             if cached:

@@ -135,3 +135,42 @@ class UniversalCompanyTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ValuationOutcomeTests(unittest.TestCase):
+    """Checklist 0.4: the valuation step must never fail silently."""
+
+    def _engine(self, directory, data_factory=provider_data):
+        cache = CompanyProfileCache(directory)
+        return UniversalCompanyResearchEngine(resolver=SecurityResolver(lambda ticker: data_factory(ticker), cache), cache=cache)
+
+    def test_failed_valuation_is_recorded_and_persisted(self):
+        with tempfile.TemporaryDirectory() as directory:
+            engine = self._engine(directory)
+            result = engine.analyze("AMD")
+            self.assertEqual(result["valuation_status"]["state"], "FAILED")
+            self.assertTrue(result["valuation_status"]["error_type"])
+            self.assertTrue(any(error.startswith("Valuation failed:") for error in result["errors"]))
+            reopened = engine.open_cached("AMD")["profile"]["valuation_status"]
+            self.assertEqual(reopened, result["valuation_status"])
+
+    def test_completed_valuation_reports_its_own_state(self):
+        from unittest.mock import patch
+        report = {"validation": {"status": "PROVISIONAL"}, "data_quality": {"status": "LIMITED"}, "assumptions": {"base": [{"name": "wacc", "value": 0.09}]}, "reverse_dcf": {"status": "CONVERGED"}}
+        with tempfile.TemporaryDirectory() as directory, patch("intrinsic_valuation.build_valuation_report", return_value=report):
+            result = self._engine(directory).analyze("AMD")
+        status = result["valuation_status"]
+        self.assertEqual(status["state"], "COMPLETED")
+        self.assertEqual(status["report_validation"], "PROVISIONAL")
+        self.assertTrue(status["has_base_assumptions"])
+        self.assertEqual(status["reverse_dcf_status"], "CONVERGED")
+        self.assertFalse(any(error.startswith("Valuation failed:") for error in result["errors"]))
+
+    def test_financial_institution_is_not_applicable_rather_than_failed(self):
+        def bank(ticker):
+            data = provider_data(ticker, security_type="FINANCIAL_INSTITUTION")
+            data["info"].update(sector="Financial Services", industry="Banks - Diversified", longBusinessSummary="A diversified bank taking deposits and making loans.")
+            return data
+        with tempfile.TemporaryDirectory() as directory:
+            result = self._engine(directory, bank).analyze("JPM")
+        self.assertEqual(result["valuation_status"]["state"], "NOT_APPLICABLE")
