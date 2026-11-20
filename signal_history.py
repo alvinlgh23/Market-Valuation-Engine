@@ -39,7 +39,7 @@ ROOT = Path(__file__).resolve().parent
 DEFAULT_HISTORY_DIR = ROOT / "data" / "history"
 FIELDS = ["signal_id", "observation_date", "value", "label", "source", "source_state", "recorded_at"]
 RECORDED_STATES = {"LIVE", "BACKFILL"}
-BACKFILL_SOURCE = "Yahoo Finance daily closes, recomputed with the live engine functions"
+BACKFILL_SOURCE = "Yahoo daily closes (backfill)"  # recomputed with the live engine functions
 
 
 def history_dir() -> Path:
