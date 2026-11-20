@@ -56,7 +56,12 @@ class TestMacroExperience:
     def test_neer_cache_maps_history_and_all_components(self):
         neer = self.system["modules"]["neer"]["payload"]
         assert self.system["modules"]["neer"]["state"] == "CACHED"
-        assert len(neer["history"]) == 299
+        history = neer["history"]
+        # The cache grows with every refresh, so assert structure rather than a fixed length.
+        assert len(history) >= 250
+        assert all({"date", "index", "center", "upper", "lower", "deviation_pct"} <= set(row) for row in history)
+        assert all(earlier["date"] < later["date"] for earlier, later in zip(history, history[1:]))
+        assert history[-1]["date"] == neer["as_of"]
         assert len(neer["fx_components"]) == 12
         assert all(isinstance(item["weight"], (int, float)) for item in neer["fx_components"])
         assert all(isinstance(item["contribution_63d_pct"], (int, float)) for item in neer["fx_components"])
