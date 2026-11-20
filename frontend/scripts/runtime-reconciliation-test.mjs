@@ -49,3 +49,11 @@ assert.equal(retained.modules.core_market.payload.sectors.length, 34);
 assert.equal(retained.modules.core_market.state, "STALE");
 assert.equal(retained.dashboard, response.data.dashboard, "Retained claims and metrics share one snapshot");
 console.log("Runtime contract: all 34 captured rows retained with dates/source; dashboard lineage, explicit invalid/empty states and failed-refresh retention passed.");
+
+// Checklist 1.6: every API row carries its engine rank, in engine order.
+{
+  const ranked = integrateSectorEngineRows(rows, "CACHED").filter((sector) => sector.engineRank != null).sort((a, b) => a.engineRank - b.engineRank);
+  assert.equal(ranked.length, rows.length);
+  assert.deepEqual(ranked.map((sector) => sector.ticker), rows.map((row) => row.ticker.toUpperCase()));
+  console.log("Engine rank: table order matches the Python engine ranking for all rows.");
+}

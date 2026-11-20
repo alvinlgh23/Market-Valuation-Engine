@@ -129,12 +129,18 @@ function measuredColumns(sectorList: SectorResearchObject[]) {
   return OPTIONAL_COLUMNS.filter((column) => sectorList.some((sector) => isMeasured(sector[column.key])));
 }
 
-function RotationTable({ sectorList }: { sectorList: SectorResearchObject[] }) {
+/** Engine ranking order; sectors without an engine row go last in catalog order (checklist 1.6). */
+export function byEngineRank(sectorList: SectorResearchObject[]) {
+  return sectorList.map((sector, index) => ({ sector, index })).sort((a, b) => (a.sector.engineRank ?? Infinity) - (b.sector.engineRank ?? Infinity) || a.index - b.index).map(({ sector }) => sector);
+}
+
+function RotationTable({ sectorList: unordered }: { sectorList: SectorResearchObject[] }) {
+  const sectorList = byEngineRank(unordered);
   const columns = measuredColumns(sectorList);
   const template = `minmax(132px, 1.25fr) repeat(3, .48fr)${columns.map(() => " minmax(96px, .8fr)").join("")}`;
   return <section className="sector-research-table" aria-label="Sector rotation table">
-    <header style={{ gridTemplateColumns: template }}><span>Sector</span><span>1M</span><span>3M</span><span>6M RS</span>{columns.map((column) => <span key={column.key}>{column.label}</span>)}</header>
-    {sectorList.map((sector) => <Link key={sector.slug} style={{ gridTemplateColumns: template }} href={sectorHref(sector, "snapshot")} title={`${sector.measurementSource} · ${sector.lastUpdated} · ${sector.measurementReason}`}><strong>{sector.name}<small>{sector.ticker}</small></strong><span>{percent(sector.rel1m)}</span><span>{percent(sector.rel3m)}</span><span>{percent(sector.rel6m)}</span>{columns.map((column) => <span key={column.key}>{isMeasured(sector[column.key]) ? sector[column.key] : "—"}</span>)}</Link>)}
+    <header style={{ gridTemplateColumns: template }}><span>Rank · Sector</span><span>1M</span><span>3M</span><span>6M RS</span>{columns.map((column) => <span key={column.key}>{column.label}</span>)}</header>
+    {sectorList.map((sector) => <Link key={sector.slug} style={{ gridTemplateColumns: template }} href={sectorHref(sector, "snapshot")} title={`${sector.measurementSource} · ${sector.lastUpdated} · ${sector.measurementReason}`}><strong>{sector.engineRank != null ? `${sector.engineRank + 1}. ` : ""}{sector.name}<small>{sector.ticker}</small></strong><span>{percent(sector.rel1m)}</span><span>{percent(sector.rel3m)}</span><span>{percent(sector.rel6m)}</span>{columns.map((column) => <span key={column.key}>{isMeasured(sector[column.key]) ? sector[column.key] : "—"}</span>)}</Link>)}
   </section>;
 }
 

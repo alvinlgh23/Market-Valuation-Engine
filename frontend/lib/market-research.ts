@@ -27,6 +27,8 @@ export interface SectorResearchObject {
   ticker: string;
   name: string;
   primaryTheme: string;
+  /** Position in the Python sector engine ranking (0 = top); null when the engine supplied no row. */
+  engineRank?: number | null;
   currentRead: string;
   rel1m: number | null;
   rel3m: number | null;
@@ -405,7 +407,9 @@ export type SectorEngineRow = { ticker?: string; name?: string; source?: string;
 
 export function integrateSectorEngineRows(rows: SectorEngineRow[] | undefined, state = "UNKNOWN"): SectorResearchObject[] {
   const byTicker = new Map<string, SectorEngineRow>();
+  const rankByTicker = new Map<string, number>();
   for (const row of Array.isArray(rows) ? rows : []) {
+    if (row && typeof row.ticker === "string" && !rankByTicker.has(row.ticker.toUpperCase())) rankByTicker.set(row.ticker.toUpperCase(), rankByTicker.size);
     if (!row || typeof row.ticker !== "string") continue;
     const key = row.ticker.toUpperCase();
     const normalized = { ...row, as_of: typeof row.as_of === "string" && /^\d{4}-\d{2}-\d{2}/.test(row.as_of) && Number.isFinite(Date.parse(row.as_of)) ? row.as_of : undefined };
@@ -425,6 +429,7 @@ export function integrateSectorEngineRows(rows: SectorEngineRow[] | undefined, s
     const reason = !row ? "No sector row in this snapshot." : invalid ? row.validation_reason || `Model validation: ${row.validation_status}` : `${row.provider_diagnostic?.provider_status ? `Provider status: ${row.provider_diagnostic.provider_status}. ` : ""}Missing horizon values are not supplied by the sector engine; breadth, crowding and stage require independent measurements.`;
     return {
       ...sector,
+      engineRank: rankByTicker.get(sector.ticker) ?? null,
       rel1m: invalid ? null : finite(row?.rel_1m), rel3m: invalid ? null : finite(row?.rel_3m), rel6m: invalid ? null : finite(row?.rel_6m),
       breadth: "Unavailable", breadthRatio: null, crowding: "Unavailable", crowdingBasis: "No current positioning measurements supplied.",
       momentum: "Unverified", stage: "Unavailable", heat: "Unavailable",
