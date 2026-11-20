@@ -51,9 +51,12 @@ P1 发现的遗留问题：`compute_macro` 只记录 10 年期和前端利率的
 
 ### P2 信号历史库
 
-- [ ] **2.1** 实现第 5 节阶段 1。存放位置：仓库内 `data/history/`，不放在 `.cache/` 下。
-- [ ] **2.2** 把价格类信号的计算抽成"给定价格序列和截止日期"的纯函数，回填至少 2 年。抽取前后对同一截止日期的输出必须逐值相等，用测试固定。
-- [ ] **2.3** 读取接口：时间序列、N 日前的值、自身历史分位数。
+- [x] **2.1** 实现第 5 节阶段 1。存放位置：仓库内 `data/history/`，不放在 `.cache/` 下。
+  - 结果（2026-11-20）：新增 `signal_history.py`。每个 (signal_id, observation_date) 一行，写到 `data/history/<family>.csv`，已存在的键永不改写；只记录 LIVE 和 BACKFILL，缺失值不记为零。`research_system.isolated` 在 LIVE 刷新成功后记录各模块，`--live` 时另记录 Compass；记录失败只在 payload 的 `history` 字段报告，不影响刷新。`tests/conftest.py` 让测试写到临时目录。提交 c192472。
+- [x] **2.2** 把价格类信号的计算抽成"给定价格序列和截止日期"的纯函数，回填至少 2 年。抽取前后对同一截止日期的输出必须逐值相等，用测试固定。
+  - 结果（2026-11-20）：`Valuation_model.py` 抽出 `sector_row_from_histories`、`relative_change_from_histories`、`macro_scores`，原函数改为调用它们，公式和权重不变。`tests/test_pure_extraction.py` 保留抽取前代码的逐字副本，在合成数据（含历史过短的 None 分支）和 13,440 组宏观输入上要求逐值相等（提交 3b2bd84 的说明误写成 26,880）。回填 2024-11-19 至 2026-11-19 共 502 个交易日、98,854 条，61 个代码全部取到，12.4 MB（提交 e788b01）。与 2026-11-04 的缓存实时快照对比：136 个板块值中 129 个完全相同，其余差异不超过 2.6e-5（雅虎事后修订了少量复权收盘价）；风险状态一致。宏观输入有小差异，因为实时运行混用了各品种的最新报价（例如 VIX 取 11 月 5 日盘中值，行却标为 11 月 4 日），回填用同日收盘价。回填只复现 `compute_macro` 的雅虎数据源，不复现 FRED/财政部回退。
+- [x] **2.3** 读取接口：时间序列、N 日前的值、自身历史分位数。
+  - 结果（2026-11-20）：`SignalStore` 提供 `series`、`labels`、`latest`、`value_days_ago`（日历日）、`value_observations_ago`、`percentile`（少于 60 个观测返回 None）、`signal_ids`；CLI `python signal_history.py show <id>` / `ids [prefix]`。测试 `tests/test_signal_history.py`（11 个）。全套 245 通过。
 
 ### P3 暴露映射与 NEER 检验
 
