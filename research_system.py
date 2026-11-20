@@ -18,6 +18,7 @@ from macro_world import build_world
 from research_capabilities import capability_payload
 from signal_history import record_module
 from environment import CARRY_EDGE_STATE, build_environment, fetch_cftc_jpy
+from sector_flow import all_sector_flow
 
 
 ROOT = Path(__file__).resolve().parent
@@ -707,6 +708,7 @@ def build_research_system(refresh: bool = False) -> dict[str, Any]:
         "world": world,
         "market_transmission": market_transmission,
         "environment": environment,
+        "sector_flow": all_sector_flow(),
         "modules": {
             "inflation": inflation_result,
             "core_market": core_result,

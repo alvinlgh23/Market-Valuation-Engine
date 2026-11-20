@@ -62,7 +62,7 @@ export function MarketsResearch({ section, system }: { section: string; system: 
   const view = params.get("view");
   const node = params.get("node");
   const core = system.modules.core_market.payload ?? {};
-  const sectorList = integrateSectorEngineRows((core.sectors ?? []) as SectorEngineRow[], system.modules.core_market.state);
+  const sectorList = integrateSectorEngineRows((core.sectors ?? []) as SectorEngineRow[], system.modules.core_market.state, system.sector_flow);
   if (section === "rotation") return <MarketsRotationSurface sectorList={sectorList} selectedSector={sectorParam} view={view} selectedNodeId={node} />;
   const fragility = (core.fragility ?? {}) as Record<string, unknown>;
   const risk = (core.risk ?? {}) as Record<string, unknown>;
@@ -75,7 +75,7 @@ export function MarketsResearch({ section, system }: { section: string; system: 
 export function SectorResearch({ sector, system }: { sector: string; system: ResearchSystem }) {
   const params = useSearchParams();
   const core = system.modules.core_market.payload ?? {};
-  const sectorList = integrateSectorEngineRows((core.sectors ?? []) as SectorEngineRow[], system.modules.core_market.state);
+  const sectorList = integrateSectorEngineRows((core.sectors ?? []) as SectorEngineRow[], system.modules.core_market.state, system.sector_flow);
   return <MarketsRotationSurface sectorList={sectorList} selectedSector={sector} view={params.get("view") ?? "snapshot" } selectedNodeId={params.get("node") ?? null} />;
 }
 
@@ -101,7 +101,7 @@ function hasPositioningPoints(sectorList: SectorResearchObject[]) {
 
 function RotationMap({ selected, sectorList }: { selected: SectorResearchObject; sectorList: SectorResearchObject[] }) {
   const max = Math.max(...sectorList.map((sector) => Math.abs(sector.rel6m ?? 0)), 0.25);
-  const crowdingY = (sector: SectorResearchObject) => sector.crowding.toLowerCase().includes("elevated") ? 24 : sector.crowding.toLowerCase().includes("moderate") ? 50 : 74;
+  const crowdingY = (sector: SectorResearchObject) => ({ crowded: 18, extended: 38, neutral: 58, unloved: 80 } as Record<string, number>)[sector.crowding.toLowerCase()] ?? (sector.crowding.toLowerCase().includes("elevated") ? 24 : sector.crowding.toLowerCase().includes("moderate") ? 50 : 74);
   return <section className="rotation-map-panel">
     <header><div><span>ROTATION MAP</span><h2>Leadership vs positioning risk</h2></div><small>{rotationAxis.x} / {rotationAxis.y}</small></header>
     <div className="rotation-plane" role="img" aria-label="Sector rotation positioning plane">

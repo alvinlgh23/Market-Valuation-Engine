@@ -51,7 +51,7 @@ function findRead(system: ResearchSystem, id: string) {
 function measuredSectors(system: ResearchSystem) {
   const rows = system.modules.core_market.payload?.sectors as SectorEngineRow[] | undefined;
   const order = new Map((Array.isArray(rows) ? rows : []).map((row, index) => [row.ticker, index]));
-  return integrateSectorEngineRows(rows, system.modules.core_market.state).sort((a, b) => (order.get(a.ticker) ?? Infinity) - (order.get(b.ticker) ?? Infinity));
+  return integrateSectorEngineRows(rows, system.modules.core_market.state, system.sector_flow).sort((a, b) => (order.get(a.ticker) ?? Infinity) - (order.get(b.ticker) ?? Infinity));
 }
 
 export function dashboardStateStrip(system: ResearchSystem): DashboardLink[] {

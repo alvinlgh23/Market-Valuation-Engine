@@ -132,7 +132,7 @@ def macro_axis(archetype: str, environment: dict[str, Any]) -> dict[str, Any]:
                 detail={"exposures": rows, "confirmed_tailwinds": tail, "confirmed_headwinds": head, "carry_switch": switch})
 
 
-def flow_axis(ticker: str, etf: str | None, mapping_note: str, store: SignalStore, company_vs_sector_3m: float | None) -> dict[str, Any]:
+def flow_axis(ticker: str, etf: str | None, mapping_note: str, store: SignalStore, company_vs_sector_3m: float | None, sector_flow: dict[str, Any] | None = None) -> dict[str, Any]:
     if not etf:
         return axis("No sector mapping", missing=["sector ETF for this company"], families=["price"])
     signal = f"sector.{etf}.rel_3m"
@@ -155,10 +155,26 @@ def flow_axis(ticker: str, etf: str | None, mapping_note: str, store: SignalStor
     evidence = [f"{etf} 3M relative strength vs SPY {_pct(latest)} on {latest_day}, {percentile:.0%} percentile of its stored history; same bucket {held} of last 10 observations."]
     if company_vs_sector_3m is not None:
         evidence.append(f"{ticker} {'leads' if company_vs_sector_3m > 0 else 'lags'} {etf} by {_size(company_vs_sector_3m)} over three months.")
-    return axis(state, direction=direction, confidence="MODERATE" if held >= 8 else "LOW", evidence=evidence, families=["price"],
-                missing=["sector breadth", "ETF share creation/redemption", "dollar volume"],
+    flow = sector_flow or {}
+    missing = []
+    if flow.get("breadth_50") is not None:
+        participation = f"{flow['breadth_50']:.0%} of {etf}'s top holdings above their 50-day average"
+        volume = "" if flow.get("dollar_volume_percentile") is None else f", dollar volume at the {flow['dollar_volume_percentile']:.0%} percentile"
+        updown = "" if flow.get("updown_volume_20d") is None else f", up/down volume {flow['updown_volume_20d']:.2f}"
+        evidence.insert(1, participation + volume + updown + ".")
+    else:
+        missing.append("sector breadth and volume")
+    if not flow.get("shares_outstanding_change"):
+        missing.append("ETF share creation/redemption (history starts with the first snapshot)")
+    confidence = "MODERATE" if held >= 8 else "LOW"
+    if flow.get("breadth_50") is not None and current in (1, -1):
+        confirms = (current == 1 and flow["breadth_50"] >= 0.5) or (current == -1 and flow["breadth_50"] < 0.5)
+        confidence = confidence if confirms else "LOW"
+        if not confirms:
+            evidence.append("Breadth does not confirm the relative-strength reading.")
+    return axis(state, direction=direction, confidence=confidence, evidence=evidence, families=["price"], missing=missing,
                 detail={"sector_etf": etf, "mapping": mapping_note, "rel_3m": latest, "percentile": percentile, "persistence_of_10": held,
-                        "company_vs_sector_3m": company_vs_sector_3m, "rel_3m_21_obs_ago": prior})
+                        "company_vs_sector_3m": company_vs_sector_3m, "rel_3m_21_obs_ago": prior, "sector_flow": flow})
 
 
 def valuation_axis(report: dict[str, Any] | None, observed_growth: float | None, consensus_growth: float | None,
@@ -210,14 +226,17 @@ def valuation_axis(report: dict[str, Any] | None, observed_growth: float | None,
                 missing=["valuation multiple history (percentile in own history)"])
 
 
-def crowding_axis(heat: dict[str, Any] | None) -> dict[str, Any]:
+def crowding_axis(heat: dict[str, Any] | None, sector_flow: dict[str, Any] | None = None) -> dict[str, Any]:
     if not heat:
         return axis("Crowding unavailable", missing=["price and valuation heat"], families=["price"])
     import Valuation_model as vm
     label = vm.chase_risk_label(heat)
+    sector_crowding = (sector_flow or {}).get("crowding")
     evidence = [f"Heat {heat.get('heat'):.0f}/100 (valuation {heat.get('valuation_heat'):.0f}, momentum {heat.get('momentum_heat'):.0f}); "
                 f"{_pct(heat.get('dist_200'))} from the 200-day average; RSI {heat.get('rsi'):.0f}." if heat.get('rsi') is not None else
                 f"Heat {heat.get('heat'):.0f}/100."]
+    if sector_crowding and sector_crowding != "Unavailable":
+        evidence.append(f"Sector positioning: {sector_crowding} (breadth, dollar volume and relative strength against their own history).")
     return axis(label, confidence="LOW", evidence=evidence, families=["price", "valuation"],
                 missing=["positioning data (short interest, options, fund ownership)"],
                 detail={key: heat.get(key) for key in ("heat", "valuation_heat", "momentum_heat", "rsi", "dist_50", "dist_200", "six_month", "forward_pe", "ev_sales")})
@@ -416,6 +435,8 @@ def build_card(ticker: str, environment: dict[str, Any], core: dict[str, Any], s
     with contextlib.redirect_stdout(io.StringIO()):
         heat = (vm.heat_rows([ticker]) or [None])[0]
     expectations = collect_expectations(ticker)
+    from sector_flow import latest_sector_flow
+    sector_flow = latest_sector_flow(store, etf) if etf else None
     erp_sensitivity = None
     rates = (report or {}).get("discount_rate") or {}
     if report and report.get("scenarios") and _num(rates.get("wacc")) and _num(rates.get("beta")) and _num(rates.get("equity_weight")):
@@ -428,9 +449,9 @@ def build_card(ticker: str, environment: dict[str, Any], core: dict[str, Any], s
     observed_growth = _num(info.get("revenueGrowth"))
     axes = {
         "macro": macro_axis(archetype, environment),
-        "flow": flow_axis(ticker, etf, mapping, store, company_vs_sector),
+        "flow": flow_axis(ticker, etf, mapping, store, company_vs_sector, sector_flow),
         "valuation": valuation_axis(report, observed_growth, expectations.get("revenue_growth_next_year"), _num((core.get("macro") or {}).get("erp")), erp_sensitivity),
-        "crowding": crowding_axis(heat),
+        "crowding": crowding_axis(heat, sector_flow),
         "expectations": expectations_axis(expectations),
         "fundamentals": fundamentals_axis(economics),
     }

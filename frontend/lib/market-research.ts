@@ -405,7 +405,21 @@ export function percent(value: number | null): string {
 
 export type SectorEngineRow = { ticker?: string; name?: string; source?: string; validation_status?: string; validation_reason?: string; provider_diagnostic?: { provider_status?: string; source_status?: string }; rel_1m?: number | null; rel_3m?: number | null; rel_6m?: number | null; as_of?: string };
 
-export function integrateSectorEngineRows(rows: SectorEngineRow[] | undefined, state = "UNKNOWN"): SectorResearchObject[] {
+function flowFields(flow?: SectorFlowRow) {
+  const breadth = typeof flow?.breadth_50 === "number" && Number.isFinite(flow.breadth_50) ? flow.breadth_50 : null;
+  const crowding = flow?.crowding && flow.crowding !== "Unavailable" ? flow.crowding : null;
+  return {
+    breadth: breadth == null ? "Unavailable" : breadth >= 0.7 ? "Broad" : breadth >= 0.4 ? "Selective" : "Narrow",
+    breadthRatio: breadth,
+    crowding: crowding ?? "Unavailable",
+    crowdingBasis: crowding ? `Breadth, dollar volume and relative strength against their own history${flow?.as_of ? ` as of ${flow.as_of}` : ""}; ${flow?.breadth_basis ?? "top holdings"}.` : "No current positioning measurements supplied.",
+  };
+}
+
+/** Sector money-flow measurements from sector_flow.py (checklist P5); dated separately from relative strength. */
+export type SectorFlowRow = { etf?: string; as_of?: string | null; breadth_50?: number | null; breadth_200?: number | null; dollar_volume_percentile?: number | null; updown_volume_20d?: number | null; rs_persistence_63?: number | null; crowding?: string | null; crowding_state?: string | null; breadth_basis?: string };
+
+export function integrateSectorEngineRows(rows: SectorEngineRow[] | undefined, state = "UNKNOWN", flow?: Record<string, SectorFlowRow>): SectorResearchObject[] {
   const byTicker = new Map<string, SectorEngineRow>();
   const rankByTicker = new Map<string, number>();
   for (const row of Array.isArray(rows) ? rows : []) {
@@ -431,7 +445,7 @@ export function integrateSectorEngineRows(rows: SectorEngineRow[] | undefined, s
       ...sector,
       engineRank: rankByTicker.get(sector.ticker) ?? null,
       rel1m: invalid ? null : finite(row?.rel_1m), rel3m: invalid ? null : finite(row?.rel_3m), rel6m: invalid ? null : finite(row?.rel_6m),
-      breadth: "Unavailable", breadthRatio: null, crowding: "Unavailable", crowdingBasis: "No current positioning measurements supplied.",
+      ...flowFields(flow?.[sector.ticker]),
       momentum: "Unverified", stage: "Unavailable", heat: "Unavailable",
       currentRead: invalid ? `Measurement withheld: ${reason}` : row && [row.rel_1m, row.rel_3m, row.rel_6m].some(value => finite(value) != null) ? "Dated Python relative strength is available; broader leadership and crowding conclusions require additional evidence." : "Structural sector map available; no finite relative-strength measurements in this snapshot.",
       leaders: sector.leaders.map(leader => ({ ...leader, relativeStrength: null, condition: "Structural role; current leadership unverified" })),
