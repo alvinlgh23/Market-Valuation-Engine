@@ -16,6 +16,7 @@ from typing import Any, Callable
 
 from macro_world import build_world
 from research_capabilities import capability_payload
+from signal_history import record_module
 
 
 ROOT = Path(__file__).resolve().parent
@@ -76,7 +77,9 @@ def isolated(name: str, loader: Callable[[], Any], refresh: bool) -> dict[str, A
                 if cached and cached.get("sectors"):
                     return {"state": "STALE", "payload": cached, "error": "Refresh returned no sector measurements; preserving last-valid observations."}
             save_cache(name, payload)
-            return {"state": "LIVE", "payload": payload, "error": None}
+            # Checklist 2.1: append the fresh observations to the signal history.
+            history = record_module(name, payload, "LIVE")
+            return {"state": "LIVE", "payload": payload, "error": None, "history": history}
         except Exception as exc:
             cached = load_cache(name)
             if cached is not None:
@@ -638,12 +641,17 @@ def build_research_system(refresh: bool = False) -> dict[str, Any]:
                 "evidence_ids": list(dict.fromkeys(edge.get("evidence_ids", []) + ["sg-neer-current"])),
             })
     market_transmission = build_market_transmission(world, core_result["payload"], states)
+    world_history = record_module("world", world, "LIVE") if refresh else {"state": "SKIPPED", "written": 0, "error": None}
     return {
         "schema_version": "1.1",
         "generated_at": datetime.now().astimezone().isoformat(timespec="seconds"),
         "mode": "LIVE_REFRESH" if refresh else "CACHE_FIRST",
         "engine_states": states,
         "engine_errors": {"inflation": inflation_result["error"], "core_market": core_result["error"], "neer": neer_result["error"], "kospi": kospi_result["error"]},
+        "history": {
+            "inflation": inflation_result.get("history"), "core_market": core_result.get("history"),
+            "neer": neer_result.get("history"), "kospi": kospi_result.get("history"), "world": world_history,
+        },
         "dashboard": dashboard_from(world, inflation_result["payload"], core_result["payload"], states, companies),
         "world": world,
         "market_transmission": market_transmission,
