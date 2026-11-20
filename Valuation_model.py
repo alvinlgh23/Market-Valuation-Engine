@@ -489,14 +489,17 @@ def rsi(hist, period=14):
     return float(100 - (100 / (1 + rs)))
 
 
-def relative_change(ticker, benchmark="SPY", days=63):
-    asset = fetch_history(ticker, "1y")
-    bench = fetch_history(benchmark, "1y")
+def relative_change_from_histories(asset, bench, days=63):
+    """Pure form of relative_change for already-fetched (or date-truncated) histories."""
     asset_ret = price_change(asset, days)
     bench_ret = price_change(bench, days)
     if asset_ret is None or bench_ret is None:
         return None
     return asset_ret - bench_ret
+
+
+def relative_change(ticker, benchmark="SPY", days=63):
+    return relative_change_from_histories(fetch_history(ticker, "1y"), fetch_history(benchmark, "1y"), days)
 
 
 def score_from_change(change, bullish_when_positive=True, scale=0.08):
@@ -1141,6 +1144,35 @@ def macro_catalyst_warning(label, source, value):
     return f"{label}: Unavailable from {source}."
 
 
+def macro_scores(tnx_3m, front_rate_3m, dxy_3m, yield_curve, hyg_ief, vix_level):
+    """Pure macro scoring used by compute_macro and the signal-history backfill.
+
+    The formula and weights are unchanged from compute_macro; they were only moved here so
+    a historical cutoff can be scored with the same arithmetic.
+    """
+    rate_score = score_from_change(tnx_3m, bullish_when_positive=False, scale=0.12)
+    front_rate_score = score_from_change(front_rate_3m, bullish_when_positive=False, scale=0.12)
+    usd_score = score_from_change(dxy_3m, bullish_when_positive=False, scale=0.06)
+    curve_score = 60 if yield_curve and yield_curve > 0 else 40 if yield_curve and yield_curve < 0 else 50
+    vix_score = 75 if vix_level and vix_level < 16 else 60 if vix_level and vix_level < 22 else 35 if vix_level else 50
+    credit_score = score_from_change(hyg_ief, bullish_when_positive=True, scale=0.05)
+
+    liquidity_score = (rate_score * 0.30) + (front_rate_score * 0.15) + (usd_score * 0.25) + (curve_score * 0.10) + (credit_score * 0.20)
+    risk_score = (vix_score * 0.55) + (credit_score * 0.45)
+    macro_score = (liquidity_score * 0.60) + (risk_score * 0.40)
+    return {
+        "rate_score": rate_score,
+        "front_rate_score": front_rate_score,
+        "usd_score": usd_score,
+        "curve_score": curve_score,
+        "vix_score": vix_score,
+        "credit_score": credit_score,
+        "liquidity_score": liquidity_score,
+        "risk_score": risk_score,
+        "macro_score": macro_score,
+    }
+
+
 def compute_macro():
     from treasury_semantics import treasury_curve
     tnx_level, tnx_3m, tnx_source, tnx_sources = fetch_macro_level_change(MACRO_FALLBACKS["tnx"])
@@ -1171,16 +1203,10 @@ def compute_macro():
     curve_metadata = treasury_curve(tnx_level, front_rate_level, front_rate_ticker, tnx_date, front_rate_date)
     curve_metadata["source"] = f"{tnx_source or 'Unavailable'} / Yahoo Finance ({front_rate_ticker})"
 
-    rate_score = score_from_change(tnx_3m, bullish_when_positive=False, scale=0.12)
-    front_rate_score = score_from_change(front_rate_3m, bullish_when_positive=False, scale=0.12)
-    usd_score = score_from_change(dxy_3m, bullish_when_positive=False, scale=0.06)
-    curve_score = 60 if yield_curve and yield_curve > 0 else 40 if yield_curve and yield_curve < 0 else 50
-    vix_score = 75 if vix_level and vix_level < 16 else 60 if vix_level and vix_level < 22 else 35 if vix_level else 50
-    credit_score = score_from_change(hyg_ief, bullish_when_positive=True, scale=0.05)
-
-    liquidity_score = (rate_score * 0.30) + (front_rate_score * 0.15) + (usd_score * 0.25) + (curve_score * 0.10) + (credit_score * 0.20)
-    risk_score = (vix_score * 0.55) + (credit_score * 0.45)
-    macro_score = (liquidity_score * 0.60) + (risk_score * 0.40)
+    scores = macro_scores(tnx_3m, front_rate_3m, dxy_3m, yield_curve, hyg_ief, vix_level)
+    liquidity_score = scores["liquidity_score"]
+    risk_score = scores["risk_score"]
+    macro_score = scores["macro_score"]
 
     spy = yf.Ticker("SPY")
     spy_info = {}
@@ -1256,40 +1282,49 @@ def compute_macro():
     }
 
 
+def sector_row_from_histories(ticker, name, hist, spy_hist):
+    """Pure sector scoring for one ETF given its history and SPY's over the same window.
+
+    compute_sectors and the signal-history backfill both call this, so a historical cutoff
+    is scored with exactly the live arithmetic. Formula and weights are unchanged.
+    """
+    rel_1m = relative_change_from_histories(hist, spy_hist, 21)
+    rel_3m = relative_change_from_histories(hist, spy_hist, 63)
+    rel_6m = relative_change_from_histories(hist, spy_hist, 126)
+    close = float(hist["Close"].iloc[-1])
+    high_252 = float(hist["Close"].tail(252).max())
+    breakout = (close / high_252 - 1) if high_252 else None
+
+    momentum_score = (
+        score_from_change(rel_1m, True, 0.06) * 0.35
+        + score_from_change(rel_3m, True, 0.10) * 0.40
+        + score_from_change(rel_6m, True, 0.16) * 0.25
+    )
+    breakout_score = score_from_change(breakout, True, 0.08)
+    score = momentum_score * 0.75 + breakout_score * 0.25
+    return {
+        "ticker": ticker,
+        "name": name,
+        "rel_1m": rel_1m,
+        "rel_3m": rel_3m,
+        "rel_6m": rel_6m,
+        "breakout": breakout,
+        "score": score,
+        "as_of": str(hist.index[-1])[:10],
+    }
+
+
 def compute_sectors():
     rows = []
+    spy_hist = fetch_history("SPY", "1y")
     for ticker, name in SECTOR_ETFS.items():
         hist = fetch_history(ticker, "1y")
         if hist is None:
             continue
-
-        rel_1m = relative_change(ticker, "SPY", 21)
-        rel_3m = relative_change(ticker, "SPY", 63)
-        rel_6m = relative_change(ticker, "SPY", 126)
-        close = float(hist["Close"].iloc[-1])
-        high_252 = float(hist["Close"].tail(252).max())
-        breakout = (close / high_252 - 1) if high_252 else None
-
-        momentum_score = (
-            score_from_change(rel_1m, True, 0.06) * 0.35
-            + score_from_change(rel_3m, True, 0.10) * 0.40
-            + score_from_change(rel_6m, True, 0.16) * 0.25
-        )
-        breakout_score = score_from_change(breakout, True, 0.08)
-        score = momentum_score * 0.75 + breakout_score * 0.25
-
-        rows.append({
-            "ticker": ticker,
-            "name": name,
-            "rel_1m": rel_1m,
-            "rel_3m": rel_3m,
-            "rel_6m": rel_6m,
-            "breakout": breakout,
-            "score": score,
-            "as_of": str(hist.index[-1])[:10],
-            "source": "Yahoo Finance / Python sector engine",
-            "provider_diagnostic": market_provider_diagnostics().get(f"history:{ticker}:1y", {}),
-        })
+        row = sector_row_from_histories(ticker, name, hist, spy_hist)
+        row["source"] = "Yahoo Finance / Python sector engine"
+        row["provider_diagnostic"] = market_provider_diagnostics().get(f"history:{ticker}:1y", {})
+        rows.append(row)
     return sorted(rows, key=lambda row: row["score"], reverse=True)
 
 
