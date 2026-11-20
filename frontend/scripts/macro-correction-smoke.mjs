@@ -26,9 +26,13 @@ try {
   await page.getByRole("heading", { name: "Macro overview" }).waitFor();
   if (await page.locator(".macro-overview-surface .object-metric-grid").count()) throw new Error("Macro Overview still contains the generic metric grid");
   await page.getByRole("heading", { name: "US Treasury structure" }).waitFor();
-  await page.getByRole("img", { name: /Treasury curve with 2Y, 10Y/ }).waitFor();
-  await page.getByText("5/7 configured drivers available.").waitFor();
-  await page.getByText("0% cross-asset coverage").waitFor();
+  // Since checklist 1.1 Macro renders current data, not the August fixture. The curve is drawn
+  // only when 2Y/10Y/30Y share an observation date; otherwise the rates card shows its
+  // explicit coverage fallback. Either is valid; a blank card is not.
+  const curve = page.getByRole("img", { name: /Treasury curve with 2Y, 10Y/ });
+  const curveFallback = page.locator(".rates-card .macro-coverage-fallback");
+  await curve.or(curveFallback).first().waitFor();
+  await page.getByText(/\d+\/\d+ configured drivers available\./).first().waitFor();
   await page.screenshot({ path: path.join(artifacts, "01-macro-overview.png"), fullPage: true });
   await page.locator(".macro-market-transmission").screenshot({ path: path.join(artifacts, "02-market-transmission.png") });
 
@@ -87,8 +91,10 @@ try {
   await page.screenshot({ path: path.join(artifacts, "10-transmission-workspace.png"), fullPage: true });
 
   await open(page, "/macro/risk");
-  await page.getByRole("heading", { name: "Conclusion withheld" }).waitFor();
-  if (await page.locator(".engine-ledger").count()) throw new Error("Zero-coverage risk should not render the full missing ledger by default");
+  // With current data the regime may be published; the withheld branch only applies at low coverage.
+  const riskHeading = page.locator(".engine-module-header h1").first();
+  await riskHeading.waitFor();
+  if ((await riskHeading.innerText()).trim() === "Conclusion withheld" && await page.locator(".engine-ledger").count()) throw new Error("Zero-coverage risk should not render the full missing ledger by default");
   await page.close();
 
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });

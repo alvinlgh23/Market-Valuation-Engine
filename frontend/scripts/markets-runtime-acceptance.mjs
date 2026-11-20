@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import { chromium } from "playwright";
 
 const base = process.env.CHAINSTOX_BASE_URL || "http://localhost:3000";
-const directory = "artifacts/real-user-acceptance";
+const directory = process.env.CHAINSTOX_ARTIFACT_DIR || "artifacts/real-user-acceptance";
 await fs.mkdir(directory, { recursive: true });
 const api = await fetch(`${base}/api/research?scope=full`);
 assert.equal(api.status, 200);
@@ -39,11 +39,17 @@ try {
   await clientTable.waitFor({ timeout: 45000 });
   assert.equal(await clientTable.locator("a").count(), rows.length, "Hydrated Markets page lost cached sector rows");
   assert.ok((await clientTable.innerText()).includes(`${(healthcare.rel_6m * 100).toFixed(1)}%`));
+  // Since checklist 1.2 the observation date and source live in each row's tooltip and in
+  // the page's single data-status control, not in the visible row text.
   for (const row of rows) {
-    const link = clientTable.locator("a").filter({ hasText: `${row.ticker} ·` });
+    const link = clientTable.locator("a").filter({ has: clientPage.locator("small", { hasText: new RegExp(`^${row.ticker}$`) }) });
     assert.equal(await link.count(), 1, `Missing ${row.ticker}`);
-    assert.ok((await link.innerText()).includes(row.as_of), `${row.ticker} observation date missing`);
+    const title = await link.getAttribute("title");
+    assert.ok(title?.includes(row.as_of), `${row.ticker} observation date missing from row tooltip`);
+    assert.ok(title?.includes(row.source), `${row.ticker} source missing from row tooltip`);
   }
+  const latest = rows.map(row => row.as_of).sort().at(-1);
+  assert.ok((await clientPage.locator("[data-research-status] summary").innerText()).includes(latest), "Data status does not show the latest observation date");
   await clientPage.screenshot({ path: `${directory}/markets-client.png`, fullPage: true });
   trace.push({ route: "/markets", stage: "normal browser", sectorRows: await clientTable.locator("a").count() });
   await clientPage.goto(`${base}/markets?sector=semiconductors`, { waitUntil: "domcontentloaded" });
@@ -52,8 +58,6 @@ try {
   const semis = rows.find(row => row.ticker === "SMH");
   assert.ok(semis);
   const snapshotText = await snapshot.innerText();
-  assert.ok(snapshotText.includes(semis.as_of));
-  assert.ok(snapshotText.includes(semis.source));
   assert.ok(snapshotText.includes(`${(semis.rel_6m * 100).toFixed(1)}%`));
   assert.ok(!snapshotText.includes("No sector row in this snapshot."));
   await clientPage.screenshot({ path: `${directory}/semiconductors-client.png`, fullPage: true });
