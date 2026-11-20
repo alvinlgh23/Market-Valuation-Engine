@@ -1,5 +1,11 @@
 import { ResearchShell } from "../../components/research/ResearchShell";
 import { FullMarketBrief } from "../../components/research/ObjectResearchSurfaces";
-import fixture from "../../lib/fixtures/research-system.json";
 import type { ResearchSystem } from "../../lib/research-system-types";
-export default function BriefPage() { const system = fixture as unknown as ResearchSystem; return <ResearchShell active="dashboard" dataState="CACHED"><FullMarketBrief system={system} /></ResearchShell>; }
+import { loadResearchSystem, researchShellState } from "../../lib/research-server";
+
+export const dynamic = "force-dynamic";
+
+export default async function BriefPage() {
+  const response = await loadResearchSystem();
+  return <ResearchShell active="dashboard" dataState={researchShellState(response)}><FullMarketBrief system={response.data as unknown as ResearchSystem} /></ResearchShell>;
+}

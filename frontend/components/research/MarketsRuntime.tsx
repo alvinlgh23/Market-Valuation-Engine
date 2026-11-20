@@ -43,12 +43,12 @@ export function MarketsRuntime({ initial, initialMeta, section = "rotation", sec
   return <>{status}{sector ? <SectorResearch sector={sector} system={system} /> : <MarketsResearch section={section} system={system} />}</>;
 }
 
-export function LabsRuntime({ initial, section }: { initial: ResearchSystem; section: string }) {
-  const { system, status } = useResearchRuntime(initial);
+export function LabsRuntime({ initial, initialMeta, section }: { initial: ResearchSystem; initialMeta?: ResearchResponse["meta"]; section: string }) {
+  const { system, status } = useResearchRuntime(initial, initialMeta);
   return <>{status}<p>Snapshot generated {system.generated_at}. Consumer Sentiment observation date is not supplied by this cached record; do not treat snapshot generation as its measurement date.</p><LabsSurface section={section} system={system} /></>;
 }
 
-export function DashboardRuntime({ initial, onModule }: { initial: ResearchSystem; onModule: (module: string) => void }) {
-  const { system, status } = useResearchRuntime(initial);
+export function DashboardRuntime({ initial, initialMeta, onModule }: { initial: ResearchSystem; initialMeta?: ResearchResponse["meta"]; onModule: (module: string) => void }) {
+  const { system, status } = useResearchRuntime(initial, initialMeta);
   return <>{status}<ResearchDashboard system={system} onModule={onModule} /></>;
 }

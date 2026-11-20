@@ -39,3 +39,12 @@ export async function loadResearchSystem(refresh = false) {
   }
   return { data: full, meta: { source, core_snapshot_id: coreSnapshotId(full), fallback: false, generated_at: full.generated_at } };
 }
+
+export type LoadedResearch = Awaited<ReturnType<typeof loadResearchSystem>>;
+
+/** One data state for the page shell, derived from the same response every page renders. */
+export function researchShellState(response: LoadedResearch, module: "core_market" | "inflation" = "core_market") {
+  if (response.meta.fallback) return "STALE" as const;
+  const state = String(response.data.modules[module]?.state ?? "UNKNOWN").toUpperCase();
+  return (["LIVE", "CACHED", "STALE", "PARTIAL", "INSUFFICIENT", "UNAVAILABLE"].includes(state) ? state : "UNKNOWN") as "LIVE" | "CACHED" | "STALE" | "PARTIAL" | "INSUFFICIENT" | "UNKNOWN";
+}
