@@ -19,8 +19,8 @@ function display(value: unknown) {
 }
 function Badge({ value }: { value: string }) { return <span className={`system-badge system-badge-${value.toLowerCase().replaceAll("_", "-").replaceAll(" ", "-")}`}>{value}</span>; }
 
-export function ObjectHeader({ eyebrow, title: heading, summary, state = "CACHED" }: { eyebrow: string; title: string; summary: string; state?: string }) {
-  return <header className="engine-module-header object-page-header"><div><span>{eyebrow}</span><h1>{heading}</h1><p>{summary}</p></div><Badge value={state} /></header>;
+export function ObjectHeader({ eyebrow, title: heading, summary }: { eyebrow: string; title: string; summary: string; state?: string }) {
+  return <header className="engine-module-header object-page-header"><div><span>{eyebrow}</span><h1>{heading}</h1><p>{summary}</p></div></header>;
 }
 
 function RecordGrid({ record, limit }: { record: Record<string, unknown>; limit?: number }) {
@@ -86,11 +86,11 @@ function sectorHref(sector: SectorResearchObject, view = "snapshot", node?: stri
 
 function SectorMetricStrip({ sector }: { sector: SectorResearchObject }) {
   return <section className="market-state-strip" aria-label={`${sector.name} current market state`}>
-    <article><span>6M Relative Strength</span><strong>{percent(sector.rel6m)}</strong><small>vs SPY · {sector.lastUpdated} · {sector.sourceState}</small><small>{sector.measurementSource}</small></article>
+    <article><span>6M Relative Strength</span><strong>{percent(sector.rel6m)}</strong><small>vs SPY</small></article>
     <article><span>Breadth</span><strong>{sector.breadth}</strong><small>{sector.breadthRatio == null ? "coverage unavailable" : `${Math.round(sector.breadthRatio * 100)}% participating`}</small></article>
     <article><span>Crowding</span><strong>{sector.crowding}</strong><small>separate from momentum</small></article>
     <article><span>Stage</span><strong>{sector.stage}</strong><small>{sector.momentum}</small></article>
-    <article><span>Theme</span><strong>{sector.primaryTheme}</strong><small>{sector.sourceState}</small></article>
+    <article><span>Theme</span><strong>{sector.primaryTheme}</strong></article>
   </section>;
 }
 
@@ -114,14 +114,14 @@ function RotationMap({ selected, sectorList }: { selected: SectorResearchObject;
 function RotationTable({ sectorList }: { sectorList: SectorResearchObject[] }) {
   return <section className="sector-research-table" aria-label="Sector rotation table">
     <header><span>Sector</span><span>1M</span><span>3M</span><span>6M RS</span><span>Breadth</span><span>Crowding</span><span>Stage</span><span>Theme</span></header>
-    {sectorList.map((sector) => <Link key={sector.slug} href={sectorHref(sector, "snapshot")} title={`${sector.measurementSource} · ${sector.measurementReason}`}><strong>{sector.name}<small>{sector.ticker} · {sector.lastUpdated} · {sector.sourceState}</small><small>{sector.measurementSource}</small></strong><span>{percent(sector.rel1m)}</span><span>{percent(sector.rel3m)}</span><span>{percent(sector.rel6m)}</span><span>{sector.breadth}</span><span>{sector.crowding}</span><span>{sector.stage}</span><span>{sector.primaryTheme}</span></Link>)}
+    {sectorList.map((sector) => <Link key={sector.slug} href={sectorHref(sector, "snapshot")} title={`${sector.measurementSource} · ${sector.measurementReason}`}><strong>{sector.name}<small>{sector.ticker}</small></strong><span>{percent(sector.rel1m)}</span><span>{percent(sector.rel3m)}</span><span>{percent(sector.rel6m)}</span><span>{sector.breadth}</span><span>{sector.crowding}</span><span>{sector.stage}</span><span>{sector.primaryTheme}</span></Link>)}
   </section>;
 }
 
 function SectorSnapshot({ sector }: { sector: SectorResearchObject }) {
   return <section className="sector-snapshot-surface">
     <header><span>MARKETS / SECTOR SNAPSHOT</span><h1>{sector.name}</h1><p>{sector.currentRead}</p></header>
-    <p>{sector.measurementSource} · Observation {sector.lastUpdated} · {sector.sourceState}. {sector.measurementReason}</p>
+    {sector.rel6m == null ? <p>{sector.measurementReason}</p> : null}
     <SectorMetricStrip sector={sector} />
     <nav className="sector-actions">
       <Link className="primary" href={sectorHref(sector, "structure")}>Explore Sector Structure →</Link>

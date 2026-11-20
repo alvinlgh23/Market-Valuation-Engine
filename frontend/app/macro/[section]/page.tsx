@@ -1,3 +1,4 @@
+import { PageDataStatus } from "../../../components/research/DataStatus";
 import { notFound } from "next/navigation";
 import { ResearchShell } from "../../../components/research/ResearchShell";
 import { MacroResearch } from "../../../components/research/ObjectResearchSurfaces";
@@ -14,5 +15,5 @@ export default async function MacroSectionPage({ params }: { params: Promise<{ s
   const response = await loadResearchSystem();
   const system = response.data as unknown as ResearchSystem;
   const state = researchShellState(response, section === "inflation" ? "inflation" : "core_market");
-  return <ResearchShell active="macro" dataState={state}>{section === "rates" ? <MacroRatesRuntime initial={system} /> : <MacroResearch section={section} system={system} />}</ResearchShell>;
+  return <ResearchShell active="macro" dataState={state}><PageDataStatus system={system} meta={response.meta} />{section === "rates" ? <MacroRatesRuntime initial={system} /> : <MacroResearch section={section} system={system} />}</ResearchShell>;
 }

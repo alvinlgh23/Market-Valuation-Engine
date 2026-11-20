@@ -14,7 +14,6 @@ import type { ResearchSystem } from "../../lib/research-system-types";
 
 function stateClass(value: string) { return value.toLowerCase().replaceAll(" ", "-").replaceAll("/", "-").replaceAll("_", "-"); }
 function Badge({ state }: { state?: string }) { const value = state || "UNAVAILABLE"; return <span className={`system-badge system-badge-${stateClass(value)}`}>{value}</span>; }
-function timestamp(value: string) { return value.replace("T", " "); }
 
 function PanelHeader({ code, title, action }: { code: string; title: string; action?: { label: string; href: string } }) {
   return <header className="command-panel-header"><div><span>{code}</span><h2>{title}</h2></div>{action ? <Link href={action.href}>{action.label}</Link> : null}</header>;
@@ -28,7 +27,6 @@ export function ResearchDashboard({ system }: { system: ResearchSystem; onModule
   const tensions = dashboardTensions(system);
   const leaders = marketLeadershipSummary(system);
   const companies = recentCompanyRows(system);
-  const freshness = system.dashboard.freshness.slice(0, 7);
   const watch = system.dashboard.watch_conditions.slice(0, 5);
   const regions = system.dashboard.global_regions.slice(0, 5);
 
@@ -44,9 +42,7 @@ export function ResearchDashboard({ system }: { system: ResearchSystem; onModule
         <p>{system.dashboard.headline.summary}</p>
       </div>
       <aside>
-        <Badge state="CACHED" />
         <strong>{system.dashboard.headline.state}</strong>
-        <small>Generated {timestamp(system.generated_at)}</small>
         <Link href="/brief">Open Full Market Brief →</Link>
       </aside>
     </header>
@@ -109,10 +105,6 @@ export function ResearchDashboard({ system }: { system: ResearchSystem; onModule
     </div>
 
     <div className="command-center-secondary operations-row">
-      <section className="command-panel freshness-panel">
-        <PanelHeader code="DATA FRESHNESS" title="Compact coverage" />
-        <div className="freshness-grid">{freshness.map((item) => <article key={String(item.module)}><span>{item.module}</span><Badge state={String(item.state || "UNAVAILABLE")} /><small>{String(item.as_of || "Timestamp unavailable")}</small></article>)}</div>
-      </section>
       <section className="command-panel watch-panel">
         <PanelHeader code="WATCH CONDITIONS" title="Active verification points" />
         <div className="watch-list">{watch.map((item) => <Link href={String(item.href || "/")} key={`${item.module}-${item.label}`}><span>{item.module}</span><strong>{item.label}</strong><small>{item.current} / {item.threshold}</small><Badge state={String(item.state || "WATCH")} /></Link>)}</div>
