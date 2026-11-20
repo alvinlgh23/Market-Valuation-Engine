@@ -3624,6 +3624,7 @@ def print_usage():
     print("  python model.py fair-value MSFT  # alias for value")
     print("  python model.py economics PLTR   # company economics only")
     print("  python model.py company-economics PLTR --json")
+    print("  python model.py verdict NVDA      # company judgment card (add --watchlist, --json, --home-currency SGD)")
     print("  python model.py research-system inventory --json")
     print("  python model.py research-system dashboard --json")
     print("  python model.py research-system full --live --json")
@@ -3746,6 +3747,9 @@ def run_cli(args):
         except ValueError as exc:
             print(f"Valuation input error: {exc}", file=sys.stderr)
             return 2
+    elif command in {"verdict", "card", "judgment"}:
+        from company_verdict import main as run_company_verdict
+        return run_company_verdict(args[1:])
     elif command in {"10", "economics", "company-economics"}:
         ticker = args[1] if len(args) >= 2 else "PLTR"
         extra = args[2:]
