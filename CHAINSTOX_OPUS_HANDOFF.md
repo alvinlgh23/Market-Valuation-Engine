@@ -17,9 +17,12 @@
 ### P0 保全与确认
 
 - [x] **0.1 快照分支。** 已完成（2026-11-16）。四个仓库各有本地分支 `snapshot/2026-11-16-pre-synthesis`，内容与当时的工作区逐一核对一致。
-- [ ] **0.2 修脆弱的测试。** `tests/test_macro_experience.py:59` 断言 NEER 缓存历史长度等于 299。改成对固定 fixture 断言，或断言结构而非精确长度。完成标准：全套测试通过。
-- [ ] **0.3 查清公司档案里估值为空的原因。** 见 4.4。对 MSFT 和 PLTR 各跑一次估值，区分两个候选原因，把结论写回 4.4。
-- [ ] **0.4 估值失败不再静默。** `company_research.py:352-355` 的 `except Exception: valuation = None` 改为记录失败类型和原因，随档案一起返回。不改任何估值计算。
+- [x] **0.2 修脆弱的测试。** `tests/test_macro_experience.py:59` 断言 NEER 缓存历史长度等于 299。改成对固定 fixture 断言，或断言结构而非精确长度。完成标准：全套测试通过。
+  - 结果（2026-11-20）：`tests/test_macro_experience.py` 改为断言行字段、日期严格递增、至少 250 行、末行等于 `as_of`。全套 227 通过。提交 5e10ba6。
+- [x] **0.3 查清公司档案里估值为空的原因。** 见 4.4。对 MSFT 和 PLTR 各跑一次估值，区分两个候选原因，把结论写回 4.4。
+  - 结果（2026-11-20）：结论已写回 4.4。展示层 15 家都因版本不匹配被无估值重建；MSFT/NVDA 估值本身正常；PLTR 为 FCFF 对账失败的合法不予给出；反向 DCF 在两家上超出 50% 增长上限。没有改代码；`.cache/` 已备份到 `../chainstox-cache-backups/2026-11-20/`，运行前后校验和一致。
+- [x] **0.4 估值失败不再静默。** `company_research.py:352-355` 的 `except Exception: valuation = None` 改为记录失败类型和原因，随档案一起返回。不改任何估值计算。
+  - 结果（2026-11-20）：`company_research.py` 新增 `valuation_outcome`，档案和响应带 `valuation_status`（COMPLETED / FAILED / NOT_APPLICABLE，失败时含异常类型和信息），失败同时写入 `errors`。新增 3 个测试，全套 230 通过。提交 2a46ab9。
 
 ### P1 界面减法（不依赖后端，可与 P2 穿插）
 
@@ -173,6 +176,16 @@ Owner 的原话是项目"已经卡着了"。本文的判断：卡住不是因为
 - `company_research.py:319-321` 在缓存的 `classification_version` 不匹配时用 `build_company_economics(snapshot)` 重建档案，没有传估值报告。
 
 估值引擎本身（`model.py valuation <TICKER> --json`，前端走 `frontend/lib/valuation-service.ts:68`）是另一条路径，可能是正常的。动手前先对一两个代码确认这一点。
+
+**2026-11-20 核实结论（清单 0.3）。** 对 MSFT、PLTR、NVDA 直接运行 `collect_valuation_data` + `build_valuation_report`，不写公司缓存（运行前后 `.cache/` 校验和一致）。原因有三层，按影响范围排序：
+
+1. **展示层：所有 15 家都被无估值重建。** 15 个缓存文件的 `classification_version` 都不是当前的 `phase8.1-evidence-authority-v2`（10 家为空，5 家为 v1）。`company_research.py` 的 `_public_profile` 因此在每次打开时调用 `build_company_economics(snapshot)` 重建，不传估值报告，估值复核必然为空。这是界面上 15 家全空的直接原因。修复需要重新分析这 15 家，会覆盖缓存，未做。
+2. **估值本身可以运行。** MSFT 和 NVDA 估值正常完成（验证状态 PROVISIONAL，数据质量 GOOD，三个情景齐全）。把报告传给 `build_company_economics` 后，估值复核有结果：MSFT 两项 SUPPORTED；NVDA 增长 TOO_CONSERVATIVE、利润率 SUPPORTED。所以候选原因一（异常被吞）在这两家上没有发生；当时保存的文件为何为空无法回溯，0.4 之后的新分析会记录 `valuation_status`。
+3. **PLTR 是合法的不予给出。** FCFF 历史对账失败（缺税后利息），`data_quality` 为 `FAILED_FCFF_RECONCILIATION`，没有情景和反向 DCF。
+
+**新发现：市场预期比较在三家上都是 INSUFFICIENT_EVIDENCE，原因不是缺数据。** MSFT 和 NVDA 的反向 DCF 状态都是 `NO_ECONOMIC_SOLUTION`：即使首年增长取搜索上限 50%，模型价值仍低于股价（MSFT 上限 $379 对股价 $498；NVDA 上限 $75.8 对股价 $146）。也就是说，在现有的 5 年显式期、利润率和 WACC 下，股价隐含的增长超出了模型能表达的范围。`MarketExpectationsComparator` 只接受 `converged`，所以把这个方向明确的结果当成"证据不足"。这与 8.1 和清单 7.6 指出的结构问题是同一件事。判断卡（清单 4.2）应把"上限仍低于股价"读成"市场隐含增长高于测试区间"，作为有方向的结论展示；反向 DCF 求解器本身不改。
+
+另外两家的估值报告都标注了 `discount-rate fallbacks used: equity risk premium`，即 ERP 用的是 4.5% 的固定回退值（见 4.6）。
 
 ### 4.5 "资金流"没有被测量
 
