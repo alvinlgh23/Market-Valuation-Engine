@@ -1,4 +1,5 @@
 "use client";
+import { StatusBadge } from "../research/StatusBadge";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -8,8 +9,7 @@ import type { QuantitativeDatum } from "../../lib/visualization-types";
 import { DivergingBarChart, YieldCurveChart } from "../charts/AnalyticalCharts";
 import { MacroWorldMap } from "./MacroWorldMap";
 
-function stateClass(value: string) { return value.toLowerCase().replaceAll(" ", "-").replaceAll("_", "-").replaceAll("/", "-"); }
-function Status({ value }: { value: string }) { return <span className={`macro-status macro-status-${stateClass(value)}`}>{value}</span>; }
+function Status({ value }: { value: string }) { return <StatusBadge value={value} variant="macro" />; }
 function SectionHeader({ code, title, note, href, action }: { code: string; title: string; note: string; href?: string; action?: string }) {
   return <header className="macro-overview-section-header"><div><span>{code}</span><h2>{title}</h2><p>{note}</p></div>{href ? <Link href={href}>{action || "Investigate →"}</Link> : null}</header>;
 }

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FormEvent, ReactNode, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { displayStatus, statusWord } from "../../lib/status-words";
 import { recentCompanyResearch, type RecentCompanyResearch } from "../../lib/company-research-api";
 import { sectors } from "../../lib/market-research";
 import { ChainstoxBrand } from "./ChainstoxBrand";
@@ -123,7 +124,7 @@ export function ResearchShell({
           {PRIMARY.map(([key, label, href]) => <Link key={key} className={topActive === key ? "active" : ""} href={href} onClick={() => setMobileNavOpen(false)}>{label}</Link>)}
         </nav>
         <button className="quiet-search-trigger" type="button" onClick={() => setSearchOpen(true)} aria-label="Open global search"><span>Global search</span><kbd>⌘K</kbd></button>
-        <div className={`data-state data-state-${shellState.toLowerCase().replaceAll("_", "-")}`} title={STATE_HELP[shellState] ?? "Current research data state"}><i />{shellState}</div>
+        <div className={`data-state data-state-${shellState.toLowerCase().replaceAll("_", "-")}`} title={STATE_HELP[shellState] ?? "Current research data state"}><i />{shellState === "DEMO" || shellState === "FIXTURE" ? displayStatus(shellState) : statusWord(shellState) ?? displayStatus(shellState)}</div>
       </header>
       {routeDemoMode ? <section className="demo-guide-strip" aria-label="Competition demo guide">
         <div><span>DETERMINISTIC DEMO</span><strong>Global mechanism {"->"} industry mechanism {"->"} company mechanism {"->"} price expectation {"->"} evidence</strong></div>

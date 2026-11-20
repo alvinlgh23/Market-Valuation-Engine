@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { CompanyResearchViewModel } from "../../lib/company-economics-types";
 import { humanize } from "../../lib/companyEconomicsAdapter";
 import { ResearchShell, type ResearchDataState } from "../research/ResearchShell";
+import { displayStatus } from "../../lib/status-words";
 import { CompanyWorkspaces, type CompanyWorkspaceKind } from "./CompanyWorkspaces";
 import { ResearchLabel, Unavailable } from "./ResearchPrimitives";
 import { ReportMode } from "./ReportMode";
@@ -94,7 +95,7 @@ export function CompanyResearchPage({ company, dataState = "FIXTURE", initialWor
     router.push(`/valuation/${company.ticker}?${query}`);
   }
 
-  const marketRead = humanize(company.raw.market_expectations_comparison.state);
+  const marketRead = displayStatus(company.raw.market_expectations_comparison.state);
   const growthSummary = company.growthDrivers.map((driver) => driver.label).join(" × ");
 
   return (
@@ -110,7 +111,7 @@ export function CompanyResearchPage({ company, dataState = "FIXTURE", initialWor
           <h2>{company.coreQuestion}</h2>
         </section>
 
-        {company.raw.data_quality ? <section className="snapshot-quality-strip" aria-label="Company research quality"><div><span>Classification</span><strong>{humanize(company.raw.data_quality.classification)}</strong></div><div><span>Constraint diagnosis</span><strong>{humanize(company.raw.data_quality.constraint_diagnosis)}</strong></div><div><span>Valuation</span><strong>{humanize(company.raw.data_quality.valuation)}</strong></div><div><span>Overall research</span><strong>{humanize(company.raw.data_quality.overall)}</strong></div></section> : null}
+        {company.raw.data_quality ? <section className="snapshot-quality-strip" aria-label="Company research quality"><div><span>Classification</span><strong>{displayStatus(company.raw.data_quality.classification)}</strong></div><div><span>Constraint diagnosis</span><strong>{displayStatus(company.raw.data_quality.constraint_diagnosis)}</strong></div><div><span>Valuation</span><strong>{displayStatus(company.raw.data_quality.valuation)}</strong></div><div><span>Overall research</span><strong>{displayStatus(company.raw.data_quality.overall)}</strong></div></section> : null}
 
         <section className="snapshot-quality-strip" aria-label="Evidence qualification summary"><div><span>Observed</span><strong>{company.evidenceCounts.observed}</strong></div><div><span>Proxy / inference</span><strong>{company.evidenceCounts.proxy + company.evidenceCounts.inference}</strong></div><div><span>Unverified / stale</span><strong>{company.evidenceCounts.unverified} / {company.evidenceCounts.stale}</strong></div><div><span>Counterevidence</span><strong>{company.evidenceCounts.counter}</strong></div></section>
 

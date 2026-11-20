@@ -1,4 +1,6 @@
 "use client";
+import { StatusBadge } from "./StatusBadge";
+import { statusWord } from "../../lib/status-words";
 
 import Link from "next/link";
 import { useState } from "react";
@@ -12,8 +14,7 @@ import {
 } from "../../lib/dashboard-orchestration";
 import type { ResearchSystem } from "../../lib/research-system-types";
 
-function stateClass(value: string) { return value.toLowerCase().replaceAll(" ", "-").replaceAll("/", "-").replaceAll("_", "-"); }
-function Badge({ state }: { state?: string }) { const value = state || "UNAVAILABLE"; return <span className={`system-badge system-badge-${stateClass(value)}`}>{value}</span>; }
+function Badge({ state }: { state?: string }) { return <StatusBadge value={state || "UNAVAILABLE"} />; }
 
 function PanelHeader({ code, title, action }: { code: string; title: string; action?: { label: string; href: string } }) {
   return <header className="command-panel-header"><div><span>{code}</span><h2>{title}</h2></div>{action ? <Link href={action.href}>{action.label}</Link> : null}</header>;
@@ -63,7 +64,7 @@ export function ResearchDashboard({ system }: { system: ResearchSystem; onModule
     </section> : null}
 
     <section className="system-state-strip" aria-label="Current market state strip">
-      {states.map((item) => <Link href={item.href} key={item.label}><span>{item.label}</span><strong>{item.state}</strong><small>{item.detail}</small></Link>)}
+      {states.map((item) => <Link href={item.href} key={item.label}><span>{item.label}</span><strong title={item.state}>{statusWord(item.state) ?? item.state}</strong><small>{item.detail}</small></Link>)}
     </section>
 
     <div className="command-center-primary">

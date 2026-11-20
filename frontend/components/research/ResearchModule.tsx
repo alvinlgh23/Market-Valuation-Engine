@@ -1,11 +1,12 @@
 "use client";
+import { StatusBadge } from "./StatusBadge";
 
 import { useState } from "react";
 import { ChartUnavailable, DivergingBarChart } from "../charts/AnalyticalCharts";
 import type { InflationMetric, ResearchSystem } from "../../lib/research-system-types";
 import type { QuantitativeDatum } from "../../lib/visualization-types";
 
-function Badge({ state }: { state: string }) { return <span className={`system-badge system-badge-${state.toLowerCase().replaceAll(" ", "-")}`}>{state}</span>; }
+function Badge({ state }: { state: string }) { return <StatusBadge value={state} />; }
 function Value({ value }: { value: unknown }) { return <>{value === null || value === undefined || value === "" ? "Unavailable" : typeof value === "number" ? value.toFixed(2) : String(value)}</>; }
 
 function Inflation({ system }: { system: ResearchSystem }) {

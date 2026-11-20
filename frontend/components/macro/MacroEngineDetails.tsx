@@ -1,4 +1,5 @@
 "use client";
+import { StatusBadge } from "../research/StatusBadge";
 
 import { useState } from "react";
 import { DivergingBarChart, RankedBarChart, TimeSeriesChart } from "../charts/AnalyticalCharts";
@@ -7,7 +8,7 @@ import type { QuantitativeDatum, RankedResearchItem } from "../../lib/visualizat
 
 type Json = Record<string, unknown>;
 
-function Status({ value }: { value: unknown }) { const state = String(value ?? "UNAVAILABLE"); return <span className={`macro-status macro-status-${state.toLowerCase().replaceAll(" ", "-")}`}>{state}</span>; }
+function Status({ value }: { value: unknown }) { return <StatusBadge value={value ?? "UNAVAILABLE"} variant="macro" />; }
 function show(value: unknown) { return value === null || value === undefined ? "Unavailable" : typeof value === "number" ? value.toFixed(3) : String(value); }
 
 function SpecialModel({ payload }: { payload: Json }) {

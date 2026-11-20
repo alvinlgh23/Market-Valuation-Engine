@@ -1,4 +1,5 @@
 "use client";
+import { StatusBadge } from "../research/StatusBadge";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -18,7 +19,7 @@ function readQuery() {
 }
 
 function Status({ value }: { value: string }) {
-  return <span className={`macro-status macro-status-${value.toLowerCase().replaceAll(" ", "-")}`}>{value}</span>;
+  return <StatusBadge value={value} variant="macro" />;
 }
 
 function EvidenceRow({ evidence, expanded, onToggle }: { evidence: MacroEvidence; expanded: boolean; onToggle: () => void }) {

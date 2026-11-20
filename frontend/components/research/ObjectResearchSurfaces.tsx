@@ -1,4 +1,5 @@
 "use client";
+import { StatusBadge } from "./StatusBadge";
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -17,7 +18,7 @@ function display(value: unknown) {
   if (typeof value === "object") return "Open evidence detail";
   return String(value);
 }
-function Badge({ value }: { value: string }) { return <span className={`system-badge system-badge-${value.toLowerCase().replaceAll("_", "-").replaceAll(" ", "-")}`}>{value}</span>; }
+function Badge({ value }: { value: string }) { return <StatusBadge value={value} />; }
 
 export function ObjectHeader({ eyebrow, title: heading, summary }: { eyebrow: string; title: string; summary: string; state?: string }) {
   return <header className="engine-module-header object-page-header"><div><span>{eyebrow}</span><h1>{heading}</h1><p>{summary}</p></div></header>;
