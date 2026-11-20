@@ -3258,3 +3258,8 @@ body {
 .status-word-partial { color: var(--research-caution); border-color: color-mix(in srgb, var(--research-caution) 45%, transparent); }
 .status-word-unavailable { color: var(--research-faint); border-color: var(--research-line); }
 .status-word-stale { color: var(--research-negative); border-color: color-mix(in srgb, var(--research-negative) 45%, transparent); }
+
+/* Empty modules are not rendered; one line names what is missing (checklist 1.4). */
+.markets-topology.markets-topology-table-only { grid-template-columns: 1fr; }
+.sector-research-table > header, .sector-research-table > a { min-width: 0; }
+.missing-summary { margin: 32px 0 0; padding-top: 12px; border-top: 1px solid var(--research-line); color: var(--research-faint); font: 12px/1.5 var(--font-research); }

@@ -90,7 +90,7 @@ export function ResearchDashboard({ system }: { system: ResearchSystem; onModule
       </section>
       <section className="command-panel leadership-panel">
         <PanelHeader code="MARKET LEADERSHIP" title="Sector bridge" action={{ label: "Open Sector Rotation →", href: "/markets" }} />
-        <div className="leadership-mini-table">{leaders.map((sector) => <Link href={sector.href} key={sector.ticker}><strong>{sector.ticker}<small>{sector.name}</small></strong><span>{sector.rel6m}</span><span>{sector.breadth}</span><span>{sector.crowding}</span></Link>)}</div>
+        <div className="leadership-mini-table">{leaders.map((sector) => <Link href={sector.href} key={sector.ticker}><strong>{sector.ticker}<small>{sector.name}</small></strong><span>{sector.rel6m} 6M vs SPY</span>{leaders.some((item) => item.breadth !== "Unavailable") ? <span>{sector.breadth}</span> : null}{leaders.some((item) => item.crowding !== "Unavailable") ? <span>{sector.crowding}</span> : null}</Link>)}</div>
       </section>
     </div>
 

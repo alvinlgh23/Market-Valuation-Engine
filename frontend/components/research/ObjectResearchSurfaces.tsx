@@ -88,11 +88,15 @@ function sectorHref(sector: SectorResearchObject, view = "snapshot", node?: stri
 function SectorMetricStrip({ sector }: { sector: SectorResearchObject }) {
   return <section className="market-state-strip" aria-label={`${sector.name} current market state`}>
     <article><span>6M Relative Strength</span><strong>{percent(sector.rel6m)}</strong><small>vs SPY</small></article>
-    <article><span>Breadth</span><strong>{sector.breadth}</strong><small>{sector.breadthRatio == null ? "coverage unavailable" : `${Math.round(sector.breadthRatio * 100)}% participating`}</small></article>
-    <article><span>Crowding</span><strong>{sector.crowding}</strong><small>separate from momentum</small></article>
-    <article><span>Stage</span><strong>{sector.stage}</strong><small>{sector.momentum}</small></article>
-    <article><span>Theme</span><strong>{sector.primaryTheme}</strong></article>
+    {isMeasured(sector.breadth) ? <article><span>Breadth</span><strong>{sector.breadth}</strong><small>{sector.breadthRatio == null ? "participation share not reported" : `${Math.round(sector.breadthRatio * 100)}% participating`}</small></article> : null}
+    {isMeasured(sector.crowding) ? <article><span>Crowding</span><strong>{sector.crowding}</strong><small>separate from momentum</small></article> : null}
+    {isMeasured(sector.stage) ? <article><span>Stage</span><strong>{sector.stage}</strong><small>{sector.momentum}</small></article> : null}
+    {isMeasured(sector.primaryTheme) ? <article><span>Theme</span><strong>{sector.primaryTheme}</strong></article> : null}
   </section>;
+}
+
+function hasPositioningPoints(sectorList: SectorResearchObject[]) {
+  return sectorList.some((sector) => sector.rel6m != null && isMeasured(sector.crowding));
 }
 
 function RotationMap({ selected, sectorList }: { selected: SectorResearchObject; sectorList: SectorResearchObject[] }) {
@@ -100,7 +104,6 @@ function RotationMap({ selected, sectorList }: { selected: SectorResearchObject;
   const crowdingY = (sector: SectorResearchObject) => sector.crowding.toLowerCase().includes("elevated") ? 24 : sector.crowding.toLowerCase().includes("moderate") ? 50 : 74;
   return <section className="rotation-map-panel">
     <header><div><span>ROTATION MAP</span><h2>Leadership vs positioning risk</h2></div><small>{rotationAxis.x} / {rotationAxis.y}</small></header>
-    {!sectorList.some(sector => sector.rel6m != null && sector.crowding !== "Unavailable") ? <p role="status">Positioning plane unavailable: crowding measurements are missing. Dated relative strength is shown in the table; no crowding coordinate is invented.</p> : null}
     <div className="rotation-plane" role="img" aria-label="Sector rotation positioning plane">
       <span className="axis axis-x">Leadership / relative strength →</span><span className="axis axis-y">Crowding / extension ↑</span>
       {sectorList.filter(sector => sector.rel6m != null && sector.crowding !== "Unavailable").map((sector) => {
@@ -112,11 +115,33 @@ function RotationMap({ selected, sectorList }: { selected: SectorResearchObject;
   </section>;
 }
 
+type OptionalColumn = { key: "breadth" | "crowding" | "stage" | "primaryTheme"; label: string };
+const OPTIONAL_COLUMNS: OptionalColumn[] = [
+  { key: "breadth", label: "Breadth" },
+  { key: "crowding", label: "Crowding" },
+  { key: "stage", label: "Stage" },
+  { key: "primaryTheme", label: "Theme" },
+];
+const isMeasured = (value: string | null | undefined) => Boolean(value) && !["Unavailable", "Unclassified", "Unverified"].includes(String(value));
+
+/** Columns with at least one measured value; an all-empty column is not rendered (checklist 1.4). */
+function measuredColumns(sectorList: SectorResearchObject[]) {
+  return OPTIONAL_COLUMNS.filter((column) => sectorList.some((sector) => isMeasured(sector[column.key])));
+}
+
 function RotationTable({ sectorList }: { sectorList: SectorResearchObject[] }) {
+  const columns = measuredColumns(sectorList);
+  const template = `minmax(132px, 1.25fr) repeat(3, .48fr)${columns.map(() => " minmax(96px, .8fr)").join("")}`;
   return <section className="sector-research-table" aria-label="Sector rotation table">
-    <header><span>Sector</span><span>1M</span><span>3M</span><span>6M RS</span><span>Breadth</span><span>Crowding</span><span>Stage</span><span>Theme</span></header>
-    {sectorList.map((sector) => <Link key={sector.slug} href={sectorHref(sector, "snapshot")} title={`${sector.measurementSource} · ${sector.measurementReason}`}><strong>{sector.name}<small>{sector.ticker}</small></strong><span>{percent(sector.rel1m)}</span><span>{percent(sector.rel3m)}</span><span>{percent(sector.rel6m)}</span><span>{sector.breadth}</span><span>{sector.crowding}</span><span>{sector.stage}</span><span>{sector.primaryTheme}</span></Link>)}
+    <header style={{ gridTemplateColumns: template }}><span>Sector</span><span>1M</span><span>3M</span><span>6M RS</span>{columns.map((column) => <span key={column.key}>{column.label}</span>)}</header>
+    {sectorList.map((sector) => <Link key={sector.slug} style={{ gridTemplateColumns: template }} href={sectorHref(sector, "snapshot")} title={`${sector.measurementSource} · ${sector.lastUpdated} · ${sector.measurementReason}`}><strong>{sector.name}<small>{sector.ticker}</small></strong><span>{percent(sector.rel1m)}</span><span>{percent(sector.rel3m)}</span><span>{percent(sector.rel6m)}</span>{columns.map((column) => <span key={column.key}>{isMeasured(sector[column.key]) ? sector[column.key] : "—"}</span>)}</Link>)}
   </section>;
+}
+
+/** One line at the bottom of a page naming what is not measured, instead of empty modules. */
+export function MissingSummary({ items }: { items: string[] }) {
+  if (!items.length) return null;
+  return <p className="missing-summary">Not measured yet: {items.join(", ")}.</p>;
 }
 
 function SectorSnapshot({ sector }: { sector: SectorResearchObject }) {
@@ -201,8 +226,8 @@ function MarketsRotationSurface({ sectorList, selectedSector, view, selectedNode
   if (view === "report") return <div className="engine-module"><SectorReport sector={selected} /></div>;
   return <div className="engine-module markets-research-surface">
     <ObjectHeader eyebrow="MARKETS / SECTOR ROTATION" title="Where leadership is moving" summary="Sector Rotation is the bridge between macro regime and company research: compare leadership, then open a sector, structure node, evidence, or company." state={selected.sourceState} />
-    <div className="markets-topology">
-      <RotationMap selected={selected} sectorList={sectorList} />
+    <div className={`markets-topology${hasPositioningPoints(sectorList) ? "" : " markets-topology-table-only"}`}>
+      {hasPositioningPoints(sectorList) ? <RotationMap selected={selected} sectorList={sectorList} /> : null}
       <RotationTable sectorList={sectorList} />
     </div>
     <SectorSnapshot sector={selected} />
@@ -210,6 +235,10 @@ function MarketsRotationSurface({ sectorList, selectedSector, view, selectedNode
     {view === "leadership" ? <SectorLeadership sector={selected} /> : null}
     {view === "breadth" ? <SectorEvidenceView sector={selected} kind="breadth" /> : null}
     {view === "positioning" ? <SectorEvidenceView sector={selected} kind="positioning" /> : null}
+    <MissingSummary items={[
+      ...OPTIONAL_COLUMNS.filter((column) => !measuredColumns(sectorList).includes(column)).map((column) => `sector ${column.label.toLowerCase()}`),
+      ...(hasPositioningPoints(sectorList) ? [] : ["the leadership-versus-crowding map (needs crowding measurements)"]),
+    ]} />
   </div>;
 }
 

@@ -166,7 +166,7 @@ export function marketLeadershipSummary(system: ResearchSystem) {
   return measuredSectors(system).filter(s => s.rel6m != null).slice(0, 4).map((sector) => ({
     ticker: sector.ticker,
     name: sector.name,
-    rel6m: `${percent(sector.rel6m)} · ${sector.lastUpdated} · ${sector.sourceState}`,
+    rel6m: percent(sector.rel6m),
     breadth: sector.breadth,
     crowding: sector.crowding,
     href: `/markets?sector=${sector.slug}`
