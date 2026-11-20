@@ -28,15 +28,26 @@
 
 对应 9.2 的第 1、2、3、7、8、9、10 条，每条一个提交：
 
-- [ ] **1.1** 所有页面改走 `frontend/lib/research-server.ts`，不再直接 import 打包 fixture（`app/macro/page.tsx`、`app/macro/[section]/page.tsx`、`app/macro/world/page.tsx`、`app/brief/page.tsx`，以及 `app/page.tsx`、`app/labs/[section]/page.tsx` 的初始值）。
-- [ ] **1.2** 来源信息收进每页一个入口；去掉顶部的原始状态行、行内和区块内重复的来源与缓存标签。
-- [ ] **1.3** 面向用户的状态词收敛为四个（有结论、部分、无数据、已过期）；写一张从内部状态到这四个词的映射表，放在一处，所有组件共用。
-- [ ] **1.4** 空模块不渲染：没有点的图、整列为空的表格列；缺失项在页面底部汇总成一行。
-- [ ] **1.5** 删除填充文字和工程用语（见 9.1 第 3、8 条的例子）。
-- [ ] **1.6** Markets 表格按引擎排名排序。
-- [ ] **1.7** 删除未被引用的旧终端外壳组件和 `lib/mock-data/`。删之前用 grep 再确认一次没有引用，typecheck、lint、build 都要过。
+- [x] **1.1** 所有页面改走 `frontend/lib/research-server.ts`，不再直接 import 打包 fixture（`app/macro/page.tsx`、`app/macro/[section]/page.tsx`、`app/macro/world/page.tsx`、`app/brief/page.tsx`，以及 `app/page.tsx`、`app/labs/[section]/page.tsx` 的初始值）。
+  - 结果（2026-11-20）：Dashboard、Macro 三页、Brief、Labs、板块页改为 `await loadResearchSystem()`，壳层状态由同一响应推出；新增 `lib/research-server.ts::researchShellState` 和 `components/research/DashboardEntry.tsx`。打包 fixture 只剩加载失败回退和带标签的 demo 页。Macro 页现在与 Dashboard 显示同一风险状态。提交 d15d12b。
+- [x] **1.2** 来源信息收进每页一个入口；去掉顶部的原始状态行、行内和区块内重复的来源与缓存标签。
+  - 结果（2026-11-20）：新增 `components/research/DataStatus.tsx`（每页一个可展开控件：状态词、最新观测日期；展开后是来源、快照、行数、生成时间、各模块新鲜度）。删除了顶部原始状态行、Dashboard 写死的 CACHED 和新鲜度面板、表格每行的日期/来源/状态、各区块标题的状态角标；Macro 覆盖率区块收为页面底部一个折叠块。提交 8903a7f。
+- [x] **1.3** 面向用户的状态词收敛为四个（有结论、部分、无数据、已过期）；写一张从内部状态到这四个词的映射表，放在一处，所有组件共用。
+  - 结果（2026-11-20）：`lib/status-words.ts` 是唯一映射表（Available / Partial / Not available / Out of date），领域标签（WATCH、FACT、政策状态名等）不映射；`components/research/StatusBadge.tsx` 替换了 6 个本地徽章组件，壳层指示、公司质量条、Dashboard 状态条也走同一映射。测试 `frontend/scripts/status-words-test.mjs`。提交 d60c02c。
+- [x] **1.4** 空模块不渲染：没有点的图、整列为空的表格列；缺失项在页面底部汇总成一行。
+  - 结果（2026-11-20）：没有点的轮动图不再渲染；表格只显示至少有一个值的列；板块指标条和 Dashboard 领涨表同样处理；Markets 页底部一行 `MissingSummary` 列出未测量项。提交 2abe7aa。
+- [x] **1.5** 删除填充文字和工程用语（见 9.1 第 3、8 条的例子）。
+  - 结果（2026-11-20）：删除全局页脚口号、Dashboard 流程口号、`SCHEMA / 1.1`、微秒时间戳、"classified ... by the source module" 生成句和描述实现方式的区块说明；`research_system.py` 里 "available observation window" 改为 "3-month change"。提交 6d5ce2f。
+- [x] **1.6** Markets 表格按引擎排名排序。
+  - 结果（2026-11-20）：`integrateSectorEngineRows` 给每个板块加 `engineRank`，表格按它排序并显示名次（医疗保健第一，不再是半导体）。测试加在 `runtime-reconciliation-test.mjs`。提交 1b4df5b。
+- [x] **1.7** 删除未被引用的旧终端外壳组件和 `lib/mock-data/`。删之前用 grep 再确认一次没有引用，typecheck、lint、build 都要过。
+  - 结果（2026-11-20）：删除 13 个旧终端组件、`lib/types.ts`、`lib/mock-data/`，以及 `lib/data-provider.ts` 里没有调用方的 `dataProvider`。typecheck、lint、build 通过。提交 4b97905。
 
 完成标准：`npm run typecheck`、`npm run lint`、`npm run build` 通过；`frontend/scripts/` 里现有的验收脚本通过或按新界面更新。
+
+P1 验收（2026-11-20）：typecheck、lint、build 通过；无浏览器的脚本（runtime-reconciliation-test、status-words-test、chart-normalization-test、fair-value-scale-test、macro-coverage-test、phase6-2-unit-test）通过；浏览器脚本 markets-runtime-acceptance、dashboard-phase4-smoke、markets-phase3-smoke、macro-correction-smoke、research-capability-smoke 对 3010 端口的 dev server 通过（截图写到暂存目录，没有覆盖仓库里的 artifacts）。markets-runtime-acceptance 和 macro-correction-smoke 按新界面更新了断言（提交 d6a9788）。没有运行会触发实时刷新的 runtime-reconciliation-browser 和 phase6-2-integration，因为刷新会覆盖缓存。运行前后 `.cache/` 校验和一致。
+
+P1 发现的遗留问题：`compute_macro` 只记录 10 年期和前端利率的观测日期，30 年期没有（`Valuation_model.py` 的 `tyx_observed_at` 缺失），所以 2Y/10Y/30Y 同日曲线被正确地隐藏。补这个字段需要改 `compute_macro` 的输出并刷新缓存，未做。
 
 ### P2 信号历史库
 
