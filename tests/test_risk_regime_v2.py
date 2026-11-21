@@ -30,3 +30,10 @@ def test_boundary_equity_decline_is_not_calm():
     assert report["regime_v2"] != rr.NO_DOMINANT_STRESS
     edge = analyze_risk_regime(calm(spy=-0.024))
     assert edge["regime_v2"] == rr.NO_DOMINANT_STRESS
+
+
+def test_v2_is_the_default_label_and_legacy_is_kept():
+    report = analyze_risk_regime(calm())
+    assert report["regime"] == rr.NO_DOMINANT_STRESS and report["published_regime"] == rr.NO_DOMINANT_STRESS
+    assert report["legacy_regime"] in {"Healthy Rotation", "Narrow Leadership Unwind", "Broad Risk-Off", "Liquidity / Inflation Stress"}
+    assert report["confidence"] in {"Moderate", "Low"}

@@ -597,7 +597,13 @@ def analyze_risk_regime(data, lookbacks=None):
 
     available_points = sum(1 for item in evidence.values() if item["label"] != "Unavailable")
     coverage = available_points / len(evidence)
-    confidence = confidence_label(support[regime], conflict[regime], coverage)
+    legacy_regime, legacy_confidence = regime, confidence_label(support[regime], conflict[regime], coverage)
+    # Checklist 7.1 step 2: v2 is the default label; the legacy label stays in the payload.
+    regime = regime_v2
+    if regime == NO_DOMINANT_STRESS:
+        confidence = "Moderate" if coverage >= 0.70 else "Low"
+    else:
+        confidence = legacy_confidence
     published_regime = regime if coverage >= 0.55 else "Insufficient Evidence"
 
     matrix = [
@@ -618,6 +624,8 @@ def analyze_risk_regime(data, lookbacks=None):
     return {
         "regime": regime,
         "regime_v2": regime_v2,
+        "legacy_regime": legacy_regime,
+        "legacy_confidence": legacy_confidence,
         "regime_v2_rule": "No Dominant Stress when no explicit regime rule fires and SPY 20D > -2.5%, momentum is not down 4% vs SPY, HYG-LQD > -2.5%, VIX is not in high stress and Treasuries are hedging.",
         "published_regime": published_regime,
         "publication_state": "AVAILABLE" if coverage >= 0.55 else "INSUFFICIENT",
@@ -632,8 +640,8 @@ def analyze_risk_regime(data, lookbacks=None):
         "company_context": company_context_for(regime),
         "sector_context": sector_context_for(regime),
         "unavailable": sorted(set(unavailable)),
-        "supporting_evidence": support[regime],
-        "conflicting_evidence": conflict[regime],
+        "supporting_evidence": support.get(regime, 0),
+        "conflicting_evidence": conflict.get(regime, 0),
     }
 
 
