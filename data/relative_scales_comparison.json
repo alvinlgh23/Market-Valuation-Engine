@@ -1,0 +1,1100 @@
+[
+  {
+    "ticker": "NVDA",
+    "old_quality_score": 95.39482919918537,
+    "old_heat": 15,
+    "old_valuation_heat": 15,
+    "quality_percentile_in_peers": 0.5833333333333334,
+    "peers": 12,
+    "price_to_sales": 14.037236987115199,
+    "price_to_sales_percentile_own_history": 0.0011049723756906078,
+    "valuation_state": "AVAILABLE",
+    "detail": {
+      "ticker": "NVDA",
+      "peer_group": [
+        "MU",
+        "WDC",
+        "SNDK",
+        "AVGO",
+        "AMD",
+        "TSM",
+        "ASML",
+        "LRCX",
+        "KLAC",
+        "AMAT",
+        "MRVL"
+      ],
+      "quality": {
+        "peers": 12,
+        "metrics": {
+          "rev_growth": {
+            "value": 1.032,
+            "percentile": 0.8333333333333334,
+            "peers_with_data": 12
+          },
+          "earnings_growth": {
+            "value": 1.077,
+            "percentile": 0.6666666666666666,
+            "peers_with_data": 12
+          },
+          "op_margin": {
+            "value": 0.66082,
+            "percentile": 0.8333333333333334,
+            "peers_with_data": 12
+          },
+          "margin_expansion": {
+            "value": 0.053937651784697005,
+            "percentile": 0.3333333333333333,
+            "peers_with_data": 12
+          },
+          "accel": {
+            "value": 1.0585114348672526,
+            "percentile": 0.8333333333333334,
+            "peers_with_data": 12
+          },
+          "score": {
+            "value": 95.39482919918537,
+            "percentile": 0.5833333333333334,
+            "peers_with_data": 12
+          }
+        },
+        "state": "AVAILABLE",
+        "quality_percentile": 0.5833333333333334
+      },
+      "valuation": {
+        "state": "AVAILABLE",
+        "metric": "price_to_sales",
+        "current": 14.037236987115199,
+        "percentile": 0.0011049723756906078,
+        "first": "2023-04-17",
+        "last": "2026-11-20",
+        "observations": 905,
+        "note": "Uses today's share count for past dates; ignores buybacks and dilution."
+      },
+      "peer_basis": "sector ETF candidate list (proxy for archetype)"
+    }
+  },
+  {
+    "ticker": "MSFT",
+    "old_quality_score": 84.8930222555827,
+    "old_heat": 45,
+    "old_valuation_heat": 15,
+    "quality_percentile_in_peers": 0.7,
+    "peers": 10,
+    "price_to_sales": 10.843028404583034,
+    "price_to_sales_percentile_own_history": 0.13092269326683292,
+    "valuation_state": "AVAILABLE",
+    "detail": {
+      "ticker": "MSFT",
+      "peer_group": [
+        "AAPL",
+        "NVDA",
+        "AVGO",
+        "ORCL",
+        "CRM",
+        "ADBE",
+        "AMD",
+        "NOW",
+        "PANW"
+      ],
+      "quality": {
+        "peers": 10,
+        "metrics": {
+          "rev_growth": {
+            "value": 0.188,
+            "percentile": 0.4,
+            "peers_with_data": 10
+          },
+          "earnings_growth": {
+            "value": 0.323,
+            "percentile": 0.5,
+            "peers_with_data": 10
+          },
+          "op_margin": {
+            "value": 0.47104,
+            "percentile": 0.8,
+            "peers_with_data": 10
+          },
+          "margin_expansion": {
+            "value": 0.008838773503472563,
+            "percentile": 0.6,
+            "peers_with_data": 10
+          },
+          "accel": {
+            "value": 0.18804475171552526,
+            "percentile": 0.4,
+            "peers_with_data": 10
+          },
+          "score": {
+            "value": 84.8930222555827,
+            "percentile": 0.7,
+            "peers_with_data": 10
+          }
+        },
+        "state": "AVAILABLE",
+        "quality_percentile": 0.7
+      },
+      "valuation": {
+        "state": "AVAILABLE",
+        "metric": "price_to_sales",
+        "current": 10.843028404583034,
+        "percentile": 0.13092269326683292,
+        "first": "2023-09-13",
+        "last": "2026-11-20",
+        "observations": 802,
+        "note": "Uses today's share count for past dates; ignores buybacks and dilution."
+      },
+      "peer_basis": "sector ETF candidate list (proxy for archetype)"
+    }
+  },
+  {
+    "ticker": "PLTR",
+    "old_quality_score": 96.25,
+    "old_heat": 60,
+    "old_valuation_heat": 45,
+    "quality_percentile_in_peers": 1.0,
+    "peers": 11,
+    "price_to_sales": 73.95668768011073,
+    "price_to_sales_percentile_own_history": 0.5766738660907127,
+    "valuation_state": "AVAILABLE",
+    "detail": {
+      "ticker": "PLTR",
+      "peer_group": [
+        "MSFT",
+        "AAPL",
+        "NVDA",
+        "AVGO",
+        "ORCL",
+        "CRM",
+        "ADBE",
+        "AMD",
+        "NOW",
+        "PANW"
+      ],
+      "quality": {
+        "peers": 11,
+        "metrics": {
+          "rev_growth": {
+            "value": 0.959,
+            "percentile": 0.9090909090909091,
+            "peers_with_data": 11
+          },
+          "earnings_growth": {
+            "value": 1.444,
+            "percentile": 0.9090909090909091,
+            "peers_with_data": 11
+          },
+          "op_margin": {
+            "value": 0.45638,
+            "percentile": 0.7272727272727273,
+            "peers_with_data": 11
+          },
+          "margin_expansion": {
+            "value": 0.13597775833140335,
+            "percentile": 0.9090909090909091,
+            "peers_with_data": 11
+          },
+          "accel": {
+            "value": 0.9587051643733087,
+            "percentile": 0.9090909090909091,
+            "peers_with_data": 11
+          },
+          "score": {
+            "value": 96.25,
+            "percentile": 1.0,
+            "peers_with_data": 11
+          }
+        },
+        "state": "AVAILABLE",
+        "quality_percentile": 1.0
+      },
+      "valuation": {
+        "state": "AVAILABLE",
+        "metric": "price_to_sales",
+        "current": 73.95668768011073,
+        "percentile": 0.5766738660907127,
+        "first": "2023-03-16",
+        "last": "2026-11-20",
+        "observations": 926,
+        "note": "Uses today's share count for past dates; ignores buybacks and dilution."
+      },
+      "peer_basis": "sector ETF candidate list (proxy for archetype)"
+    }
+  },
+  {
+    "ticker": "TSM",
+    "old_quality_score": 96.25,
+    "old_heat": 5,
+    "old_valuation_heat": 5,
+    "quality_percentile_in_peers": 1.0,
+    "peers": 12,
+    "price_to_sales": null,
+    "price_to_sales_percentile_own_history": null,
+    "valuation_state": "CURRENCY_MISMATCH",
+    "detail": {
+      "ticker": "TSM",
+      "peer_group": [
+        "MU",
+        "WDC",
+        "SNDK",
+        "AVGO",
+        "NVDA",
+        "AMD",
+        "ASML",
+        "LRCX",
+        "KLAC",
+        "AMAT",
+        "MRVL"
+      ],
+      "quality": {
+        "peers": 12,
+        "metrics": {
+          "rev_growth": {
+            "value": 0.509,
+            "percentile": 0.3333333333333333,
+            "peers_with_data": 12
+          },
+          "earnings_growth": {
+            "value": 0.687,
+            "percentile": 0.4166666666666667,
+            "peers_with_data": 12
+          },
+          "op_margin": {
+            "value": 0.57961,
+            "percentile": 0.75,
+            "peers_with_data": 12
+          },
+          "margin_expansion": {
+            "value": 0.08075466341772042,
+            "percentile": 0.5833333333333334,
+            "peers_with_data": 12
+          },
+          "accel": {
+            "value": 0.5094611917263259,
+            "percentile": 0.4166666666666667,
+            "peers_with_data": 12
+          },
+          "score": {
+            "value": 96.25,
+            "percentile": 1.0,
+            "peers_with_data": 12
+          }
+        },
+        "state": "AVAILABLE",
+        "quality_percentile": 1.0
+      },
+      "valuation": {
+        "state": "CURRENCY_MISMATCH",
+        "metric": "price_to_sales",
+        "reason": "Revenue is reported in TWD and the price is quoted in USD; no FX conversion is applied."
+      },
+      "peer_basis": "sector ETF candidate list (proxy for archetype)"
+    }
+  },
+  {
+    "ticker": "AMD",
+    "old_quality_score": 90.94722888523802,
+    "old_heat": 25,
+    "old_valuation_heat": 25,
+    "quality_percentile_in_peers": 0.3333333333333333,
+    "peers": 12,
+    "price_to_sales": 20.277528299592788,
+    "price_to_sales_percentile_own_history": 0.857451403887689,
+    "valuation_state": "AVAILABLE",
+    "detail": {
+      "ticker": "AMD",
+      "peer_group": [
+        "MU",
+        "WDC",
+        "SNDK",
+        "AVGO",
+        "NVDA",
+        "TSM",
+        "ASML",
+        "LRCX",
+        "KLAC",
+        "AMAT",
+        "MRVL"
+      ],
+      "quality": {
+        "peers": 12,
+        "metrics": {
+          "rev_growth": {
+            "value": 0.447,
+            "percentile": 0.25,
+            "peers_with_data": 12
+          },
+          "earnings_growth": {
+            "value": 0.938,
+            "percentile": 0.5833333333333334,
+            "peers_with_data": 12
+          },
+          "op_margin": {
+            "value": 0.17820999,
+            "percentile": 0.16666666666666666,
+            "peers_with_data": 12
+          },
+          "margin_expansion": {
+            "value": 0.07434996589931764,
+            "percentile": 0.5,
+            "peers_with_data": 12
+          },
+          "accel": {
+            "value": 0.4467878001297858,
+            "percentile": 0.3333333333333333,
+            "peers_with_data": 12
+          },
+          "score": {
+            "value": 90.94722888523802,
+            "percentile": 0.3333333333333333,
+            "peers_with_data": 12
+          }
+        },
+        "state": "AVAILABLE",
+        "quality_percentile": 0.3333333333333333
+      },
+      "valuation": {
+        "state": "AVAILABLE",
+        "metric": "price_to_sales",
+        "current": 20.277528299592788,
+        "percentile": 0.857451403887689,
+        "first": "2023-03-16",
+        "last": "2026-11-20",
+        "observations": 926,
+        "note": "Uses today's share count for past dates; ignores buybacks and dilution."
+      },
+      "peer_basis": "sector ETF candidate list (proxy for archetype)"
+    }
+  },
+  {
+    "ticker": "COST",
+    "old_quality_score": 75.70916641458531,
+    "old_heat": 82,
+    "old_valuation_heat": 35,
+    "quality_percentile_in_peers": 1.0,
+    "peers": 10,
+    "price_to_sales": 1.6110459463471953,
+    "price_to_sales_percentile_own_history": 0.6451187335092349,
+    "valuation_state": "AVAILABLE",
+    "detail": {
+      "ticker": "COST",
+      "peer_group": [
+        "WMT",
+        "PG",
+        "KO",
+        "PEP",
+        "PM",
+        "MDLZ",
+        "CL",
+        "MO",
+        "KMB"
+      ],
+      "quality": {
+        "peers": 10,
+        "metrics": {
+          "rev_growth": {
+            "value": 0.111,
+            "percentile": 1.0,
+            "peers_with_data": 10
+          },
+          "earnings_growth": {
+            "value": 0.15,
+            "percentile": 0.7,
+            "peers_with_data": 10
+          },
+          "op_margin": {
+            "value": 0.03797,
+            "percentile": 0.1,
+            "peers_with_data": 10
+          },
+          "margin_expansion": {
+            "value": 0.0009298302395983268,
+            "percentile": 0.5,
+            "peers_with_data": 10
+          },
+          "accel": {
+            "value": 0.11104275964529453,
+            "percentile": 1.0,
+            "peers_with_data": 10
+          },
+          "score": {
+            "value": 75.70916641458531,
+            "percentile": 1.0,
+            "peers_with_data": 10
+          }
+        },
+        "state": "AVAILABLE",
+        "quality_percentile": 1.0
+      },
+      "valuation": {
+        "state": "AVAILABLE",
+        "metric": "price_to_sales",
+        "current": 1.6110459463471953,
+        "percentile": 0.6451187335092349,
+        "first": "2023-11-14",
+        "last": "2026-11-20",
+        "observations": 758,
+        "note": "Uses today's share count for past dates; ignores buybacks and dilution."
+      },
+      "peer_basis": "sector ETF candidate list (proxy for archetype)"
+    }
+  },
+  {
+    "ticker": "LLY",
+    "old_quality_score": 85.60943160373007,
+    "old_heat": 55,
+    "old_valuation_heat": 25,
+    "quality_percentile_in_peers": 1.0,
+    "peers": 10,
+    "price_to_sales": 18.409787288273634,
+    "price_to_sales_percentile_own_history": 0.5572354211663066,
+    "valuation_state": "AVAILABLE",
+    "detail": {
+      "ticker": "LLY",
+      "peer_group": [
+        "UNH",
+        "JNJ",
+        "ABBV",
+        "MRK",
+        "TMO",
+        "ABT",
+        "ISRG",
+        "AMGN",
+        "DHR"
+      ],
+      "quality": {
+        "peers": 10,
+        "metrics": {
+          "rev_growth": {
+            "value": 0.386,
+            "percentile": 1.0,
+            "peers_with_data": 10
+          },
+          "earnings_growth": {
+            "value": 0.163,
+            "percentile": 0.6,
+            "peers_with_data": 10
+          },
+          "op_margin": {
+            "value": 0.51254004,
+            "percentile": 1.0,
+            "peers_with_data": 10
+          },
+          "margin_expansion": {
+            "value": 0.060173153637487875,
+            "percentile": 0.8,
+            "peers_with_data": 10
+          },
+          "accel": {
+            "value": 0.38611442531674345,
+            "percentile": 1.0,
+            "peers_with_data": 10
+          },
+          "score": {
+            "value": 85.60943160373007,
+            "percentile": 1.0,
+            "peers_with_data": 10
+          }
+        },
+        "state": "AVAILABLE",
+        "quality_percentile": 1.0
+      },
+      "valuation": {
+        "state": "AVAILABLE",
+        "metric": "price_to_sales",
+        "current": 18.409787288273634,
+        "percentile": 0.5572354211663066,
+        "first": "2023-03-16",
+        "last": "2026-11-20",
+        "observations": 926,
+        "note": "Uses today's share count for past dates; ignores buybacks and dilution."
+      },
+      "peer_basis": "sector ETF candidate list (proxy for archetype)"
+    }
+  },
+  {
+    "ticker": "XOM",
+    "old_quality_score": 81.71431554487867,
+    "old_heat": 20,
+    "old_valuation_heat": 5,
+    "quality_percentile_in_peers": 0.3,
+    "peers": 10,
+    "price_to_sales": 2.0148957911220826,
+    "price_to_sales_percentile_own_history": 0.9287257019438445,
+    "valuation_state": "AVAILABLE",
+    "detail": {
+      "ticker": "XOM",
+      "peer_group": [
+        "CVX",
+        "COP",
+        "SLB",
+        "EOG",
+        "MPC",
+        "VLO",
+        "PSX",
+        "OXY",
+        "HAL"
+      ],
+      "quality": {
+        "peers": 10,
+        "metrics": {
+          "rev_growth": {
+            "value": 0.326,
+            "percentile": 0.5,
+            "peers_with_data": 10
+          },
+          "earnings_growth": {
+            "value": 1.114,
+            "percentile": 0.3,
+            "peers_with_data": 10
+          },
+          "op_margin": {
+            "value": 0.12875,
+            "percentile": 0.4,
+            "peers_with_data": 10
+          },
+          "margin_expansion": {
+            "value": 0.059430973027182504,
+            "percentile": 0.3,
+            "peers_with_data": 10
+          },
+          "accel": {
+            "value": 0.3260731300476414,
+            "percentile": 0.5,
+            "peers_with_data": 10
+          },
+          "score": {
+            "value": 81.71431554487867,
+            "percentile": 0.3,
+            "peers_with_data": 10
+          }
+        },
+        "state": "AVAILABLE",
+        "quality_percentile": 0.3
+      },
+      "valuation": {
+        "state": "AVAILABLE",
+        "metric": "price_to_sales",
+        "current": 2.0148957911220826,
+        "percentile": 0.9287257019438445,
+        "first": "2023-03-16",
+        "last": "2026-11-20",
+        "observations": 926,
+        "note": "Uses today's share count for past dates; ignores buybacks and dilution."
+      },
+      "peer_basis": "sector ETF candidate list (proxy for archetype)"
+    }
+  },
+  {
+    "ticker": "JPM",
+    "old_quality_score": 66.29946713568194,
+    "old_heat": 20,
+    "old_valuation_heat": 5,
+    "quality_percentile_in_peers": 0.2,
+    "peers": 10,
+    "price_to_sales": 4.53483652514509,
+    "price_to_sales_percentile_own_history": 0.7224622030237581,
+    "valuation_state": "AVAILABLE",
+    "detail": {
+      "ticker": "JPM",
+      "peer_group": [
+        "BRK-B",
+        "V",
+        "MA",
+        "BAC",
+        "WFC",
+        "GS",
+        "MS",
+        "AXP",
+        "BLK"
+      ],
+      "quality": {
+        "peers": 10,
+        "metrics": {
+          "rev_growth": {
+            "value": 0.102,
+            "percentile": 0.3,
+            "peers_with_data": 10
+          },
+          "earnings_growth": {
+            "value": 0.099,
+            "percentile": 0.4,
+            "peers_with_data": 10
+          },
+          "op_margin": {
+            "value": 0.44787997,
+            "percentile": 0.8,
+            "peers_with_data": 10
+          },
+          "margin_expansion": {
+            "value": -0.002383433983006278,
+            "percentile": 0.4,
+            "peers_with_data": 10
+          },
+          "accel": {
+            "value": 0.0805944432479,
+            "percentile": 0.2,
+            "peers_with_data": 10
+          },
+          "score": {
+            "value": 66.29946713568194,
+            "percentile": 0.2,
+            "peers_with_data": 10
+          }
+        },
+        "state": "AVAILABLE",
+        "quality_percentile": 0.2
+      },
+      "valuation": {
+        "state": "AVAILABLE",
+        "metric": "price_to_sales",
+        "current": 4.53483652514509,
+        "percentile": 0.7224622030237581,
+        "first": "2023-03-16",
+        "last": "2026-11-20",
+        "observations": 926,
+        "note": "Uses today's share count for past dates; ignores buybacks and dilution."
+      },
+      "peer_basis": "sector ETF candidate list (proxy for archetype)"
+    }
+  },
+  {
+    "ticker": "UBER",
+    "old_quality_score": 60.953758578361615,
+    "old_heat": 25,
+    "old_valuation_heat": 25,
+    "quality_percentile_in_peers": 0.09090909090909091,
+    "peers": 11,
+    "price_to_sales": 2.4914791894082966,
+    "price_to_sales_percentile_own_history": 0.056155507559395246,
+    "valuation_state": "AVAILABLE",
+    "detail": {
+      "ticker": "UBER",
+      "peer_group": [
+        "MSFT",
+        "AAPL",
+        "NVDA",
+        "AVGO",
+        "ORCL",
+        "CRM",
+        "ADBE",
+        "AMD",
+        "NOW",
+        "PANW"
+      ],
+      "quality": {
+        "peers": 11,
+        "metrics": {
+          "rev_growth": {
+            "value": 0.096,
+            "percentile": 0.09090909090909091,
+            "peers_with_data": 11
+          },
+          "earnings_growth": {
+            "value": -0.92,
+            "percentile": 0.09090909090909091,
+            "peers_with_data": 11
+          },
+          "op_margin": {
+            "value": 0.12444,
+            "percentile": 0.18181818181818182,
+            "peers_with_data": 11
+          },
+          "margin_expansion": {
+            "value": 0.015348925679148223,
+            "percentile": 0.6363636363636364,
+            "peers_with_data": 11
+          },
+          "accel": {
+            "value": 0.09645800846513697,
+            "percentile": 0.09090909090909091,
+            "peers_with_data": 11
+          },
+          "score": {
+            "value": 60.953758578361615,
+            "percentile": 0.09090909090909091,
+            "peers_with_data": 11
+          }
+        },
+        "state": "AVAILABLE",
+        "quality_percentile": 0.09090909090909091
+      },
+      "valuation": {
+        "state": "AVAILABLE",
+        "metric": "price_to_sales",
+        "current": 2.4914791894082966,
+        "percentile": 0.056155507559395246,
+        "first": "2023-03-16",
+        "last": "2026-11-20",
+        "observations": 926,
+        "note": "Uses today's share count for past dates; ignores buybacks and dilution."
+      },
+      "peer_basis": "sector ETF candidate list (proxy for archetype)"
+    }
+  },
+  {
+    "ticker": "V",
+    "old_quality_score": 79.84378003576178,
+    "old_heat": 65,
+    "old_valuation_heat": 35,
+    "quality_percentile_in_peers": 0.7,
+    "peers": 10,
+    "price_to_sales": 17.325351062294267,
+    "price_to_sales_percentile_own_history": 0.9538670284938942,
+    "valuation_state": "AVAILABLE",
+    "detail": {
+      "ticker": "V",
+      "peer_group": [
+        "BRK-B",
+        "JPM",
+        "MA",
+        "BAC",
+        "WFC",
+        "GS",
+        "MS",
+        "AXP",
+        "BLK"
+      ],
+      "quality": {
+        "peers": 10,
+        "metrics": {
+          "rev_growth": {
+            "value": 0.132,
+            "percentile": 0.7,
+            "peers_with_data": 10
+          },
+          "earnings_growth": {
+            "value": 0.219,
+            "percentile": 0.7,
+            "peers_with_data": 10
+          },
+          "op_margin": {
+            "value": 0.66306996,
+            "percentile": 1.0,
+            "peers_with_data": 10
+          },
+          "margin_expansion": {
+            "value": -0.020212417957736095,
+            "percentile": 0.1,
+            "peers_with_data": 10
+          },
+          "accel": {
+            "value": 0.13194703468854896,
+            "percentile": 0.6,
+            "peers_with_data": 10
+          },
+          "score": {
+            "value": 79.84378003576178,
+            "percentile": 0.7,
+            "peers_with_data": 10
+          }
+        },
+        "state": "AVAILABLE",
+        "quality_percentile": 0.7
+      },
+      "valuation": {
+        "state": "AVAILABLE",
+        "metric": "price_to_sales",
+        "current": 17.325351062294267,
+        "percentile": 0.9538670284938942,
+        "first": "2023-12-14",
+        "last": "2026-11-20",
+        "observations": 737,
+        "note": "Uses today's share count for past dates; ignores buybacks and dilution."
+      },
+      "peer_basis": "sector ETF candidate list (proxy for archetype)"
+    }
+  },
+  {
+    "ticker": "WMT",
+    "old_quality_score": 61.503778596366054,
+    "old_heat": 50,
+    "old_valuation_heat": 35,
+    "quality_percentile_in_peers": 0.1,
+    "peers": 10,
+    "price_to_sales": 1.4234092449048505,
+    "price_to_sales_percentile_own_history": 0.9281767955801105,
+    "valuation_state": "AVAILABLE",
+    "detail": {
+      "ticker": "WMT",
+      "peer_group": [
+        "COST",
+        "PG",
+        "KO",
+        "PEP",
+        "PM",
+        "MDLZ",
+        "CL",
+        "MO",
+        "KMB"
+      ],
+      "quality": {
+        "peers": 10,
+        "metrics": {
+          "rev_growth": {
+            "value": 0.059,
+            "percentile": 0.8,
+            "peers_with_data": 10
+          },
+          "earnings_growth": {
+            "value": -0.091,
+            "percentile": 0.1,
+            "peers_with_data": 10
+          },
+          "op_margin": {
+            "value": 0.03938,
+            "percentile": 0.2,
+            "peers_with_data": 10
+          },
+          "margin_expansion": {
+            "value": 0.008855742189265034,
+            "percentile": 0.6,
+            "peers_with_data": 10
+          },
+          "accel": {
+            "value": 0.05938489983201989,
+            "percentile": 0.7,
+            "peers_with_data": 10
+          },
+          "score": {
+            "value": 61.503778596366054,
+            "percentile": 0.1,
+            "peers_with_data": 10
+          }
+        },
+        "state": "AVAILABLE",
+        "quality_percentile": 0.1
+      },
+      "valuation": {
+        "state": "AVAILABLE",
+        "metric": "price_to_sales",
+        "current": 1.4234092449048505,
+        "percentile": 0.9281767955801105,
+        "first": "2023-04-17",
+        "last": "2026-11-20",
+        "observations": 905,
+        "note": "Uses today's share count for past dates; ignores buybacks and dilution."
+      },
+      "peer_basis": "sector ETF candidate list (proxy for archetype)"
+    }
+  },
+  {
+    "ticker": "META",
+    "old_quality_score": 84.75,
+    "old_heat": 5,
+    "old_valuation_heat": 5,
+    "quality_percentile_in_peers": 1.0,
+    "peers": 10,
+    "price_to_sales": 6.17997443238644,
+    "price_to_sales_percentile_own_history": 0.2019438444924406,
+    "valuation_state": "AVAILABLE",
+    "detail": {
+      "ticker": "META",
+      "peer_group": [
+        "GOOGL",
+        "NFLX",
+        "TMUS",
+        "DIS",
+        "SPOT",
+        "VZ",
+        "T",
+        "CMCSA",
+        "CHTR"
+      ],
+      "quality": {
+        "peers": 10,
+        "metrics": {
+          "rev_growth": {
+            "value": 0.261,
+            "percentile": 1.0,
+            "peers_with_data": 10
+          },
+          "earnings_growth": {
+            "value": 2.648,
+            "percentile": 1.0,
+            "peers_with_data": 9
+          },
+          "op_margin": {
+            "value": 0.37777,
+            "percentile": 1.0,
+            "peers_with_data": 10
+          },
+          "margin_expansion": {
+            "value": -0.1996959628643296,
+            "percentile": 0.1,
+            "peers_with_data": 10
+          },
+          "accel": {
+            "value": 0.2607041099098395,
+            "percentile": 1.0,
+            "peers_with_data": 10
+          },
+          "score": {
+            "value": 84.75,
+            "percentile": 1.0,
+            "peers_with_data": 10
+          }
+        },
+        "state": "AVAILABLE",
+        "quality_percentile": 1.0
+      },
+      "valuation": {
+        "state": "AVAILABLE",
+        "metric": "price_to_sales",
+        "current": 6.17997443238644,
+        "percentile": 0.2019438444924406,
+        "first": "2023-03-16",
+        "last": "2026-11-20",
+        "observations": 926,
+        "note": "Uses today's share count for past dates; ignores buybacks and dilution."
+      },
+      "peer_basis": "sector ETF candidate list (proxy for archetype)"
+    }
+  },
+  {
+    "ticker": "CRM",
+    "old_quality_score": 78.50827161427938,
+    "old_heat": 20,
+    "old_valuation_heat": 5,
+    "quality_percentile_in_peers": 0.4,
+    "peers": 10,
+    "price_to_sales": 3.579777386669363,
+    "price_to_sales_percentile_own_history": 0.06298342541436464,
+    "valuation_state": "AVAILABLE",
+    "detail": {
+      "ticker": "CRM",
+      "peer_group": [
+        "MSFT",
+        "AAPL",
+        "NVDA",
+        "AVGO",
+        "ORCL",
+        "ADBE",
+        "AMD",
+        "NOW",
+        "PANW"
+      ],
+      "quality": {
+        "peers": 10,
+        "metrics": {
+          "rev_growth": {
+            "value": 0.108,
+            "percentile": 0.1,
+            "peers_with_data": 10
+          },
+          "earnings_growth": {
+            "value": 1.189,
+            "percentile": 0.9,
+            "peers_with_data": 10
+          },
+          "op_margin": {
+            "value": 0.21519,
+            "percentile": 0.4,
+            "peers_with_data": 10
+          },
+          "margin_expansion": {
+            "value": -0.014463595247358463,
+            "percentile": 0.4,
+            "peers_with_data": 10
+          },
+          "accel": {
+            "value": 0.1083431027745212,
+            "percentile": 0.1,
+            "peers_with_data": 10
+          },
+          "score": {
+            "value": 78.50827161427938,
+            "percentile": 0.4,
+            "peers_with_data": 10
+          }
+        },
+        "state": "AVAILABLE",
+        "quality_percentile": 0.4
+      },
+      "valuation": {
+        "state": "AVAILABLE",
+        "metric": "price_to_sales",
+        "current": 3.579777386669363,
+        "percentile": 0.06298342541436464,
+        "first": "2023-04-17",
+        "last": "2026-11-20",
+        "observations": 905,
+        "note": "Uses today's share count for past dates; ignores buybacks and dilution."
+      },
+      "peer_basis": "sector ETF candidate list (proxy for archetype)"
+    }
+  },
+  {
+    "ticker": "CAT",
+    "old_quality_score": 81.29118988724616,
+    "old_heat": 5,
+    "old_valuation_heat": 5,
+    "quality_percentile_in_peers": 1.0,
+    "peers": 10,
+    "price_to_sales": 3.455872282533643,
+    "price_to_sales_percentile_own_history": 0.6943844492440605,
+    "valuation_state": "AVAILABLE",
+    "detail": {
+      "ticker": "CAT",
+      "peer_group": [
+        "GE",
+        "RTX",
+        "UNP",
+        "HON",
+        "ETN",
+        "DE",
+        "BA",
+        "LMT",
+        "UPS"
+      ],
+      "quality": {
+        "peers": 10,
+        "metrics": {
+          "rev_growth": {
+            "value": 0.173,
+            "percentile": 0.9,
+            "peers_with_data": 10
+          },
+          "earnings_growth": {
+            "value": 0.461,
+            "percentile": 1.0,
+            "peers_with_data": 9
+          },
+          "op_margin": {
+            "value": 0.18761,
+            "percentile": 0.7,
+            "peers_with_data": 10
+          },
+          "margin_expansion": {
+            "value": 0.030716563374659445,
+            "percentile": 0.9,
+            "peers_with_data": 10
+          },
+          "accel": {
+            "value": 0.17258192538836603,
+            "percentile": 0.9,
+            "peers_with_data": 10
+          },
+          "score": {
+            "value": 81.29118988724616,
+            "percentile": 1.0,
+            "peers_with_data": 10
+          }
+        },
+        "state": "AVAILABLE",
+        "quality_percentile": 1.0
+      },
+      "valuation": {
+        "state": "AVAILABLE",
+        "metric": "price_to_sales",
+        "current": 3.455872282533643,
+        "percentile": 0.6943844492440605,
+        "first": "2023-03-16",
+        "last": "2026-11-20",
+        "observations": 926,
+        "note": "Uses today's share count for past dates; ignores buybacks and dilution."
+      },
+      "peer_basis": "sector ETF candidate list (proxy for archetype)"
+    }
+  }
+]
