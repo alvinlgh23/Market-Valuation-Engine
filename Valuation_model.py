@@ -1369,6 +1369,12 @@ def company_quality_rows(tickers):
         rows.append({
             "ticker": ticker,
             "name": safe(info, "shortName", "longName", default=ticker),
+            "sector": safe(info, "sector"),
+            "industry": safe(info, "industry"),
+            "beta": safe(info, "beta"),
+            "market_cap": safe(info, "marketCap"),
+            "quote_type": safe(info, "quoteType"),
+            "summary": safe(info, "longBusinessSummary", default=""),
             "rev_growth": rev_growth,
             "earnings_growth": earnings_growth,
             "op_margin": op_margin,
@@ -1582,17 +1588,91 @@ def momentum_weakness_label(heat):
     return None
 
 
-AI_LEADERS = {"NVDA", "AVGO", "TSM", "ASML", "AMD", "MRVL"}
-MATURE_QUALITY = {"AAPL", "MSFT", "GOOGL", "META", "V", "MA", "COST", "BRK-B"}
-LIQUIDITY_SENSITIVE = {"COIN", "MSTR", "MARA", "RIOT", "CLSK", "IREN", "HOOD", "IBIT"}
-NARRATIVE_DECAY = {"PYPL"}
-IDENTITY_UNCERTAINTY = {"RBLX"}
-SPECULATIVE_TURNAROUND = {"INTC"}
-EXPENSIVE_CONVICTION_GROWTH = {"PLTR"}
-HARD_ASSET_ROTATION = {
-    "NEM", "GOLD", "AEM", "WPM", "FNV", "KGC", "PAAS", "AGI", "GFI", "HMY",
-    "FCX", "SCCO", "TECK", "BHP", "RIO", "VALE", "XOM", "CVX", "COP", "CF", "MOS", "AA",
-}
+# Checklist 6.3: the narrative classifier used hand-maintained ticker lists, so a company
+# outside the lists could never receive these labels. Each list is now a rule over measured
+# inputs from company_quality_rows and heat_rows. Thresholds are stated here and are model
+# policy, not calibrated estimates.
+CRYPTO_TERMS = ("bitcoin", "crypto", "digital asset", "blockchain")
+SEMICONDUCTOR_TERMS = ("semiconductor",)
+HARD_ASSET_TERMS = ("gold", "silver", "copper", "mining", "metals", "aluminum", "oil & gas", "fertilizer", "agricultural inputs", "steel")
+
+
+def _text(quality, *keys):
+    return " ".join(str(quality.get(key) or "") for key in keys).lower()
+
+
+def is_liquidity_sensitive(quality, heat):
+    """Digital-asset industry or name, or equity beta of at least 2.5 (was COIN, MSTR, miners, HOOD, IBIT).
+
+    The business summary is not searched: payment companies mention crypto without being crypto assets.
+    """
+    beta = quality.get("beta")
+    return any(term in _text(quality, "industry", "name") for term in CRYPTO_TERMS) or (is_number(beta) and beta >= 2.5)
+
+
+def is_ai_infrastructure_leader(quality, heat):
+    """Semiconductor business, quality >= 70, positive FCF, revenue growth >= 15% (was NVDA, AVGO, TSM, ASML, AMD, MRVL)."""
+    growth = quality.get("rev_growth")
+    return (any(term in _text(quality, "industry") for term in SEMICONDUCTOR_TERMS) and quality.get("score", 0) >= 70
+            and is_number(quality.get("fcf")) and quality["fcf"] > 0 and is_number(growth) and growth >= 0.15)
+
+
+def is_mature_institutional_quality(quality, heat):
+    """Market cap >= $200B, quality >= 70 and positive FCF (was AAPL, MSFT, GOOGL, META, V, MA, COST, BRK-B)."""
+    cap = quality.get("market_cap")
+    return is_number(cap) and cap >= 200e9 and quality.get("score", 0) >= 70 and is_number(quality.get("fcf")) and quality["fcf"] > 0
+
+
+def is_narrative_decay(quality, heat, rel_strength):
+    """Positive FCF, revenue growth < 8%, forward P/E < 15 and 3M relative strength below -5% (was PYPL)."""
+    growth, pe = quality.get("rev_growth"), heat.get("forward_pe")
+    return (is_number(quality.get("fcf")) and quality["fcf"] > 0 and is_number(growth) and growth < 0.08
+            and is_number(pe) and 0 < pe < 15 and rel_strength is not None and rel_strength < -0.05)
+
+
+def is_identity_uncertain(quality, heat):
+    """Revenue growth >= 20% with a negative operating margin (was RBLX)."""
+    growth, margin = quality.get("rev_growth"), quality.get("op_margin")
+    return is_number(growth) and growth >= 0.20 and is_number(margin) and margin < 0
+
+
+def is_speculative_turnaround(quality, heat):
+    """Market cap >= $50B, operating margin < 5% and revenue growth <= 5% (was INTC)."""
+    cap, margin, growth = quality.get("market_cap"), quality.get("op_margin"), quality.get("rev_growth")
+    return is_number(cap) and cap >= 50e9 and is_number(margin) and margin < 0.05 and (not is_number(growth) or growth <= 0.05)
+
+
+def is_expensive_conviction_growth(quality, heat):
+    """Quality >= 75, revenue growth >= 25% and forward P/E > 60 or EV/sales > 20 (was PLTR)."""
+    growth, pe, ev_sales = quality.get("rev_growth"), heat.get("forward_pe"), heat.get("ev_sales")
+    return (quality.get("score", 0) >= 75 and is_number(growth) and growth >= 0.25
+            and ((is_number(pe) and pe > 60) or (is_number(ev_sales) and ev_sales > 20)))
+
+
+# Most specific rule first: a high-beta chip leader is an AI leader, a premium-multiple grower
+# is not "mature quality", and a miner is a hard asset before it is a value or decay story.
+NARRATIVE_RULE_ORDER = ("ai_infrastructure_leader", "liquidity_sensitive", "expensive_conviction_growth", "hard_asset",
+                        "mature_institutional_quality", "narrative_decay", "identity_uncertain", "speculative_turnaround")
+
+
+def narrative_rule(quality, heat, rel_strength):
+    """Name of the first rule that matches, in NARRATIVE_RULE_ORDER, or None."""
+    checks = {
+        "ai_infrastructure_leader": lambda: is_ai_infrastructure_leader(quality, heat),
+        "liquidity_sensitive": lambda: is_liquidity_sensitive(quality, heat),
+        "expensive_conviction_growth": lambda: is_expensive_conviction_growth(quality, heat),
+        "hard_asset": lambda: is_hard_asset(quality, heat),
+        "mature_institutional_quality": lambda: is_mature_institutional_quality(quality, heat),
+        "narrative_decay": lambda: is_narrative_decay(quality, heat, rel_strength),
+        "identity_uncertain": lambda: is_identity_uncertain(quality, heat),
+        "speculative_turnaround": lambda: is_speculative_turnaround(quality, heat),
+    }
+    return next((name for name in NARRATIVE_RULE_ORDER if checks[name]()), None)
+
+
+def is_hard_asset(quality, heat):
+    """Basic materials or energy sector, or a mining/metals/oil/fertilizer industry (was a 22-ticker list)."""
+    return str(quality.get("sector") or "").lower() in {"basic materials", "energy"} or any(term in _text(quality, "industry") for term in HARD_ASSET_TERMS)
 
 
 def narrative_template(label, drivers, interpretation, market_interpretation=None):
@@ -1644,8 +1724,9 @@ def narrative_classification(quality, heat, rel_strength, pe_score):
         or (rel_strength is not None and rel_strength < 0.05)
     )
     unstable_earnings_base = forward_pe is not None and forward_pe < 0
+    rule = narrative_rule(quality, heat, rel_strength)
 
-    if ticker in LIQUIDITY_SENSITIVE:
+    if rule == "liquidity_sensitive":
         return narrative_template(
             "Liquidity-Sensitive Narrative Asset",
             [
@@ -1659,7 +1740,7 @@ def narrative_classification(quality, heat, rel_strength, pe_score):
             ],
         )
 
-    if ticker in AI_LEADERS and quality_score >= 70 and stable_fcf:
+    if rule == "ai_infrastructure_leader":
         return narrative_template(
             "Institutional AI Leader",
             [
@@ -1674,7 +1755,7 @@ def narrative_classification(quality, heat, rel_strength, pe_score):
             ],
         )
 
-    if ticker in MATURE_QUALITY and stable_fcf and quality_score >= 70:
+    if rule == "mature_institutional_quality":
         return narrative_template(
             "Mature Institutional Quality / Momentum Repair",
             [
@@ -1689,7 +1770,7 @@ def narrative_classification(quality, heat, rel_strength, pe_score):
             ],
         )
 
-    if ticker in NARRATIVE_DECAY:
+    if rule == "narrative_decay":
         return narrative_template(
             "Narrative Decay / Weakening Mature Platform",
             [
@@ -1704,7 +1785,7 @@ def narrative_classification(quality, heat, rel_strength, pe_score):
             ],
         )
 
-    if ticker in IDENTITY_UNCERTAINTY:
+    if rule == "identity_uncertain":
         return narrative_template(
             "Identity Uncertainty",
             [
@@ -1730,7 +1811,7 @@ def narrative_classification(quality, heat, rel_strength, pe_score):
             ],
         )
 
-    if ticker in SPECULATIVE_TURNAROUND:
+    if rule == "speculative_turnaround":
         return narrative_template(
             "Speculative Turnaround",
             [
@@ -1745,7 +1826,7 @@ def narrative_classification(quality, heat, rel_strength, pe_score):
             ],
         )
 
-    if ticker in EXPENSIVE_CONVICTION_GROWTH and quality_score >= 75:
+    if rule == "expensive_conviction_growth":
         drivers = [
             "strong revenue and earnings acceleration",
             "high financial quality",
@@ -1766,7 +1847,7 @@ def narrative_classification(quality, heat, rel_strength, pe_score):
             ],
         )
 
-    if ticker in HARD_ASSET_ROTATION:
+    if rule == "hard_asset":
         if stable_fcf and quality_score >= 55:
             label = "Defensive Hard-Asset Rotation"
             drivers = [
