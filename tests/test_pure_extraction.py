@@ -97,7 +97,9 @@ def test_compute_sectors_matches_pre_extraction_engine_exactly():
         expected = reference_compute_sectors()
         actual = vm.compute_sectors()
     assert [row["ticker"] for row in actual] == [row["ticker"] for row in expected]
-    assert actual == expected  # every field, including None paths, compared with ==
+    # Every pre-existing field, including None paths, is compared with ==. Checklist 7.2 adds new
+    # fields (tier, *_vol_adj, vol_adj_score, rank_in_tier) alongside; they are tested separately.
+    assert [{key: row[key] for key in reference} for row, reference in zip(actual, expected)] == expected
 
 
 def test_sector_row_from_histories_is_the_engine_row():

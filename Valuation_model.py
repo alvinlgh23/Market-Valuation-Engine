@@ -1310,6 +1310,50 @@ def sector_row_from_histories(ticker, name, hist, spy_hist):
     }
 
 
+# Checklist 7.2: 34 ETFs of very different kinds shared one leaderboard, so high-volatility
+# themes dominated both ends. Each ETF now has a tier, volatility-adjusted relative strength
+# and a rank inside its tier. score and the overall order are unchanged.
+SECTOR_TIERS = {
+    "GICS_SECTOR": ("XLK", "XLY", "XLC", "XLE", "XLF", "XLI", "XLB", "XLV", "XLU", "XLP", "XLRE"),
+    "INDUSTRY": ("SMH", "IGV", "CIBR", "XBI", "KRE", "KBE", "ITB", "XRT", "IYT", "ITA", "JETS"),
+    "THEME": ("URA", "TAN", "ICLN", "COPX", "KWEB", "QTUM", "UFO"),
+    "ASSET": ("SLV", "DBA", "IBIT", "GLD", "DBC"),
+}
+TIER_OF = {ticker: tier for tier, tickers in SECTOR_TIERS.items() for ticker in tickers}
+TIER_ORDER = tuple(SECTOR_TIERS)
+VOL_ADJ_WEIGHTS = {"rel_1m": (21, 0.35), "rel_3m": (63, 0.40), "rel_6m": (126, 0.25)}
+
+
+def vol_adjusted_fields(row, hist, spy_hist):
+    """Relative return divided by the tracking volatility of (ETF - SPY) daily returns over the same window."""
+    output = {"tier": TIER_OF.get(row["ticker"], "UNTIERED")}
+    if hist is None or spy_hist is None:
+        return output
+    daily = (hist["Close"].pct_change() - spy_hist["Close"].pct_change().reindex(hist.index)).dropna()
+    composite, weight_used = 0.0, 0.0
+    for key, (window, weight) in VOL_ADJ_WEIGHTS.items():
+        value = row.get(key)
+        tail = daily.tail(window)
+        tracking = float(tail.std()) * (window ** 0.5) if len(tail) >= window else None
+        adjusted = value / tracking if is_number(value) and tracking else None
+        output[f"{key}_vol_adj"] = adjusted
+        if adjusted is not None:
+            composite += weight * adjusted
+            weight_used += weight
+    output["vol_adj_score"] = composite / weight_used if weight_used else None
+    return output
+
+
+def rank_within_tiers(rows):
+    for tier in {row.get("tier") for row in rows}:
+        members = sorted((row for row in rows if row.get("tier") == tier and row.get("vol_adj_score") is not None), key=lambda row: row["vol_adj_score"], reverse=True)
+        for position, row in enumerate(members, 1):
+            row["rank_in_tier"] = position
+    for row in rows:
+        row.setdefault("rank_in_tier", None)
+    return rows
+
+
 def compute_sectors():
     rows = []
     spy_hist = fetch_history("SPY", "1y")
@@ -1318,10 +1362,11 @@ def compute_sectors():
         if hist is None:
             continue
         row = sector_row_from_histories(ticker, name, hist, spy_hist)
+        row.update(vol_adjusted_fields(row, hist, spy_hist))
         row["source"] = "Yahoo Finance / Python sector engine"
         row["provider_diagnostic"] = market_provider_diagnostics().get(f"history:{ticker}:1y", {})
         rows.append(row)
-    return sorted(rows, key=lambda row: row["score"], reverse=True)
+    return sorted(rank_within_tiers(rows), key=lambda row: row["score"], reverse=True)
 
 
 def company_quality_rows(tickers):
