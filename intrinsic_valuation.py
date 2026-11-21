@@ -815,9 +815,19 @@ def company_spread_scenarios(data, rates, overrides):
     }
 
 
-# ---- Checklist 7.6: longer explicit period for fast growers (parallel; not the default) ----
+# ---- Checklist 7.6: longer explicit period for fast growers, phased in above the cap ----
 GROWTH_CAPS = {"MATURE_OPERATING_COMPANY": 0.18, "GROWTH_SOFTWARE_COMPANY": 0.35, "CYCLICAL_COMPANY": 0.08}
 EXTENDED_POLICY = {"years": 10, "first_year_growth_cap": 0.50, "decay": "linear"}
+# Owner decision (2026-11-21): the ten-year model is phased in by how far observed growth exceeds
+# the type cap, so there is no jump at the cap. Weight 0 at the cap, 1 at cap + PHASE_IN_BAND.
+PHASE_IN_BAND = 0.10
+
+
+def extended_weight(observed_growth, cap):
+    """Share of the ten-year model in the headline value: 0 at or below the cap, linear to 1 at cap + band."""
+    if not _number(observed_growth) or cap is None:
+        return 0.0
+    return _clamp((observed_growth - cap) / PHASE_IN_BAND, 0.0, 1.0)
 
 
 def _dcf_extended(data, assumptions, first_growth, years=10, decay="linear"):
@@ -929,11 +939,72 @@ def extended_horizon(data, assumptions, kind):
     passed = all(all(item.values()) for item in checks.values()) and scenarios["bear"] <= scenarios["base"] <= scenarios["bull"] and bumped[0] > bumped[1] > bumped[2]
     return {
         "state": "COMPUTED", "default": False, "observed_growth": observed, "type_cap": cap, "first_year_growth": first,
+        "weight": extended_weight(observed, cap),
         "policy": dict(EXTENDED_POLICY), "fair_value": scenarios, "checks": checks, "checks_passed": passed,
         "reverse_dcf": _extended_reverse(data, assumptions["base"], years, decay), "sensitivity": sensitivity,
         "assumptions_to_state": "First-year growth cap (50%), linear decay to terminal growth and a 10-year explicit period are model policy without calibration; see sensitivity.",
-        "note": "Parallel framework for owner review (checklist 7.6); the five-year valuation remains the default.",
+        "note": "Ten-year values at full weight; the headline fair value blends them with the five-year values by `weight` (see report['fair_value']).",
     }
+
+
+def _blended_reverse(data, base_items, weight, years, decay):
+    """Solve year-1 growth so that (1 - weight) x five-year value + weight x ten-year value equals the price.
+
+    Same bounds, tolerance and boundary rule as _reverse_dcf. Both models take year-1 revenue growth
+    as the solved variable; the reported five-year CAGR is the weighted CAGR of the two paths.
+    """
+    if not _number(data.get("price")) or data["price"] <= 0 or not _number(data.get("latest_fcff")) or data["latest_fcff"] <= 0:
+        return {"converged": False, "status": "NOT_RUN", "weight": weight}
+
+    def blended(growth):
+        five = _dcf(data, base_items, forced_growth=growth)
+        ten = _dcf_extended(data, base_items, growth, years, decay)
+        return five, ten, (1 - weight) * five["fair_value_per_share"] + weight * ten["fair_value_per_share"]
+
+    low, high = REVERSE_GROWTH_BOUNDS
+    low_value, high_value = blended(low)[2] - data["price"], blended(high)[2] - data["price"]
+    base = {"solved_variable": "Year-1 revenue growth on the phased model", "weight": weight}
+    if low_value * high_value > 0:
+        return {**base, "converged": False, "status": "NO_ECONOMIC_SOLUTION", "low_case_value": low_value + data["price"], "high_case_value": high_value + data["price"]}
+    difference = None
+    for _ in range(80):
+        mid = (low + high) / 2
+        difference = blended(mid)[2] - data["price"]
+        if abs(difference) <= REVERSE_TOLERANCE_PER_SHARE:
+            break
+        if difference * low_value <= 0:
+            high = mid
+        else:
+            low, low_value = mid, difference
+    if difference is None or abs(difference) > REVERSE_TOLERANCE_PER_SHARE:
+        return {**base, "converged": False, "status": "NON_CONVERGENT", "residual_per_share": difference}
+    if min(abs(mid - bound) for bound in REVERSE_GROWTH_BOUNDS) < 1e-6:
+        return {**base, "converged": False, "status": "BOUNDARY_SOLUTION", "residual_per_share": difference}
+    five, ten, _ = blended(mid)
+    five_cagr = (five["forecast"][-1]["revenue"] / data["latest_revenue"]) ** (1 / 5) - 1
+    ten_cagr = (ten["forecast"][4]["revenue"] / data["latest_revenue"]) ** (1 / 5) - 1
+    return {**base, "converged": True, "status": "CONVERGED", "required_year_1_revenue_growth": mid,
+            "required_5y_revenue_cagr": (1 - weight) * five_cagr + weight * ten_cagr,
+            "five_year_model_5y_cagr": five_cagr, "ten_year_model_first_5y_cagr": ten_cagr, "residual_per_share": difference}
+
+
+def phased_fair_value(data, assumptions, scenarios, extended, reverse):
+    """Headline fair value (checklist 7.6, owner decision): five-year values, blended with the ten-year values above the cap."""
+    five = {name: scenarios[name]["fair_value_per_share"] for name in ("bear", "base", "bull")}
+    output = {"five_year": five, "phase_in_band": PHASE_IN_BAND, "type_cap": extended.get("type_cap"), "observed_growth": extended.get("observed_growth")}
+    if extended.get("state") != "COMPUTED":
+        return {**output, "method": "FIVE_YEAR", "extended_weight": 0.0, "fair_value": dict(five), "reverse_dcf": reverse,
+                "reason": extended.get("reason") or "Ten-year model not computed; five-year values apply."}
+    if not extended.get("checks_passed"):
+        return {**output, "method": "FIVE_YEAR", "extended_weight": 0.0, "fair_value": dict(five), "reverse_dcf": reverse, "ten_year": extended["fair_value"],
+                "reason": "Ten-year model failed its arithmetic, ordering or WACC checks; five-year values apply."}
+    weight = extended["weight"]
+    ten = extended["fair_value"]
+    blended = {name: (1 - weight) * five[name] + weight * ten[name] for name in five}
+    blended_reverse = _blended_reverse(data, assumptions["base"], weight, EXTENDED_POLICY["years"], EXTENDED_POLICY["decay"]) if weight > 0 else reverse
+    return {**output, "method": "PHASED" if weight > 0 else "FIVE_YEAR", "extended_weight": weight, "fair_value": blended, "ten_year": ten,
+            "reverse_dcf": blended_reverse,
+            "reason": f"Observed growth {extended['observed_growth']:.1%} vs cap {extended['type_cap']:.0%}: ten-year model weighted {weight:.0%}, five-year {1 - weight:.0%}."}
 
 
 def _sensitivity(data, base_items):
@@ -1225,6 +1296,8 @@ def build_valuation_report(ticker: str, overrides: dict | None = None, data: dic
         "assumptions": {},
         "discount_rate": {},
         "scenarios": {},
+        # Headline fair value (checklist 7.6); replaced once the scenarios are computed and validated.
+        "fair_value": {"method": "WITHHELD", "fair_value": {}, "reason": "Fair value not calculated."},
         "sensitivity": {},
         "reverse_dcf": {},
         "cross_checks": {},
@@ -1487,9 +1560,10 @@ def build_valuation_report(ticker: str, overrides: dict | None = None, data: dic
     }
     report["discount_rate"] = rates
     report["scenarios"] = scenarios
-    # Checklists 7.5 and 7.6: parallel calculations for owner review; they do not change the default output.
+    # Checklist 7.5: parallel calculation for owner review. Checklist 7.6: the headline value phases in the ten-year model (report["fair_value"]).
     report["company_spread_scenarios"] = company_spread_scenarios(data, rates, overrides)
     report["extended_horizon"] = extended_horizon(data, assumptions, kind)
+    report["fair_value"] = phased_fair_value(data, assumptions, scenarios, report["extended_horizon"], reverse)
     report["sensitivity"] = sensitivity
     report["reverse_dcf"] = reverse
     report["cross_checks"] = cross_checks
@@ -1505,15 +1579,17 @@ def build_valuation_report(ticker: str, overrides: dict | None = None, data: dic
         "lower": ["lower growth", "weaker margins", "higher dilution", "higher WACC", "lower terminal growth"],
         "highest_sensitivity": "WACC and terminal growth dominate the sensitivity grid; revenue growth and Year-5 FCFF margin dominate operating value.",
     }
-    base_value = scenarios["base"]["fair_value_per_share"]
+    headline = report["fair_value"]["fair_value"]
+    base_value = headline["base"]
     report["final_interpretation"] = {
-        "bear_to_bull_range": [scenarios["bear"]["fair_value_per_share"], scenarios["bull"]["fair_value_per_share"]],
+        "bear_to_bull_range": [headline["bear"], headline["bull"]],
         "base_fair_value": base_value,
         "text": (
             f"The explicit scenarios produce a fair-value range of "
-            f"${scenarios['bear']['fair_value_per_share']:,.2f}–${scenarios['bull']['fair_value_per_share']:,.2f} per share, "
+            f"${headline['bear']:,.2f}–${headline['bull']:,.2f} per share, "
             f"with a ${base_value:,.2f} base-case estimate. "
-            "This is a research estimate, not a recommendation, and is highly sensitive to discount rate, durable cash-flow margin, growth, and dilution."
+            + (f"{report['fair_value']['reason']} " if report["fair_value"]["method"] == "PHASED" else "")
+            + "This is a research estimate, not a recommendation, and is highly sensitive to discount rate, durable cash-flow margin, growth, and dilution."
         ),
     }
     report["validation"] = validation
@@ -1523,6 +1599,7 @@ def build_valuation_report(ticker: str, overrides: dict | None = None, data: dic
         report["scenarios"] = {}
         report["sensitivity"] = {}
         report["reverse_dcf"] = {"status": "VALIDATION_FAILED", "reason": "Critical valuation checks failed."}
+        report["fair_value"] = {"method": "WITHHELD", "fair_value": {}, "reason": "Critical valuation checks failed."}
         report["cross_checks"] = {"notes": ["Authoritative values withheld after critical validation failure."]}
         report["final_interpretation"] = {"text": "Fair value withheld: " + "; ".join(validation["reasons"])}
     report["_data"] = data

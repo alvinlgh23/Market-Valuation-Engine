@@ -203,12 +203,23 @@ def valuation_axis(report: dict[str, Any] | None, observed_growth: float | None,
     if not report:
         return axis("Valuation unavailable", missing=["valuation report"], families=["valuation"])
     price = _num((report.get("company") or {}).get("current_market_price"))
-    reverse = report.get("reverse_dcf") or {}
-    scenarios = report.get("scenarios") or {}
-    fair = {name: _num((scenarios.get(name) or {}).get("fair_value_per_share")) for name in ("bear", "base", "bull")}
+    headline = report.get("fair_value") or {}
+    if headline.get("fair_value"):
+        # Checklist 7.6 (owner decision): the ten-year model is phased in above the type's growth cap.
+        reverse = headline.get("reverse_dcf") or report.get("reverse_dcf") or {}
+        fair = {name: _num(headline["fair_value"].get(name)) for name in ("bear", "base", "bull")}
+    else:
+        reverse = report.get("reverse_dcf") or {}
+        scenarios = report.get("scenarios") or {}
+        fair = {name: _num((scenarios.get(name) or {}).get("fair_value_per_share")) for name in ("bear", "base", "bull")}
     rates = report.get("discount_rate") or {}
-    notes = ["Five-year explicit forecast with a capped first-year growth rate and 2.5% terminal growth; for fast growers this structure understates value (checklist 7.6)."]
-    detail = {"price": price, "fair_value": fair, "reverse_dcf_status": reverse.get("status"), "observed_growth": observed_growth,
+    weight = _num(headline.get("extended_weight"))
+    if headline.get("method") == "PHASED" and weight is not None:
+        notes = [f"Blends the five-year ({1 - weight:.0%}) and ten-year ({weight:.0%}) models: observed growth {_pct(headline.get('observed_growth'))} is above the {_pct(headline.get('type_cap'))} cap; full ten-year weight at cap + {_pct(headline.get('phase_in_band'))}."]
+    else:
+        notes = ["Five-year explicit forecast with a capped first-year growth rate and 2.5% terminal growth; growth is within the type's cap, so the ten-year model is not blended in."]
+    detail = {"price": price, "fair_value": fair, "valuation_method": headline.get("method"), "ten_year_weight": weight,
+              "reverse_dcf_status": reverse.get("status"), "observed_growth": observed_growth,
               "consensus_next_year_growth": consensus_growth, "fixed_erp": _num(rates.get("equity_risk_premium")), "implied_erp": implied_erp,
               "erp_sensitivity": erp_sensitivity, "wacc": _num(rates.get("wacc")), "notes": notes}
     status = reverse.get("status")

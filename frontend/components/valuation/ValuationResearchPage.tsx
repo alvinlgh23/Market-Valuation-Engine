@@ -9,6 +9,7 @@ import {
   baseAssumptions,
   hasScenarios,
   valuationState,
+  headlineFairValues,
   type ScenarioResult,
   type ValuationReport,
   type ValuationView
@@ -31,29 +32,30 @@ function ViewNav({ ticker, view, fixture }: { ticker: string; view: ValuationVie
   return <nav className="valuation-view-nav" aria-label="Valuation views">{views.map(([key, label]) => { const query = new URLSearchParams(params.toString()); query.set("view", key); query.delete("refresh"); if (fixture) query.set("fixture", "1"); return <Link className={view === key ? "active" : ""} href={`/valuation/${ticker}?${query}`} key={key}>{label}</Link>; })}</nav>;
 }
 
+function headlineReverse(report: ValuationReport): Record<string, unknown> {
+  return report.fair_value?.method === "PHASED" && report.fair_value.reverse_dcf ? report.fair_value.reverse_dcf : report.reverse_dcf;
+}
+
 function FairValueRange({ report }: { report: ValuationReport }) {
   const params = useSearchParams();
   if (report.validation.status === "FAILED" || (!hasScenarios(report) && !report.fallback?.required_specialized_framework)) return <section className="valuation-framework-state"><ValueBadge value={report.validation.status === "FAILED" ? "FAILED" : "INSUFFICIENT_DATA"} /><h2>Fair value withheld</h2><p>{report.validation.reasons?.join(" ") || report.data_quality.reason}</p><p>Inspect Validation and the historical FCFF reconciliation for diagnostic detail.</p></section>;
   if (!hasScenarios(report)) return <section className="valuation-framework-state"><ValueBadge value="FRAMEWORK_REQUIRED" /><h2>Valuation framework required</h2><p>{report.fallback?.why_standard_dcf_is_inappropriate || report.data_quality.reason}</p><dl><div><dt>Company type</dt><dd>{report.company.company_type}</dd></div><div><dt>Required framework</dt><dd>{report.fallback?.required_specialized_framework || report.selected_method}</dd></div><div><dt>Missing evidence</dt><dd>{report.fallback?.missing_data?.join(", ") || report.data_quality.missing?.join(", ") || "Unavailable"}</dd></div></dl></section>;
-  const scenarios = report.scenarios as Record<"bear" | "base" | "bull", ScenarioResult>;
-  const { bear, base, bull } = scenarios;
+  const values = headlineFairValues(report);
+  const { bear, base, bull } = values;
   const price = report.company.current_market_price;
-  const scale = fairValueCoordinates({
-    bear: bear.fair_value_per_share,
-    base: base.fair_value_per_share,
-    bull: bull.fair_value_per_share,
-    market: price,
-  });
+  const phased = report.fair_value?.method === "PHASED";
+  const scale = fairValueCoordinates({ bear, base, bull, market: price });
   if (!scale.valid) return <section className="valuation-framework-state"><ValueBadge value="INSUFFICIENT_DATA" /><h2>Fair-value range unavailable</h2><p>Scenario values are missing or not economically ordered.</p></section>;
   return <section className="valuation-range-surface" aria-label="Fair value range">
     <header><span>FAIR VALUE RANGE</span><ValueBadge value={report.validation.status} /><ValueBadge value={valuationState(report)} /></header>
     {report.validation.status === "PROVISIONAL" ? <p>{report.validation.reasons?.join(" ") || "Uncertain checks remain."} <Link href={`/valuation/${report.company.ticker}?${new URLSearchParams({ ...Object.fromEntries(params), view: "validation" })}`}>Inspect validation →</Link></p> : null}
     <div className="valuation-range-track">
       <div className="valuation-range-line" />
-      {(["bear", "base", "bull"] as const).map((key) => <div className={`valuation-range-point ${key}`} key={key} style={{ left: `${scale.positions[key]}%` }}><i /><span>{key}</span><strong>{money(scenarios[key].fair_value_per_share)}</strong></div>)}
+      {(["bear", "base", "bull"] as const).map((key) => <div className={`valuation-range-point ${key}`} key={key} style={{ left: `${scale.positions[key]}%` }}><i /><span>{key}</span><strong>{money(values[key])}</strong></div>)}
       {price != null ? <div className="valuation-market-marker" style={{ left: `${scale.positions.market}%` }}><i>▲</i><span>Market {money(price)}</span></div> : null}
     </div>
-    <footer><span>Bear {money(bear.fair_value_per_share)}</span><span>Base {money(base.fair_value_per_share)}</span><span>Bull {money(bull.fair_value_per_share)}</span></footer>
+    <footer><span>Bear {money(bear)}</span><span>Base {money(base)}</span><span>Bull {money(bull)}</span></footer>
+    {phased ? <p>{report.fair_value?.reason} The DCF and Assumptions views show the five-year model only.</p> : null}
   </section>;
 }
 
@@ -84,10 +86,10 @@ function Snapshot({ report, company }: { report: ValuationReport; company: Compa
   const economics = company ? adaptCompanyEconomics(company) : null;
   return <div className="valuation-overview-grid">
     <FairValueRange report={report} />
-    <section className="valuation-read-panel"><span>CURRENT READ</span><h2>{valuationState(report)}</h2><p>{report.final_interpretation.text || report.data_quality.reason || report.fallback?.why_standard_dcf_is_inappropriate}</p><dl><div><dt>Market price</dt><dd>{money(report.company.current_market_price)}</dd></div><div><dt>Validation</dt><dd>{humanize(report.validation.status)}</dd></div><div><dt>Reverse DCF</dt><dd>{humanize(String(report.reverse_dcf.status || "Unavailable"))}</dd></div></dl></section>
+    <section className="valuation-read-panel"><span>CURRENT READ</span><h2>{valuationState(report)}</h2><p>{report.final_interpretation.text || report.data_quality.reason || report.fallback?.why_standard_dcf_is_inappropriate}</p><dl><div><dt>Market price</dt><dd>{money(report.company.current_market_price)}</dd></div><div><dt>Validation</dt><dd>{humanize(report.validation.status)}</dd></div><div><dt>Reverse DCF</dt><dd>{humanize(String(headlineReverse(report).status || "Unavailable"))}</dd></div></dl></section>
     <section className="valuation-mini-ledger"><span>OBSERVED ECONOMICS</span><dl><div><dt>Revenue growth</dt><dd>{pct(economics?.raw.growth_sustainability.current_revenue_growth ?? report.historical_base.current_provider_revenue_growth)}</dd></div><div><dt>FCFF margin</dt><dd>{pct(report.historical_base.fcff_margin)}</dd></div><div><dt>Constraint</dt><dd>{economics?.primaryConstraint.label || "Company Economics unavailable"}</dd></div><div><dt>Scaling</dt><dd>{economics?.raw.scaling_economics.interpretation || "Unavailable"}</dd></div></dl></section>
     <section className="valuation-mini-ledger"><span>MODEL ASSUMPTIONS</span><dl>{["year_1_revenue_growth", "year_5_fcff_margin", "wacc", "terminal_growth", "annual_dilution"].map((name) => <div key={name}><dt>{humanize(name)}</dt><dd>{assumption(report, name)?.unit === "multiple" ? number(assumption(report, name)?.value) : pct(assumption(report, name)?.value)}</dd></div>)}</dl></section>
-    <section className="valuation-mini-ledger market-implied"><span>MARKET-IMPLIED EXPECTATIONS</span><dl><div><dt>Solved variable</dt><dd>{String(report.reverse_dcf.solved_variable || "Unavailable")}</dd></div><div><dt>Status</dt><dd>{humanize(String(report.reverse_dcf.status || "Unavailable"))}</dd></div><div><dt>Required 5Y revenue CAGR</dt><dd>{pct(report.reverse_dcf.required_5y_revenue_cagr)}</dd></div><div><dt>Residual</dt><dd>{money(report.reverse_dcf.residual_per_share)}</dd></div></dl></section>
+    <section className="valuation-mini-ledger market-implied"><span>MARKET-IMPLIED EXPECTATIONS</span><dl><div><dt>Solved variable</dt><dd>{String(headlineReverse(report).solved_variable || "Unavailable")}</dd></div><div><dt>Status</dt><dd>{humanize(String(headlineReverse(report).status || "Unavailable"))}</dd></div><div><dt>Required 5Y revenue CAGR</dt><dd>{pct(headlineReverse(report).required_5y_revenue_cagr)}</dd></div><div><dt>Residual</dt><dd>{money(headlineReverse(report).residual_per_share)}</dd></div></dl></section>
   </div>;
 }
 

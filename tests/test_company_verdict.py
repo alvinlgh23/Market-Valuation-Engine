@@ -126,3 +126,14 @@ def test_sector_mapping_prefers_engine_candidates():
     assert cv.sector_etf_for("NVDA", "Technology")[0] == "SMH"
     assert cv.sector_etf_for("ZZZZ", "Healthcare")[0] == "XLV"
     assert cv.sector_etf_for("ZZZZ", None)[0] is None
+
+
+def test_valuation_axis_reads_the_phased_headline():
+    base = report("CONVERGED", converged=True, required_5y_revenue_cagr=0.30)
+    base["fair_value"] = {"method": "PHASED", "extended_weight": 0.4, "observed_growth": 0.22, "type_cap": 0.18, "phase_in_band": 0.10,
+                          "fair_value": {"bear": 70.0, "base": 95.0, "bull": 130.0},
+                          "reverse_dcf": {"status": "CONVERGED", "converged": True, "required_5y_revenue_cagr": 0.20}}
+    result = cv.valuation_axis(base, 0.22, 0.20, None, None)
+    assert result["detail"]["fair_value"] == {"bear": 70.0, "base": 95.0, "bull": 130.0}
+    assert result["detail"]["implied_5y_revenue_cagr"] == 0.20 and result["detail"]["ten_year_weight"] == 0.4
+    assert "ten-year (40%)" in result["detail"]["notes"][0]

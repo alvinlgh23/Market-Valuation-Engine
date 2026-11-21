@@ -1,4 +1,4 @@
-"""Checklists 7.5/7.6: default valuation next to company-specific spreads and the extended horizon (stop point)."""
+"""Checklists 7.5/7.6: five-year values, company-specific spreads, the ten-year model and the phased headline (7.6 default)."""
 import contextlib
 import io
 import json
@@ -25,6 +25,8 @@ for ticker in json.loads(Path("data/watchlist.json").read_text())["tickers"]:
         "default_reverse_dcf": (report.get("reverse_dcf") or {}).get("status"),
         "company_spreads": report.get("company_spread_scenarios"),
         "extended_horizon": report.get("extended_horizon"),
+        "headline": {key: (report.get("fair_value") or {}).get(key) for key in ("method", "extended_weight", "fair_value", "reason")}
+                    | {"reverse_dcf": ((report.get("fair_value") or {}).get("reverse_dcf") or {}).get("status")},
     })
 Path("data/valuation_parallel_comparison.json").write_text(json.dumps(rows, indent=2, default=str) + "\n")
 fmt = lambda values: "withheld" if not values else " / ".join("n/a" if value is None else f"{value:,.0f}" for value in values.values())
@@ -40,4 +42,6 @@ for row in rows:
     ext_text = ext.get("state", "—")
     if ext.get("state") == "COMPUTED":
         ext_text = f"{fmt(ext['fair_value'])}  growth {ext['observed_growth']:.0%} > cap {ext['type_cap']:.0%}; reverse {ext['reverse_dcf'].get('status')}; checks {'pass' if ext['checks_passed'] else 'FAIL'}"
-    print(f"{row['ticker']:5} price {row['price']}\n      default   {fmt(row['default_fair_value'])}  reverse {row['default_reverse_dcf']}\n      7.5       {spread_text}\n      7.6       {ext_text}")
+    head = row["headline"]
+    head_text = f"{fmt(head['fair_value'])}  {head['method']}" + (f" (ten-year weight {head['extended_weight']:.0%}); reverse {head['reverse_dcf']}" if head["method"] == "PHASED" else "")
+    print(f"{row['ticker']:5} price {row['price']}\n      five-year {fmt(row['default_fair_value'])}  reverse {row['default_reverse_dcf']}\n      7.5       {spread_text}\n      ten-year  {ext_text}\n      HEADLINE  {head_text}")

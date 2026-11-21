@@ -1,4 +1,4 @@
-"""Checklists 7.5 and 7.6: parallel valuation calculations leave the default untouched."""
+"""Checklist 7.5: parallel spreads leave the default untouched. Checklist 7.6: the ten-year model is phased in above the cap."""
 from unittest.mock import patch
 
 import pandas as pd
@@ -52,3 +52,58 @@ def test_linear_decay_reaches_terminal_growth_in_the_final_year():
     result = iv._dcf_extended(data, items, first_growth=0.30, years=10)
     assert abs(result["forecast"][-1]["revenue_growth"] - iv._assumption_value(items, "terminal_growth")) < 1e-12
     assert all(iv._extended_checks(data, result, items).values())
+
+
+def test_extended_weight_is_continuous_from_the_cap():
+    cap = 0.18
+    assert iv.extended_weight(0.12, cap) == 0.0 and iv.extended_weight(cap, cap) == 0.0
+    assert abs(iv.extended_weight(cap + 0.01, cap) - 0.1) < 1e-12
+    assert abs(iv.extended_weight(cap + iv.PHASE_IN_BAND / 2, cap) - 0.5) < 1e-12
+    assert iv.extended_weight(cap + iv.PHASE_IN_BAND, cap) == 1.0 and iv.extended_weight(1.03, cap) == 1.0
+    assert iv.extended_weight(None, cap) == 0.0 and iv.extended_weight(0.5, None) == 0.0
+
+
+def test_headline_is_five_year_within_the_cap():
+    report = report_for(fixture_data())
+    five = {name: value["fair_value_per_share"] for name, value in report["scenarios"].items()}
+    assert report["fair_value"]["method"] == "FIVE_YEAR" and report["fair_value"]["extended_weight"] == 0.0
+    assert report["fair_value"]["fair_value"] == five
+    assert report["final_interpretation"]["base_fair_value"] == five["base"]
+
+
+def test_headline_blends_by_weight_and_has_no_jump_at_the_cap():
+    def headline(growth):
+        data = fixture_data(); data["info"]["revenueGrowth"] = growth
+        return report_for(data)
+    just_above = headline(0.18 + 1e-6)
+    assert just_above["fair_value"]["extended_weight"] < 1e-4
+    assert abs(just_above["fair_value"]["fair_value"]["base"] - just_above["fair_value"]["five_year"]["base"]) < 1e-2 * abs(just_above["fair_value"]["five_year"]["base"])
+    mid = headline(0.23)
+    weight = mid["fair_value"]["extended_weight"]
+    assert abs(weight - 0.5) < 1e-9 and mid["fair_value"]["method"] == "PHASED"
+    for name in ("bear", "base", "bull"):
+        expected = (1 - weight) * mid["fair_value"]["five_year"][name] + weight * mid["fair_value"]["ten_year"][name]
+        assert abs(mid["fair_value"]["fair_value"][name] - expected) < 1e-9
+    assert mid["final_interpretation"]["base_fair_value"] == mid["fair_value"]["fair_value"]["base"]
+    # The five-year scenarios stay intact beside the headline.
+    assert mid["scenarios"]["base"]["fair_value_per_share"] == mid["fair_value"]["five_year"]["base"]
+
+
+def test_blended_reverse_dcf_reprices_the_phased_model():
+    data = fixture_data(); data["info"]["revenueGrowth"] = 0.23
+    report = report_for(data)
+    reverse = report["fair_value"]["reverse_dcf"]
+    weight = report["fair_value"]["extended_weight"]
+    assert reverse["status"] == "CONVERGED"
+    items = iv._scenario_assumptions(data, fixture_rates(), {})["base"]
+    growth = reverse["required_year_1_revenue_growth"]
+    value = (1 - weight) * iv._dcf(data, items, forced_growth=growth)["fair_value_per_share"] + weight * iv._dcf_extended(data, items, growth)["fair_value_per_share"]
+    assert abs(value - data["price"]) <= iv.REVERSE_TOLERANCE_PER_SHARE
+
+
+def test_withheld_valuation_withholds_the_headline():
+    data = fixture_data(); data["info"]["revenueGrowth"] = 0.23
+    data["latest_operating_income"] = 400.0   # FCFF reconciliation fails (as in test_intrinsic_valuation)
+    report = report_for(data)
+    assert report["validation"]["status"] == "FAILED"
+    assert report["fair_value"]["method"] == "WITHHELD" and report["fair_value"]["fair_value"] == {}
