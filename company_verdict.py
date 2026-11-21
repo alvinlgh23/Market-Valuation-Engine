@@ -247,20 +247,26 @@ def valuation_axis(report: dict[str, Any] | None, observed_growth: float | None,
                 missing=["valuation multiple history (percentile in own history)"])
 
 
-def crowding_axis(heat: dict[str, Any] | None, sector_flow: dict[str, Any] | None = None) -> dict[str, Any]:
+def crowding_axis(heat: dict[str, Any] | None, sector_flow: dict[str, Any] | None = None, relative: dict[str, Any] | None = None) -> dict[str, Any]:
     if not heat:
         return axis("Crowding unavailable", missing=["price and valuation heat"], families=["price"])
     import Valuation_model as vm
     label = vm.chase_risk_label(heat)
     sector_crowding = (sector_flow or {}).get("crowding")
-    evidence = [f"Heat {heat.get('heat'):.0f}/100 (valuation {heat.get('valuation_heat'):.0f}, momentum {heat.get('momentum_heat'):.0f}); "
-                f"{_pct(heat.get('dist_200'))} from the 200-day average; RSI {heat.get('rsi'):.0f}." if heat.get('rsi') is not None else
-                f"Heat {heat.get('heat'):.0f}/100."]
+    valuation = (relative or {}).get("valuation") or {}
+    technicals = f"{_pct(heat.get('dist_200'))} from the 200-day average" + (f", RSI {heat.get('rsi'):.0f}" if heat.get("rsi") is not None else "")
+    missing = ["positioning data (short interest, options, fund ownership)"]
+    # Checklist 7.3 step 2: the valuation part is read against the company's own history first.
+    if valuation.get("state") == "AVAILABLE":
+        evidence = [f"Price-to-sales {valuation['current']:.1f}, at the {valuation['percentile']:.0%} percentile of its own history since {valuation['first'][:4]}; {technicals}."]
+    else:
+        evidence = [f"Heat {heat.get('heat'):.0f}/100 on the absolute scale (valuation {heat.get('valuation_heat'):.0f}, momentum {heat.get('momentum_heat'):.0f}); {technicals}."]
+        missing.append(f"valuation in own history ({valuation.get('reason') or valuation.get('state') or 'not computed'})")
     if sector_crowding and sector_crowding != "Unavailable":
         evidence.append(f"Sector positioning: {sector_crowding} (breadth, dollar volume and relative strength against their own history).")
-    return axis(label, confidence="LOW", evidence=evidence, families=["price", "valuation"],
-                missing=["positioning data (short interest, options, fund ownership)"],
-                detail={key: heat.get(key) for key in ("heat", "valuation_heat", "momentum_heat", "rsi", "dist_50", "dist_200", "six_month", "forward_pe", "ev_sales")})
+    return axis(label, confidence="LOW", evidence=evidence, families=["price", "valuation"], missing=missing,
+                detail={**{key: heat.get(key) for key in ("heat", "valuation_heat", "momentum_heat", "rsi", "dist_50", "dist_200", "six_month", "forward_pe", "ev_sales")},
+                        "valuation_in_own_history": valuation})
 
 
 def expectations_axis(expectations: dict[str, Any] | None) -> dict[str, Any]:
@@ -285,7 +291,7 @@ def expectations_axis(expectations: dict[str, Any] | None) -> dict[str, Any]:
                 evidence=evidence, families=["fundamentals"], detail=expectations)
 
 
-def fundamentals_axis(economics: dict[str, Any] | None) -> dict[str, Any]:
+def fundamentals_axis(economics: dict[str, Any] | None, relative: dict[str, Any] | None = None) -> dict[str, Any]:
     if not economics:
         return axis("Company economics unavailable", missing=["company economics"], families=["fundamentals"])
     translation = economics.get("financial_translation") or {}
@@ -305,9 +311,12 @@ def fundamentals_axis(economics: dict[str, Any] | None) -> dict[str, Any]:
     evidence = [", ".join(f"{key.replace('_', ' ')} {str(value).lower().replace('_', ' ')}" for key, value in states.items())]
     if growth is not None:
         evidence.append(f"Current revenue growth {_pct(growth)}.")
+    quality = (relative or {}).get("quality") or {}
+    if quality.get("quality_percentile") is not None:
+        evidence.append(f"Quality at the {quality['quality_percentile']:.0%} percentile of {quality['peers']} sector peers (absolute score {quality['metrics']['score']['value']:.0f}/100).")
     return axis(state, confidence="MODERATE" if unknown == 0 else "LOW", evidence=evidence, families=["fundamentals"],
                 missing=[f"{key.replace('_', ' ')}" for key, value in states.items() if value in (None, "INSUFFICIENT_EVIDENCE")],
-                detail={"financial_translation": states, "current_revenue_growth": growth, "archetype": (economics.get("classification") or {}).get("primary_archetype")})
+                detail={"peer_quality": quality, "financial_translation": states, "current_revenue_growth": growth, "archetype": (economics.get("classification") or {}).get("primary_archetype")})
 
 
 # ---- cross-axis reading ----------------------------------------------------------------------
@@ -458,6 +467,11 @@ def build_card(ticker: str, environment: dict[str, Any], core: dict[str, Any], s
     expectations = collect_expectations(ticker)
     from sector_flow import latest_sector_flow
     sector_flow = latest_sector_flow(store, etf) if etf else None
+    from relative_scales import relative_readings
+    try:
+        relative = relative_readings(ticker, [name for name in vm.SECTOR_CANDIDATES.get(etf or "", []) if name != ticker])
+    except Exception as exc:  # noqa: BLE001
+        relative, errors["relative_scales"] = None, f"{type(exc).__name__}: {exc}"
     erp_sensitivity = None
     rates = (report or {}).get("discount_rate") or {}
     if report and report.get("scenarios") and _num(rates.get("wacc")) and _num(rates.get("beta")) and _num(rates.get("equity_weight")):
@@ -472,9 +486,9 @@ def build_card(ticker: str, environment: dict[str, Any], core: dict[str, Any], s
         "macro": macro_axis(archetype, environment),
         "flow": flow_axis(ticker, etf, mapping, store, company_vs_sector, sector_flow),
         "valuation": valuation_axis(report, observed_growth, expectations.get("revenue_growth_next_year"), _num((core.get("macro") or {}).get("erp")), erp_sensitivity),
-        "crowding": crowding_axis(heat, sector_flow),
+        "crowding": crowding_axis(heat, sector_flow, relative),
         "expectations": expectations_axis(expectations),
-        "fundamentals": fundamentals_axis(economics),
+        "fundamentals": fundamentals_axis(economics, relative),
     }
     risk = environment.get("risk_regime") or {}
     tactical_env = f"Risk regime: {risk.get('regime') or 'unavailable'}"
