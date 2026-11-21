@@ -620,14 +620,17 @@ def _base_parameters(data: dict, rates: dict) -> dict:
     }
 
 
-def _scenario_assumptions(data, rates, overrides) -> dict[str, list[Assumption]]:
+DEFAULT_SCENARIO_SPREADS = {
+    "bear": {"growth": -0.04, "margin": -0.04, "wacc": 0.01, "terminal": -0.005, "dilution": 0.005, "multiple": -2.0},
+    "base": {"growth": 0, "margin": 0, "wacc": 0, "terminal": 0, "dilution": 0, "multiple": 0},
+    "bull": {"growth": 0.04, "margin": 0.04, "wacc": -0.01, "terminal": 0.005, "dilution": -0.001, "multiple": 2.0},
+}
+
+
+def _scenario_assumptions(data, rates, overrides, spreads=None) -> dict[str, list[Assumption]]:
     base = _base_parameters(data, rates)
     sbc_policy = data.get("sbc_policy", SBC_ACCOUNTING_POLICY)
-    spreads = {
-        "bear": {"growth": -0.04, "margin": -0.04, "wacc": 0.01, "terminal": -0.005, "dilution": 0.005, "multiple": -2.0},
-        "base": {"growth": 0, "margin": 0, "wacc": 0, "terminal": 0, "dilution": 0, "multiple": 0},
-        "bull": {"growth": 0.04, "margin": 0.04, "wacc": -0.01, "terminal": 0.005, "dilution": -0.001, "multiple": 2.0},
-    }
+    spreads = spreads or DEFAULT_SCENARIO_SPREADS
     result = {}
     override_map = {
         "revenue_growth": "growth",
@@ -753,6 +756,183 @@ def _dcf(data, assumptions, forced_growth=None, forced_margin=None):
         "terminal_method_difference": exit_fair_value - fair_value,
         "current_price": data["price"],
         "upside_downside": fair_value / data["price"] - 1 if _number(data["price"]) and data["price"] > 0 else None,
+    }
+
+
+# ---- Checklist 7.5: scenario spreads from the company's own history (parallel; not the default) ----
+SPREAD_BOUNDS = {"growth": (0.02, 0.10), "margin": (0.02, 0.08)}
+
+
+def _stdev(values):
+    if len(values) < 2:
+        return None
+    mean = sum(values) / len(values)
+    return math.sqrt(sum((value - mean) ** 2 for value in values) / (len(values) - 1))
+
+
+def company_scenario_spreads(data):
+    """Growth and margin spreads from the standard deviation of the company's annual history.
+
+    Revenue growth: standard deviation of year-on-year growth across the available fiscal
+    years, bounded to 2-10 points. Margin: standard deviation of free-cash-flow margin (a
+    stated proxy for FCFF margin, whose history is not reconstructed), bounded to 2-8 points.
+    Fewer than four fiscal years keeps the default +/-4 points for that input. WACC, terminal
+    growth, dilution and exit-multiple spreads are unchanged.
+    """
+    revenues = [value for value in (data.get("revenue_history") or []) if _number(value)]
+    if len(revenues) < 4:
+        return None, {"reason": f"{len(revenues)} fiscal years of revenue; at least four are needed. Default spreads kept."}
+    growth = [revenues[index] / revenues[index + 1] - 1 for index in range(len(revenues) - 1) if revenues[index + 1] > 0]
+    fcf = _row(data.get("cashflow"), "Free Cash Flow")
+    margins = [value / revenue for value, revenue in zip(fcf, revenues) if _number(value) and revenue > 0]
+    growth_spread = _clamp(_stdev(growth), *SPREAD_BOUNDS["growth"]) if _stdev(growth) is not None else 0.04
+    margin_spread = _clamp(_stdev(margins), *SPREAD_BOUNDS["margin"]) if len(margins) >= 4 and _stdev(margins) is not None else 0.04
+    spreads = {name: dict(values) for name, values in DEFAULT_SCENARIO_SPREADS.items()}
+    spreads["bear"].update(growth=-growth_spread, margin=-margin_spread)
+    spreads["bull"].update(growth=growth_spread, margin=margin_spread)
+    return spreads, {
+        "fiscal_years": len(revenues), "growth_history": growth, "fcf_margin_history": margins,
+        "growth_spread": growth_spread, "margin_spread": margin_spread,
+        "margin_basis": "free-cash-flow margin history" if len(margins) >= 4 else "default 4 points (fewer than four FCF margins)",
+    }
+
+
+def company_spread_scenarios(data, rates, overrides):
+    spreads, basis = company_scenario_spreads(data)
+    if spreads is None:
+        return {"state": "DEFAULT_SPREADS_KEPT", "default": False, **basis}
+    try:
+        assumptions = _scenario_assumptions(data, rates, overrides, spreads=spreads)
+        results = {name: _dcf(data, items) for name, items in assumptions.items()}
+    except ValueError as exc:
+        return {"state": "INVALID", "default": False, "reason": str(exc), "basis": basis}
+    fair = {name: result["fair_value_per_share"] for name, result in results.items()}
+    return {
+        "state": "COMPUTED", "default": False, "basis": basis,
+        "spreads": {name: {key: spreads[name][key] for key in ("growth", "margin")} for name in spreads},
+        "fair_value": fair, "ordering_valid": fair["bear"] <= fair["base"] <= fair["bull"],
+        "note": "Parallel calculation for owner review (checklist 7.5); the default scenarios still use +/-4 points.",
+    }
+
+
+# ---- Checklist 7.6: longer explicit period for fast growers (parallel; not the default) ----
+GROWTH_CAPS = {"MATURE_OPERATING_COMPANY": 0.18, "GROWTH_SOFTWARE_COMPANY": 0.35, "CYCLICAL_COMPANY": 0.08}
+EXTENDED_POLICY = {"years": 10, "first_year_growth_cap": 0.50, "decay": "linear"}
+
+
+def _dcf_extended(data, assumptions, first_growth, years=10, decay="linear"):
+    """Like _dcf, but with `years` explicit years; growth decays from first_growth to terminal growth.
+
+    decay="linear" reaches terminal growth in the final year; decay="front_loaded" halves the
+    gap to terminal growth each year. FCFF margin moves linearly from today's margin to the same
+    target margin as the five-year model. Terminal value, the enterprise-to-equity bridge and
+    dilution follow _dcf exactly, compounded over `years`.
+    """
+    target_margin = _assumption_value(assumptions, "year_5_fcff_margin")
+    wacc = _assumption_value(assumptions, "wacc")
+    terminal_growth = _assumption_value(assumptions, "terminal_growth")
+    dilution = _assumption_value(assumptions, "annual_dilution")
+    if wacc - terminal_growth <= 0:
+        raise ValueError("WACC must exceed terminal growth.")
+    revenue = data["latest_revenue"]
+    current_margin = data["latest_fcff"] / revenue
+    forecast, pv_fcff = [], 0.0
+    for year in range(1, years + 1):
+        if decay == "front_loaded":
+            growth = terminal_growth + (first_growth - terminal_growth) * (0.5 ** (year - 1))
+        else:
+            growth = first_growth + (terminal_growth - first_growth) * ((year - 1) / (years - 1))
+        margin = current_margin + (target_margin - current_margin) * (year / years)
+        revenue *= 1 + growth
+        fcff = revenue * margin
+        present = fcff / ((1 + wacc) ** year)
+        pv_fcff += present
+        forecast.append({"year": year, "revenue_growth": growth, "revenue": revenue, "fcff_margin": margin, "fcff": fcff, "present_value": present})
+    terminal_value = forecast[-1]["fcff"] * (1 + terminal_growth) / (wacc - terminal_growth)
+    pv_terminal = terminal_value / ((1 + wacc) ** years)
+    enterprise_value = pv_fcff + pv_terminal
+    net_cash = data["cash"] - data["debt"]
+    other_senior_claims = data.get("other_senior_claims", 0)
+    equity_value = enterprise_value + net_cash - other_senior_claims
+    diluted_shares = data["shares"] * ((1 + dilution) ** years)
+    return {"forecast": forecast, "pv_forecast_fcff": pv_fcff, "terminal_value": terminal_value, "pv_terminal_value": pv_terminal,
+            "enterprise_value": enterprise_value, "net_cash_debt_adjustment": net_cash, "other_senior_claims": other_senior_claims,
+            "equity_value": equity_value, "diluted_shares": diluted_shares, "fair_value_per_share": equity_value / diluted_shares}
+
+
+def _extended_checks(data, result, assumptions):
+    wacc = _assumption_value(assumptions, "wacc")
+    years = len(result["forecast"])
+    arithmetic = abs(sum(row["present_value"] for row in result["forecast"]) - result["pv_forecast_fcff"]) < 1e-6 * max(1.0, abs(result["pv_forecast_fcff"]))
+    terminal = abs(result["pv_terminal_value"] - result["terminal_value"] / ((1 + wacc) ** years)) < 1e-6 * max(1.0, abs(result["terminal_value"]))
+    ev = abs(result["enterprise_value"] - result["pv_forecast_fcff"] - result["pv_terminal_value"]) < 1e-6 * max(1.0, abs(result["enterprise_value"]))
+    bridge = abs(result["equity_value"] - (result["enterprise_value"] + result["net_cash_debt_adjustment"] - result["other_senior_claims"])) < 1e-6 * max(1.0, abs(result["equity_value"]))
+    shares = abs(result["fair_value_per_share"] * result["diluted_shares"] - result["equity_value"]) < 1e-6 * max(1.0, abs(result["equity_value"]))
+    return {"forecast_arithmetic": arithmetic, "terminal_value": terminal, "enterprise_value": ev, "ev_to_equity_bridge": bridge, "share_conversion": shares,
+            "wacc_above_terminal": wacc > _assumption_value(assumptions, "terminal_growth")}
+
+
+def _extended_reverse(data, base_items, years, decay):
+    """Solve first-year growth on the extended model; same bounds and boundary rule as _reverse_dcf."""
+    if not _number(data.get("price")) or data["price"] <= 0 or not _number(data.get("latest_fcff")) or data["latest_fcff"] <= 0:
+        return {"converged": False, "status": "NOT_RUN"}
+    low, high = REVERSE_GROWTH_BOUNDS
+    value = lambda growth: _dcf_extended(data, base_items, growth, years, decay)["fair_value_per_share"] - data["price"]
+    low_value, high_value = value(low), value(high)
+    if low_value * high_value > 0:
+        return {"converged": False, "status": "NO_ECONOMIC_SOLUTION", "low_case_value": low_value + data["price"], "high_case_value": high_value + data["price"]}
+    for _ in range(80):
+        mid = (low + high) / 2
+        difference = value(mid)
+        if abs(difference) <= REVERSE_TOLERANCE_PER_SHARE:
+            break
+        if difference * low_value <= 0:
+            high = mid
+        else:
+            low, low_value = mid, difference
+    if min(abs(mid - bound) for bound in REVERSE_GROWTH_BOUNDS) < 1e-6:
+        return {"converged": False, "status": "BOUNDARY_SOLUTION"}
+    return {"converged": True, "status": "CONVERGED", "required_year_1_revenue_growth": mid}
+
+
+def extended_horizon(data, assumptions, kind):
+    """Checklist 7.6: run only when observed growth exceeds the company type's first-year cap."""
+    observed = _pick(data["info"], "revenueGrowth")
+    cap = GROWTH_CAPS.get(kind)
+    if not _number(observed) or cap is None or observed <= cap:
+        return {"state": "NOT_TRIGGERED", "observed_growth": observed, "type_cap": cap,
+                "reason": "Observed growth is within the five-year model's cap; the existing valuation applies unchanged."}
+    years, decay = EXTENDED_POLICY["years"], EXTENDED_POLICY["decay"]
+    first = min(observed, EXTENDED_POLICY["first_year_growth_cap"])
+    deltas = {name: DEFAULT_SCENARIO_SPREADS[name]["growth"] for name in ("bear", "base", "bull")}
+    scenarios, checks = {}, {}
+    try:
+        for name, items in assumptions.items():
+            result = _dcf_extended(data, items, first + deltas[name], years, decay)
+            scenarios[name] = result["fair_value_per_share"]
+            checks[name] = _extended_checks(data, result, items)
+        base = assumptions["base"]
+        wacc_item = next(item for item in base if item.name == "wacc")
+        bumped = []
+        for shift in (-0.01, 0.0, 0.01):
+            cloned = [Assumption(**asdict(item)) for item in base]
+            next(item for item in cloned if item.name == "wacc").value = wacc_item.value + shift
+            bumped.append(_dcf_extended(data, cloned, first, years, decay)["fair_value_per_share"])
+        sensitivity = {
+            "first_year_growth_cap": {str(level): _dcf_extended(data, base, min(observed, level), years, decay)["fair_value_per_share"] for level in (0.40, 0.50, 0.60)},
+            "explicit_years": {str(length): _dcf_extended(data, base, first, length, decay)["fair_value_per_share"] for length in (8, 10, 12)},
+            "decay": {shape: _dcf_extended(data, base, first, years, shape)["fair_value_per_share"] for shape in ("linear", "front_loaded")},
+            "wacc_minus_1pp_base_plus_1pp": bumped,
+        }
+    except ValueError as exc:
+        return {"state": "INVALID", "reason": str(exc)}
+    passed = all(all(item.values()) for item in checks.values()) and scenarios["bear"] <= scenarios["base"] <= scenarios["bull"] and bumped[0] > bumped[1] > bumped[2]
+    return {
+        "state": "COMPUTED", "default": False, "observed_growth": observed, "type_cap": cap, "first_year_growth": first,
+        "policy": dict(EXTENDED_POLICY), "fair_value": scenarios, "checks": checks, "checks_passed": passed,
+        "reverse_dcf": _extended_reverse(data, assumptions["base"], years, decay), "sensitivity": sensitivity,
+        "assumptions_to_state": "First-year growth cap (50%), linear decay to terminal growth and a 10-year explicit period are model policy without calibration; see sensitivity.",
+        "note": "Parallel framework for owner review (checklist 7.6); the five-year valuation remains the default.",
     }
 
 
@@ -1307,6 +1487,9 @@ def build_valuation_report(ticker: str, overrides: dict | None = None, data: dic
     }
     report["discount_rate"] = rates
     report["scenarios"] = scenarios
+    # Checklists 7.5 and 7.6: parallel calculations for owner review; they do not change the default output.
+    report["company_spread_scenarios"] = company_spread_scenarios(data, rates, overrides)
+    report["extended_horizon"] = extended_horizon(data, assumptions, kind)
     report["sensitivity"] = sensitivity
     report["reverse_dcf"] = reverse
     report["cross_checks"] = cross_checks
