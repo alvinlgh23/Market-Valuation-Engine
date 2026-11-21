@@ -129,9 +129,21 @@ function measuredColumns(sectorList: SectorResearchObject[]) {
   return OPTIONAL_COLUMNS.filter((column) => sectorList.some((sector) => isMeasured(sector[column.key])));
 }
 
-/** Engine ranking order; sectors without an engine row go last in catalog order (checklist 1.6). */
+const TIER_ORDER = ["GICS_SECTOR", "INDUSTRY", "THEME", "ASSET"];
+const TIER_LABEL: Record<string, string> = { GICS_SECTOR: "Sector", INDUSTRY: "Industry", THEME: "Theme", ASSET: "Asset" };
+
+/** Tier order and rank inside the tier when supplied (checklist 7.2); otherwise the engine ranking (checklist 1.6). */
 export function byEngineRank(sectorList: SectorResearchObject[]) {
-  return sectorList.map((sector, index) => ({ sector, index })).sort((a, b) => (a.sector.engineRank ?? Infinity) - (b.sector.engineRank ?? Infinity) || a.index - b.index).map(({ sector }) => sector);
+  const tiered = sectorList.some((sector) => sector.tier && sector.rankInTier != null);
+  const tierIndex = (sector: SectorResearchObject) => (sector.tier ? TIER_ORDER.indexOf(sector.tier) : -1) + 1 || TIER_ORDER.length + 1;
+  return sectorList.map((sector, index) => ({ sector, index })).sort((a, b) => (tiered
+    ? tierIndex(a.sector) - tierIndex(b.sector) || (a.sector.rankInTier ?? Infinity) - (b.sector.rankInTier ?? Infinity)
+    : (a.sector.engineRank ?? Infinity) - (b.sector.engineRank ?? Infinity)) || a.index - b.index).map(({ sector }) => sector);
+}
+
+function rankLabel(sector: SectorResearchObject) {
+  if (sector.tier && sector.rankInTier != null) return `${TIER_LABEL[sector.tier] ?? sector.tier} #${sector.rankInTier} · `;
+  return sector.engineRank != null ? `${sector.engineRank + 1}. ` : "";
 }
 
 function RotationTable({ sectorList: unordered }: { sectorList: SectorResearchObject[] }) {
@@ -140,7 +152,7 @@ function RotationTable({ sectorList: unordered }: { sectorList: SectorResearchOb
   const template = `minmax(132px, 1.25fr) repeat(3, .48fr)${columns.map(() => " minmax(96px, .8fr)").join("")}`;
   return <section className="sector-research-table" aria-label="Sector rotation table">
     <header style={{ gridTemplateColumns: template }}><span>Rank · Sector</span><span>1M</span><span>3M</span><span>6M RS</span>{columns.map((column) => <span key={column.key}>{column.label}</span>)}</header>
-    {sectorList.map((sector) => <Link key={sector.slug} style={{ gridTemplateColumns: template }} href={sectorHref(sector, "snapshot")} title={`${sector.measurementSource} · ${sector.lastUpdated} · ${sector.measurementReason}`}><strong>{sector.engineRank != null ? `${sector.engineRank + 1}. ` : ""}{sector.name}<small>{sector.ticker}</small></strong><span>{percent(sector.rel1m)}</span><span>{percent(sector.rel3m)}</span><span>{percent(sector.rel6m)}</span>{columns.map((column) => <span key={column.key}>{isMeasured(sector[column.key]) ? sector[column.key] : "—"}</span>)}</Link>)}
+    {sectorList.map((sector) => <Link key={sector.slug} style={{ gridTemplateColumns: template }} href={sectorHref(sector, "snapshot")} title={`${sector.measurementSource} · ${sector.lastUpdated} · ${sector.measurementReason}`}><strong>{rankLabel(sector)}{sector.name}<small>{sector.ticker}</small></strong><span>{percent(sector.rel1m)}</span><span>{percent(sector.rel3m)}</span><span>{percent(sector.rel6m)}</span>{columns.map((column) => <span key={column.key}>{isMeasured(sector[column.key]) ? sector[column.key] : "—"}</span>)}</Link>)}
   </section>;
 }
 

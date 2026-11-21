@@ -3105,16 +3105,26 @@ def print_macro_command():
         print(item)
 
 
+TIER_LABELS = {"GICS_SECTOR": "Sectors", "INDUSTRY": "Industries", "THEME": "Themes", "ASSET": "Assets", "UNTIERED": "Other"}
+
+
 def print_sectors_command(show_all=False):
+    """Checklist 7.2 step 2: leaders are ranked inside their tier on volatility-adjusted strength."""
     rows = compute_sectors()
-    print("Sector Rotation Leaderboard:")
-    print()
-    limit = len(rows) if show_all else 3
-    for idx, row in enumerate(rows[:limit], 1):
-        print(
-            f"{idx}. {row['name']} {emoji_for_sector(row['name'])}  "
-            f"(1M {signed_pct(row['rel_1m'])}, 3M {signed_pct(row['rel_3m'])}, 6M {signed_pct(row['rel_6m'])} vs SPY)"
-        )
+    print("Sector Rotation Leaderboard (ranked within tier, volatility-adjusted):")
+    limit = None if show_all else 3
+    for tier in (*TIER_ORDER, "UNTIERED"):
+        members = sorted((row for row in rows if row.get("tier") == tier), key=lambda row: (row.get("rank_in_tier") is None, row.get("rank_in_tier") or 0))
+        if not members:
+            continue
+        print()
+        print(f"{TIER_LABELS[tier]}:")
+        for row in members[:limit]:
+            print(
+                f"{row.get('rank_in_tier') or '-'}. {row['name']} {emoji_for_sector(row['name'])}  "
+                f"(1M {signed_pct(row['rel_1m'])}, 3M {signed_pct(row['rel_3m'])}, 6M {signed_pct(row['rel_6m'])} vs SPY; "
+                f"3M per unit of tracking volatility {signed_fmt(row.get('rel_3m_vol_adj'), 2)})"
+            )
 
 
 def print_sector_command(raw_sector):

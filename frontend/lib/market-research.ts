@@ -29,6 +29,10 @@ export interface SectorResearchObject {
   primaryTheme: string;
   /** Position in the Python sector engine ranking (0 = top); null when the engine supplied no row. */
   engineRank?: number | null;
+  /** Checklist 7.2: tier and volatility-adjusted rank inside it, when the engine supplied them. */
+  tier?: string | null;
+  rankInTier?: number | null;
+  rel3mVolAdj?: number | null;
   currentRead: string;
   rel1m: number | null;
   rel3m: number | null;
@@ -403,7 +407,7 @@ export function percent(value: number | null): string {
   return `${sign}${(value * 100).toFixed(1)}%`;
 }
 
-export type SectorEngineRow = { ticker?: string; name?: string; source?: string; validation_status?: string; validation_reason?: string; provider_diagnostic?: { provider_status?: string; source_status?: string }; rel_1m?: number | null; rel_3m?: number | null; rel_6m?: number | null; as_of?: string };
+export type SectorEngineRow = { tier?: string; rank_in_tier?: number | null; rel_3m_vol_adj?: number | null; ticker?: string; name?: string; source?: string; validation_status?: string; validation_reason?: string; provider_diagnostic?: { provider_status?: string; source_status?: string }; rel_1m?: number | null; rel_3m?: number | null; rel_6m?: number | null; as_of?: string };
 
 function flowFields(flow?: SectorFlowRow) {
   const breadth = typeof flow?.breadth_50 === "number" && Number.isFinite(flow.breadth_50) ? flow.breadth_50 : null;
@@ -444,6 +448,9 @@ export function integrateSectorEngineRows(rows: SectorEngineRow[] | undefined, s
     return {
       ...sector,
       engineRank: rankByTicker.get(sector.ticker) ?? null,
+      tier: row?.tier ?? null,
+      rankInTier: typeof row?.rank_in_tier === "number" ? row.rank_in_tier : null,
+      rel3mVolAdj: invalid ? null : finite(row?.rel_3m_vol_adj),
       rel1m: invalid ? null : finite(row?.rel_1m), rel3m: invalid ? null : finite(row?.rel_3m), rel6m: invalid ? null : finite(row?.rel_6m),
       ...flowFields(flow?.[sector.ticker]),
       momentum: "Unverified", stage: "Unavailable", heat: "Unavailable",
