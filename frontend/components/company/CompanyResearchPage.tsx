@@ -9,6 +9,7 @@ import { displayStatus } from "../../lib/status-words";
 import { CompanyWorkspaces, type CompanyWorkspaceKind } from "./CompanyWorkspaces";
 import { ResearchLabel, Unavailable } from "./ResearchPrimitives";
 import { ReportMode } from "./ReportMode";
+import { JudgmentCard } from "./JudgmentCard";
 import { OperationalResearch } from "./OperationalResearch";
 
 function queryState(): { workspace: CompanyWorkspaceKind | null; node: string | null } {
@@ -105,6 +106,8 @@ export function CompanyResearchPage({ company, dataState = "FIXTURE", initialWor
           <div><span>{company.ticker} / {company.name.toUpperCase()}</span><h1>{company.name}</h1><p>{company.archetype}</p></div>
           <div className="snapshot-system-meta"><span>Data as of {String(company.asOf).slice(0, 10)}</span><span title={company.raw.validation.status}>Checks: {displayStatus(company.raw.validation.status)}</span></div>
         </header>
+
+        <JudgmentCard key={company.ticker} ticker={company.ticker} />
 
         <section className="snapshot-question">
           <ResearchLabel>Core economic question</ResearchLabel>

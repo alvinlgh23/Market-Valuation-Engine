@@ -10,18 +10,18 @@ import { ChainstoxBrand } from "./ChainstoxBrand";
 
 export type ResearchDataState = "LIVE" | "CACHED" | "DEMO" | "FIXTURE" | "STALE" | "PARTIAL" | "UNKNOWN" | "INSUFFICIENT" | "INSUFFICIENT_EVIDENCE" | "AVAILABLE" | "FRAMEWORK_REQUIRED" | "NOT_ANALYZED" | "ANALYZING" | "UNSUPPORTED" | "FAILED" | "INSUFFICIENT_DATA";
 
+// Checklist 8.2: three questions instead of one tab per engine. Valuation is reached from each
+// company; Labs and the demo route stay reachable by URL but are not in the top bar.
 const PRIMARY = [
-  ["dashboard", "Dashboard", "/"],
-  ["macro", "Macro", "/macro"],
-  ["markets", "Markets", "/markets"],
-  ["companies", "Companies", "/companies"],
-  ["valuation", "Valuation", "/valuation"],
-  ["labs", "Labs", "/labs"]
+  ["dashboard", "Today", "/"],
+  ["companies", "Watchlist", "/companies"],
+  ["markets", "Market context", "/markets"]
 ] as const;
+const TOP_LEVEL: Record<string, string> = { dashboard: "dashboard", overview: "dashboard", company: "companies", companies: "companies", valuation: "companies", macro: "markets", markets: "markets", labs: "markets" };
 
 const CONTEXT: Record<string, readonly (readonly [string, string])[]> = {
   macro: [["Overview", "/macro"], ["World Map", "/macro/world"], ["Central Banks", "/macro/central-banks"], ["Inflation", "/macro/inflation"], ["Rates", "/macro/rates"], ["Liquidity", "/macro/liquidity"], ["FX", "/macro/fx"], ["Risk Regime", "/macro/risk"]],
-  markets: [["Sector Rotation", "/markets"], ["Sector Research", "/markets/sectors"], ["Breadth", "/markets/breadth"], ["Crowding", "/markets/crowding"], ["Defensive Rotation", "/markets/defensive-rotation"]],
+  markets: [["Sector rotation", "/markets"], ["Macro overview", "/macro"], ["World map", "/macro/world"], ["Central banks", "/macro/central-banks"], ["Inflation", "/macro/inflation"], ["Rates", "/macro/rates"], ["Liquidity", "/macro/liquidity"], ["FX", "/macro/fx"], ["Risk regime", "/macro/risk"], ["Defensive rotation", "/markets/defensive-rotation"]],
   valuation: [["Overview", "/valuation"], ["Assumptions", "/valuation/MSFT?view=assumptions"], ["DCF", "/valuation/MSFT?view=dcf"], ["Reverse DCF", "/valuation/MSFT?view=reverse-dcf"], ["Sensitivity", "/valuation/MSFT?view=sensitivity"], ["Validation", "/valuation/MSFT?view=validation"]],
   labs: [["Fragility", "/labs/fragility"], ["Historical", "/labs/historical"]]
 };
@@ -78,8 +78,8 @@ export function ResearchShell({
   const [recentCompanies, setRecentCompanies] = useState<RecentCompanyResearch[]>([]);
   const routeDemoMode = demoMode || searchParams.get("demo") === "1" || pathname === "/demo";
   const shellState = routeDemoMode ? "DEMO" : dataState;
-  const topActive = active === "company" ? "companies" : active === "overview" ? "dashboard" : active;
-  const contextual = ticker && topActive === "valuation" ? valuationContext(ticker) : ticker ? companyContext(ticker) : CONTEXT[topActive] ?? [];
+  const topActive = TOP_LEVEL[active] ?? active;
+  const contextual = ticker && active === "valuation" ? valuationContext(ticker) : ticker ? companyContext(ticker) : CONTEXT[active === "valuation" ? "valuation" : topActive] ?? [];
   const moduleResults = useMemo(() => {
     const q = query.trim().toLowerCase();
     const index = [

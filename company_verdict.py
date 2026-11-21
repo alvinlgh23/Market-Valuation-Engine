@@ -585,13 +585,37 @@ def run_watchlist(tickers: list[str], *, home_currency: str | None = None, as_js
     return 0
 
 
+def watchlist_summary(store: SignalStore | None = None) -> list[dict[str, Any]]:
+    """Last recorded card states per watchlist company, read from history only (no network)."""
+    store = store or SignalStore()
+    tickers = json.loads(WATCHLIST_PATH.read_text()).get("tickers", []) if WATCHLIST_PATH.exists() else []
+    output = []
+    for ticker in tickers:
+        axes, last_date, changed = {}, None, []
+        for key in ("macro", "flow", "valuation", "crowding", "expectations", "fundamentals"):
+            rows = [row for row in store.rows(f"verdict.{ticker}.{key}") if row["label"]]
+            if not rows:
+                continue
+            axes[key] = rows[-1]["label"]
+            last_date = max(last_date or rows[-1]["observation_date"], rows[-1]["observation_date"])
+            if len(rows) >= 2 and rows[-2]["label"] != rows[-1]["label"]:
+                changed.append({"axis": key, "from": rows[-2]["label"], "to": rows[-1]["label"], "on": rows[-1]["observation_date"]})
+        output.append({"ticker": ticker, "last_card": last_date, "axes": axes, "changed": changed})
+    output.sort(key=lambda item: (-len(item["changed"]), item["last_card"] is None, item["ticker"]))
+    return output
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="CHAINSTOX company judgment card")
     parser.add_argument("tickers", nargs="*")
     parser.add_argument("--watchlist", action="store_true", help=f"Run every ticker in {WATCHLIST_PATH.relative_to(ROOT)}.")
     parser.add_argument("--json", action="store_true")
     parser.add_argument("--home-currency", help="Show USD returns translated into this currency, e.g. SGD.")
+    parser.add_argument("--summary", action="store_true", help="Print the last recorded card states for the watchlist as JSON (no network).")
     args = parser.parse_args(argv)
+    if args.summary:
+        print(json.dumps(watchlist_summary(), indent=2))
+        return 0
     tickers = [item.upper() for item in args.tickers]
     if args.watchlist:
         tickers += json.loads(WATCHLIST_PATH.read_text()).get("tickers", [])
