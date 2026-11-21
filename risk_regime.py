@@ -279,8 +279,15 @@ def risk_regime_summary(evidence):
     )
 
 
+NO_DOMINANT_STRESS = "No Dominant Stress"
+
+
 def narrative_for(regime):
     narratives = {
+        NO_DOMINANT_STRESS: [
+            "No cross-asset stress pattern is active: equities are not falling, credit is not weakening and volatility is not in stress.",
+            "Sector and company evidence carry more weight than the risk regime in this state.",
+        ],
         "Healthy Rotation": [
             "Market behavior points to contained rotation within equities rather than broad abandonment of risk.",
             "Stable breadth, defensive relative strength, contained volatility, and non-stressed credit argue against a confirmed systemic risk-off event.",
@@ -312,6 +319,9 @@ def invalidation_for(regime):
     ]
     if regime == "Healthy Rotation":
         return common
+    if regime == NO_DOMINANT_STRESS:
+        return ["SPY falls more than 2.5% over 20 days", "Momentum leaders fall 4% or more against SPY", "HYG falls 2.5% or more against LQD",
+                "VIX moves into high-stress territory", "Treasuries stop hedging an equity decline"]
     if regime == "Narrow Leadership Unwind":
         return [
             "Equal-weight breadth starts falling faster than SPY",
@@ -339,6 +349,10 @@ def invalidation_for(regime):
 
 def portfolio_stance_for(regime):
     stances = {
+        NO_DOMINANT_STRESS: [
+            "The risk regime does not argue for or against adding risk.",
+            "Let sector relative strength, valuation and company evidence decide.",
+        ],
         "Healthy Rotation": [
             "Treat weakness as rotation evidence, not a standalone opportunity.",
             "Favor staged accumulation only where sector relative strength, breadth, and financial quality remain intact.",
@@ -365,6 +379,7 @@ def portfolio_stance_for(regime):
 
 def company_context_for(regime):
     contexts = {
+        NO_DOMINANT_STRESS: "No market-wide stress pattern is active; company evidence dominates.",
         "Healthy Rotation": "Company weakness can be evaluated constructively if fundamentals, sector strength, and breadth confirmation remain intact.",
         "Narrow Leadership Unwind": "Overheated momentum names deserve extra caution; first-dip buying should wait for evidence that leadership deleveraging has stabilized.",
         "Broad Risk-Off": "Company-level quality matters, but broad de-risking raises the required margin of safety and favors stronger balance sheets.",
@@ -374,6 +389,8 @@ def company_context_for(regime):
 
 
 def sector_context_for(regime, sector_key=None):
+    if regime == NO_DOMINANT_STRESS:
+        return "No market-wide stress pattern is active; sector relative strength can be read on its own terms."
     if regime == "Healthy Rotation":
         return "Sector weakness should be compared against defensive rotation and breadth before calling it broad risk-off."
     if regime == "Narrow Leadership Unwind":
@@ -559,6 +576,7 @@ def analyze_risk_regime(data, lookbacks=None):
     if bonds_fail and usd_stress and credit_bad:
         support["Liquidity / Inflation Stress"] += 2
 
+    explicit_rule = True
     if bonds_fail and usd_stress and equity_down:
         regime = "Liquidity / Inflation Stress"
     elif broad_equity_down and global_weak and (defensives_fail or credit_bad or vol_high):
@@ -568,7 +586,14 @@ def analyze_risk_regime(data, lookbacks=None):
     elif equity_down and defensives_ok and credit_ok:
         regime = "Healthy Rotation"
     else:
+        explicit_rule = False
         regime = max(support, key=lambda name: support[name] - conflict[name])
+
+    # Checklist 7.1: the four labels all describe stress, so a calm market used to receive one
+    # of them through the fallback above. When no explicit rule fired and none of the stress
+    # conditions holds, the new field says so. The explicit rules keep their priority.
+    no_dominant_stress = not equity_down and not momentum_sharp and not credit_bad and not vol_high and not bonds_fail
+    regime_v2 = NO_DOMINANT_STRESS if (not explicit_rule and no_dominant_stress and spy20 is not None) else regime
 
     available_points = sum(1 for item in evidence.values() if item["label"] != "Unavailable")
     coverage = available_points / len(evidence)
@@ -592,6 +617,8 @@ def analyze_risk_regime(data, lookbacks=None):
 
     return {
         "regime": regime,
+        "regime_v2": regime_v2,
+        "regime_v2_rule": "No Dominant Stress when no explicit regime rule fires and SPY 20D > -2.5%, momentum is not down 4% vs SPY, HYG-LQD > -2.5%, VIX is not in high stress and Treasuries are hedging.",
         "published_regime": published_regime,
         "publication_state": "AVAILABLE" if coverage >= 0.55 else "INSUFFICIENT",
         "publication_rule": "At least 55% of the cross-asset evidence matrix must be available before a regime is published.",
