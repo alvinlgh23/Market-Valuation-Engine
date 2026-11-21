@@ -1169,6 +1169,42 @@ def macro_scores(tnx_3m, front_rate_3m, dxy_3m, yield_curve, hyg_ief, vix_level)
     }
 
 
+# Checklist 7.4: the three macro scores stay; factor_states shows each input on its own, with no
+# good/bad direction (the exposure map decides that per company). The percentile is the
+# reading's position in its own stored history (signal_history); fewer than 60 stored
+# observations gives none. Inputs are the very values compute_macro scored.
+MACRO_FACTORS = (
+    ("long_rates", "US 10Y yield", "tnx_level", "tnx_3m", "macro.tnx_3m", ("Rising", "Flat", "Falling")),
+    ("front_rates", "Front-end yield", "front_rate_level", "front_rate_3m", "macro.front_rate_3m", ("Rising", "Flat", "Falling")),
+    ("usd", "US dollar (DXY)", "dxy_level", "dxy_3m", "macro.dxy_3m", ("Strengthening", "Flat", "Weakening")),
+    ("credit", "Credit risk appetite (HYG vs IEF)", None, "hyg_ief", "macro.hyg_ief", ("Improving", "Steady", "Fading")),
+    ("volatility", "VIX", "vix_level", None, "macro.vix_level", ("Elevated", "Normal", "Low")),
+    ("curve", "10Y minus front-end", "yield_curve", None, "macro.yield_curve", ("Steep", "Normal", "Flat or inverted")),
+    ("money_supply", "M2, 6-month change", None, "m2_6m", "macro.m2_6m", ("Expanding fast", "Normal", "Slowing")),
+)
+
+
+def macro_factor_states(macro, store=None):
+    from signal_history import SignalStore
+    store = store or SignalStore()
+    as_of = macro.get("tnx_observed_at")
+    states = {}
+    for key, label, level_key, change_key, signal_id, words in MACRO_FACTORS:
+        value = macro.get(change_key or level_key)
+        percentile = store.percentile(signal_id, value=value, as_of=as_of) if is_number(value) else None
+        state = "Unavailable" if not is_number(value) else "Insufficient history" if percentile is None else words[0] if percentile >= 0.67 else words[2] if percentile <= 0.33 else words[1]
+        states[key] = {
+            "label": label,
+            "level": macro.get(level_key) if level_key else None,
+            "change_3m": macro.get(change_key) if change_key else None,
+            "reading_used": change_key or level_key,
+            "percentile_in_own_history": percentile,
+            "state": state,
+            "as_of": as_of,
+        }
+    return states
+
+
 def compute_macro():
     from treasury_semantics import treasury_curve
     tnx_level, tnx_3m, tnx_source, tnx_sources = fetch_macro_level_change(MACRO_FALLBACKS["tnx"])
@@ -1243,7 +1279,7 @@ def compute_macro():
         if warning
     ]
 
-    return {
+    result = {
         "tnx_level": tnx_level,
         "tnx_3m": tnx_3m,
         "tnx_source": tnx_source or "Unavailable",
@@ -1276,6 +1312,11 @@ def compute_macro():
         "macro_score": macro_score,
         "provider_warnings": provider_warnings,
     }
+    try:
+        result["factor_states"] = macro_factor_states(result)
+    except Exception as exc:  # noqa: BLE001 - the history store must not break the macro scan
+        result["factor_states"] = {"error": f"{type(exc).__name__}: {exc}"}
+    return result
 
 
 def sector_row_from_histories(ticker, name, hist, spy_hist):
