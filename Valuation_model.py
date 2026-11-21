@@ -2792,6 +2792,18 @@ def policy_liquidity_text():
         return f"Unavailable ({type(exc).__name__})"
 
 
+def print_macro_factor_states(states):
+    """Checklist 7.4 step 2: each macro input on its own, against its own history, before the scores."""
+    if not isinstance(states, dict) or "error" in states:
+        return
+    print("Macro Factors (state vs own history; no good/bad direction):")
+    for item in states.values():
+        percentile = item.get("percentile_in_own_history")
+        where = "" if percentile is None else f" · {percentile:.0%} percentile"
+        print(f"  {item['label']}: {item['state']}{where}")
+    print()
+
+
 def print_global_liquidity_conditions(data):
     dxy_rising = data["dxy_3m"] is not None and data["dxy_3m"] > 0
     dxy_label = "Unavailable" if data.get("dxy_3m") is None else "Rising" if dxy_rising else "Falling / Stable"
@@ -2810,6 +2822,7 @@ def print_global_liquidity_conditions(data):
     print(f"Risk Perception: {risk_perception_label(data['vix_level'])}")
     print(f"Carry Conditions: {carry_condition_label(data.get('usdjpy_3m'), data['vix_level'])}")
     print()
+    print_macro_factor_states(data.get("factor_states"))
     print(f"US 10Y Treasury Yield: {pct(data['tnx_level'] / 100 if data['tnx_level'] else None)}")
     print(f"US 30Y Treasury Yield: {pct(data['tyx_level'] / 100 if data.get('tyx_level') else None)}")
     print(f"DXY Trend: {dxy_label} ({signed_pct(data['dxy_3m'])} 3M)")
