@@ -132,10 +132,28 @@ def macro_axis(archetype: str, environment: dict[str, Any]) -> dict[str, Any]:
                 detail={"exposures": rows, "confirmed_tailwinds": tail, "confirmed_headwinds": head, "carry_switch": switch})
 
 
-def flow_axis(ticker: str, etf: str | None, mapping_note: str, store: SignalStore, company_vs_sector_3m: float | None, sector_flow: dict[str, Any] | None = None) -> dict[str, Any]:
+def card_removals() -> set[str]:
+    """Signals the scorecard found to carry no information (checklist 6.2); empty if it has not been run."""
+    path = ROOT / "data" / "signal_validation.json"
+    try:
+        return set(json.loads(path.read_text()).get("card_removals", []))
+    except (OSError, json.JSONDecodeError):
+        return set()
+
+
+FLOW_BASIS = (("rel_1m", "1M"), ("rel_3m", "3M"), ("rel_6m", "6M"))
+
+
+def flow_axis(ticker: str, etf: str | None, mapping_note: str, store: SignalStore, company_vs_sector_3m: float | None,
+              sector_flow: dict[str, Any] | None = None, removed: set[str] | None = None) -> dict[str, Any]:
     if not etf:
         return axis("No sector mapping", missing=["sector ETF for this company"], families=["price"])
-    signal = f"sector.{etf}.rel_3m"
+    removed = card_removals() if removed is None else removed
+    basis = next(((metric, label) for metric, label in FLOW_BASIS if metric not in removed), None)
+    if basis is None:
+        return axis("No informative flow signal", missing=["a relative-strength horizon that passed the scorecard"], families=["price"])
+    metric, horizon = basis
+    signal = f"sector.{etf}.{metric}"
     points = store.series(signal)
     if len(points) < 60:
         return axis("Insufficient sector history", missing=[f"{signal} history"], families=["price"], detail={"sector_etf": etf})
@@ -152,29 +170,32 @@ def flow_axis(ticker: str, etf: str | None, mapping_note: str, store: SignalStor
     state = names.get(current, "Unavailable") if held >= 6 else "Mixed (not persistent)"
     prior = store.value_observations_ago(signal, 21)
     direction = None if prior is None else "strengthening" if latest > prior[1] else "weakening" if latest < prior[1] else "unchanged"
-    evidence = [f"{etf} 3M relative strength vs SPY {_pct(latest)} on {latest_day}, {percentile:.0%} percentile of its stored history; same bucket {held} of last 10 observations."]
-    if company_vs_sector_3m is not None:
-        evidence.append(f"{ticker} {'leads' if company_vs_sector_3m > 0 else 'lags'} {etf} by {_size(company_vs_sector_3m)} over three months.")
+    evidence = [f"{etf} {horizon} relative strength vs SPY {_pct(latest)} on {latest_day}, {percentile:.0%} percentile of its stored history; same bucket {held} of last 10 observations."]
     flow = sector_flow or {}
-    missing = []
-    if flow.get("breadth_50") is not None:
-        participation = f"{flow['breadth_50']:.0%} of {etf}'s top holdings above their 50-day average"
-        volume = "" if flow.get("dollar_volume_percentile") is None else f", dollar volume at the {flow['dollar_volume_percentile']:.0%} percentile"
-        updown = "" if flow.get("updown_volume_20d") is None else f", up/down volume {flow['updown_volume_20d']:.2f}"
-        evidence.insert(1, participation + volume + updown + ".")
-    else:
-        missing.append("sector breadth and volume")
+    volume_parts = []
+    if flow.get("dollar_volume_percentile") is not None:
+        volume_parts.append(f"dollar volume at the {flow['dollar_volume_percentile']:.0%} percentile")
+    if flow.get("updown_volume_20d") is not None:
+        volume_parts.append(f"up/down volume {flow['updown_volume_20d']:.2f}")
+    if flow.get("breadth_50") is not None and "breadth_50" not in removed:
+        volume_parts.insert(0, f"{flow['breadth_50']:.0%} of {etf}'s top holdings above their 50-day average")
+    if volume_parts:
+        evidence.append(f"{etf}: " + ", ".join(volume_parts) + ".")
+    elif company_vs_sector_3m is not None:
+        evidence.append(f"{ticker} {'leads' if company_vs_sector_3m > 0 else 'lags'} {etf} by {_size(company_vs_sector_3m)} over three months.")
+    missing = [] if volume_parts else ["sector volume"]
     if not flow.get("shares_outstanding_change"):
         missing.append("ETF share creation/redemption (history starts with the first snapshot)")
     confidence = "MODERATE" if held >= 8 else "LOW"
-    if flow.get("breadth_50") is not None and current in (1, -1):
+    if flow.get("breadth_50") is not None and "breadth_50" not in removed and current in (1, -1):
         confirms = (current == 1 and flow["breadth_50"] >= 0.5) or (current == -1 and flow["breadth_50"] < 0.5)
-        confidence = confidence if confirms else "LOW"
         if not confirms:
+            confidence = "LOW"
             evidence.append("Breadth does not confirm the relative-strength reading.")
     return axis(state, direction=direction, confidence=confidence, evidence=evidence, families=["price"], missing=missing,
-                detail={"sector_etf": etf, "mapping": mapping_note, "rel_3m": latest, "percentile": percentile, "persistence_of_10": held,
-                        "company_vs_sector_3m": company_vs_sector_3m, "rel_3m_21_obs_ago": prior, "sector_flow": flow})
+                detail={"sector_etf": etf, "mapping": mapping_note, "basis": metric, "relative_strength": latest, "percentile": percentile,
+                        "persistence_of_10": held, "company_vs_sector_3m": company_vs_sector_3m, "relative_strength_21_obs_ago": prior,
+                        "sector_flow": flow, "removed_by_scorecard": sorted(removed)})
 
 
 def valuation_axis(report: dict[str, Any] | None, observed_growth: float | None, consensus_growth: float | None,

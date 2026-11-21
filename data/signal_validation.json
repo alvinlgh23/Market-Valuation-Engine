@@ -1,0 +1,610 @@
+{
+  "schema_version": "1.0",
+  "method": "Signal scorecard: does each stored signal say anything about what happens next? (checklist P6)\n\nSector signals (cross-section of 34 sector/theme ETFs)\n    Forward return = the ETF's relative return against SPY over the next 20 trading days\n    (1M) or 62 trading days (3M). It is read from the stored rel_1m / rel_3m series shifted\n    back by the same number of observations, so the window starts after the signal date and\n    uses the engine's own arithmetic.\n    On each sample date the signal and the forward return are ranked across ETFs and their\n    Spearman correlation (the information coefficient, IC) is taken. Sample dates are\n    spaced by the horizon, so windows do not overlap.\n    Reported: mean IC, its t-statistic over sample dates, the number of sample dates and of\n    (date, ETF) pairs, and the hit rate: the share of pairs where the cross-sectionally\n    demeaned signal and forward return have the same sign.\n\nMacro signals (time series)\n    Forward return = SPY's return over the next 21 or 63 trading days, non-overlapping\n    samples. Reported: Pearson correlation, its t-statistic, sample size and hit rate\n    (sign of the demeaned signal against sign of the demeaned forward return).\n    The risk regime label is reported as the mean forward return per regime.\n\nDecision rule for the card (fixed before running, checklist 6.2)\n    A signal has NO INFORMATION when, at both horizons, |t| < 1 and the hit rate is within\n    0.47-0.53. Such signals are removed from the judgment card; the engines keep them.\n    A signal is REVERSED when the mean IC is negative with t <= -2 at either horizon: it\n    stays on the card but must not be read as \"more is better\".",
+  "sector": {
+    "rel_1m": {
+      "horizons": {
+        "1M": {
+          "mean_ic": 0.08647140674451599,
+          "t_stat": 2.3183158284428385,
+          "sample_dates": 35,
+          "pairs": 1187,
+          "hit_rate": 0.5299073294018534,
+          "first": "2023-11-20",
+          "last": "2026-09-28"
+        },
+        "3M": {
+          "mean_ic": -0.013382873810681295,
+          "t_stat": -0.17259121581997205,
+          "sample_dates": 11,
+          "pairs": 373,
+          "hit_rate": 0.43699731903485256,
+          "first": "2023-11-20",
+          "last": "2026-05-28"
+        }
+      },
+      "verdict": "INFORMATIVE"
+    },
+    "rel_3m": {
+      "horizons": {
+        "1M": {
+          "mean_ic": -0.03941176470588234,
+          "t_stat": -0.8459012973712334,
+          "sample_dates": 35,
+          "pairs": 1185,
+          "hit_rate": 0.48270042194092827,
+          "first": "2023-11-20",
+          "last": "2026-09-28"
+        },
+        "3M": {
+          "mean_ic": -0.07547919994444059,
+          "t_stat": -0.8499868677675272,
+          "sample_dates": 11,
+          "pairs": 372,
+          "hit_rate": 0.4731182795698925,
+          "first": "2023-11-20",
+          "last": "2026-05-28"
+        }
+      },
+      "verdict": "NO_INFORMATION"
+    },
+    "rel_6m": {
+      "horizons": {
+        "1M": {
+          "mean_ic": -0.0010798865000545778,
+          "t_stat": -0.022001324676679708,
+          "sample_dates": 35,
+          "pairs": 1182,
+          "hit_rate": 0.5025380710659898,
+          "first": "2023-11-20",
+          "last": "2026-09-28"
+        },
+        "3M": {
+          "mean_ic": 0.028467254670463234,
+          "t_stat": 0.3373258433555572,
+          "sample_dates": 11,
+          "pairs": 371,
+          "hit_rate": 0.5256064690026954,
+          "first": "2023-11-20",
+          "last": "2026-05-28"
+        }
+      },
+      "verdict": "NO_INFORMATION"
+    },
+    "breakout": {
+      "horizons": {
+        "1M": {
+          "mean_ic": 0.012672193553345082,
+          "t_stat": 0.2625693443304738,
+          "sample_dates": 35,
+          "pairs": 1188,
+          "hit_rate": 0.4882154882154882,
+          "first": "2023-11-20",
+          "last": "2026-09-28"
+        },
+        "3M": {
+          "mean_ic": -0.06227426867815915,
+          "t_stat": -0.9938382147616551,
+          "sample_dates": 11,
+          "pairs": 373,
+          "hit_rate": 0.46112600536193027,
+          "first": "2023-11-20",
+          "last": "2026-05-28"
+        }
+      },
+      "verdict": "WEAK"
+    },
+    "score": {
+      "horizons": {
+        "1M": {
+          "mean_ic": 0.010100652418773857,
+          "t_stat": 0.23800623183522346,
+          "sample_dates": 35,
+          "pairs": 1188,
+          "hit_rate": 0.5008417508417509,
+          "first": "2023-11-20",
+          "last": "2026-09-28"
+        },
+        "3M": {
+          "mean_ic": -0.016812223672308623,
+          "t_stat": -0.19701568071285255,
+          "sample_dates": 11,
+          "pairs": 373,
+          "hit_rate": 0.4691689008042895,
+          "first": "2023-11-20",
+          "last": "2026-05-28"
+        }
+      },
+      "verdict": "WEAK"
+    },
+    "breadth_50": {
+      "horizons": {
+        "1M": {
+          "mean_ic": 0.008139486082615914,
+          "t_stat": 0.1561168840376504,
+          "sample_dates": 23,
+          "pairs": 782,
+          "hit_rate": 0.520460358056266,
+          "first": "2024-11-19",
+          "last": "2026-09-25"
+        },
+        "3M": {
+          "mean_ic": -0.049865338700502804,
+          "t_stat": -0.8674046661058932,
+          "sample_dates": 7,
+          "pairs": 238,
+          "hit_rate": 0.4831932773109244,
+          "first": "2024-11-19",
+          "last": "2026-05-27"
+        }
+      },
+      "verdict": "NO_INFORMATION"
+    },
+    "breadth_200": {
+      "horizons": {
+        "1M": {
+          "mean_ic": -0.021580912577949526,
+          "t_stat": -0.44292172082321996,
+          "sample_dates": 23,
+          "pairs": 782,
+          "hit_rate": 0.4936061381074169,
+          "first": "2024-11-19",
+          "last": "2026-09-25"
+        },
+        "3M": {
+          "mean_ic": -0.04260918590587576,
+          "t_stat": -0.4147470776663116,
+          "sample_dates": 7,
+          "pairs": 238,
+          "hit_rate": 0.4957983193277311,
+          "first": "2024-11-19",
+          "last": "2026-05-27"
+        }
+      },
+      "verdict": "NO_INFORMATION"
+    },
+    "dollar_volume_z": {
+      "horizons": {
+        "1M": {
+          "mean_ic": 0.060477239023951815,
+          "t_stat": 1.0140155603153596,
+          "sample_dates": 17,
+          "pairs": 578,
+          "hit_rate": 0.5380622837370242,
+          "first": "2024-11-19",
+          "last": "2026-09-25"
+        },
+        "3M": {
+          "mean_ic": -0.05809014514896867,
+          "t_stat": -0.6658722203007077,
+          "sample_dates": 5,
+          "pairs": 170,
+          "hit_rate": 0.5235294117647059,
+          "first": "2024-11-19",
+          "last": "2026-05-27"
+        }
+      },
+      "verdict": "WEAK"
+    },
+    "updown_volume_20d": {
+      "horizons": {
+        "1M": {
+          "mean_ic": 0.0606968479091241,
+          "t_stat": 1.5098996108369285,
+          "sample_dates": 23,
+          "pairs": 782,
+          "hit_rate": 0.5396419437340153,
+          "first": "2024-11-19",
+          "last": "2026-09-25"
+        },
+        "3M": {
+          "mean_ic": 0.017527010804321706,
+          "t_stat": 0.1936680902562167,
+          "sample_dates": 7,
+          "pairs": 238,
+          "hit_rate": 0.4831932773109244,
+          "first": "2024-11-19",
+          "last": "2026-05-27"
+        }
+      },
+      "verdict": "WEAK"
+    },
+    "rs_persistence_63": {
+      "horizons": {
+        "1M": {
+          "mean_ic": -0.0536075989951031,
+          "t_stat": -1.0908034675901808,
+          "sample_dates": 32,
+          "pairs": 1083,
+          "hit_rate": 0.46814404432132967,
+          "first": "2023-11-20",
+          "last": "2026-09-28"
+        },
+        "3M": {
+          "mean_ic": -0.06590171793703752,
+          "t_stat": -0.7414096693513235,
+          "sample_dates": 10,
+          "pairs": 338,
+          "hit_rate": 0.46449704142011833,
+          "first": "2023-11-20",
+          "last": "2026-05-28"
+        }
+      },
+      "verdict": "WEAK"
+    },
+    "crowding_state": {
+      "horizons": {
+        "1M": {
+          "mean_ic": 0.022685114254037773,
+          "t_stat": 0.3656886546995878,
+          "sample_dates": 20,
+          "pairs": 680,
+          "hit_rate": 0.5308823529411765,
+          "first": "2024-11-19",
+          "last": "2026-09-25"
+        },
+        "3M": {
+          "mean_ic": -0.004721341468342438,
+          "t_stat": -0.04205969831608443,
+          "sample_dates": 6,
+          "pairs": 204,
+          "hit_rate": 0.4852941176470588,
+          "first": "2024-11-19",
+          "last": "2026-05-27"
+        }
+      },
+      "verdict": "WEAK"
+    }
+  },
+  "macro": {
+    "liquidity_score": {
+      "horizons": {
+        "1M": {
+          "corr": -0.001845663844884531,
+          "t_stat": -0.010602549640065108,
+          "samples": 35,
+          "hit_rate": 0.6,
+          "first": "2023-11-20",
+          "last": "2026-09-28"
+        },
+        "3M": {
+          "corr": 0.27456329158739456,
+          "t_stat": 0.8566102373365763,
+          "samples": 11,
+          "hit_rate": 0.5454545454545454,
+          "first": "2023-11-20",
+          "last": "2026-05-28"
+        }
+      },
+      "verdict": "WEAK"
+    },
+    "risk_score": {
+      "horizons": {
+        "1M": {
+          "corr": -0.28609595402747434,
+          "t_stat": -1.7151893775484368,
+          "samples": 35,
+          "hit_rate": 0.4,
+          "first": "2023-11-20",
+          "last": "2026-09-28"
+        },
+        "3M": {
+          "corr": -0.07348053473458349,
+          "t_stat": -0.22103915006716895,
+          "samples": 11,
+          "hit_rate": 0.36363636363636365,
+          "first": "2023-11-20",
+          "last": "2026-05-28"
+        }
+      },
+      "verdict": "WEAK"
+    },
+    "macro_score": {
+      "horizons": {
+        "1M": {
+          "corr": -0.1596792504824455,
+          "t_stat": -0.9292101997544906,
+          "samples": 35,
+          "hit_rate": 0.5142857142857142,
+          "first": "2023-11-20",
+          "last": "2026-09-28"
+        },
+        "3M": {
+          "corr": 0.3211454404717467,
+          "t_stat": 1.0173240940691701,
+          "samples": 11,
+          "hit_rate": 0.5454545454545454,
+          "first": "2023-11-20",
+          "last": "2026-05-28"
+        }
+      },
+      "verdict": "WEAK"
+    },
+    "rate_score": {
+      "horizons": {
+        "1M": {
+          "corr": 0.0811622827851945,
+          "t_stat": 0.46778508782758027,
+          "samples": 35,
+          "hit_rate": 0.5714285714285714,
+          "first": "2023-11-20",
+          "last": "2026-09-28"
+        },
+        "3M": {
+          "corr": 0.03666795534519484,
+          "t_stat": 0.11007789293421412,
+          "samples": 11,
+          "hit_rate": 0.36363636363636365,
+          "first": "2023-11-20",
+          "last": "2026-05-28"
+        }
+      },
+      "verdict": "WEAK"
+    },
+    "front_rate_score": {
+      "horizons": {
+        "1M": {
+          "corr": -0.048556384413749015,
+          "t_stat": -0.2792646006438289,
+          "samples": 35,
+          "hit_rate": 0.6285714285714286,
+          "first": "2023-11-20",
+          "last": "2026-09-28"
+        },
+        "3M": {
+          "corr": 0.2732060317675192,
+          "t_stat": 0.852033238308252,
+          "samples": 11,
+          "hit_rate": 0.45454545454545453,
+          "first": "2023-11-20",
+          "last": "2026-05-28"
+        }
+      },
+      "verdict": "WEAK"
+    },
+    "usd_score": {
+      "horizons": {
+        "1M": {
+          "corr": 0.03782220481924463,
+          "t_stat": 0.21742759784594107,
+          "samples": 35,
+          "hit_rate": 0.5428571428571428,
+          "first": "2023-11-20",
+          "last": "2026-09-28"
+        },
+        "3M": {
+          "corr": 0.5176033765721322,
+          "t_stat": 1.8148347389286497,
+          "samples": 11,
+          "hit_rate": 0.6363636363636364,
+          "first": "2023-11-20",
+          "last": "2026-05-28"
+        }
+      },
+      "verdict": "WEAK"
+    },
+    "curve_score": {
+      "horizons": {
+        "1M": {
+          "corr": -0.13369738104487514,
+          "t_stat": -0.7749906888174826,
+          "samples": 35,
+          "hit_rate": 0.37142857142857144,
+          "first": "2023-11-20",
+          "last": "2026-09-28"
+        },
+        "3M": {
+          "corr": -0.3822353386434989,
+          "t_stat": -1.2409365157018355,
+          "samples": 11,
+          "hit_rate": 0.2727272727272727,
+          "first": "2023-11-20",
+          "last": "2026-05-28"
+        }
+      },
+      "verdict": "WEAK"
+    },
+    "vix_score": {
+      "horizons": {
+        "1M": {
+          "corr": -0.3535265412720972,
+          "t_stat": -2.1710521542186383,
+          "samples": 35,
+          "hit_rate": 0.4857142857142857,
+          "first": "2023-11-20",
+          "last": "2026-09-28"
+        },
+        "3M": {
+          "corr": 0.10090418364621906,
+          "t_stat": 0.3042654768373103,
+          "samples": 11,
+          "hit_rate": 0.45454545454545453,
+          "first": "2023-11-20",
+          "last": "2026-05-28"
+        }
+      },
+      "verdict": "REVERSED"
+    },
+    "credit_score": {
+      "horizons": {
+        "1M": {
+          "corr": -0.17082874462687542,
+          "t_stat": -0.9959765477298014,
+          "samples": 35,
+          "hit_rate": 0.34285714285714286,
+          "first": "2023-11-20",
+          "last": "2026-09-28"
+        },
+        "3M": {
+          "corr": -0.14046071414663966,
+          "t_stat": -0.42560144764325225,
+          "samples": 11,
+          "hit_rate": 0.45454545454545453,
+          "first": "2023-11-20",
+          "last": "2026-05-28"
+        }
+      },
+      "verdict": "WEAK"
+    },
+    "tnx_3m": {
+      "horizons": {
+        "1M": {
+          "corr": -0.0812577521798742,
+          "t_stat": -0.4683389882176225,
+          "samples": 35,
+          "hit_rate": 0.45714285714285713,
+          "first": "2023-11-20",
+          "last": "2026-09-28"
+        },
+        "3M": {
+          "corr": -0.0928586256499585,
+          "t_stat": -0.27978474187334734,
+          "samples": 11,
+          "hit_rate": 0.6363636363636364,
+          "first": "2023-11-20",
+          "last": "2026-05-28"
+        }
+      },
+      "verdict": "WEAK"
+    },
+    "dxy_3m": {
+      "horizons": {
+        "1M": {
+          "corr": -0.06002485114747373,
+          "t_stat": -0.345439385391663,
+          "samples": 35,
+          "hit_rate": 0.42857142857142855,
+          "first": "2023-11-20",
+          "last": "2026-09-28"
+        },
+        "3M": {
+          "corr": -0.5200713831917195,
+          "t_stat": -1.8266859879467607,
+          "samples": 11,
+          "hit_rate": 0.36363636363636365,
+          "first": "2023-11-20",
+          "last": "2026-05-28"
+        }
+      },
+      "verdict": "WEAK"
+    },
+    "hyg_ief": {
+      "horizons": {
+        "1M": {
+          "corr": -0.17082719960150763,
+          "t_stat": -0.9959672690543138,
+          "samples": 35,
+          "hit_rate": 0.34285714285714286,
+          "first": "2023-11-20",
+          "last": "2026-09-28"
+        },
+        "3M": {
+          "corr": -0.14094967823634214,
+          "t_stat": -0.4271130056779149,
+          "samples": 11,
+          "hit_rate": 0.45454545454545453,
+          "first": "2023-11-20",
+          "last": "2026-05-28"
+        }
+      },
+      "verdict": "WEAK"
+    },
+    "vix_level": {
+      "horizons": {
+        "1M": {
+          "corr": 0.4360021297867741,
+          "t_stat": 2.7831031742604697,
+          "samples": 35,
+          "hit_rate": 0.5428571428571428,
+          "first": "2023-11-20",
+          "last": "2026-09-28"
+        },
+        "3M": {
+          "corr": -0.20499366118507875,
+          "t_stat": -0.6283245224772576,
+          "samples": 11,
+          "hit_rate": 0.5454545454545454,
+          "first": "2023-11-20",
+          "last": "2026-05-28"
+        }
+      },
+      "verdict": "INFORMATIVE"
+    },
+    "usdjpy_3m": {
+      "horizons": {
+        "1M": {
+          "corr": -0.047652442270400115,
+          "t_stat": -0.27405377124313807,
+          "samples": 35,
+          "hit_rate": 0.4857142857142857,
+          "first": "2023-11-20",
+          "last": "2026-09-28"
+        },
+        "3M": {
+          "corr": -0.26474179576095225,
+          "t_stat": -0.8236124255947921,
+          "samples": 11,
+          "hit_rate": 0.45454545454545453,
+          "first": "2023-11-20",
+          "last": "2026-05-28"
+        }
+      },
+      "verdict": "WEAK"
+    }
+  },
+  "risk_regime_forward_spy": {
+    "1M": {
+      "Broad Risk-Off": {
+        "mean_forward_return": 0.10498867346900148,
+        "days": 9,
+        "non_overlapping_samples": 1
+      },
+      "Healthy Rotation": {
+        "mean_forward_return": 0.011959322437333135,
+        "days": 655,
+        "non_overlapping_samples": 32
+      },
+      "Liquidity / Inflation Stress": {
+        "mean_forward_return": 0.06562488316837349,
+        "days": 29,
+        "non_overlapping_samples": 2
+      },
+      "Narrow Leadership Unwind": {
+        "mean_forward_return": 0.020863211049948305,
+        "days": 40,
+        "non_overlapping_samples": 2
+      }
+    },
+    "3M": {
+      "Broad Risk-Off": {
+        "mean_forward_return": 0.18583753098069755,
+        "days": 9,
+        "non_overlapping_samples": 1
+      },
+      "Healthy Rotation": {
+        "mean_forward_return": 0.04409844640010777,
+        "days": 618,
+        "non_overlapping_samples": 10
+      },
+      "Liquidity / Inflation Stress": {
+        "mean_forward_return": 0.07804563734952037,
+        "days": 29,
+        "non_overlapping_samples": 1
+      },
+      "Narrow Leadership Unwind": {
+        "mean_forward_return": 0.06552876575868949,
+        "days": 35,
+        "non_overlapping_samples": 1
+      }
+    }
+  },
+  "card_removals": [
+    "breadth_200",
+    "breadth_50",
+    "rel_3m",
+    "rel_6m"
+  ],
+  "reversed": [
+    "vix_score"
+  ]
+}

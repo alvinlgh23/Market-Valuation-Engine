@@ -45,12 +45,14 @@ def test_flow_axis_requires_persistence(tmp_path):
     days = pd.bdate_range("2025-01-01", periods=120)
     values = [0.0] * 100 + [0.5] * 20             # last 20 observations in the top bucket
     store.append([observation("sector.XLV.rel_3m", day, value + index * 1e-6, source="t", source_state="BACKFILL") for index, (day, value) in enumerate(zip(days, values))])
-    result = cv.flow_axis("LLY", "XLV", "test", store, 0.08)
+    result = cv.flow_axis("LLY", "XLV", "test", store, 0.08, removed={"rel_1m"})
     assert result["state"] == "Money flowing in" and result["detail"]["persistence_of_10"] >= 6
+    assert result["detail"]["basis"] == "rel_3m"
     assert "leads XLV by 8.0%" in result["evidence"][1]
+    assert cv.flow_axis("LLY", "XLV", "test", store, 0.08, removed={"rel_1m", "rel_3m", "rel_6m"})["state"] == "No informative flow signal"
     flip = SignalStore(tmp_path / "flip")
     flip.append([observation("sector.XLV.rel_3m", day, (0.5 if index % 2 else -0.5) + index * 1e-6, source="t", source_state="BACKFILL") for index, day in enumerate(days)])
-    assert cv.flow_axis("LLY", "XLV", "test", flip, None)["state"] == "Mixed (not persistent)"
+    assert cv.flow_axis("LLY", "XLV", "test", flip, None, removed={"rel_1m"})["state"] == "Mixed (not persistent)"
     assert cv.flow_axis("LLY", None, "none", store, None)["state"] == "No sector mapping"
 
 

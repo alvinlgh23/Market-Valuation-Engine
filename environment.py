@@ -240,6 +240,22 @@ def semis_cycle(kospi: dict[str, Any] | None) -> dict[str, Any]:
     )
 
 
+def volatility_scorecard_note(path=None) -> str | None:
+    """Checklist 6.2: say so when high VIX has been followed by higher, not lower, SPY returns."""
+    import json
+    from pathlib import Path
+    path = path or Path(__file__).resolve().parent / "data" / "signal_validation.json"
+    try:
+        macro = json.loads(Path(path).read_text()).get("macro", {})
+    except (OSError, ValueError):
+        return None
+    level = (macro.get("vix_level") or {}).get("horizons", {}).get("1M") or {}
+    if (macro.get("vix_score") or {}).get("verdict") == "REVERSED" and level.get("corr") is not None and level["corr"] > 0:
+        return (f"Describes current stress, not a forward signal: higher VIX has been followed by higher SPY returns over the next month "
+                f"(r = {level['corr']:+.2f}, t = {level['t_stat']:.1f}, {level['samples']} non-overlapping months).")
+    return None
+
+
 # ---- assembled layer -----------------------------------------------------------------------
 def build_environment(core: dict[str, Any] | None, world: dict[str, Any], inflation: dict[str, Any] | None, kospi: dict[str, Any] | None,
                       cftc: dict[str, Any] | None = None, store: SignalStore | None = None) -> dict[str, Any]:
@@ -262,6 +278,9 @@ def build_environment(core: dict[str, Any] | None, world: dict[str, Any], inflat
         "yen_carry": yen_carry(core, world, cftc),
         "semis_cycle": semis_cycle(kospi),
     }
+    vix_note = volatility_scorecard_note()
+    if vix_note:
+        factors["volatility"]["notes"].append(vix_note)
     wti = ((inflation or {}).get("metrics") or {}).get("wti") or {}
     oil_3m = _num(wti.get("trend_3m"))
     oil_direction = None if oil_3m is None else 1 if oil_3m > 5 else -1 if oil_3m < -5 else 0
