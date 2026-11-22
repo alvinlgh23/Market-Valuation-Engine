@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { loadCompanyCard } from "../../lib/company-card";
 import { fairValueCoordinates } from "../../lib/fair-value-scale.mjs";
 import { axisTone, confidenceDots, percentileWidth, TONE_GLYPH, TONE_LABEL, type Tone } from "../../lib/judgment-tone.mjs";
 import { PriceDriversPanel, type Attribution, type PriceReading } from "./PriceDrivers";
@@ -141,9 +142,7 @@ export function JudgmentCard({ ticker }: { ticker: string }) {
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     let active = true;
-    fetch(`/api/research?action=company-verdict&ticker=${encodeURIComponent(ticker)}`, { cache: "no-store" })
-      .then(async (response) => { const body = await response.json(); if (!active) return; if (body.card) setCard(body.card as Card); else setError(body.error || "The judgment card is unavailable."); })
-      .catch((failure) => { if (active) setError(String(failure)); });
+    loadCompanyCard(ticker).then((result) => { if (!active) return; if (result.card) setCard(result.card as unknown as Card); else setError(result.error); });
     return () => { active = false; };
   }, [ticker]);
   if (error) return <section className="judgment-card judgment-card-empty" aria-label="Judgment card"><p>Judgment card unavailable: {error}</p></section>;

@@ -223,7 +223,9 @@ P1 发现的遗留问题：`compute_macro` 只记录 10 年期和前端利率的
   - 结果（2026-11-22）：CAT（股权激励 2.42 亿）、WMT（36.03 亿，历年从 7.7 亿稳定增长，数值合理）、CRM（利息 3.24 亿）对账通过，现在有估值。XOM（SEC 也没有股权激励）、PLTR（没有申报利息支出）、LLY（补上后对账仍差 26.4 亿）继续扣留，**没有填 0**。估值的数据质量说明会写出哪些字段来自申报文件。公式和容差没有改。
 - [x] **11.5** V 改为走一般经营公司的估值；BAC、SOFI 继续扣留，页面用白话说明原因。
   - 结果（2026-11-22）：`is_payment_network`：Yahoo 行业为"Credit Services"、业务简介提到交易处理网络、且没有贷款或存款字样的公司（V、MA），不再走银行框架；AXP、COF、SYF、SOFI 有放贷或存款，仍走银行框架。新旧两条证券分类路径都改了。V 对账通过、反向 DCF 收敛，现在有估值。判断卡被扣留时改写白话原因（银行、ADR 币种、缺字段、两种现金流对不上四种），模型原文保留在 `detail.model_reason`。有测试。
-- [ ] **11.6** 概览页：列出候选瓶颈和需要的指标，不再显示 Unknown；估值格子读判断卡的估值。
+- [x] **11.6** 概览页：列出候选瓶颈和需要的指标，不再显示 Unknown；估值格子读判断卡的估值。
+  - 结果（2026-11-22）：公司页"Research details"里，质量条改为"Business type（类型 · 可信度）/ Bottleneck（Not confirmed · N candidates）/ Valuation (live) / Overall research"。主要约束格子在未确认时列出前三个候选瓶颈和确认所需的经营数字（例如 TSLA：Backlog Execution 需要 backlog、Production Capacity 需要 production volume），"QUALITATIVE RESEARCH GAP"改成"WHAT IS MISSING"并点名缺哪些数字。估值格子读判断卡的估值（同一次请求，`lib/company-card.ts` 共用，一分钟内复用）。浏览器核对：TSLA、CAT（显示估值区间和隐含增长）、SOFI（显示银行白话原因）；每页只发一次判断卡请求。公司浏览器脚本已更新并通过。
+  - 约束规则本身没有改：仍然要有直接经营指标并观察到方向，才会认定主要瓶颈。
 - [ ] **11.7** 先备份，再重新分析 `.cache/company_economics` 里的存档。
 
 ## 1. Owner 想要什么

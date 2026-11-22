@@ -36,7 +36,7 @@ await preview.close();
 
 await page.goto(`${baseUrl}/company/AMD`, { waitUntil: "networkidle" });
 await page.locator(".company-details > summary").click();   // checklist 9.4: the stored profile is folded
-await page.getByText("QUALITATIVE RESEARCH GAP").waitFor();
+await page.getByText("WHAT IS MISSING").waitFor();   // checklist 11.6: plain-language gap
 await capture("04-amd-company-snapshot.png");
 await page.getByRole("button", { name: /^Economic map$/ }).click();
 await page.locator(".research-workspace-layer").waitFor();

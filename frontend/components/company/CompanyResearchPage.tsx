@@ -11,6 +11,7 @@ import { ResearchLabel } from "./ResearchPrimitives";
 import { ReportMode } from "./ReportMode";
 import { JudgmentCard } from "./JudgmentCard";
 import { OperationalResearch } from "./OperationalResearch";
+import { BottleneckCandidates, candidateBottlenecks, useLiveValuation } from "./StoredProfileReads";
 
 function queryState(): { workspace: CompanyWorkspaceKind | null; node: string | null } {
   if (typeof window === "undefined") return { workspace: null, node: null };
@@ -97,6 +98,13 @@ export function CompanyResearchPage({ company, dataState = "FIXTURE", initialWor
   }
 
   const marketRead = displayStatus(company.raw.market_expectations_comparison.state);
+  const liveValuation = useLiveValuation(company.ticker);
+  const unconfirmed = company.primaryConstraint.constraint === "UNKNOWN";
+  const candidates = candidateBottlenecks(company.raw.constraints.candidate_assessments, company.raw.constraints.candidate_constraints);
+  const neededNumbers = candidates.map((item) => item.needs).filter((item): item is string => Boolean(item));
+  const gapText = neededNumbers.length
+    ? `The filings and market data we read have no direct operating numbers (${neededNumbers.join(", ")}), so no bottleneck is confirmed. Financial ratios alone are not used to name one.`
+    : company.raw.qualitative_research_reason;
   const growthSummary = company.growthDrivers.map((driver) => driver.label).join(" × ");
 
   return (
@@ -125,11 +133,16 @@ export function CompanyResearchPage({ company, dataState = "FIXTURE", initialWor
           <h2>{company.coreQuestion}</h2>
         </section>
 
-        {company.raw.data_quality ? <section className="snapshot-quality-strip" aria-label="Company research quality"><div><span>Classification</span><strong>{displayStatus(company.raw.data_quality.classification)}</strong></div><div><span>Constraint diagnosis</span><strong>{displayStatus(company.raw.data_quality.constraint_diagnosis)}</strong></div><div><span>Valuation</span><strong>{displayStatus(company.raw.data_quality.valuation)}</strong></div><div><span>Overall research</span><strong>{displayStatus(company.raw.data_quality.overall)}</strong></div></section> : null}
+        {company.raw.data_quality ? <section className="snapshot-quality-strip" aria-label="Company research quality">
+          <div title="Business-model route and how sure the classifier is"><span>Business type</span><strong>{company.archetype} · {displayStatus(company.raw.data_quality.classification).toLowerCase()}</strong></div>
+          <div title={unconfirmed ? "No direct operating number confirms a bottleneck yet" : undefined}><span>Bottleneck</span><strong>{unconfirmed ? `Not confirmed · ${candidates.length} candidates` : company.primaryConstraint.label}</strong></div>
+          <div title="Live, the same read as the judgment card above"><span>Valuation (live)</span><strong>{liveValuation.axis?.state ?? (liveValuation.loading ? "Loading…" : displayStatus(company.raw.data_quality.valuation))}</strong></div>
+          <div><span>Overall research</span><strong>{displayStatus(company.raw.data_quality.overall)}</strong></div>
+        </section> : null}
 
         <section className="snapshot-quality-strip" aria-label="Evidence qualification summary"><div><span>Observed</span><strong>{company.evidenceCounts.observed}</strong></div><div><span>Proxy / inference</span><strong>{company.evidenceCounts.proxy + company.evidenceCounts.inference}</strong></div><div><span>Unverified / stale</span><strong>{company.evidenceCounts.unverified} / {company.evidenceCounts.stale}</strong></div><div><span>Counterevidence</span><strong>{company.evidenceCounts.counter}</strong></div></section>
 
-        {company.raw.qualitative_research_needed ? <section className="snapshot-qualitative-gap"><span>QUALITATIVE RESEARCH GAP</span><p>{company.raw.qualitative_research_reason}</p></section> : null}
+        {company.raw.qualitative_research_needed ? <section className="snapshot-qualitative-gap" title={company.raw.qualitative_research_reason}><span>WHAT IS MISSING</span><p>{gapText}</p></section> : null}
 
         <div className="snapshot-research-grid">
           <section className="snapshot-growth snapshot-block">
@@ -140,8 +153,8 @@ export function CompanyResearchPage({ company, dataState = "FIXTURE", initialWor
 
           <section className="snapshot-constraint snapshot-block">
             <header><span>02</span><strong>Primary Constraint</strong><button type="button" onClick={() => { openWorkspace("economics"); setTimeout(() => selectNode(company.raw.economic_graph.nodes.find((node) => node.type === "constraint")?.id ?? ""), 0); }}>Inspect →</button></header>
-            <h3>{company.primaryConstraint.label}</h3>
-            <dl><div><dt>Binding</dt><dd>{humanize(company.primaryConstraint.constraint_status || "EVIDENCE_INSUFFICIENT")}</dd></div><div><dt>Direction</dt><dd>{humanize(company.primaryConstraint.direction_status || company.primaryConstraint.direction)}</dd></div><div><dt>Evidence</dt><dd>{company.primaryConstraint.basis}</dd></div></dl>
+            {unconfirmed ? <BottleneckCandidates candidates={candidates} /> : <><h3>{company.primaryConstraint.label}</h3>
+            <dl><div><dt>Binding</dt><dd>{humanize(company.primaryConstraint.constraint_status || "EVIDENCE_INSUFFICIENT")}</dd></div><div><dt>Direction</dt><dd>{humanize(company.primaryConstraint.direction_status || company.primaryConstraint.direction)}</dd></div><div><dt>Evidence</dt><dd>{company.primaryConstraint.basis}</dd></div></dl></>}
           </section>
 
           <section className="snapshot-read snapshot-block">
@@ -152,8 +165,14 @@ export function CompanyResearchPage({ company, dataState = "FIXTURE", initialWor
 
           <section className="snapshot-valuation snapshot-block">
             <header><span>04</span><strong>Valuation Read</strong><button type="button" onClick={() => openValuationObject()}>Open →</button></header>
-            <h3>{marketRead}</h3>
-            <p>{company.raw.market_expectations_comparison.reason}</p>
+            {liveValuation.axis ? <>
+              <h3>{liveValuation.axis.state}</h3>
+              <p>{liveValuation.axis.evidence[0] ?? liveValuation.axis.missing[0]}</p>
+              <small>Live, the same read as the judgment card above.</small>
+            </> : <>
+              <h3>{liveValuation.loading ? "Loading the live valuation…" : marketRead}</h3>
+              <p>{company.raw.market_expectations_comparison.reason}</p>
+            </>}
           </section>
         </div>
 

@@ -2494,6 +2494,13 @@ body {
 .snapshot-read > small { color: var(--mi-muted); font-size: var(--fs-1); }
 .snapshot-valuation > p { max-width: 620px; margin: 0 0 9px; color: var(--mi-muted); font-size: var(--fs-1); line-height: 1.5; }
 .snapshot-valuation .unavailable-value { float: right; }
+/* Checklist 11.6: candidate bottlenecks and the live valuation note. */
+.snapshot-constraint > p { margin: 16px 0 10px; color: var(--mi-muted); font-size: var(--fs-1); line-height: 1.5; }
+.snapshot-candidates { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.snapshot-candidates li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.snapshot-candidates b { color: var(--mi-text); font-size: var(--fs-2); font-weight: 540; }
+.snapshot-candidates small { color: var(--mi-muted); font: 500 var(--fs-1)/1.3 var(--mi-mono); }
+.snapshot-valuation > small { display: block; color: var(--mi-muted); font-size: var(--fs-1); line-height: 1.45; }
 
 .snapshot-actions {
   display: grid;
