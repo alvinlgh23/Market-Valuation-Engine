@@ -137,3 +137,17 @@ def test_valuation_axis_reads_the_phased_headline():
     assert result["detail"]["fair_value"] == {"bear": 70.0, "base": 95.0, "bull": 130.0}
     assert result["detail"]["implied_5y_revenue_cagr"] == 0.20 and result["detail"]["ten_year_weight"] == 0.4
     assert "ten-year (40%)" in result["detail"]["notes"][0]
+
+
+def test_reversed_volatility_is_context_not_a_headwind(monkeypatch):
+    """Checklist 10.5: high VIX preceded better returns, so it is shown but not counted."""
+    validation = {"results": {"FABLESS_SEMICONDUCTOR": {"volatility": {"status": "CONFIRMED"}, "semis_cycle": {"status": "CONFIRMED"}, "usd": {"status": "CONFIRMED"}}}}
+    import exposure_map
+    monkeypatch.setattr(exposure_map, "load_validation", lambda path=None: validation)
+    monkeypatch.setattr(cv, "reversed_signals", lambda: {"vix_score"})
+    result = cv.macro_axis("FABLESS_SEMICONDUCTOR", environment(volatility=1, semis_cycle=1, usd=-1))
+    assert result["state"] == "Tailwind"                              # volatility rising would otherwise be a headwind
+    assert result["detail"]["confirmed_headwinds"] == 0
+    assert any("not counted as a headwind" in line for line in result["detail"]["context_only"])
+    monkeypatch.setattr(cv, "reversed_signals", lambda: set())
+    assert cv.macro_axis("FABLESS_SEMICONDUCTOR", environment(volatility=1, semis_cycle=1, usd=-1))["detail"]["confirmed_headwinds"] == 1

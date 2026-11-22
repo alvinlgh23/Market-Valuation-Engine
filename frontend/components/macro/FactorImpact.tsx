@@ -1,25 +1,17 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { loadWatchlistDrivers, type DriverRow as Row } from "../../lib/watchlist-drivers";
 
 // Checklist 10.4: which watchlist companies a macro factor moved over the last three months,
 // from the same attribution as the watchlist column (one shared request for every tile).
-type Row = { ticker: string; attribution?: { windows?: Record<string, { macro_by_factor?: Record<string, number> }> } };
-
-let shared: Promise<Row[]> | null = null;
-function loadDrivers(): Promise<Row[]> {
-  shared ??= fetch("/api/research?action=watchlist-drivers", { cache: "no-store" })
-    .then(async (response) => { const body = await response.json(); return Array.isArray(body.rows) ? (body.rows as Row[]) : []; })
-    .catch(() => { shared = null; return []; });
-  return shared;
-}
 
 const MIN_EFFECT = 0.01;   // show companies the factor moved by at least one percentage point
 const UNMEASURED: Record<string, string> = { liquidity: "No market proxy; not split out of prices" };
 
 export function FactorImpact({ factor, limit = 3 }: { factor: string; limit?: number }) {
   const [rows, setRows] = useState<Row[] | null>(null);
-  useEffect(() => { let active = true; loadDrivers().then((value) => { if (active) setRows(value); }); return () => { active = false; }; }, []);
+  useEffect(() => { let active = true; loadWatchlistDrivers().then((value) => { if (active) setRows(value); }); return () => { active = false; }; }, []);
   if (UNMEASURED[factor]) return <small className="env-impact env-impact-none">{UNMEASURED[factor]}</small>;
   if (!rows) return <small className="env-impact env-impact-none">Watchlist effect…</small>;
   const effects = rows

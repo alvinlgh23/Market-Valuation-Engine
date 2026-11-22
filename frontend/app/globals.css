@@ -3597,3 +3597,16 @@ body {
 .env-impact a.up b { color: var(--research-positive); }
 .env-impact small { color: var(--research-faint); }
 .env-impact.env-impact-none { display: block; color: var(--research-faint); }
+.env-states { display: grid; gap: 4px; font-size: var(--fs-1); }
+.env-states > span { display: flex; justify-content: space-between; gap: 8px; color: var(--research-text); }
+.env-states > span small { color: var(--research-faint); }
+.env-untested { color: var(--research-faint); font-style: italic; }
+.today-headline h1 { font-size: var(--fs-4); line-height: 1.25; }
+.today-headline-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 8px; font-size: var(--fs-1); color: var(--research-muted); }
+.today-headline-chips > span, .today-mover { padding: 3px 8px; border: 1px solid var(--research-line); }
+.today-mover { color: var(--research-text); text-decoration: none; border-color: #d9824f; }
+.today-mover:hover { color: var(--research-accent); }
+.today-context { color: var(--research-faint); border-style: dashed !important; }
+.today-headline { display: block !important; }
+.today-headline-chips { justify-content: flex-start; }
+.today-headline-chips > * { flex: 0 0 auto; text-transform: none !important; letter-spacing: normal !important; font-family: var(--font-research) !important; font-size: var(--fs-1) !important; }

@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { EnvironmentFactors } from "../macro/EnvironmentFactors";
 import { WatchlistChanges } from "./WatchlistChanges";
+import { TodayHeadline } from "./TodayHeadline";
 import { dashboardPriorities, dashboardTensions, marketMoves, sectorLeadershipBars, type MarketMove } from "../../lib/dashboard-orchestration";
 import type { ResearchSystem } from "../../lib/research-system-types";
 import { statusWord } from "../../lib/status-words";
@@ -41,12 +42,7 @@ export function ResearchDashboard({ system }: { system: ResearchSystem; onModule
   const priorities = dashboardPriorities(system);
   const tensions = dashboardTensions(system);
   return <div className="system-dashboard today-visual">
-    <header className="today-regime" title={system.dashboard.headline.summary}>
-      <span>Risk regime</span>
-      <h1>{system.dashboard.headline.state}</h1>
-      <small>{system.environment?.as_of ? `data ${system.environment.as_of}` : null}</small>
-      <Link href="/brief">Full brief →</Link>
-    </header>
+    <TodayHeadline regime={system.dashboard.headline.state} regimeSummary={system.dashboard.headline.summary} asOf={system.environment?.as_of} />
 
     <EnvironmentFactors environment={system.environment} />
 

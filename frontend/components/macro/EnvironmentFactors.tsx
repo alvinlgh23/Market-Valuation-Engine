@@ -20,7 +20,8 @@ function FactorVisual({ id, factor }: { id: string; factor: EnvironmentFactor })
   if (id === "semis_cycle") return <Track label="within year" value={num(r.percentile_within_year)} />;
   if (id === "liquidity") {
     const policy = obj(r.policy_liquidity), market = obj(r.market_liquidity);
-    return <div className="env-gauges">{[["Policy", policy], ["Market", market]].map(([label, item]) => { const score = num((item as Record<string, unknown>).score); return score == null ? null : <Track key={String(label)} label={String(label)} value={score / 100} right={`${Math.round(score)}/100`} />; })}</div>;
+    // Checklist 10.5: the 0-100 scores failed the scorecard (not significant), so only their states are shown.
+    return <div className="env-states">{[["Policy", policy], ["Market", market]].map(([label, item]) => { const state = (item as Record<string, unknown>).label; return state ? <span key={String(label)}><small>{String(label)}</small>{String(state)}</span> : null; })}<small className="env-untested">Scores not validated against returns</small></div>;
   }
   if (id === "fed_path") {
     const tighten = num(r.probability_tightening_3m), ease = num(r.probability_easing_3m);

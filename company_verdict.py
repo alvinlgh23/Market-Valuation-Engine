@@ -90,6 +90,9 @@ def macro_axis(archetype: str, environment: dict[str, Any]) -> dict[str, Any]:
     from company_economics_registry import Archetype
 
     factors = environment.get("factors") or {}
+    # Checklist 10.5: factors whose scorecard sign was reversed (high VIX preceded *better* returns) describe
+    # what already moved prices; they are shown but not counted as a forward tailwind or headwind.
+    reversed_ids = {"volatility"} if "vix_score" in reversed_signals() else set()
     rows, tail, head, missing = [], 0, 0, []
     for exposure in exposures_for(archetype):
         if exposure["factor"] == "yen_carry":
@@ -102,7 +105,7 @@ def macro_axis(archetype: str, environment: dict[str, Any]) -> dict[str, Any]:
             missing.append(f"{exposure['factor_label']} current state")
             continue
         effect = direction * exposure["direction"]
-        weight = "confirmed" if exposure["validation"] == "CONFIRMED" else "unconfirmed"
+        weight = "context" if exposure["factor"] in reversed_ids else "confirmed" if exposure["validation"] == "CONFIRMED" else "unconfirmed"
         rows.append({"factor": exposure["factor"], "label": exposure["factor_label"], "factor_state": factor.get("state"),
                      "effect": effect, "validation": exposure["validation"], "mechanism": exposure["mechanism"], "weight": weight})
         if weight == "confirmed":
@@ -127,10 +130,21 @@ def macro_axis(archetype: str, environment: dict[str, Any]) -> dict[str, Any]:
         switch = "Yen-carry unwind risk is on and this business is liquidity-sensitive."
     evidence = [f"{row['label']}: {row['factor_state']} → {'tailwind' if row['effect'] > 0 else 'headwind' if row['effect'] < 0 else 'neutral'} ({row['validation'].lower()})"
                 for row in sorted(confirmed, key=lambda item: -abs(item["effect"]))]
+    context_note = [f"{row['label']}: {row['factor_state']}. Moves prices at the time, but high readings preceded better, not worse, returns in the scorecard, so it is not counted as a headwind."
+                    for row in rows if row["weight"] == "context"]
     if switch:
         evidence.insert(0, switch)
     return axis(state, confidence=confidence, evidence=evidence, missing=missing, families=["macro_data", "price"],
-                detail={"exposures": rows, "confirmed_tailwinds": tail, "confirmed_headwinds": head, "carry_switch": switch})
+                detail={"exposures": rows, "confirmed_tailwinds": tail, "confirmed_headwinds": head, "carry_switch": switch, "context_only": context_note})
+
+
+def reversed_signals() -> set[str]:
+    """Signals whose forward sign was the opposite of the hypothesis in the scorecard (checklist 6.1)."""
+    path = ROOT / "data" / "signal_validation.json"
+    try:
+        return set(json.loads(path.read_text()).get("reversed", []))
+    except (OSError, json.JSONDecodeError):
+        return set()
 
 
 def card_removals() -> set[str]:
@@ -514,7 +528,7 @@ def build_card(ticker: str, environment: dict[str, Any], core: dict[str, Any], s
         "fundamentals": fundamentals_axis(economics, relative),
     }
     risk = environment.get("risk_regime") or {}
-    tactical_env = f"Risk regime: {risk.get('regime') or 'unavailable'}"
+    tactical_env = f"Market regime (context only, not predictive): {risk.get('regime') or 'unavailable'}"
     from exposure_map import exposures_for
     exposed = {item["factor"] for item in exposures_for(archetype)}
     card = {

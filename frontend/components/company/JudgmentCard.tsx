@@ -52,7 +52,9 @@ function AxisVisual({ name, axis }: { name: string; axis: Axis }) {
     const rows = Array.isArray(detail.exposures) ? (detail.exposures as Array<Record<string, unknown>>) : [];
     const shown = rows.filter((row) => row.factor_state && row.effect !== 0);
     if (!shown.length) return null;
-    return <div className="jc-chips">{shown.map((row) => <Chip key={String(row.factor)} tone={Number(row.effect) > 0 ? "supportive" : "against"}>{String(row.label)}: {String(row.factor_state).toLowerCase()}</Chip>)}</div>;
+    // Checklist 10.5: "context" factors (reversed in the scorecard) are shown neutral, not as a headwind or tailwind.
+    return <div className="jc-chips">{shown.map((row) => <span key={String(row.factor)} title={row.weight === "context" ? "Moved prices, but not counted as a forecast: high readings preceded better returns in the scorecard." : undefined}>
+      <Chip tone={row.weight === "context" ? "unknown" : Number(row.effect) > 0 ? "supportive" : "against"}>{String(row.label)}: {String(row.factor_state).toLowerCase()}{row.weight === "context" ? " · context" : ""}</Chip></span>)}</div>;
   }
   if (name === "expectations") {
     const up = num(detail.revisions_up_30d), down = num(detail.revisions_down_30d);
