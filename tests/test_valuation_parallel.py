@@ -1,4 +1,4 @@
-"""Checklist 7.5: parallel spreads leave the default untouched. Checklist 7.6: the ten-year model is phased in above the cap."""
+"""Checklist 7.5: bear/bull spreads from company history are the default. Checklist 7.6: the ten-year model is phased in above the cap."""
 from unittest.mock import patch
 
 import pandas as pd
@@ -12,13 +12,30 @@ def report_for(data):
         return iv.build_valuation_report("TEST", data=data)
 
 
-def test_default_scenarios_are_identical_with_and_without_the_parallel_sections():
+def test_default_scenarios_use_company_spreads_and_keep_the_old_values_beside_them():
     data = fixture_data()
+    data["cashflow"] = pd.DataFrame({"2025": [150.0], "2024": [120.0], "2023": [60.0], "2022": [100.0]}, index=["Free Cash Flow"])
     report = report_for(data)
+    rates = fixture_rates()
+    spreads, _ = iv.company_scenario_spreads(data)
+    expected = {name: iv._dcf(data, items)["fair_value_per_share"] for name, items in iv._scenario_assumptions(data, rates, {}, spreads=spreads).items()}
+    legacy = {name: iv._dcf(data, items)["fair_value_per_share"] for name, items in iv._scenario_assumptions(data, rates, {}).items()}
+    assert {name: value["fair_value_per_share"] for name, value in report["scenarios"].items()} == expected
+    record = report["scenario_spreads"]
+    assert record["source"] == "COMPANY_HISTORY" and record["default_spread_fair_value"] == legacy
+    assert record["spreads"]["bull"] == {"growth": spreads["bull"]["growth"], "margin": spreads["bull"]["margin"]}
+    assert expected["base"] == legacy["base"]   # spreads move bear and bull only
+    assert expected["bear"] <= expected["base"] <= expected["bull"]
+
+
+def test_short_history_keeps_the_four_point_default():
+    data = fixture_data(); data["revenue_history"] = [1000.0, 900.0, 800.0]
+    report = report_for(data)
+    assert report["scenario_spreads"]["source"] == "DEFAULT"
+    assert report["scenario_spreads"]["spreads"]["bull"] == {"growth": 0.04, "margin": 0.04}
     rates = fixture_rates()
     expected = {name: iv._dcf(data, items)["fair_value_per_share"] for name, items in iv._scenario_assumptions(data, rates, {}).items()}
     assert {name: value["fair_value_per_share"] for name, value in report["scenarios"].items()} == expected
-    assert report["company_spread_scenarios"]["default"] is False
 
 
 def test_company_spreads_follow_history_and_respect_bounds():
@@ -29,10 +46,17 @@ def test_company_spreads_follow_history_and_respect_bounds():
     assert iv.SPREAD_BOUNDS["margin"][0] <= basis["margin_spread"] <= iv.SPREAD_BOUNDS["margin"][1]
     assert spreads["bull"]["growth"] == basis["growth_spread"] and spreads["bear"]["margin"] == -basis["margin_spread"]
     assert spreads["bull"]["wacc"] == iv.DEFAULT_SCENARIO_SPREADS["bull"]["wacc"]
-    result = report_for(data)["company_spread_scenarios"]
-    assert result["state"] == "COMPUTED" and result["ordering_valid"]
     short = fixture_data(); short["revenue_history"] = [1000.0, 900.0, 800.0]
     assert iv.company_scenario_spreads(short)[0] is None
+
+
+def test_ten_year_bear_and_bull_use_the_same_growth_spreads():
+    data = fixture_data(); data["info"]["revenueGrowth"] = 0.65
+    report = report_for(data)
+    spreads, _ = iv.company_scenario_spreads(data)
+    assumptions = iv._scenario_assumptions(data, fixture_rates(), {}, spreads=spreads)
+    bull = iv._dcf_extended(data, assumptions["bull"], 0.50 + spreads["bull"]["growth"])["fair_value_per_share"]
+    assert abs(report["extended_horizon"]["fair_value"]["bull"] - bull) < 1e-9
 
 
 def test_extended_horizon_only_runs_above_the_cap_and_passes_its_checks():

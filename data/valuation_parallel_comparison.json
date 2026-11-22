@@ -3,15 +3,14 @@
     "ticker": "NVDA",
     "price": 125.53,
     "default_fair_value": {
-      "bear": 32.76404325891229,
+      "bear": 26.9489585117916,
       "base": 43.37772754551974,
-      "bull": 57.15382059253251
+      "bull": 65.10066942291648
     },
     "withheld_reason": null,
     "default_reverse_dcf": "NO_ECONOMIC_SOLUTION",
-    "company_spreads": {
-      "state": "COMPUTED",
-      "default": false,
+    "scenario_spreads": {
+      "source": "COMPANY_HISTORY",
       "basis": {
         "fiscal_years": 4,
         "growth_history": [
@@ -34,22 +33,17 @@
           "growth": -0.1,
           "margin": -0.08
         },
-        "base": {
-          "growth": 0,
-          "margin": 0
-        },
         "bull": {
           "growth": 0.1,
           "margin": 0.08
         }
       },
-      "fair_value": {
-        "bear": 26.9489585117916,
+      "default_spread_fair_value": {
+        "bear": 32.76404325891229,
         "base": 43.37772754551974,
-        "bull": 65.10066942291648
+        "bull": 57.15382059253251
       },
-      "ordering_valid": true,
-      "note": "Parallel calculation for owner review (checklist 7.5); the default scenarios still use +/-4 points."
+      "note": "Bear/bull growth and margin spreads come from the company's own history; the +/-4-point values are shown for comparison."
     },
     "extended_horizon": {
       "state": "COMPUTED",
@@ -64,9 +58,9 @@
         "decay": "linear"
       },
       "fair_value": {
-        "bear": 106.50945442662189,
+        "bear": 81.60311173569714,
         "base": 155.36133488607368,
-        "bull": 221.9916274301274
+        "bull": 273.62580701972985
       },
       "checks": {
         "bear": {
@@ -128,9 +122,9 @@
       "method": "PHASED",
       "extended_weight": 1.0,
       "fair_value": {
-        "bear": 106.50945442662189,
+        "bear": 81.60311173569714,
         "base": 155.36133488607368,
-        "bull": 221.9916274301274
+        "bull": 273.62580701972985
       },
       "reason": "Observed growth 103.2% vs cap 18%: ten-year model weighted 100%, five-year 0%.",
       "reverse_dcf": "CONVERGED"
@@ -140,15 +134,14 @@
     "ticker": "MSFT",
     "price": 484.52,
     "default_fair_value": {
-      "bear": 133.7741791694376,
+      "bear": 137.29906736315792,
       "base": 212.1175970046067,
-      "bull": 340.08075309374897
+      "bull": 330.10408362624804
     },
     "withheld_reason": null,
     "default_reverse_dcf": "NO_ECONOMIC_SOLUTION",
-    "company_spreads": {
-      "state": "COMPUTED",
-      "default": false,
+    "scenario_spreads": {
+      "source": "COMPANY_HISTORY",
       "basis": {
         "fiscal_years": 4,
         "growth_history": [
@@ -171,22 +164,17 @@
           "growth": -0.02,
           "margin": -0.043277490771985117
         },
-        "base": {
-          "growth": 0,
-          "margin": 0
-        },
         "bull": {
           "growth": 0.02,
           "margin": 0.043277490771985117
         }
       },
-      "fair_value": {
-        "bear": 137.29906736315792,
+      "default_spread_fair_value": {
+        "bear": 133.7741791694376,
         "base": 212.1175970046067,
-        "bull": 330.10408362624804
+        "bull": 340.08075309374897
       },
-      "ordering_valid": true,
-      "note": "Parallel calculation for owner review (checklist 7.5); the default scenarios still use +/-4 points."
+      "note": "Bear/bull growth and margin spreads come from the company's own history; the +/-4-point values are shown for comparison."
     },
     "extended_horizon": {
       "state": "COMPUTED",
@@ -201,9 +189,9 @@
         "decay": "linear"
       },
       "fair_value": {
-        "bear": 163.39580833018306,
+        "bear": 173.86085025698688,
         "base": 280.81414861567924,
-        "bull": 486.3353097586253
+        "bull": 454.1428538196156
       },
       "checks": {
         "bear": {
@@ -265,9 +253,9 @@
       "method": "PHASED",
       "extended_weight": 0.08000000000000007,
       "fair_value": {
-        "bear": 136.14390950229722,
+        "bear": 140.22400999466424,
         "base": 217.61332113349252,
-        "bull": 351.7811176269391
+        "bull": 340.02718524171746
       },
       "reason": "Observed growth 18.8% vs cap 18%: ten-year model weighted 8%, five-year 92%.",
       "reverse_dcf": "NO_ECONOMIC_SOLUTION"
@@ -279,7 +267,7 @@
     "default_fair_value": null,
     "withheld_reason": "Historical FCFF cannot be reconciled because required statement fields are missing.",
     "default_reverse_dcf": null,
-    "company_spreads": null,
+    "scenario_spreads": null,
     "extended_horizon": null,
     "headline": {
       "method": "WITHHELD",
@@ -295,7 +283,7 @@
     "default_fair_value": null,
     "withheld_reason": "Financial currency TWD does not match quotation currency USD. ADR/ordinary share ratio, dated FX and denominator are not integrated into this valuation execution path.",
     "default_reverse_dcf": null,
-    "company_spreads": null,
+    "scenario_spreads": null,
     "extended_horizon": null,
     "headline": {
       "method": "WITHHELD",
@@ -311,7 +299,7 @@
     "default_fair_value": null,
     "withheld_reason": "The remaining discrepancy is material after explicitly testing stock-based compensation. Review non-operating income, unusual taxes, minority interests, and statement-period or classification differences.",
     "default_reverse_dcf": null,
-    "company_spreads": null,
+    "scenario_spreads": null,
     "extended_horizon": null,
     "headline": {
       "method": "WITHHELD",
@@ -325,15 +313,14 @@
     "ticker": "COST",
     "price": 1102.15,
     "default_fair_value": {
-      "bear": 153.84958366608782,
+      "bear": 341.5572523402267,
       "base": 704.5972792638929,
-      "bull": 1770.957760963405
+      "bull": 1352.1166264902024
     },
     "withheld_reason": null,
     "default_reverse_dcf": "CONVERGED",
-    "company_spreads": {
-      "state": "COMPUTED",
-      "default": false,
+    "scenario_spreads": {
+      "source": "COMPANY_HISTORY",
       "basis": {
         "fiscal_years": 4,
         "growth_history": [
@@ -356,22 +343,17 @@
           "growth": -0.025840426671934147,
           "margin": -0.02
         },
-        "base": {
-          "growth": 0,
-          "margin": 0
-        },
         "bull": {
           "growth": 0.025840426671934147,
           "margin": 0.02
         }
       },
-      "fair_value": {
-        "bear": 341.5572523402267,
+      "default_spread_fair_value": {
+        "bear": 153.84958366608782,
         "base": 704.5972792638929,
-        "bull": 1352.1166264902024
+        "bull": 1770.957760963405
       },
-      "ordering_valid": true,
-      "note": "Parallel calculation for owner review (checklist 7.5); the default scenarios still use +/-4 points."
+      "note": "Bear/bull growth and margin spreads come from the company's own history; the +/-4-point values are shown for comparison."
     },
     "extended_horizon": {
       "state": "NOT_TRIGGERED",
@@ -383,9 +365,9 @@
       "method": "FIVE_YEAR",
       "extended_weight": 0.0,
       "fair_value": {
-        "bear": 153.84958366608782,
+        "bear": 341.5572523402267,
         "base": 704.5972792638929,
-        "bull": 1770.957760963405
+        "bull": 1352.1166264902024
       },
       "reason": "Observed growth is within the five-year model's cap; the existing valuation applies unchanged.",
       "reverse_dcf": "CONVERGED"
@@ -397,7 +379,7 @@
     "default_fair_value": null,
     "withheld_reason": "Historical FCFF cannot be reconciled because required statement fields are missing.",
     "default_reverse_dcf": null,
-    "company_spreads": null,
+    "scenario_spreads": null,
     "extended_horizon": null,
     "headline": {
       "method": "WITHHELD",
@@ -413,7 +395,7 @@
     "default_fair_value": null,
     "withheld_reason": "Historical FCFF cannot be reconciled because required statement fields are missing.",
     "default_reverse_dcf": null,
-    "company_spreads": null,
+    "scenario_spreads": null,
     "extended_horizon": null,
     "headline": {
       "method": "WITHHELD",
@@ -429,7 +411,7 @@
     "default_fair_value": null,
     "withheld_reason": "Debt and interest are operating inputs for financial institutions; an industrial-company FCFF DCF would be misleading.",
     "default_reverse_dcf": null,
-    "company_spreads": null,
+    "scenario_spreads": null,
     "extended_horizon": null,
     "headline": {
       "method": "WITHHELD",
@@ -445,7 +427,7 @@
     "default_fair_value": null,
     "withheld_reason": "The remaining discrepancy is material after explicitly testing stock-based compensation. Review non-operating income, unusual taxes, minority interests, and statement-period or classification differences.",
     "default_reverse_dcf": null,
-    "company_spreads": null,
+    "scenario_spreads": null,
     "extended_horizon": null,
     "headline": {
       "method": "WITHHELD",
@@ -461,7 +443,7 @@
     "default_fair_value": null,
     "withheld_reason": "Debt and interest are operating inputs for financial institutions; an industrial-company FCFF DCF would be misleading.",
     "default_reverse_dcf": null,
-    "company_spreads": null,
+    "scenario_spreads": null,
     "extended_horizon": null,
     "headline": {
       "method": "WITHHELD",
@@ -477,7 +459,7 @@
     "default_fair_value": null,
     "withheld_reason": "Historical FCFF cannot be reconciled because required statement fields are missing.",
     "default_reverse_dcf": null,
-    "company_spreads": null,
+    "scenario_spreads": null,
     "extended_horizon": null,
     "headline": {
       "method": "WITHHELD",
@@ -491,15 +473,14 @@
     "ticker": "META",
     "price": 560.84,
     "default_fair_value": {
-      "bear": 231.42569473198552,
+      "bear": 194.67285707566538,
       "base": 359.3223198984252,
-      "bull": 560.1297806545487
+      "bull": 627.9609732270917
     },
     "withheld_reason": null,
     "default_reverse_dcf": "CONVERGED",
-    "company_spreads": {
-      "state": "COMPUTED",
-      "default": false,
+    "scenario_spreads": {
+      "source": "COMPANY_HISTORY",
       "basis": {
         "fiscal_years": 4,
         "growth_history": [
@@ -522,22 +503,17 @@
           "growth": -0.036774977914122695,
           "margin": -0.07962137164294092
         },
-        "base": {
-          "growth": 0,
-          "margin": 0
-        },
         "bull": {
           "growth": 0.036774977914122695,
           "margin": 0.07962137164294092
         }
       },
-      "fair_value": {
-        "bear": 194.67285707566538,
+      "default_spread_fair_value": {
+        "bear": 231.42569473198552,
         "base": 359.3223198984252,
-        "bull": 627.9609732270917
+        "bull": 560.1297806545487
       },
-      "ordering_valid": true,
-      "note": "Parallel calculation for owner review (checklist 7.5); the default scenarios still use +/-4 points."
+      "note": "Bear/bull growth and margin spreads come from the company's own history; the +/-4-point values are shown for comparison."
     },
     "extended_horizon": {
       "state": "COMPUTED",
@@ -552,9 +528,9 @@
         "decay": "linear"
       },
       "fair_value": {
-        "bear": 371.45033359326004,
+        "bear": 321.20346606929104,
         "base": 627.273666668272,
-        "bull": 1056.4978829142576
+        "bull": 1170.7348540045073
       },
       "checks": {
         "bear": {
@@ -616,9 +592,9 @@
       "method": "PHASED",
       "extended_weight": 0.8100000000000002,
       "fair_value": {
-        "bear": 344.8456522096179,
+        "bear": 297.1626503605022,
         "base": 576.3629107820011,
-        "bull": 962.187943484913
+        "bull": 1067.6078166567984
       },
       "reason": "Observed growth 26.1% vs cap 18%: ten-year model weighted 81%, five-year 19%.",
       "reverse_dcf": "CONVERGED"
@@ -630,7 +606,7 @@
     "default_fair_value": null,
     "withheld_reason": "Historical FCFF cannot be reconciled because required statement fields are missing.",
     "default_reverse_dcf": null,
-    "company_spreads": null,
+    "scenario_spreads": null,
     "extended_horizon": null,
     "headline": {
       "method": "WITHHELD",
@@ -646,7 +622,7 @@
     "default_fair_value": null,
     "withheld_reason": "Historical FCFF cannot be reconciled because required statement fields are missing.",
     "default_reverse_dcf": null,
-    "company_spreads": null,
+    "scenario_spreads": null,
     "extended_horizon": null,
     "headline": {
       "method": "WITHHELD",

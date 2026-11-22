@@ -759,7 +759,7 @@ def _dcf(data, assumptions, forced_growth=None, forced_margin=None):
     }
 
 
-# ---- Checklist 7.5: scenario spreads from the company's own history (parallel; not the default) ----
+# ---- Checklist 7.5: scenario spreads from the company's own history (default since owner approval 2026-11-22) ----
 SPREAD_BOUNDS = {"growth": (0.02, 0.10), "margin": (0.02, 0.08)}
 
 
@@ -797,22 +797,21 @@ def company_scenario_spreads(data):
     }
 
 
-def company_spread_scenarios(data, rates, overrides):
-    spreads, basis = company_scenario_spreads(data)
+def scenario_spread_record(data, rates, overrides, spreads, basis):
+    """What the scenarios used: company-history spreads when available, otherwise the +/-4-point defaults.
+
+    The +/-4-point values are computed beside them so the change stays visible (checklist 7.5).
+    """
+    record = {"source": "COMPANY_HISTORY" if spreads is not None else "DEFAULT", "basis": basis,
+              "spreads": {name: {key: (spreads or DEFAULT_SCENARIO_SPREADS)[name][key] for key in ("growth", "margin")} for name in ("bear", "bull")}}
     if spreads is None:
-        return {"state": "DEFAULT_SPREADS_KEPT", "default": False, **basis}
+        return record
     try:
-        assumptions = _scenario_assumptions(data, rates, overrides, spreads=spreads)
-        results = {name: _dcf(data, items) for name, items in assumptions.items()}
+        legacy = {name: _dcf(data, items)["fair_value_per_share"] for name, items in _scenario_assumptions(data, rates, overrides).items()}
     except ValueError as exc:
-        return {"state": "INVALID", "default": False, "reason": str(exc), "basis": basis}
-    fair = {name: result["fair_value_per_share"] for name, result in results.items()}
-    return {
-        "state": "COMPUTED", "default": False, "basis": basis,
-        "spreads": {name: {key: spreads[name][key] for key in ("growth", "margin")} for name in spreads},
-        "fair_value": fair, "ordering_valid": fair["bear"] <= fair["base"] <= fair["bull"],
-        "note": "Parallel calculation for owner review (checklist 7.5); the default scenarios still use +/-4 points.",
-    }
+        return {**record, "default_spread_fair_value": None, "default_spread_reason": str(exc)}
+    return {**record, "default_spread_fair_value": legacy,
+            "note": "Bear/bull growth and margin spreads come from the company's own history; the +/-4-point values are shown for comparison."}
 
 
 # ---- Checklist 7.6: longer explicit period for fast growers, phased in above the cap ----
@@ -905,7 +904,7 @@ def _extended_reverse(data, base_items, years, decay):
     return {"converged": True, "status": "CONVERGED", "required_year_1_revenue_growth": mid}
 
 
-def extended_horizon(data, assumptions, kind):
+def extended_horizon(data, assumptions, kind, spreads=None):
     """Checklist 7.6: run only when observed growth exceeds the company type's first-year cap."""
     observed = _pick(data["info"], "revenueGrowth")
     cap = GROWTH_CAPS.get(kind)
@@ -914,7 +913,8 @@ def extended_horizon(data, assumptions, kind):
                 "reason": "Observed growth is within the five-year model's cap; the existing valuation applies unchanged."}
     years, decay = EXTENDED_POLICY["years"], EXTENDED_POLICY["decay"]
     first = min(observed, EXTENDED_POLICY["first_year_growth_cap"])
-    deltas = {name: DEFAULT_SCENARIO_SPREADS[name]["growth"] for name in ("bear", "base", "bull")}
+    # Same growth spreads as the five-year scenarios (company history when available, checklist 7.5).
+    deltas = {name: (spreads or DEFAULT_SCENARIO_SPREADS)[name]["growth"] for name in ("bear", "base", "bull")}
     scenarios, checks = {}, {}
     try:
         for name, items in assumptions.items():
@@ -1475,7 +1475,8 @@ def build_valuation_report(ticker: str, overrides: dict | None = None, data: dic
         "diluted_share_history": _row(data["income"], "Diluted Average Shares", "Basic Average Shares"),
     }
     rates = _market_rates(data)
-    assumptions = _scenario_assumptions(data, rates, overrides)
+    spreads, spread_basis = company_scenario_spreads(data)
+    assumptions = _scenario_assumptions(data, rates, overrides, spreads=spreads)
     scenarios = {name: _dcf(data, items) for name, items in assumptions.items()}
     sensitivity = _sensitivity(data, assumptions["base"])
     reverse = _reverse_dcf(data, assumptions["base"])
@@ -1560,9 +1561,9 @@ def build_valuation_report(ticker: str, overrides: dict | None = None, data: dic
     }
     report["discount_rate"] = rates
     report["scenarios"] = scenarios
-    # Checklist 7.5: parallel calculation for owner review. Checklist 7.6: the headline value phases in the ten-year model (report["fair_value"]).
-    report["company_spread_scenarios"] = company_spread_scenarios(data, rates, overrides)
-    report["extended_horizon"] = extended_horizon(data, assumptions, kind)
+    # Checklist 7.5: bear/bull spreads from the company's history. Checklist 7.6: the headline value phases in the ten-year model (report["fair_value"]).
+    report["scenario_spreads"] = scenario_spread_record(data, rates, overrides, spreads, spread_basis)
+    report["extended_horizon"] = extended_horizon(data, assumptions, kind, spreads)
     report["fair_value"] = phased_fair_value(data, assumptions, scenarios, report["extended_horizon"], reverse)
     report["sensitivity"] = sensitivity
     report["reverse_dcf"] = reverse
