@@ -10,6 +10,7 @@ import type { QuantitativeDatum } from "../../lib/visualization-types";
 import { DivergingBarChart, YieldCurveChart } from "../charts/AnalyticalCharts";
 import { MacroWorldMap } from "./MacroWorldMap";
 import { CoverageBar } from "./CoverageBar";
+import { MarketContextHeadline } from "./MarketContextHeadline";
 
 function Status({ value }: { value: string }) { return <StatusBadge value={value} variant="macro" />; }
 function SectionHeader({ code, title, note, href, action }: { code: string; title: string; note: string; href?: string; action?: string }) {
@@ -49,7 +50,7 @@ export function MacroOverviewSurface({ system }: { system: ResearchSystem }) {
 
   return <div className="engine-module macro-overview-surface">
     {/* Checklist 9.7: the regime as one line, then every factor as a tile. */}
-    <header className="today-regime"><span>Risk regime</span><h1>{system.dashboard.headline.state}</h1><p>{system.dashboard.headline.summary}</p></header>
+    <MarketContextHeadline regime={system.dashboard.headline.state} regimeSummary={system.dashboard.headline.summary} />
     <EnvironmentFactors environment={system.environment} />
 
     <section className="macro-overview-section macro-market-transmission" aria-label="Market Transmission">
