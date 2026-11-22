@@ -7,7 +7,7 @@ import { humanize } from "../../lib/companyEconomicsAdapter";
 import { ResearchShell, type ResearchDataState } from "../research/ResearchShell";
 import { displayStatus } from "../../lib/status-words";
 import { CompanyWorkspaces, type CompanyWorkspaceKind } from "./CompanyWorkspaces";
-import { ResearchLabel, Unavailable } from "./ResearchPrimitives";
+import { ResearchLabel } from "./ResearchPrimitives";
 import { ReportMode } from "./ReportMode";
 import { JudgmentCard } from "./JudgmentCard";
 import { OperationalResearch } from "./OperationalResearch";
@@ -103,12 +103,23 @@ export function CompanyResearchPage({ company, dataState = "FIXTURE", initialWor
     <ResearchShell active="company" ticker={company.ticker} dataState={dataState}>
       <div className="company-control-surface">
         <header className="snapshot-identity">
-          <div><span>{company.ticker} / {company.name.toUpperCase()}</span><h1>{company.name}</h1><p>{company.archetype}</p></div>
+          <div><span>{company.ticker}</span><h1>{company.name}</h1></div>
           <div className="snapshot-system-meta"><span>Data as of {String(company.asOf).slice(0, 10)}</span><span title={company.raw.validation.status}>Checks: {displayStatus(company.raw.validation.status)}</span></div>
         </header>
 
         <JudgmentCard key={company.ticker} ticker={company.ticker} />
 
+        <nav className="company-deeper" aria-label="Deeper research">
+          <button type="button" onClick={() => openValuationObject()}>Valuation</button>
+          <button type="button" onClick={() => openWorkspace("economics")}>Economic map</button>
+          <button type="button" onClick={() => openWorkspace("financials")}>Financials</button>
+          <button type="button" onClick={() => openWorkspace("evidence")}>Evidence <small>{company.evidenceCounts.all}</small></button>
+          <button type="button" onClick={() => setReportOpen(true)}>Full report</button>
+        </nav>
+
+        {/* Checklist 9.4: the stored research profile sits behind one toggle; the judgment card above is the live read. */}
+        <details className="company-details">
+        <summary>Research details <small>stored profile · {company.archetype} · built {String(company.asOf).slice(0, 10)}</small></summary>
         <section className="snapshot-question">
           <ResearchLabel>Core economic question</ResearchLabel>
           <h2>{company.coreQuestion}</h2>
@@ -143,18 +154,11 @@ export function CompanyResearchPage({ company, dataState = "FIXTURE", initialWor
             <header><span>04</span><strong>Valuation Read</strong><button type="button" onClick={() => openValuationObject()}>Open →</button></header>
             <h3>{marketRead}</h3>
             <p>{company.raw.market_expectations_comparison.reason}</p>
-            {company.raw.company.market_price == null ? <Unavailable reason={dataState === "FIXTURE" ? "Current price unavailable in fixture" : "Current price unavailable from provider"} /> : null}
           </section>
         </div>
 
         <OperationalResearch research={company.raw.operational_research} />
-        <footer className="snapshot-actions">
-          <button className="snapshot-primary-action" type="button" onClick={() => openWorkspace("economics")}><span>Open Economic Map</span><small>Explore drivers, constraints, and outcomes</small><i>↗</i></button>
-          <button type="button" onClick={() => openValuationObject()}><span>Open Valuation</span><small>Open the unified valuation object</small><i>↗</i></button>
-          <button type="button" onClick={() => openWorkspace("financials")}><span>Financials</span><small>Economics-to-FCFF translation</small><i>↗</i></button>
-          <button type="button" onClick={() => openWorkspace("evidence")}><span>Evidence</span><small>{company.evidenceCounts.all} traceable items</small><i>↗</i></button>
-          <button type="button" onClick={() => setReportOpen(true)}><span>Full Report</span><small>15-section analyst memo</small><i>↗</i></button>
-        </footer>
+        </details>
       </div>
 
       <CompanyWorkspaces company={company} workspace={workspace} selectedNodeId={selectedNodeId} onNode={selectNode} onClose={closeWorkspace} onEvidence={openEvidence} />
