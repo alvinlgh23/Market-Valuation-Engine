@@ -1,4 +1,5 @@
 import type { EnvironmentFactor, EnvironmentLayer } from "../../lib/research-system-types";
+import { FactorImpact } from "./FactorImpact";
 
 const ORDER: Array<[string, string]> = [["fed_path", "Fed path"], ["long_rates", "US 10Y yield"], ["usd", "US dollar"], ["credit", "Credit"], ["volatility", "Volatility"], ["liquidity", "Liquidity"],
   ["growth", "Growth"], ["inflation", "Inflation"], ["oil", "Oil"], ["semis_cycle", "Chip cycle"], ["yen_carry", "Yen carry"]];
@@ -53,6 +54,7 @@ export function EnvironmentFactors({ environment }: { environment?: EnvironmentL
         <span>{label}</span>
         <strong><em aria-hidden>{glyph}</em>{factor.state}</strong>
         <FactorVisual id={id} factor={factor} />
+        <FactorImpact factor={id} />
       </article>;
     })}</div>
     {environment.contradictions?.length ? <footer>{environment.contradictions.map((item) => <span key={item.text}>! {item.text}</span>)}</footer> : null}

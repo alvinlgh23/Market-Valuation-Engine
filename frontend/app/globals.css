@@ -3587,3 +3587,13 @@ body {
 .wl-drivers-summary { display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center; margin: 0 0 12px; color: var(--research-muted); font-size: var(--fs-1); }
 .wl-drivers-summary b { color: var(--research-text); font-size: var(--fs-3); margin-right: 4px; }
 .wl-drivers-summary .pd-kind-company b { color: #d9824f; }
+/* Checklist 10.4: watchlist effect inside each factor tile */
+.env-impact { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--research-line); font-size: var(--fs-1); }
+.env-impact > span { flex-basis: 100%; color: var(--research-faint); }
+.env-impact a { color: var(--research-text); text-decoration: none; }
+.env-impact a:hover { color: var(--research-accent); }
+.env-impact a b { font-weight: 600; font-variant-numeric: tabular-nums; }
+.env-impact a.down b { color: var(--research-negative); }
+.env-impact a.up b { color: var(--research-positive); }
+.env-impact small { color: var(--research-faint); }
+.env-impact.env-impact-none { display: block; color: var(--research-faint); }
