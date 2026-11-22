@@ -569,7 +569,9 @@ class BusinessModelClassifier:
         Archetype.ENTERPRISE_AI_SOFTWARE: (("artificial intelligence platform", "enterprise data platform", "data analytics platform"), ("software - infrastructure",)),
         Archetype.TRADITIONAL_SAAS: (("software as a service", "subscription software", "customer relationship management", "enterprise application software"), ("software - application", "software - infrastructure", "prepackaged software")),
         Archetype.FABLESS_SEMICONDUCTOR: (("fabless", "designs processors", "designs and develops semiconductor", "microprocessor", "graphics processor", "accelerator"), ("semiconductors",)),
-        Archetype.SEMICONDUCTOR_FOUNDRY: (("semiconductor foundry", "wafer fabrication", "contract semiconductor manufacturing", "integrated device manufacturing"), ("semiconductor equipment & materials",)),
+        Archetype.SEMICONDUCTOR_FOUNDRY: (("semiconductor foundry", "wafer fabrication", "contract semiconductor manufacturing", "integrated device manufacturing"), ()),
+        # Checklist 9.3: equipment makers sell to fabs; they are not foundries.
+        Archetype.SEMICONDUCTOR_EQUIPMENT: (("wafer fabrication equipment", "semiconductor equipment", "manufacturing equipment, services and software", "deposition", "etch", "lithography", "process control"), ("semiconductor equipment & materials",)),
         Archetype.HYPERSCALER_CLOUD_PLATFORM: (("cloud computing platform", "cloud infrastructure", "hyperscale", "data center platform"), ("internet services & infrastructure",)),
         Archetype.CONSUMER_PLATFORM: (("social network", "social media", "digital advertising", "family of apps", "consumer platform"), ("internet content & information",)),
         Archetype.RETAIL_PHYSICAL_NETWORK: (("warehouse club", "retail stores", "retail locations", "supercenter", "grocery stores"), ("discount stores", "department stores", "grocery stores", "retail-variety stores")),
@@ -623,7 +625,7 @@ class BusinessModelClassifier:
                 if scores[archetype] > 0:
                     scores[archetype] += 1
                     evidence[archetype].append("capex intensity reinforces the metadata route's physical capacity economics")
-        if "semiconductor" in industry:
+        if "semiconductor" in industry and "equipment" not in industry:
             capex_intensity = capex / revenue if _number(capex) and _number(revenue) and revenue else None
             foundry_language = any(word in description for word in ("foundry", "wafer fabrication", "manufactures semiconductors"))
             if foundry_language or (_number(capex_intensity) and capex_intensity >= 0.20):
@@ -732,6 +734,7 @@ class GrowthArchitectureBuilder:
         GrowthPrimitive.UTILIZATION: ("utilization",), GrowthPrimitive.BACKLOG: ("backlog", "backlog_growth"), GrowthPrimitive.PATIENTS: ("patients", "patient_growth"),
         GrowthPrimitive.DRUG_PORTFOLIO: ("pipeline_milestones", "drug_portfolio"), GrowthPrimitive.PRODUCTION_VOLUME: ("production_volume",), GrowthPrimitive.COMMODITY_PRICE: ("realized_price",),
         GrowthPrimitive.ENGAGEMENT: ("engagement",), GrowthPrimitive.AD_INVENTORY: ("ad_inventory",), GrowthPrimitive.GROSS_BOOKINGS: ("gross_bookings", "bookings_growth"),
+        GrowthPrimitive.CUSTOMER_CAPEX: ("wfe_spend", "customer_capex"), GrowthPrimitive.INSTALLED_BASE: ("installed_base", "services_revenue"),
     }
 
     def build(self, classification, ledger, gaps):

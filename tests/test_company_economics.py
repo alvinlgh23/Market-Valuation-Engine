@@ -61,7 +61,7 @@ def valuation_fixture(growth=.28, margin=.30, implied_growth=.25):
 
 class CompanyEconomicsTests(unittest.TestCase):
     def test_all_required_archetypes_exist(self):
-        self.assertEqual(len(ARCHETYPE_REGISTRY), 15)
+        self.assertEqual(len(ARCHETYPE_REGISTRY), 16)
         self.assertIn(Archetype.GENERIC_OPERATING_COMPANY, ARCHETYPE_REGISTRY)
 
     def test_constraint_registry_covers_enum(self):

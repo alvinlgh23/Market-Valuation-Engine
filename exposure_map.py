@@ -95,6 +95,11 @@ EXPOSURES: dict[Archetype, tuple[Exposure, ...]] = {
         E("usd", -1, "Global customer base and non-US cost base."),
         E("volatility", -1, "Cyclical high-beta equity."),
     ),
+    Archetype.SEMICONDUCTOR_EQUIPMENT: (
+        E("semis_cycle", +1, "Orders follow chipmaker capital spending, which follows the memory and foundry cycle."),
+        E("usd", -1, "Most revenue comes from Asian chipmakers; a stronger dollar raises tool prices abroad."),
+        E("volatility", -1, "Cyclical high-beta equity."),
+    ),
     Archetype.HYPERSCALER_CLOUD_PLATFORM: (
         E("long_rates", -1, "Long-duration platform cash flows."),
         E("usd", -1, "Large share of revenue earned outside the US."),
@@ -152,6 +157,7 @@ PROXY_ETF: dict[Archetype, str | None] = {
     Archetype.TRADITIONAL_SAAS: "IGV",
     Archetype.FABLESS_SEMICONDUCTOR: "SMH",
     Archetype.SEMICONDUCTOR_FOUNDRY: "SMH",
+    Archetype.SEMICONDUCTOR_EQUIPMENT: "SMH",
     Archetype.HYPERSCALER_CLOUD_PLATFORM: "XLK",
     Archetype.CONSUMER_PLATFORM: "XLC",
     Archetype.RETAIL_PHYSICAL_NETWORK: "XRT",

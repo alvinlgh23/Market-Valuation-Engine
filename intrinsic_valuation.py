@@ -348,7 +348,8 @@ def classify_security(ticker: str, info: dict, has_financials: bool) -> str:
         return "REIT"
     if sector == "financial services" or any(term in industry for term in ("bank", "insurance", "capital markets")):
         return "FINANCIAL_INSTITUTION"
-    cyclical_terms = ("memory", "steel", "copper", "aluminum", "oil & gas", "commodity", "mining")
+    # Checklist 9.3: semiconductor equipment follows the chipmaker capex cycle.
+    cyclical_terms = ("memory", "steel", "copper", "aluminum", "oil & gas", "commodity", "mining", "semiconductor equipment")
     if ticker == "MU" or any(term in industry for term in cyclical_terms):
         return "CYCLICAL_COMPANY"
     op_margin = _pick(info, "operatingMargins")
