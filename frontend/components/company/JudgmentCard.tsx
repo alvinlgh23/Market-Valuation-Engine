@@ -117,12 +117,15 @@ function ValueRange({ card }: { card: Card }) {
 function NumberStrip({ card }: { card: Card }) {
   const valuation = card.axes.valuation?.detail ?? {};
   const expectations = card.axes.expectations?.detail ?? {};
-  const items: Array<[string, string]> = [
+  const basis = String(valuation.growth_basis ?? "");
+  const quarter = num(valuation.latest_quarter_yoy);
+  const twelveMonth = basis.startsWith("trailing twelve months");
+  const items: Array<[string, string, string?]> = [
     ["Price", money(valuation.price)],
-    ["Revenue growth", pct(valuation.observed_growth)],
+    [twelveMonth ? "Revenue growth (12 mo)" : "Revenue growth", pct(valuation.observed_growth), [basis, quarter != null ? `Latest single quarter vs a year earlier: ${pct(quarter)}` : ""].filter(Boolean).join(" · ") || undefined],
     ["Consensus next year", pct(expectations.revenue_growth_next_year ?? valuation.consensus_next_year_growth)],
   ];
-  return <dl className="jc-numbers">{items.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>;
+  return <dl className="jc-numbers">{items.map(([label, value, title]) => <div key={label} title={title}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>;
 }
 
 function Legend() {

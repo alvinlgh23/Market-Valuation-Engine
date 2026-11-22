@@ -48,7 +48,7 @@
     "extended_horizon": {
       "state": "COMPUTED",
       "default": false,
-      "observed_growth": 1.032,
+      "observed_growth": 0.8337529809100703,
       "type_cap": 0.18,
       "first_year_growth": 0.5,
       "weight": 1.0,
@@ -126,11 +126,10 @@
         "base": 155.36133488607368,
         "bull": 273.62580701972985
       },
-      "reason": "Observed growth 103.2% vs cap 18%: ten-year model weighted 100%, five-year 0%.",
+      "reason": "Observed growth 83.4% vs cap 18%: ten-year model weighted 100%, five-year 0%.",
       "reverse_dcf": "CONVERGED"
     },
-    "ttm_candidate": {
-      "state": "COMPUTED",
+    "one_quarter_legacy": {
       "method": "PHASED",
       "extended_weight": 1.0,
       "fair_value": {
@@ -138,14 +137,11 @@
         "base": 155.36133488607368,
         "bull": 273.62580701972985
       },
-      "reason": "Observed growth 83.4% vs cap 18%: ten-year model weighted 100%, five-year 0%.",
-      "growth_inputs": {
-        "selected_growth": 0.8337529809100703,
-        "basis": "trailing twelve months to 2026-07-26 vs the twelve months before (SEC filings)",
-        "fiscal_year_growth": 0.6547353579009478,
-        "latest_quarter_yoy": 1.032
-      },
-      "reverse_dcf": "CONVERGED"
+      "observed_growth": 1.032
+    },
+    "headline_growth": {
+      "observed_growth": 0.8337529809100703,
+      "growth_basis": "trailing twelve months to 2026-07-26 vs the twelve months before (SEC filings)"
     }
   },
   {
@@ -195,91 +191,12 @@
       "note": "Bear/bull growth and margin spreads come from the company's own history; the +/-4-point values are shown for comparison."
     },
     "extended_horizon": {
-      "state": "COMPUTED",
-      "default": false,
-      "observed_growth": 0.188,
+      "state": "NOT_TRIGGERED",
+      "observed_growth": 0.1791383605843193,
       "type_cap": 0.18,
-      "first_year_growth": 0.188,
-      "weight": 0.08000000000000007,
-      "policy": {
-        "years": 10,
-        "first_year_growth_cap": 0.5,
-        "decay": "linear"
-      },
-      "fair_value": {
-        "bear": 173.86085025698688,
-        "base": 280.81414861567924,
-        "bull": 454.1428538196156
-      },
-      "checks": {
-        "bear": {
-          "forecast_arithmetic": true,
-          "terminal_value": true,
-          "enterprise_value": true,
-          "ev_to_equity_bridge": true,
-          "share_conversion": true,
-          "wacc_above_terminal": true
-        },
-        "base": {
-          "forecast_arithmetic": true,
-          "terminal_value": true,
-          "enterprise_value": true,
-          "ev_to_equity_bridge": true,
-          "share_conversion": true,
-          "wacc_above_terminal": true
-        },
-        "bull": {
-          "forecast_arithmetic": true,
-          "terminal_value": true,
-          "enterprise_value": true,
-          "ev_to_equity_bridge": true,
-          "share_conversion": true,
-          "wacc_above_terminal": true
-        }
-      },
-      "checks_passed": true,
-      "reverse_dcf": {
-        "converged": true,
-        "status": "CONVERGED",
-        "required_year_1_revenue_growth": 0.33272781372070315
-      },
-      "sensitivity": {
-        "first_year_growth_cap": {
-          "0.4": 280.81414861567924,
-          "0.5": 280.81414861567924,
-          "0.6": 280.81414861567924
-        },
-        "explicit_years": {
-          "8": 251.87157378395761,
-          "10": 280.81414861567924,
-          "12": 311.4604628881534
-        },
-        "decay": {
-          "linear": 280.81414861567924,
-          "front_loaded": 194.3121665897944
-        },
-        "wacc_minus_1pp_base_plus_1pp": [
-          331.7691243267754,
-          280.81414861567924,
-          242.73662585931712
-        ]
-      },
-      "assumptions_to_state": "First-year growth cap (50%), linear decay to terminal growth and a 10-year explicit period are model policy without calibration; see sensitivity.",
-      "note": "Ten-year values at full weight; the headline fair value blends them with the five-year values by `weight` (see report['fair_value'])."
+      "reason": "Observed growth is within the five-year model's cap; the existing valuation applies unchanged."
     },
     "headline": {
-      "method": "PHASED",
-      "extended_weight": 0.08000000000000007,
-      "fair_value": {
-        "bear": 140.22400999466424,
-        "base": 217.61332113349252,
-        "bull": 340.02718524171746
-      },
-      "reason": "Observed growth 18.8% vs cap 18%: ten-year model weighted 8%, five-year 92%.",
-      "reverse_dcf": "NO_ECONOMIC_SOLUTION"
-    },
-    "ttm_candidate": {
-      "state": "COMPUTED",
       "method": "FIVE_YEAR",
       "extended_weight": 0.0,
       "fair_value": {
@@ -288,13 +205,21 @@
         "bull": 330.10408362624804
       },
       "reason": "Observed growth is within the five-year model's cap; the existing valuation applies unchanged.",
-      "growth_inputs": {
-        "selected_growth": 0.1791383605843193,
-        "basis": "trailing twelve months to 2026-09-30 vs the twelve months before (SEC filings)",
-        "fiscal_year_growth": 0.17788686799846665,
-        "latest_quarter_yoy": 0.188
-      },
       "reverse_dcf": "NO_ECONOMIC_SOLUTION"
+    },
+    "one_quarter_legacy": {
+      "method": "PHASED",
+      "extended_weight": 0.08000000000000007,
+      "fair_value": {
+        "bear": 140.22400999466424,
+        "base": 217.61332113349252,
+        "bull": 340.02718524171746
+      },
+      "observed_growth": 0.188
+    },
+    "headline_growth": {
+      "observed_growth": 0.1791383605843193,
+      "growth_basis": "trailing twelve months to 2026-09-30 vs the twelve months before (SEC filings)"
     }
   },
   {
@@ -312,19 +237,15 @@
       "reason": "Fair value not calculated.",
       "reverse_dcf": null
     },
-    "ttm_candidate": {
-      "state": null,
+    "one_quarter_legacy": {
       "method": null,
       "extended_weight": null,
       "fair_value": null,
-      "reason": null,
-      "growth_inputs": {
-        "selected_growth": null,
-        "basis": null,
-        "fiscal_year_growth": null,
-        "latest_quarter_yoy": null
-      },
-      "reverse_dcf": null
+      "observed_growth": null
+    },
+    "headline_growth": {
+      "observed_growth": null,
+      "growth_basis": null
     }
   },
   {
@@ -342,19 +263,15 @@
       "reason": "Fair value not calculated.",
       "reverse_dcf": null
     },
-    "ttm_candidate": {
-      "state": null,
+    "one_quarter_legacy": {
       "method": null,
       "extended_weight": null,
       "fair_value": null,
-      "reason": null,
-      "growth_inputs": {
-        "selected_growth": null,
-        "basis": null,
-        "fiscal_year_growth": null,
-        "latest_quarter_yoy": null
-      },
-      "reverse_dcf": null
+      "observed_growth": null
+    },
+    "headline_growth": {
+      "observed_growth": null,
+      "growth_basis": null
     }
   },
   {
@@ -372,19 +289,15 @@
       "reason": "Fair value not calculated.",
       "reverse_dcf": null
     },
-    "ttm_candidate": {
-      "state": null,
+    "one_quarter_legacy": {
       "method": null,
       "extended_weight": null,
       "fair_value": null,
-      "reason": null,
-      "growth_inputs": {
-        "selected_growth": null,
-        "basis": null,
-        "fiscal_year_growth": null,
-        "latest_quarter_yoy": null
-      },
-      "reverse_dcf": null
+      "observed_growth": null
+    },
+    "headline_growth": {
+      "observed_growth": null,
+      "growth_basis": null
     }
   },
   {
@@ -435,7 +348,7 @@
     },
     "extended_horizon": {
       "state": "NOT_TRIGGERED",
-      "observed_growth": 0.111,
+      "observed_growth": 0.10143695387577889,
       "type_cap": 0.18,
       "reason": "Observed growth is within the five-year model's cap; the existing valuation applies unchanged."
     },
@@ -450,8 +363,7 @@
       "reason": "Observed growth is within the five-year model's cap; the existing valuation applies unchanged.",
       "reverse_dcf": "CONVERGED"
     },
-    "ttm_candidate": {
-      "state": "COMPUTED",
+    "one_quarter_legacy": {
       "method": "FIVE_YEAR",
       "extended_weight": 0.0,
       "fair_value": {
@@ -459,14 +371,11 @@
         "base": 704.5972792638929,
         "bull": 1352.1166264902024
       },
-      "reason": "Observed growth is within the five-year model's cap; the existing valuation applies unchanged.",
-      "growth_inputs": {
-        "selected_growth": 0.10143695387577889,
-        "basis": "trailing twelve months to 2026-08-30 vs the twelve months before (SEC filings)",
-        "fiscal_year_growth": 0.10143695387577889,
-        "latest_quarter_yoy": 0.111
-      },
-      "reverse_dcf": "CONVERGED"
+      "observed_growth": 0.111
+    },
+    "headline_growth": {
+      "observed_growth": 0.10143695387577889,
+      "growth_basis": "trailing twelve months to 2026-08-30 vs the twelve months before (SEC filings)"
     }
   },
   {
@@ -484,19 +393,15 @@
       "reason": "Fair value not calculated.",
       "reverse_dcf": null
     },
-    "ttm_candidate": {
-      "state": null,
+    "one_quarter_legacy": {
       "method": null,
       "extended_weight": null,
       "fair_value": null,
-      "reason": null,
-      "growth_inputs": {
-        "selected_growth": null,
-        "basis": null,
-        "fiscal_year_growth": null,
-        "latest_quarter_yoy": null
-      },
-      "reverse_dcf": null
+      "observed_growth": null
+    },
+    "headline_growth": {
+      "observed_growth": null,
+      "growth_basis": null
     }
   },
   {
@@ -514,19 +419,15 @@
       "reason": "Fair value not calculated.",
       "reverse_dcf": null
     },
-    "ttm_candidate": {
-      "state": null,
+    "one_quarter_legacy": {
       "method": null,
       "extended_weight": null,
       "fair_value": null,
-      "reason": null,
-      "growth_inputs": {
-        "selected_growth": null,
-        "basis": null,
-        "fiscal_year_growth": null,
-        "latest_quarter_yoy": null
-      },
-      "reverse_dcf": null
+      "observed_growth": null
+    },
+    "headline_growth": {
+      "observed_growth": null,
+      "growth_basis": null
     }
   },
   {
@@ -544,19 +445,15 @@
       "reason": "Fair value not calculated.",
       "reverse_dcf": null
     },
-    "ttm_candidate": {
-      "state": null,
+    "one_quarter_legacy": {
       "method": null,
       "extended_weight": null,
       "fair_value": null,
-      "reason": null,
-      "growth_inputs": {
-        "selected_growth": null,
-        "basis": null,
-        "fiscal_year_growth": null,
-        "latest_quarter_yoy": null
-      },
-      "reverse_dcf": null
+      "observed_growth": null
+    },
+    "headline_growth": {
+      "observed_growth": null,
+      "growth_basis": null
     }
   },
   {
@@ -574,19 +471,15 @@
       "reason": "Fair value not calculated.",
       "reverse_dcf": null
     },
-    "ttm_candidate": {
-      "state": null,
+    "one_quarter_legacy": {
       "method": null,
       "extended_weight": null,
       "fair_value": null,
-      "reason": null,
-      "growth_inputs": {
-        "selected_growth": null,
-        "basis": null,
-        "fiscal_year_growth": null,
-        "latest_quarter_yoy": null
-      },
-      "reverse_dcf": null
+      "observed_growth": null
+    },
+    "headline_growth": {
+      "observed_growth": null,
+      "growth_basis": null
     }
   },
   {
@@ -604,19 +497,15 @@
       "reason": "Fair value not calculated.",
       "reverse_dcf": null
     },
-    "ttm_candidate": {
-      "state": null,
+    "one_quarter_legacy": {
       "method": null,
       "extended_weight": null,
       "fair_value": null,
-      "reason": null,
-      "growth_inputs": {
-        "selected_growth": null,
-        "basis": null,
-        "fiscal_year_growth": null,
-        "latest_quarter_yoy": null
-      },
-      "reverse_dcf": null
+      "observed_growth": null
+    },
+    "headline_growth": {
+      "observed_growth": null,
+      "growth_basis": null
     }
   },
   {
@@ -634,19 +523,15 @@
       "reason": "Fair value not calculated.",
       "reverse_dcf": null
     },
-    "ttm_candidate": {
-      "state": null,
+    "one_quarter_legacy": {
       "method": null,
       "extended_weight": null,
       "fair_value": null,
-      "reason": null,
-      "growth_inputs": {
-        "selected_growth": null,
-        "basis": null,
-        "fiscal_year_growth": null,
-        "latest_quarter_yoy": null
-      },
-      "reverse_dcf": null
+      "observed_growth": null
+    },
+    "headline_growth": {
+      "observed_growth": null,
+      "growth_basis": null
     }
   },
   {
@@ -698,19 +583,19 @@
     "extended_horizon": {
       "state": "COMPUTED",
       "default": false,
-      "observed_growth": 0.261,
+      "observed_growth": 0.27525361821617467,
       "type_cap": 0.18,
-      "first_year_growth": 0.261,
-      "weight": 0.8100000000000002,
+      "first_year_growth": 0.27525361821617467,
+      "weight": 0.9525361821617467,
       "policy": {
         "years": 10,
         "first_year_growth_cap": 0.5,
         "decay": "linear"
       },
       "fair_value": {
-        "bear": 321.20346606929104,
-        "base": 627.273666668272,
-        "bull": 1170.7348540045073
+        "bear": 338.19739173856715,
+        "base": 661.7440352627112,
+        "bull": 1236.1151559048628
       },
       "checks": {
         "bear": {
@@ -746,41 +631,29 @@
       },
       "sensitivity": {
         "first_year_growth_cap": {
-          "0.4": 627.273666668272,
-          "0.5": 627.273666668272,
-          "0.6": 627.273666668272
+          "0.4": 661.7440352627112,
+          "0.5": 661.7440352627112,
+          "0.6": 661.7440352627112
         },
         "explicit_years": {
-          "8": 535.3157031156891,
-          "10": 627.273666668272,
-          "12": 729.9587608455116
+          "8": 559.128911949664,
+          "10": 661.7440352627112,
+          "12": 777.6674182812645
         },
         "decay": {
-          "linear": 627.273666668272,
-          "front_loaded": 370.6088278896961
+          "linear": 661.7440352627112,
+          "front_loaded": 379.13391705338995
         },
         "wacc_minus_1pp_base_plus_1pp": [
-          734.9452944407133,
-          627.273666668272,
-          544.9697693924056
+          775.9251452024847,
+          661.7440352627112,
+          574.4869168343963
         ]
       },
       "assumptions_to_state": "First-year growth cap (50%), linear decay to terminal growth and a 10-year explicit period are model policy without calibration; see sensitivity.",
       "note": "Ten-year values at full weight; the headline fair value blends them with the five-year values by `weight` (see report['fair_value'])."
     },
     "headline": {
-      "method": "PHASED",
-      "extended_weight": 0.8100000000000002,
-      "fair_value": {
-        "bear": 297.1626503605022,
-        "base": 576.3629107820011,
-        "bull": 1067.6078166567984
-      },
-      "reason": "Observed growth 26.1% vs cap 18%: ten-year model weighted 81%, five-year 19%.",
-      "reverse_dcf": "CONVERGED"
-    },
-    "ttm_candidate": {
-      "state": "COMPUTED",
       "method": "PHASED",
       "extended_weight": 0.9525361821617467,
       "fair_value": {
@@ -789,13 +662,21 @@
         "bull": 1207.2498365606734
       },
       "reason": "Observed growth 27.5% vs cap 18%: ten-year model weighted 95%, five-year 5%.",
-      "growth_inputs": {
-        "selected_growth": 0.27525361821617467,
-        "basis": "trailing twelve months to 2026-09-30 vs the twelve months before (SEC filings)",
-        "fiscal_year_growth": 0.22167038498246217,
-        "latest_quarter_yoy": 0.261
-      },
       "reverse_dcf": "CONVERGED"
+    },
+    "one_quarter_legacy": {
+      "method": "PHASED",
+      "extended_weight": 0.8100000000000002,
+      "fair_value": {
+        "bear": 297.1626503605022,
+        "base": 576.3629107820011,
+        "bull": 1067.6078166567984
+      },
+      "observed_growth": 0.261
+    },
+    "headline_growth": {
+      "observed_growth": 0.27525361821617467,
+      "growth_basis": "trailing twelve months to 2026-09-30 vs the twelve months before (SEC filings)"
     }
   },
   {
@@ -813,19 +694,15 @@
       "reason": "Fair value not calculated.",
       "reverse_dcf": null
     },
-    "ttm_candidate": {
-      "state": null,
+    "one_quarter_legacy": {
       "method": null,
       "extended_weight": null,
       "fair_value": null,
-      "reason": null,
-      "growth_inputs": {
-        "selected_growth": null,
-        "basis": null,
-        "fiscal_year_growth": null,
-        "latest_quarter_yoy": null
-      },
-      "reverse_dcf": null
+      "observed_growth": null
+    },
+    "headline_growth": {
+      "observed_growth": null,
+      "growth_basis": null
     }
   },
   {
@@ -843,19 +720,15 @@
       "reason": "Fair value not calculated.",
       "reverse_dcf": null
     },
-    "ttm_candidate": {
-      "state": null,
+    "one_quarter_legacy": {
       "method": null,
       "extended_weight": null,
       "fair_value": null,
-      "reason": null,
-      "growth_inputs": {
-        "selected_growth": null,
-        "basis": null,
-        "fiscal_year_growth": null,
-        "latest_quarter_yoy": null
-      },
-      "reverse_dcf": null
+      "observed_growth": null
+    },
+    "headline_growth": {
+      "observed_growth": null,
+      "growth_basis": null
     }
   },
   {
@@ -905,91 +778,12 @@
       "note": "Bear/bull growth and margin spreads come from the company's own history; the +/-4-point values are shown for comparison."
     },
     "extended_horizon": {
-      "state": "COMPUTED",
-      "default": false,
-      "observed_growth": 0.531,
+      "state": "NOT_TRIGGERED",
+      "observed_growth": 0.07772690734980614,
       "type_cap": 0.08,
-      "first_year_growth": 0.5,
-      "weight": 1.0,
-      "policy": {
-        "years": 10,
-        "first_year_growth_cap": 0.5,
-        "decay": "linear"
-      },
-      "fair_value": {
-        "bear": 269.7641085064058,
-        "base": 445.1929551113345,
-        "bull": 704.456775998368
-      },
-      "checks": {
-        "bear": {
-          "forecast_arithmetic": true,
-          "terminal_value": true,
-          "enterprise_value": true,
-          "ev_to_equity_bridge": true,
-          "share_conversion": true,
-          "wacc_above_terminal": true
-        },
-        "base": {
-          "forecast_arithmetic": true,
-          "terminal_value": true,
-          "enterprise_value": true,
-          "ev_to_equity_bridge": true,
-          "share_conversion": true,
-          "wacc_above_terminal": true
-        },
-        "bull": {
-          "forecast_arithmetic": true,
-          "terminal_value": true,
-          "enterprise_value": true,
-          "ev_to_equity_bridge": true,
-          "share_conversion": true,
-          "wacc_above_terminal": true
-        }
-      },
-      "checks_passed": true,
-      "reverse_dcf": {
-        "converged": true,
-        "status": "CONVERGED",
-        "required_year_1_revenue_growth": 0.3864059448242187
-      },
-      "sensitivity": {
-        "first_year_growth_cap": {
-          "0.4": 317.181320261748,
-          "0.5": 445.1929551113345,
-          "0.6": 493.38584712973386
-        },
-        "explicit_years": {
-          "8": 328.52681669909816,
-          "10": 445.1929551113345,
-          "12": 597.8408670771893
-        },
-        "decay": {
-          "linear": 445.1929551113345,
-          "front_loaded": 168.70502989255306
-        },
-        "wacc_minus_1pp_base_plus_1pp": [
-          509.91740718464996,
-          445.1929551113345,
-          393.18250518268445
-        ]
-      },
-      "assumptions_to_state": "First-year growth cap (50%), linear decay to terminal growth and a 10-year explicit period are model policy without calibration; see sensitivity.",
-      "note": "Ten-year values at full weight; the headline fair value blends them with the five-year values by `weight` (see report['fair_value'])."
+      "reason": "Observed growth is within the five-year model's cap; the existing valuation applies unchanged."
     },
     "headline": {
-      "method": "PHASED",
-      "extended_weight": 1.0,
-      "fair_value": {
-        "bear": 269.7641085064058,
-        "base": 445.1929551113345,
-        "bull": 704.456775998368
-      },
-      "reason": "Observed growth 53.1% vs cap 8%: ten-year model weighted 100%, five-year 0%.",
-      "reverse_dcf": "CONVERGED"
-    },
-    "ttm_candidate": {
-      "state": "COMPUTED",
       "method": "FIVE_YEAR",
       "extended_weight": 0.0,
       "fair_value": {
@@ -998,13 +792,21 @@
         "bull": 126.05481434666318
       },
       "reason": "Observed growth is within the five-year model's cap; the existing valuation applies unchanged.",
-      "growth_inputs": {
-        "selected_growth": 0.07772690734980614,
-        "basis": "trailing twelve months to 2026-07-26 vs the twelve months before (SEC filings)",
-        "fiscal_year_growth": 0.04386223138063006,
-        "latest_quarter_yoy": 0.531
-      },
       "reverse_dcf": "NO_ECONOMIC_SOLUTION"
+    },
+    "one_quarter_legacy": {
+      "method": "PHASED",
+      "extended_weight": 1.0,
+      "fair_value": {
+        "bear": 269.7641085064058,
+        "base": 445.1929551113345,
+        "bull": 704.456775998368
+      },
+      "observed_growth": 0.531
+    },
+    "headline_growth": {
+      "observed_growth": 0.07772690734980614,
+      "growth_basis": "trailing twelve months to 2026-07-26 vs the twelve months before (SEC filings)"
     }
   },
   {
@@ -1056,9 +858,9 @@
     "extended_horizon": {
       "state": "COMPUTED",
       "default": false,
-      "observed_growth": 0.544,
+      "observed_growth": 0.3336166663297908,
       "type_cap": 0.08,
-      "first_year_growth": 0.5,
+      "first_year_growth": 0.3336166663297908,
       "weight": 1.0,
       "policy": {
         "years": 10,
@@ -1066,9 +868,9 @@
         "decay": "linear"
       },
       "fair_value": {
-        "bear": 110.84879725605501,
-        "base": 212.6197997747465,
-        "bull": 397.69578983192696
+        "bear": 63.36368253996979,
+        "base": 121.23259568809772,
+        "bull": 228.0522474817891
       },
       "checks": {
         "bear": {
@@ -1104,29 +906,40 @@
       },
       "sensitivity": {
         "first_year_growth_cap": {
-          "0.4": 152.21998603985543,
-          "0.5": 212.6197997747465,
-          "0.6": 245.4762147518258
+          "0.4": 121.23259568809772,
+          "0.5": 121.23259568809772,
+          "0.6": 121.23259568809772
         },
         "explicit_years": {
-          "8": 159.55193415672915,
-          "10": 212.6197997747465,
-          "12": 280.6595203694604
+          "8": 101.24749492485005,
+          "10": 121.23259568809772,
+          "12": 143.86949855328916
         },
         "decay": {
-          "linear": 212.6197997747465,
-          "front_loaded": 82.49439648032724
+          "linear": 121.23259568809772,
+          "front_loaded": 65.12158348748079
         },
         "wacc_minus_1pp_base_plus_1pp": [
-          239.63520146517388,
-          212.6197997747465,
-          190.28729180886464
+          135.68171934427286,
+          121.23259568809772,
+          109.25514530030333
         ]
       },
       "assumptions_to_state": "First-year growth cap (50%), linear decay to terminal growth and a 10-year explicit period are model policy without calibration; see sensitivity.",
       "note": "Ten-year values at full weight; the headline fair value blends them with the five-year values by `weight` (see report['fair_value'])."
     },
     "headline": {
+      "method": "FIVE_YEAR",
+      "extended_weight": 0.0,
+      "fair_value": {
+        "bear": 28.955986267428514,
+        "base": 46.98382924428986,
+        "bull": 75.20840664235054
+      },
+      "reason": "Cyclical company: the ten-year model is not blended in, so cycle-high growth is not extended (owner decision 2026-11-22).",
+      "reverse_dcf": "NO_ECONOMIC_SOLUTION"
+    },
+    "one_quarter_legacy": {
       "method": "PHASED",
       "extended_weight": 1.0,
       "fair_value": {
@@ -1134,26 +947,11 @@
         "base": 212.6197997747465,
         "bull": 397.69578983192696
       },
-      "reason": "Observed growth 54.4% vs cap 8%: ten-year model weighted 100%, five-year 0%.",
-      "reverse_dcf": "CONVERGED"
+      "observed_growth": 0.544
     },
-    "ttm_candidate": {
-      "state": "COMPUTED",
-      "method": "PHASED",
-      "extended_weight": 1.0,
-      "fair_value": {
-        "bear": 63.36368253996979,
-        "base": 121.23259568809772,
-        "bull": 228.0522474817891
-      },
-      "reason": "Observed growth 33.4% vs cap 8%: ten-year model weighted 100%, five-year 0%.",
-      "growth_inputs": {
-        "selected_growth": 0.3336166663297908,
-        "basis": "trailing twelve months to 2026-09-27 vs the twelve months before (SEC filings)",
-        "fiscal_year_growth": 0.26020858240997,
-        "latest_quarter_yoy": 0.544
-      },
-      "reverse_dcf": "CONVERGED"
+    "headline_growth": {
+      "observed_growth": 0.3336166663297908,
+      "growth_basis": "trailing twelve months to 2026-09-27 vs the twelve months before (SEC filings)"
     }
   }
 ]

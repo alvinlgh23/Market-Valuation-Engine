@@ -66,16 +66,30 @@ def report_for(data):
         return iv.build_valuation_report("TEST", data=data)
 
 
-def test_candidate_uses_ttm_growth_and_leaves_the_headline_alone():
+def test_headline_uses_twelve_month_growth_not_the_one_quarter_figure():
     data = fixture_data(); data["info"]["revenueGrowth"] = 0.53   # one noisy quarter
-    data["growth_inputs"] = {"selected_growth": 0.08, "basis": "test"}
+    data["growth_inputs"] = {"selected_growth": 0.08, "basis": "test basis", "latest_quarter_yoy": 0.53}
     report = report_for(data)
-    candidate = report["fair_value_ttm_candidate"]
-    assert candidate["state"] == "COMPUTED" and candidate["default"] is False
-    assert candidate["method"] == "FIVE_YEAR" and candidate["extended_weight"] == 0.0   # 8% is under the 18% cap
-    assert report["fair_value"]["method"] == "PHASED" and report["fair_value"]["extended_weight"] == 1.0
-    assert candidate["fair_value"] == report["fair_value"]["five_year"]
+    headline = report["fair_value"]
+    assert headline["observed_growth"] == 0.08 and headline["growth_basis"] == "test basis"
+    assert headline["method"] == "FIVE_YEAR" and headline["extended_weight"] == 0.0   # 8% is under the 18% cap
+    assert headline["fair_value"] == headline["five_year"]
+    legacy = report["fair_value_one_quarter_legacy"]
+    assert legacy["default"] is False and legacy["method"] == "PHASED" and legacy["extended_weight"] == 1.0
 
 
-def test_candidate_not_computed_without_growth_inputs():
-    assert report_for(fixture_data())["fair_value_ttm_candidate"]["state"] == "NOT_COMPUTED"
+def test_offline_data_falls_back_to_the_one_quarter_figure_and_says_so():
+    data = fixture_data(); data["info"]["revenueGrowth"] = 0.23
+    headline = report_for(data)["fair_value"]
+    assert headline["observed_growth"] == 0.23 and "one-quarter" in headline["growth_basis"]
+    assert abs(headline["extended_weight"] - 0.5) < 1e-9
+
+
+def test_cyclical_companies_are_not_blended_with_the_ten_year_model():
+    data = fixture_data(); data["security_type"] = "CYCLICAL_COMPANY"
+    data["growth_inputs"] = {"selected_growth": 0.33, "basis": "test"}
+    report = report_for(data)
+    headline = report["fair_value"]
+    assert report["extended_horizon"]["state"] == "COMPUTED"   # still computed and shown
+    assert headline["method"] == "FIVE_YEAR" and headline["extended_weight"] == 0.0 and "Cyclical" in headline["reason"]
+    assert headline["fair_value"] == headline["five_year"] and headline["ten_year"]

@@ -216,9 +216,12 @@ def valuation_axis(report: dict[str, Any] | None, observed_growth: float | None,
     weight = _num(headline.get("extended_weight"))
     if headline.get("method") == "PHASED" and weight is not None:
         notes = [f"Blends the five-year ({1 - weight:.0%}) and ten-year ({weight:.0%}) models: observed growth {_pct(headline.get('observed_growth'))} is above the {_pct(headline.get('type_cap'))} cap; full ten-year weight at cap + {_pct(headline.get('phase_in_band'))}."]
+    elif report.get("company_type") == "Cyclical Company" or "Cyclical company" in str(headline.get("reason")):
+        notes = ["Cyclical company: five-year model on normalized mid-cycle economics; the ten-year model is not blended in (owner decision 2026-11-22)."]
     else:
         notes = ["Five-year explicit forecast with a capped first-year growth rate and 2.5% terminal growth; growth is within the type's cap, so the ten-year model is not blended in."]
     detail = {"price": price, "fair_value": fair, "valuation_method": headline.get("method"), "ten_year_weight": weight,
+              "growth_basis": headline.get("growth_basis"), "latest_quarter_yoy": ((headline.get("growth_inputs") or {}).get("latest_quarter_yoy")),
               "reverse_dcf_status": reverse.get("status"), "observed_growth": observed_growth,
               "consensus_next_year_growth": consensus_growth, "fixed_erp": _num(rates.get("equity_risk_premium")), "implied_erp": implied_erp,
               "erp_sensitivity": erp_sensitivity, "wacc": _num(rates.get("wacc")), "notes": notes}
@@ -492,7 +495,9 @@ def build_card(ticker: str, environment: dict[str, Any], core: dict[str, Any], s
             erp_sensitivity = {"erp_change_pp": -1.0, "wacc": lower, "base_fair_value": _num(((alt.get("scenarios") or {}).get("base") or {}).get("fair_value_per_share"))}
         except Exception as exc:  # noqa: BLE001
             erp_sensitivity = {"error": f"{type(exc).__name__}: {exc}"}
-    observed_growth = _num(info.get("revenueGrowth"))
+    # Checklist 9.2: the twelve-month growth the valuation used, falling back to Yahoo's one-quarter figure.
+    headline = (report or {}).get("fair_value") or {}
+    observed_growth = _num(headline.get("observed_growth")) if _num(headline.get("observed_growth")) is not None else _num(info.get("revenueGrowth"))
     axes = {
         "macro": macro_axis(archetype, environment),
         "flow": flow_axis(ticker, etf, mapping, store, company_vs_sector, sector_flow),

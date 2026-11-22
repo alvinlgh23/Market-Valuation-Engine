@@ -1,4 +1,4 @@
-"""Checklists 7.5/7.6/9.2: five-year values with company spreads (default) beside the old +/-4-point values, the ten-year model and the phased headline."""
+"""Checklists 7.5/7.6/9.2: headline (12-month growth, cyclicals not blended) beside the old one-quarter headline, the five-year and ten-year values."""
 import contextlib
 import io
 import json
@@ -27,10 +27,8 @@ for ticker in dict.fromkeys([*json.loads(Path("data/watchlist.json").read_text()
         "extended_horizon": report.get("extended_horizon"),
         "headline": {key: (report.get("fair_value") or {}).get(key) for key in ("method", "extended_weight", "fair_value", "reason")}
                     | {"reverse_dcf": ((report.get("fair_value") or {}).get("reverse_dcf") or {}).get("status")},
-        "ttm_candidate": {key: (report.get("fair_value_ttm_candidate") or {}).get(key) for key in ("state", "method", "extended_weight", "fair_value", "reason")}
-                         | {"growth_inputs": {key: ((report.get("fair_value_ttm_candidate") or {}).get("growth_inputs") or {}).get(key)
-                                              for key in ("selected_growth", "basis", "fiscal_year_growth", "latest_quarter_yoy")},
-                            "reverse_dcf": (((report.get("fair_value_ttm_candidate") or {}).get("reverse_dcf")) or {}).get("status")},
+        "one_quarter_legacy": {key: (report.get("fair_value_one_quarter_legacy") or {}).get(key) for key in ("method", "extended_weight", "fair_value", "observed_growth")},
+        "headline_growth": {key: (report.get("fair_value") or {}).get(key) for key in ("observed_growth", "growth_basis")},
     })
 Path("data/valuation_parallel_comparison.json").write_text(json.dumps(rows, indent=2, default=str) + "\n")
 fmt = lambda values: "withheld" if not values else " / ".join("n/a" if value is None else f"{value:,.0f}" for value in values.values())
@@ -49,9 +47,7 @@ for row in rows:
         ext_text = f"{fmt(ext['fair_value'])}  growth {ext['observed_growth']:.0%} > cap {ext['type_cap']:.0%}; reverse {ext['reverse_dcf'].get('status')}; checks {'pass' if ext['checks_passed'] else 'FAIL'}"
     head = row["headline"]
     head_text = f"{fmt(head['fair_value'])}  {head['method']}" + (f" (ten-year weight {head['extended_weight']:.0%}); reverse {head['reverse_dcf']}" if head["method"] == "PHASED" else "")
-    cand = row["ttm_candidate"]
-    growth = cand.get("growth_inputs") or {}
-    cand_text = (f"{fmt(cand['fair_value'])}  {cand['method']}" + (f" (ten-year weight {cand['extended_weight']:.0%})" if cand.get("method") == "PHASED" else "")
-                 + (f"; growth {growth['selected_growth']:+.1%} vs one-quarter {growth['latest_quarter_yoy']:+.1%}" if growth.get("selected_growth") is not None and growth.get("latest_quarter_yoy") is not None else "")
-                 ) if cand.get("state") == "COMPUTED" else str(cand.get("state"))
-    print(f"{row['ticker']:5} price {row['price']}\n      9.2 TTM   {cand_text}\n      five-year {fmt(row['default_fair_value'])}  reverse {row['default_reverse_dcf']}\n      old ±4    {spread_text}\n      ten-year  {ext_text}\n      HEADLINE  {head_text}")
+    legacy, growth = row["one_quarter_legacy"], row["headline_growth"]
+    legacy_text = f"{fmt(legacy.get('fair_value'))}  {legacy.get('method')}" + (f" (ten-year weight {legacy['extended_weight']:.0%}; one-quarter growth {legacy['observed_growth']:+.1%})" if legacy.get("method") == "PHASED" else "")
+    growth_text = "n/a" if growth.get("observed_growth") is None else f"{growth['observed_growth']:+.1%} — {growth.get('growth_basis')}"
+    print(f"{row['ticker']:5} price {row['price']}\n      growth    {growth_text}\n      old 1-qtr {legacy_text}\n      five-year {fmt(row['default_fair_value'])}  reverse {row['default_reverse_dcf']}\n      old ±4    {spread_text}\n      ten-year  {ext_text}\n      HEADLINE  {head_text}")

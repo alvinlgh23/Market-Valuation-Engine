@@ -950,7 +950,7 @@ def _extended_reverse(data, base_items, years, decay):
 def extended_horizon(data, assumptions, kind, spreads=None, observed_override=None):
     """Checklist 7.6: run only when observed growth exceeds the company type's first-year cap.
 
-    observed_override (checklist 9.2 candidate) replaces Yahoo's one-quarter revenueGrowth.
+    observed_override (checklist 9.2): trailing-12-month growth, replacing Yahoo's one-quarter revenueGrowth.
     """
     observed = _pick(data["info"], "revenueGrowth") if observed_override is None else observed_override
     cap = GROWTH_CAPS.get(kind)
@@ -1034,19 +1034,31 @@ def _blended_reverse(data, base_items, weight, years, decay):
             "five_year_model_5y_cagr": five_cagr, "ten_year_model_first_5y_cagr": ten_cagr, "residual_per_share": difference}
 
 
-def ttm_candidate(data, assumptions, kind, spreads, scenarios, reverse):
-    """Checklist 9.2 (parallel; not the default): the phase-in driven by trailing-12-month growth."""
-    growth = data.get("growth_inputs")
-    if not growth or growth.get("selected_growth") is None:
-        return {"state": "NOT_COMPUTED", "default": False, "reason": "Growth inputs were not collected (offline data) or no filed growth exists."}
-    extended = extended_horizon(data, assumptions, kind, spreads, observed_override=growth["selected_growth"])
-    return {"state": "COMPUTED", "default": False, "growth_inputs": growth, "extended_horizon_state": extended.get("state"),
-            **phased_fair_value(data, assumptions, scenarios, extended, reverse),
-            "note": "Parallel calculation for owner review (checklist 9.2); the headline still uses Yahoo's one-quarter growth."}
+def headline_growth(data):
+    """Checklist 9.2 (owner decision 2026-11-22): the phase-in reads trailing-12-month growth.
+
+    Falls back to Yahoo's one-quarter revenueGrowth only when growth inputs were not collected
+    (offline data); the basis is always returned.
+    """
+    growth = data.get("growth_inputs") or {}
+    if growth.get("selected_growth") is not None:
+        return growth["selected_growth"], growth.get("basis")
+    return None, "Yahoo one-quarter revenue growth (twelve-month growth not collected)"
 
 
-def phased_fair_value(data, assumptions, scenarios, extended, reverse):
-    """Headline fair value (checklist 7.6, owner decision): five-year values, blended with the ten-year values above the cap."""
+def one_quarter_legacy(data, assumptions, kind, spreads, scenarios, reverse):
+    """The pre-9.2 headline (one-quarter growth, no cyclical rule), kept for comparison only."""
+    extended = extended_horizon(data, assumptions, kind, spreads)
+    return {"default": False, **phased_fair_value(data, assumptions, scenarios, extended, reverse),
+            "note": "Previous headline: Yahoo one-quarter revenue growth, cyclical companies not excluded. Comparison only."}
+
+
+def phased_fair_value(data, assumptions, scenarios, extended, reverse, kind=None):
+    """Headline fair value (checklist 7.6, owner decision): five-year values, blended with the ten-year values above the cap.
+
+    kind="CYCLICAL_COMPANY" (owner decision 2026-11-22): no blending; high growth in a cyclical is
+    cycle position, and extending it for ten years would value the peak.
+    """
     five = {name: scenarios[name]["fair_value_per_share"] for name in ("bear", "base", "bull")}
     output = {"five_year": five, "phase_in_band": PHASE_IN_BAND, "type_cap": extended.get("type_cap"), "observed_growth": extended.get("observed_growth")}
     if extended.get("state") != "COMPUTED":
@@ -1055,6 +1067,9 @@ def phased_fair_value(data, assumptions, scenarios, extended, reverse):
     if not extended.get("checks_passed"):
         return {**output, "method": "FIVE_YEAR", "extended_weight": 0.0, "fair_value": dict(five), "reverse_dcf": reverse, "ten_year": extended["fair_value"],
                 "reason": "Ten-year model failed its arithmetic, ordering or WACC checks; five-year values apply."}
+    if kind == "CYCLICAL_COMPANY":
+        return {**output, "method": "FIVE_YEAR", "extended_weight": 0.0, "fair_value": dict(five), "reverse_dcf": reverse, "ten_year": extended["fair_value"],
+                "reason": "Cyclical company: the ten-year model is not blended in, so cycle-high growth is not extended (owner decision 2026-11-22)."}
     weight = extended["weight"]
     ten = extended["fair_value"]
     blended = {name: (1 - weight) * five[name] + weight * ten[name] for name in five}
@@ -1625,9 +1640,12 @@ def build_valuation_report(ticker: str, overrides: dict | None = None, data: dic
     report["scenarios"] = scenarios
     # Checklist 7.5: bear/bull spreads from the company's history. Checklist 7.6: the headline value phases in the ten-year model (report["fair_value"]).
     report["scenario_spreads"] = scenario_spread_record(data, rates, overrides, spreads, spread_basis)
-    report["extended_horizon"] = extended_horizon(data, assumptions, kind, spreads)
-    report["fair_value"] = phased_fair_value(data, assumptions, scenarios, report["extended_horizon"], reverse)
-    report["fair_value_ttm_candidate"] = ttm_candidate(data, assumptions, kind, spreads, scenarios, reverse)
+    # Checklist 9.2 (owner decision 2026-11-22): twelve-month growth drives the phase-in; cyclicals are not blended.
+    growth, growth_basis = headline_growth(data)
+    report["extended_horizon"] = extended_horizon(data, assumptions, kind, spreads, observed_override=growth)
+    report["fair_value"] = {**phased_fair_value(data, assumptions, scenarios, report["extended_horizon"], reverse, kind),
+                            "growth_basis": growth_basis, "growth_inputs": data.get("growth_inputs")}
+    report["fair_value_one_quarter_legacy"] = one_quarter_legacy(data, assumptions, kind, spreads, scenarios, reverse)
     report["sensitivity"] = sensitivity
     report["reverse_dcf"] = reverse
     report["cross_checks"] = cross_checks
@@ -1664,7 +1682,7 @@ def build_valuation_report(ticker: str, overrides: dict | None = None, data: dic
         report["sensitivity"] = {}
         report["reverse_dcf"] = {"status": "VALIDATION_FAILED", "reason": "Critical valuation checks failed."}
         report["fair_value"] = {"method": "WITHHELD", "fair_value": {}, "reason": "Critical valuation checks failed."}
-        report["fair_value_ttm_candidate"] = {"state": "WITHHELD", "default": False, "fair_value": {}, "reason": "Critical valuation checks failed."}
+        report["fair_value_one_quarter_legacy"] = {"method": "WITHHELD", "default": False, "fair_value": {}, "reason": "Critical valuation checks failed."}
         report["cross_checks"] = {"notes": ["Authoritative values withheld after critical validation failure."]}
         report["final_interpretation"] = {"text": "Fair value withheld: " + "; ".join(validation["reasons"])}
     report["_data"] = data
