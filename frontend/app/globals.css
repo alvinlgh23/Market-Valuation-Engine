@@ -3547,3 +3547,37 @@ body {
 .cov-stale-list > span { color: var(--research-negative); font-weight: 600; }
 .cov-stale-list p { margin: 0; color: var(--research-muted); }
 .cov-stale-list b { color: var(--research-text); font-weight: 600; }
+
+/* What moved the price (checklists 10.2-10.3) */
+.pd-bar { position: relative; display: block; height: 12px; min-width: 120px; }
+.pd-bar.pd-empty { color: var(--research-faint); height: auto; }
+.pd-axis { position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: var(--research-line-strong); }
+.pd-bar .pd-seg { position: absolute; top: 0; height: 12px; }
+.pd-seg { display: inline-block; width: 9px; height: 9px; }
+.pd-macro { background: #5b8fd0; }
+.pd-market { background: #8c918d; }
+.pd-sector { background: #4fa686; }
+.pd-company { background: #d9824f; }
+.pd-tag { display: inline-block; padding: 3px 8px; font-size: var(--fs-1); border: 1px solid var(--research-line-strong); color: var(--research-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.pd-tag small { color: var(--research-faint); }
+.pd-kind-noise .pd-tag, .pd-tag.pd-kind-noise { border-color: #5b8fd0; }
+.pd-kind-watch .pd-tag, .pd-tag.pd-kind-watch { border-color: var(--research-caution); }
+.pd-kind-company .pd-tag, .pd-tag.pd-kind-company { border-color: #d9824f; }
+.pd-kind-fundamentals .pd-tag, .pd-tag.pd-kind-fundamentals { border-color: var(--research-negative); background: color-mix(in srgb, var(--research-negative) 14%, transparent); }
+.pd-legend { display: inline-flex; flex-wrap: wrap; gap: 10px; color: var(--research-muted); font-size: var(--fs-1); }
+.pd-legend > span { display: inline-flex; align-items: center; gap: 4px; }
+.pd-panel { display: grid; gap: 10px; padding: 14px 16px; margin: 0 0 14px; border: 1px solid var(--research-line); border-left: 3px solid var(--research-line-strong); }
+.pd-panel.pd-kind-noise { border-left-color: #5b8fd0; }
+.pd-panel.pd-kind-company { border-left-color: #d9824f; }
+.pd-panel.pd-kind-fundamentals { border-left-color: var(--research-negative); }
+.pd-panel.pd-kind-watch { border-left-color: var(--research-caution); }
+.pd-panel > header { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; color: var(--research-muted); font-size: var(--fs-1); }
+.pd-main { display: grid; grid-template-columns: auto minmax(120px, 1fr) auto; gap: 14px; align-items: center; }
+.pd-main strong { font: 650 24px/1 var(--font-research); font-variant-numeric: tabular-nums; }
+.pd-main strong.neg { color: var(--research-negative); }
+.pd-main strong.pos { color: var(--research-positive); }
+.pd-parts { display: flex; flex-wrap: wrap; gap: 16px; color: var(--research-muted); font-size: var(--fs-1); }
+.pd-parts > span { display: inline-flex; align-items: center; gap: 5px; }
+.pd-parts em { font-style: normal; color: var(--research-text); font-variant-numeric: tabular-nums; }
+.pd-note { color: var(--research-faint); font-size: var(--fs-1); }
+@media (max-width: 640px) { .pd-main { grid-template-columns: 1fr; } }

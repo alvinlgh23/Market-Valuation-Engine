@@ -480,7 +480,7 @@ def build_card(ticker: str, environment: dict[str, Any], core: dict[str, Any], s
         heat = (vm.heat_rows([ticker]) or [None])[0]
     expectations = collect_expectations(ticker)
     # Checklist 10.1: what moved the price (macro / market / sector / company).
-    from price_attribution import build_attribution
+    from price_attribution import build_attribution, price_reading
     try:
         attribution = build_attribution(ticker, archetype, etf)
     except Exception as exc:  # noqa: BLE001
@@ -536,12 +536,17 @@ def build_card(ticker: str, environment: dict[str, Any], core: dict[str, Any], s
         "next_catalysts": next_catalysts(expectations.get("next_earnings_date"), fomc, today),
         "families": {family: sorted(key for key, value in axes.items() if family in value["families"]) for family in FAMILIES},
         "attribution": attribution,
+        "price_reading": price_reading(attribution, axes["expectations"]["state"],
+                                       next((item for item in changes_since_last(ticker, axes, store, today.isoformat()) if item["axis"] == "fundamentals"), None)),
         "home_currency": home_currency_view(home_currency) if home_currency else None,
         "errors": errors,
         "disclaimer": "Research map, not a recommendation. Axes are shown separately and never combined into a score.",
     }
     if record:
         card["recorded"] = record_verdict(ticker, axes, store, today.isoformat())
+        reading = card["price_reading"]
+        card["recorded"] += store.append([observation(f"attribution.{ticker}.3m", today.isoformat(), reading.get("company_z"), reading["kind"],
+                                                      source="price_attribution", source_state="LIVE")])
     return card
 
 

@@ -142,3 +142,57 @@ def build_attribution(ticker: str, archetype: str, sector_etf: str | None,
         "method": "Weekly log returns; sensitivities from the 104 weeks before the window; market and sector cleaned of macro factors; company = remainder.",
     })
     return result
+
+
+# ---- Checklist 10.2: fundamentals or noise -------------------------------------------------------
+NOISE_Z = 1.0        # company part within one residual standard deviation: normal noise
+EVENT_Z = 2.0        # beyond two: a real company-specific move
+LOW_FIT_R2 = 0.30
+PART_LABEL = {"macro": "Macro", "market": "Broad market", "sector": "Sector"}
+
+
+def price_reading(attribution: dict[str, Any] | None, expectations_state: str | None = None,
+                  fundamentals_change: dict[str, str] | None = None, window: str = "3M") -> dict[str, Any]:
+    """One sentence: did the company's own story move the price, and do estimates agree?
+
+    Rules (fixed, tested):
+      |z| < 1            normal noise; name the largest outside driver if it explains >= 5 points
+      1 <= |z| < 2       some company-specific move (watch)
+      |z| >= 2           company-specific move; estimates moving the same way => fundamentals changing,
+                         otherwise => estimates unchanged (sentiment or flows)
+    """
+    if not attribution or attribution.get("status") != "AVAILABLE" or window not in (attribution.get("windows") or {}):
+        return {"kind": "unknown", "label": "Price drivers unavailable", "detail": (attribution or {}).get("reason") or "No attribution.",
+                "confidence": "LOW", "window": window}
+    w = attribution["windows"][window]
+    parts, z, change = w["parts"], w.get("company_z"), w["price_change"]
+    r2 = (attribution.get("fit") or {}).get("r2")
+    outside = max(("macro", "market", "sector"), key=lambda key: abs(parts[key]))
+    top = w.get("top_macro") or {}
+    top_label = (attribution.get("factor_labels") or {}).get(top.get("factor"), top.get("factor"))
+    driver = PART_LABEL[outside] + (f" (mainly {top_label.lower()})" if outside == "macro" and top_label else "")
+    direction = "drop" if parts["company"] < 0 else "rise"
+    estimates_up = expectations_state == "Estimates rising"
+    estimates_down = expectations_state == "Estimates falling"
+    if z is None:
+        kind, label = "unknown", "Company part could not be scored"
+    elif abs(z) < NOISE_Z:
+        kind = "noise"
+        label = f"{driver}-driven; company move is normal noise" if abs(parts[outside]) >= 0.05 else "Normal range; no clear driver"
+    elif abs(z) < EVENT_Z:
+        kind, label = "watch", f"Some company-specific {direction}"
+    elif (direction == "drop" and estimates_down) or (direction == "rise" and estimates_up):
+        kind, label = "fundamentals", f"Company-specific {direction}; estimates {'cut' if estimates_down else 'raised'}: fundamentals changing"
+    elif expectations_state in (None, "", "Consensus data unavailable", "Revisions unavailable"):
+        kind, label = "company", f"Company-specific {direction}; estimates unavailable"
+    else:
+        kind, label = "company", f"Company-specific {direction}; estimates not following: sentiment or flows"
+    detail = (f"{window} price {change:+.1%}: macro {parts['macro']:+.1%}, market {parts['market']:+.1%}, sector {parts['sector']:+.1%}, "
+              f"company {parts['company']:+.1%} ({'z unavailable' if z is None else f'{z:+.1f}x normal range'}).")
+    if fundamentals_change:
+        detail += f" Fundamentals axis changed from {fundamentals_change.get('from')} to {fundamentals_change.get('to')}."
+    confidence = "LOW" if r2 is None or r2 < LOW_FIT_R2 else "MODERATE"
+    return {"kind": kind, "label": label, "detail": detail, "confidence": confidence,
+            "fit_r2": r2, "window": window, "price_change": change, "parts": parts, "company_z": z,
+            "outside_driver": outside, "top_macro": top_label, "estimates_state": expectations_state,
+            "low_fit_note": None if confidence != "LOW" else f"The model explains only {0 if r2 is None else r2:.0%} of weekly moves; treat the split as rough."}

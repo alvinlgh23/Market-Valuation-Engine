@@ -79,3 +79,40 @@ def test_build_attribution_uses_archetype_factors_and_reports_missing_history():
     assert "000660.KS" in result["missing_histories"]
     missing = build_attribution("ZZZ", "BANK", None, fetch=fetch)
     assert missing["status"] == "UNAVAILABLE"
+
+
+# ---- Checklist 10.2: fundamentals or noise -------------------------------------------------------
+from price_attribution import price_reading  # noqa: E402
+
+
+def _attr(company, z, macro=-0.20, market=-0.03, sector=-0.01, r2=0.6):
+    total = macro + market + sector + company
+    return {"status": "AVAILABLE", "fit": {"r2": r2}, "factor_labels": {"volatility": "Equity volatility"},
+            "windows": {"3M": {"price_change": math.exp(total) - 1, "parts": {"macro": macro, "market": market, "sector": sector, "company": company},
+                               "top_macro": {"factor": "volatility", "value": macro}, "company_z": z}}}
+
+
+def test_macro_drop_with_normal_company_part_is_noise():
+    reading = price_reading(_attr(-0.02, -0.2), "Estimates stable or mixed")
+    assert reading["kind"] == "noise"
+    assert reading["label"] == "Macro (mainly equity volatility)-driven; company move is normal noise"
+
+
+def test_company_drop_with_estimate_cuts_is_fundamentals():
+    assert price_reading(_attr(-0.27, -2.4), "Estimates falling")["kind"] == "fundamentals"
+
+
+def test_company_drop_without_estimate_cuts_is_sentiment_or_flows():
+    reading = price_reading(_attr(-0.27, -2.4), "Estimates rising")
+    assert reading["kind"] == "company" and "sentiment or flows" in reading["label"]
+    assert "estimates unavailable" in price_reading(_attr(-0.27, -2.4), "Consensus data unavailable")["label"]
+
+
+def test_middle_band_is_watch_and_low_fit_is_flagged():
+    reading = price_reading(_attr(0.12, 1.4, r2=0.2))
+    assert reading["kind"] == "watch" and reading["confidence"] == "LOW" and reading["low_fit_note"]
+
+
+def test_unavailable_attribution_is_unknown_not_noise():
+    assert price_reading({"status": "UNAVAILABLE", "reason": "no history"})["kind"] == "unknown"
+    assert price_reading(None)["kind"] == "unknown"

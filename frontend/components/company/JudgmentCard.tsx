@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { fairValueCoordinates } from "../../lib/fair-value-scale.mjs";
 import { axisTone, confidenceDots, percentileWidth, TONE_GLYPH, TONE_LABEL, type Tone } from "../../lib/judgment-tone.mjs";
+import { PriceDriversPanel, type Attribution, type PriceReading } from "./PriceDrivers";
 
 type Axis = { state: string; direction: string | null; confidence: string; evidence: string[]; missing: string[]; families: string[]; detail: Record<string, unknown> };
 type Card = {
@@ -11,6 +12,7 @@ type Card = {
   contradictions: string[]; changes: Array<{ axis: string; from: string; to: string; since: string }>; falsification: string[];
   next_catalysts: { earnings: string | null; last_earnings?: string | null; fomc: string | null };
   disclaimer: string;
+  attribution?: Attribution; price_reading?: PriceReading;
 };
 
 const AXIS_LABEL: Record<string, string> = { macro: "Macro", flow: "Money flow", valuation: "Valuation", crowding: "Crowding", expectations: "Expectations", fundamentals: "Fundamentals" };
@@ -150,6 +152,7 @@ export function JudgmentCard({ ticker }: { ticker: string }) {
       <span className="jc-type">{words(card.archetype)}{card.sector_etf ? ` · ${card.sector_etf}` : ""}</span>
       <Legend />
     </div>
+    <PriceDriversPanel attribution={card.attribution} reading={card.price_reading} />
     <div className="jc-headline">
       <NumberStrip card={card} />
       <ValueRange card={card} />
