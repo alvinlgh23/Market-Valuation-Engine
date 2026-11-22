@@ -250,6 +250,47 @@ def carry_warning(readings: dict[str, Any], carry_state: str, cftc: dict[str, An
             "rule": "HIGH: carry already unwinding, or two fuel signs plus a trigger. ELEVATED: two fuel signs, or one plus a trigger."}
 
 
+# ---- Dollar driver: Fed vs ECB (checklist 10.8) ------------------------------------------
+def _compass_series(series: str) -> list[tuple[str, float]]:
+    from macro_world import COMPASS_CACHE_DIR, COMPASS_DIR
+    for folder in (COMPASS_CACHE_DIR, COMPASS_DIR / "data" / "cache" / "fred"):
+        path = folder / f"{series}.csv"
+        if path.exists():
+            rows = []
+            for line in path.read_text().splitlines()[1:]:
+                day, _, value = line.partition(",")
+                if _num_text(value) is not None:
+                    rows.append((day[:10], float(value)))
+            return rows
+    return []
+
+
+def _value_on_or_before(rows: list[tuple[str, float]], day: str) -> float | None:
+    earlier = [value for date, value in rows if date <= day]
+    return earlier[-1] if earlier else None
+
+
+def fed_ecb_divergence(fed: list[tuple[str, float]], ecb: list[tuple[str, float]], eurusd: list[tuple[str, float]]) -> dict[str, Any]:
+    """Fed funds (monthly) minus the ECB deposit rate, now and three months earlier; EUR/USD over the same window."""
+    if not fed or not ecb:
+        return {"status": "UNAVAILABLE", "reason": "Fed funds or ECB deposit-rate history missing"}
+    as_of = fed[-1][0]
+    then = (dt.date.fromisoformat(as_of) - dt.timedelta(days=92)).isoformat()
+    gap = fed[-1][1] - (_value_on_or_before(ecb, as_of) or ecb[-1][1])
+    fed_then, ecb_then = _value_on_or_before(fed, then), _value_on_or_before(ecb, then)
+    change = None if fed_then is None or ecb_then is None else gap - (fed_then - ecb_then)
+    eur_now, eur_then = (eurusd[-1][1] if eurusd else None), _value_on_or_before(eurusd, (dt.date.fromisoformat(eurusd[-1][0]) - dt.timedelta(days=92)).isoformat()) if eurusd else None
+    eur_3m = None if eur_now is None or not eur_then else eur_now / eur_then - 1
+    if change is None:
+        text = f"Fed funds is {gap:.2f} pp above the ECB deposit rate."
+    else:
+        moved = f"{'wider' if change > 0 else 'narrower'} by {abs(change):.2f} pp" if abs(change) > 0.05 else "unchanged"
+        text = (f"Fed–ECB rate gap {gap:.2f} pp, {moved} over three months"
+                + (f"; EUR/USD {eur_3m:+.1%}" if eur_3m is not None else "") + ". A wider gap tends to support the dollar.")
+    return {"status": "AVAILABLE", "as_of": as_of, "gap_pp": gap, "gap_change_3m_pp": change, "eurusd_3m": eur_3m, "text": text,
+            "source": "FRED FEDFUNDS, ECBDFR, DEXUSEU (Compass cache)"}
+
+
 # ---- Fed path (checklist 3.4) -------------------------------------------------------------
 COMPASS_BACKTEST_NOTE = (
     "Central Bank Compass's own policy-signal backtest (outputs/forward_hit_results.csv, 29 signal dates 2019-01 to 2026-05) "
@@ -402,6 +443,13 @@ def build_environment(core: dict[str, Any] | None, world: dict[str, Any], inflat
         "yen_carry": yen_carry(core, world, cftc, boj),
         "semis_cycle": semis_cycle(kospi, korea_exports),
     }
+    try:
+        divergence = fed_ecb_divergence(_compass_series("FEDFUNDS"), _compass_series("ECBDFR"), _compass_series("DEXUSEU"))
+    except Exception as exc:  # noqa: BLE001
+        divergence = {"status": "UNAVAILABLE", "reason": f"{type(exc).__name__}: {exc}"}
+    factors["usd"]["readings"]["driver_fed_ecb"] = divergence
+    if divergence.get("status") == "AVAILABLE":
+        factors["usd"]["notes"].append(divergence["text"])
     vix_note = volatility_scorecard_note()
     if vix_note:
         factors["volatility"]["notes"].append(vix_note)

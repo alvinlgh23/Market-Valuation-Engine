@@ -42,3 +42,18 @@ def test_gap_history_reads_the_refreshed_cache():
     if history:                     # the cache may be absent on a fresh checkout
         assert all(len(month) == 10 for month, _ in history)
         assert -5 < history[-1][1] < 8
+
+
+# ---- Checklist 10.8: Fed vs ECB divergence ------------------------------------------------------
+from environment import fed_ecb_divergence  # noqa: E402
+
+
+def test_fed_ecb_gap_and_three_month_change():
+    fed = [("2026-07-01", 4.00), ("2026-10-01", 3.75)]
+    ecb = [("2026-06-15", 2.00), ("2026-09-20", 2.25)]
+    eur = [("2026-07-01", 1.10), ("2026-10-01", 1.155)]
+    result = fed_ecb_divergence(fed, ecb, eur)
+    assert result["gap_pp"] == 1.5 and result["gap_change_3m_pp"] == -0.5
+    assert abs(result["eurusd_3m"] - 0.05) < 1e-9
+    assert "narrower by 0.50 pp" in result["text"]
+    assert fed_ecb_divergence([], ecb, eur)["status"] == "UNAVAILABLE"

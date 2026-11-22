@@ -16,6 +16,14 @@ function Track({ label, value, right }: { label: string; value: number | null; r
 
 function FactorVisual({ id, factor }: { id: string; factor: EnvironmentFactor }) {
   const r = factor.readings;
+  if (id === "usd") {
+    // Checklist 10.8: one line on why the dollar moves (Fed vs ECB policy gap).
+    const d = obj(r.driver_fed_ecb);
+    return <div className="env-carry">
+      <Track label="vs own history" value={num(r.percentile_in_own_history)} />
+      {d.status === "AVAILABLE" ? <small title={String(d.text ?? "")}>Fed–ECB gap {num(d.gap_pp)?.toFixed(2)} pp{num(d.gap_change_3m_pp) != null ? ` (${(num(d.gap_change_3m_pp) as number) >= 0 ? "+" : ""}${(num(d.gap_change_3m_pp) as number).toFixed(2)} in 3M)` : ""}</small> : null}
+    </div>;
+  }
   if (num(r.percentile_in_own_history) != null) return <Track label="vs own history" value={num(r.percentile_in_own_history)} />;
   if (id === "semis_cycle") {
     // Checklist 10.7: Korean chip exports as the leading read when a data.go.kr key is configured.
