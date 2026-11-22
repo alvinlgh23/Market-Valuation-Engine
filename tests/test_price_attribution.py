@@ -96,6 +96,7 @@ def test_macro_drop_with_normal_company_part_is_noise():
     reading = price_reading(_attr(-0.02, -0.2), "Estimates stable or mixed")
     assert reading["kind"] == "noise"
     assert reading["label"] == "Macro (mainly equity volatility)-driven; company move is normal noise"
+    assert reading["short"] == "Macro-driven"
 
 
 def test_company_drop_with_estimate_cuts_is_fundamentals():
@@ -116,3 +117,10 @@ def test_middle_band_is_watch_and_low_fit_is_flagged():
 def test_unavailable_attribution_is_unknown_not_noise():
     assert price_reading({"status": "UNAVAILABLE", "reason": "no history"})["kind"] == "unknown"
     assert price_reading(None)["kind"] == "unknown"
+
+
+def test_no_mapped_macro_factors_is_rough():
+    attribution = _attr(0.25, 2.2)
+    attribution["factors"] = []
+    reading = price_reading(attribution, "Estimates stable or mixed")
+    assert reading["confidence"] == "LOW" and "No macro exposures" in reading["low_fit_note"]

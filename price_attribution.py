@@ -187,12 +187,19 @@ def price_reading(attribution: dict[str, Any] | None, expectations_state: str | 
         kind, label = "company", f"Company-specific {direction}; estimates unavailable"
     else:
         kind, label = "company", f"Company-specific {direction}; estimates not following: sentiment or flows"
+    short = {"noise": f"{PART_LABEL[outside]}-driven" if abs(parts[outside]) >= 0.05 else "Normal range",
+             "watch": f"Some company {direction}", "fundamentals": "Fundamentals changing",
+             "company": f"Company {direction}" + ("" if "unavailable" in label else ", estimates flat")}.get(kind, "Unscored")
     detail = (f"{window} price {change:+.1%}: macro {parts['macro']:+.1%}, market {parts['market']:+.1%}, sector {parts['sector']:+.1%}, "
               f"company {parts['company']:+.1%} ({'z unavailable' if z is None else f'{z:+.1f}x normal range'}).")
     if fundamentals_change:
         detail += f" Fundamentals axis changed from {fundamentals_change.get('from')} to {fundamentals_change.get('to')}."
     confidence = "LOW" if r2 is None or r2 < LOW_FIT_R2 else "MODERATE"
-    return {"kind": kind, "label": label, "detail": detail, "confidence": confidence,
+    no_factors = "factors" in attribution and not attribution["factors"]
+    if no_factors:
+        confidence = "LOW"
+    return {"kind": kind, "label": label, "short": short, "detail": detail, "confidence": confidence,
             "fit_r2": r2, "window": window, "price_change": change, "parts": parts, "company_z": z,
             "outside_driver": outside, "top_macro": top_label, "estimates_state": expectations_state,
-            "low_fit_note": None if confidence != "LOW" else f"The model explains only {0 if r2 is None else r2:.0%} of weekly moves; treat the split as rough."}
+            "low_fit_note": ("No macro exposures are mapped for this company's archetype, so macro moves sit inside market and company parts." if no_factors
+                             else None if confidence != "LOW" else f"The model explains only {0 if r2 is None else r2:.0%} of weekly moves; treat the split as rough.")}

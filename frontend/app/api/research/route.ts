@@ -31,8 +31,9 @@ async function runVerdict(ticker: string) {
 
 export async function GET(request: NextRequest) {
   const action = request.nextUrl.searchParams.get("action");
-  if (action === "company-verdict" || action === "watchlist-summary") {
+  if (action === "company-verdict" || action === "watchlist-summary" || action === "watchlist-drivers") {
     try {
+      if (action === "watchlist-drivers") return NextResponse.json({ status: "OK", rows: await runPythonJson<unknown[]>(["-B", "company_verdict.py", "--drivers"], 240_000) });
       if (action === "watchlist-summary") return NextResponse.json({ status: "OK", rows: await runPythonJson<unknown[]>(["-B", "company_verdict.py", "--summary"], 60_000) });
       const ticker = request.nextUrl.searchParams.get("ticker")?.trim() ?? "";
       return NextResponse.json({ status: "OK", card: await runVerdict(ticker) });

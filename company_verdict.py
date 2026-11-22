@@ -45,6 +45,7 @@ from signal_history import SignalStore, observation
 
 ROOT = Path(__file__).resolve().parent
 WATCHLIST_PATH = ROOT / "data" / "watchlist.json"
+ATTRIBUTION_CACHE = ROOT / ".cache" / "attribution"   # one file per company, refreshed daily (checklist 10.3)
 FAMILIES = ("price", "fundamentals", "macro_data", "valuation")
 YAHOO_SECTOR_ETF = {
     "technology": "XLK", "healthcare": "XLV", "financial services": "XLF", "consumer cyclical": "XLY", "consumer defensive": "XLP",
@@ -542,6 +543,8 @@ def build_card(ticker: str, environment: dict[str, Any], core: dict[str, Any], s
         "errors": errors,
         "disclaimer": "Research map, not a recommendation. Axes are shown separately and never combined into a score.",
     }
+    save_attribution(ticker, {"date": today.isoformat(), "archetype": archetype, "sector_etf": etf, "archetype_source": "judgment card",
+                              "attribution": attribution, "reading": card["price_reading"]})
     if record:
         card["recorded"] = record_verdict(ticker, axes, store, today.isoformat())
         reading = card["price_reading"]
@@ -633,6 +636,77 @@ def watchlist_summary(store: SignalStore | None = None) -> list[dict[str, Any]]:
     return output
 
 
+def save_attribution(ticker: str, payload: dict[str, Any]) -> None:
+    try:
+        ATTRIBUTION_CACHE.mkdir(parents=True, exist_ok=True)
+        target = ATTRIBUTION_CACHE / f"{ticker.upper()}.json"
+        temporary = target.with_suffix(".json.tmp")
+        temporary.write_text(json.dumps(payload, default=str))
+        temporary.replace(target)
+    except OSError:
+        pass
+
+
+def load_attribution(ticker: str) -> dict[str, Any] | None:
+    try:
+        return json.loads((ATTRIBUTION_CACHE / f"{ticker.upper()}.json").read_text())
+    except (OSError, json.JSONDecodeError):
+        return None
+
+
+def _stored_archetype(ticker: str) -> tuple[str | None, str | None]:
+    """Archetype from the last judgment card, else from the stored company-economics profile."""
+    cached = load_attribution(ticker)
+    if cached and cached.get("archetype"):
+        return cached["archetype"], cached.get("archetype_source") or "judgment card"
+    try:
+        profile = json.loads((ROOT / ".cache" / "company_economics" / f"{ticker.upper()}.json").read_text())
+        return profile["company_economics"]["classification"]["primary_archetype"], "stored company profile"
+    except (OSError, KeyError, TypeError, json.JSONDecodeError):
+        pass
+    try:   # last resort: classify from Yahoo's industry and description only
+        import yfinance as yf
+        from company_economics import BusinessModelClassifier, snapshot_from_resolved_security
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            info = yf.Ticker(ticker).info or {}
+        archetype = BusinessModelClassifier().classify(snapshot_from_resolved_security({"info": info})).primary_archetype
+        return getattr(archetype, "value", str(archetype)), "Yahoo industry"
+    except Exception:  # noqa: BLE001
+        return None, None
+
+
+def watchlist_drivers(store: SignalStore | None = None, today: dt.date | None = None) -> list[dict[str, Any]]:
+    """What moved each watchlist company's price (checklist 10.3). Reuses today's cached attribution;
+    otherwise fetches prices (no valuation run, no card is recorded)."""
+    from price_attribution import build_attribution, price_reading
+    store = store or SignalStore()
+    today = today or dt.date.today()
+    tickers = json.loads(WATCHLIST_PATH.read_text()).get("tickers", []) if WATCHLIST_PATH.exists() else []
+    output = []
+    for ticker in tickers:
+        cached = load_attribution(ticker)
+        expectations = next((row["label"] for row in reversed(store.rows(f"verdict.{ticker}.expectations")) if row["label"]), None)
+        if cached and cached.get("date") == today.isoformat() and cached.get("attribution"):
+            payload = cached
+        else:
+            archetype, source = _stored_archetype(ticker)
+            etf = (cached or {}).get("sector_etf") or sector_etf_for(ticker, None)[0]
+            try:
+                attribution = build_attribution(ticker, archetype or "GENERIC_OPERATING_COMPANY", etf) if archetype else \
+                    {"status": "UNAVAILABLE", "reason": "No archetype on record yet; open the company card once."}
+            except Exception as exc:  # noqa: BLE001
+                attribution = {"status": "UNAVAILABLE", "reason": f"{type(exc).__name__}: {exc}"}
+            payload = {"date": today.isoformat(), "archetype": archetype, "archetype_source": source, "sector_etf": etf, "attribution": attribution}
+            if attribution.get("status") == "AVAILABLE":
+                save_attribution(ticker, payload)
+        payload["reading"] = price_reading(payload["attribution"], expectations)
+        attribution = payload["attribution"] or {}
+        output.append({"ticker": ticker, "archetype": payload.get("archetype"), "archetype_source": payload.get("archetype_source"),
+                       "expectations": expectations, "reading": payload["reading"],
+                       "attribution": {key: attribution.get(key) for key in ("status", "reason", "as_of", "fit", "factor_labels", "windows")}})
+    return output
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="CHAINSTOX company judgment card")
     parser.add_argument("tickers", nargs="*")
@@ -640,7 +714,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--json", action="store_true")
     parser.add_argument("--home-currency", help="Show USD returns translated into this currency, e.g. SGD.")
     parser.add_argument("--summary", action="store_true", help="Print the last recorded card states for the watchlist as JSON (no network).")
+    parser.add_argument("--drivers", action="store_true", help="Print what moved each watchlist price (macro / market / sector / company) as JSON.")
     args = parser.parse_args(argv)
+    if args.drivers:
+        print(json.dumps(watchlist_drivers(), default=str))
+        return 0
     if args.summary:
         print(json.dumps(watchlist_summary(), indent=2))
         return 0

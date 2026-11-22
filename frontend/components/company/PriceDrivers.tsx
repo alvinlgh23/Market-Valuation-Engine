@@ -11,7 +11,7 @@ export type Attribution = {
   factor_labels?: Record<string, string>; windows?: Record<string, AttributionWindow>;
 };
 export type PriceReading = {
-  kind: "noise" | "watch" | "company" | "fundamentals" | "unknown" | string; label: string; detail: string; confidence: string;
+  kind: "noise" | "watch" | "company" | "fundamentals" | "unknown" | string; label: string; short?: string; detail: string; confidence: string;
   window: string; price_change?: number; parts?: AttributionWindow["parts"]; company_z?: number | null; low_fit_note?: string | null;
 };
 
@@ -47,10 +47,10 @@ export function DriverBar({ parts, title }: { parts?: AttributionWindow["parts"]
   </span>;
 }
 
-export function ReadingTag({ reading }: { reading?: PriceReading | null }) {
+export function ReadingTag({ reading, compact = false }: { reading?: PriceReading | null; compact?: boolean }) {
   if (!reading) return null;
-  return <span className={`pd-tag pd-kind-${reading.kind}`} title={[reading.detail, reading.low_fit_note].filter(Boolean).join("\n")}>
-    {reading.label}{reading.confidence === "LOW" ? <small> · rough</small> : null}
+  return <span className={`pd-tag pd-kind-${reading.kind}`} title={[reading.label, reading.detail, reading.low_fit_note].filter(Boolean).join("\n")}>
+    {compact && reading.short ? reading.short : reading.label}{reading.confidence === "LOW" ? <small> · rough</small> : null}
   </span>;
 }
 
