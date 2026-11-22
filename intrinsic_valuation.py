@@ -94,6 +94,36 @@ def _statement(ticker_obj, *attrs):
     return None
 
 
+UNFILED_KEY_ROWS = {"income": ("Total Revenue", "Operating Revenue"), "cashflow": ("Operating Cash Flow", "Total Cash From Operating Activities")}
+
+
+def drop_unfiled_periods(income, cashflow, balance):
+    """Checklist 9.1: drop fiscal years the provider lists before the annual report is filed.
+
+    Yahoo adds a column for a fiscal year as soon as it ends, with only a few rows filled. A period
+    counts as unfiled when its revenue (income statement) or operating cash flow (cash-flow
+    statement) is missing. The same period dates are dropped from all three statements, so every
+    row still starts at the same fiscal year. Returns the frames and the dropped dates.
+    """
+    unfiled = set()
+    for frame, key in ((income, "income"), (cashflow, "cashflow")):
+        if frame is None or frame.empty:
+            continue
+        row = next((name for name in UNFILED_KEY_ROWS[key] if name in frame.index), None)
+        if row is None:
+            continue
+        unfiled.update(column for column in frame.columns if not _number(frame.at[row, column]))
+
+    def keep(frame):
+        if frame is None or frame.empty or not unfiled:
+            return frame
+        kept = [column for column in frame.columns if column not in unfiled]
+        return frame.loc[:, kept] if kept else None
+
+    dates = sorted(str(getattr(column, "date", lambda: column)()) for column in unfiled)
+    return keep(income), keep(cashflow), keep(balance), dates
+
+
 def _row(frame, *names) -> list[float]:
     if frame is None:
         return []
@@ -378,6 +408,7 @@ def collect_valuation_data(ticker: str) -> dict:
     income = _statement(ticker_obj, "income_stmt", "financials")
     cashflow = _statement(ticker_obj, "cashflow")
     balance = _statement(ticker_obj, "balance_sheet")
+    income, cashflow, balance, unfiled_periods = drop_unfiled_periods(income, cashflow, balance)
 
     revenue = _row(income, "Total Revenue", "Operating Revenue")
     operating_income = _row(income, "Operating Income")
@@ -462,6 +493,7 @@ def collect_valuation_data(ticker: str) -> dict:
         "routing_evidence": routing_evidence(symbol, info, security_type, has_financials),
         "price": price,
         "revenue_history": revenue,
+        "unfiled_periods_skipped": unfiled_periods,
         "operating_income_history": operating_income,
         "gross_profit_history": gross_profit,
         "latest_revenue": latest_revenue,
@@ -1532,6 +1564,11 @@ def build_valuation_report(ticker: str, overrides: dict | None = None, data: dic
                 "The historical working-capital cash-flow impact is included."
                 if _number(data.get("working_capital_change"))
                 else "A separate historical working-capital cash-flow impact was unavailable, so no value was invented."
+            )
+            + (
+                f" Fiscal year(s) ending {', '.join(data['unfiled_periods_skipped'])} listed by the provider without filed figures; the latest filed year is used."
+                if data.get("unfiled_periods_skipped")
+                else ""
             )
         ),
     }
