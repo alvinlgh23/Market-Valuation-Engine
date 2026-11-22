@@ -411,6 +411,55 @@ def _growth_inputs(symbol, info, revenue):
         return {"selected_growth": None, "basis": f"growth inputs failed: {type(exc).__name__}: {exc}"}
 
 
+# Checklist 11.2: Yahoo's free statements omit some rows (share-based pay at CAT and WMT, interest
+# expense at CRM). The filed 10-K value for the same fiscal year is read from SEC company facts
+# (already fetched for growth inputs). A field that is not filed stays missing; it never becomes zero.
+SEC_FALLBACK_CONCEPTS = {
+    "sbc": ("ShareBasedCompensation", "AllocatedShareBasedCompensationExpense"),
+    "interest_expense": ("InterestExpense", "InterestExpenseNonoperating", "InterestExpenseDebt", "InterestAndDebtExpense"),
+}
+
+
+def _period_end(frame) -> str | None:
+    try:
+        return str(frame.columns[0].date())
+    except (AttributeError, IndexError, TypeError):
+        return None
+
+
+def sec_annual_value(facts: dict, concepts: tuple[str, ...], period_end: str | None) -> tuple[str | None, float | None]:
+    """The 10-K value of the first concept with a full-year row ending on ``period_end``."""
+    if not period_end:
+        return None, None
+    taxonomy = (facts or {}).get("facts", {}).get("us-gaap", {})
+    end = dt.date.fromisoformat(period_end)
+    for concept in concepts:
+        rows = [row for row in taxonomy.get(concept, {}).get("units", {}).get("USD", [])
+                if str(row.get("form", "")).startswith("10-K") and row.get("end") == period_end and row.get("start")
+                and 350 <= (end - dt.date.fromisoformat(row["start"])).days <= 380 and _number(row.get("val"))]
+        if rows:
+            return concept, float(rows[-1]["val"])
+    return None, None
+
+
+def _sec_fallback(symbol: str, needed: dict[str, str | None], facts_loader=None) -> dict[str, tuple[str, float]]:
+    """``needed`` maps field -> fiscal period end. Returns field -> (concept, value) for what was filed."""
+    if not needed:
+        return {}
+    try:
+        if facts_loader is None:
+            from growth_inputs import sec_facts as facts_loader
+        facts = facts_loader(symbol)
+    except Exception:  # noqa: BLE001 - no SEC facts means the field stays missing
+        return {}
+    found = {}
+    for field_name, period_end in needed.items():
+        concept, value = sec_annual_value(facts, SEC_FALLBACK_CONCEPTS[field_name], period_end)
+        if concept is not None:
+            found[field_name] = (concept, value)
+    return found
+
+
 def collect_valuation_data(ticker: str) -> dict:
     symbol = ticker.strip().upper()
     ticker_obj = yf.Ticker(symbol)
@@ -430,7 +479,7 @@ def collect_valuation_data(ticker: str) -> dict:
     ocf = _row(cashflow, "Operating Cash Flow", "Total Cash From Operating Activities")
     capex = _row(cashflow, "Capital Expenditure", "Capital Expenditures")
     sbc = _row(cashflow, "Stock Based Compensation")
-    depreciation = _row(cashflow, "Depreciation And Amortization", "Depreciation")
+    depreciation = _row(cashflow, "Depreciation And Amortization", "Depreciation", "Depreciation Amortization Depletion")
     working_capital = _row(cashflow, "Change In Working Capital", "Change To Working Capital")
     deferred_tax = _row(cashflow, "Deferred Tax", "Deferred Income Tax")
     other_non_cash = _row(cashflow, "Other Non Cash Items")
@@ -468,6 +517,20 @@ def collect_valuation_data(ticker: str) -> dict:
     latest_interest_expense = abs(interest_expense[0]) if interest_expense else None
     if not _number(latest_interest_expense) and _number(latest_debt) and latest_debt == 0:
         latest_interest_expense = 0.0
+    latest_sbc = sbc[0] if sbc else None
+    needed = {}
+    if not _number(latest_sbc):
+        needed["sbc"] = _period_end(cashflow)
+    if not _number(latest_interest_expense):
+        needed["interest_expense"] = _period_end(income)
+    filed = _sec_fallback(symbol, needed)
+    input_sources = {}
+    if "sbc" in filed:
+        latest_sbc = filed["sbc"][1]
+        input_sources["sbc"] = f"SEC 10-K {filed['sbc'][0]} (fiscal year ending {needed['sbc']})"
+    if "interest_expense" in filed:
+        latest_interest_expense = abs(filed["interest_expense"][1])
+        input_sources["interest_expense"] = f"SEC 10-K {filed['interest_expense'][0]} (fiscal year ending {needed['interest_expense']})"
     after_tax_interest = (
         latest_interest_expense * (1 - tax_rate)
         if _number(latest_interest_expense)
@@ -514,7 +577,8 @@ def collect_valuation_data(ticker: str) -> dict:
         "latest_capex": latest_capex,
         "latest_fcf": latest_fcf,
         "latest_fcff": latest_fcff,
-        "sbc": sbc[0] if sbc else None,
+        "sbc": latest_sbc,
+        "input_sources": input_sources,
         "depreciation_amortization": depreciation[0] if depreciation else None,
         "working_capital_change": working_capital[0] if working_capital else None,
         "other_non_cash_adjustments": (
@@ -1610,7 +1674,14 @@ def build_valuation_report(ticker: str, overrides: dict | None = None, data: dic
                 if data.get("unfiled_periods_skipped")
                 else ""
             )
+            + (
+                " Not in the Yahoo statements, read from the filing instead: "
+                + "; ".join(f"{name.replace('_', ' ')} from {source}" for name, source in data["input_sources"].items()) + "."
+                if data.get("input_sources")
+                else ""
+            )
         ),
+        "input_sources": data.get("input_sources") or {},
     }
     report["assumptions"] = {name: [asdict(item) for item in items] for name, items in assumptions.items()}
     report["assumptions"]["policies"] = {

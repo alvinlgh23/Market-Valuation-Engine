@@ -527,3 +527,33 @@ class IntrinsicValuationTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SecFallbackTests(unittest.TestCase):
+    """Checklist 11.2: rows missing from the Yahoo statements are read from the 10-K, never set to zero."""
+
+    FACTS = {"facts": {"us-gaap": {
+        "AllocatedShareBasedCompensationExpense": {"units": {"USD": [
+            {"start": "2024-01-01", "end": "2024-12-31", "val": 223e6, "form": "10-K"},
+            {"start": "2025-01-01", "end": "2025-12-31", "val": 242e6, "form": "10-K"},
+            {"start": "2025-10-01", "end": "2025-12-31", "val": 60e6, "form": "10-K"},
+        ]}},
+        "InterestExpenseDebt": {"units": {"USD": [{"start": "2025-01-01", "end": "2025-12-31", "val": 324e6, "form": "10-Q"}]}},
+    }}}
+
+    def test_full_year_10k_value_for_the_matching_year(self):
+        from intrinsic_valuation import SEC_FALLBACK_CONCEPTS, sec_annual_value
+        self.assertEqual(sec_annual_value(self.FACTS, SEC_FALLBACK_CONCEPTS["sbc"], "2025-12-31"), ("AllocatedShareBasedCompensationExpense", 242e6))
+
+    def test_missing_or_non_annual_filing_stays_missing(self):
+        from intrinsic_valuation import SEC_FALLBACK_CONCEPTS, sec_annual_value
+        self.assertEqual(sec_annual_value(self.FACTS, SEC_FALLBACK_CONCEPTS["interest_expense"], "2025-12-31"), (None, None))
+        self.assertEqual(sec_annual_value(self.FACTS, SEC_FALLBACK_CONCEPTS["sbc"], "2023-12-31"), (None, None))
+        self.assertEqual(sec_annual_value(self.FACTS, SEC_FALLBACK_CONCEPTS["sbc"], None), (None, None))
+
+    def test_loader_failure_leaves_fields_missing(self):
+        from intrinsic_valuation import _sec_fallback
+        def broken(symbol):
+            raise LookupError("not in SEC ticker file")
+        self.assertEqual(_sec_fallback("TEST", {"sbc": "2025-12-31"}, facts_loader=broken), {})
+        self.assertEqual(_sec_fallback("TEST", {"sbc": "2025-12-31"}, facts_loader=lambda symbol: self.FACTS), {"sbc": ("AllocatedShareBasedCompensationExpense", 242e6)})

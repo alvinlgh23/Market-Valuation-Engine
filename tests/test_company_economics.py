@@ -85,6 +85,24 @@ class CompanyEconomicsTests(unittest.TestCase):
         self.assertEqual(classification.primary_archetype, Archetype.GENERIC_OPERATING_COMPANY)
         self.assertEqual(classification.classification_confidence, Confidence.LOW)
 
+    def test_consumer_sector_alone_does_not_route_to_retail(self):
+        """Checklist 11.1: Tesla was routed to warehouse retail on the Consumer Cyclical sector alone."""
+        restaurant = CompanySnapshot("TEST", "Burger Co", "2026-01-01", sector="Consumer Cyclical", industry="Restaurants", business_description="operates quick-service restaurants")
+        self.assertEqual(BusinessModelClassifier().classify(restaurant).primary_archetype, Archetype.GENERIC_OPERATING_COMPANY)
+        carmaker = CompanySnapshot("TEST", "Car Co", "2026-01-01", sector="Consumer Cyclical", industry="Auto Manufacturers", business_description="designs, manufactures and sells electric vehicles")
+        self.assertEqual(BusinessModelClassifier().classify(carmaker).primary_archetype, Archetype.INDUSTRIAL)
+        retailer = CompanySnapshot("TEST", "Shop Co", "2026-01-01", sector="Consumer Defensive", industry="Discount Stores", business_description="operates retail stores")
+        self.assertEqual(BusinessModelClassifier().classify(retailer).primary_archetype, Archetype.RETAIL_PHYSICAL_NETWORK)
+
+    def test_consumer_lender_routes_to_bank_not_payment_network(self):
+        """Checklist 11.1: a 'Credit Services' lender with deposit accounts is a bank; card networks keep their route."""
+        lender = CompanySnapshot("TEST", "Lend Co", "2026-01-01", sector="Financial Services", industry="Credit Services",
+                                 business_description="offers personal loans, student loans, home loans and checking and savings accounts", metrics={"gross_margin": 0.8})
+        self.assertEqual(BusinessModelClassifier().classify(lender).primary_archetype, Archetype.BANK)
+        network = CompanySnapshot("TEST", "Card Co", "2026-01-01", sector="Financial Services", industry="Credit Services",
+                                  business_description="a payments technology company operating a payment network", metrics={"gross_margin": 0.8})
+        self.assertEqual(BusinessModelClassifier().classify(network).primary_archetype, Archetype.PAYMENT_NETWORK)
+
     def test_growth_equation_and_driver_evidence(self):
         profile = build_company_economics(benchmark_snapshot("PLTR"))
         self.assertIn("Customers", profile.growth_architecture.primary_growth_equation)

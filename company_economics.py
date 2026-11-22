@@ -575,14 +575,17 @@ class BusinessModelClassifier:
         Archetype.HYPERSCALER_CLOUD_PLATFORM: (("cloud computing platform", "cloud infrastructure", "hyperscale", "data center platform"), ("internet services & infrastructure",)),
         Archetype.CONSUMER_PLATFORM: (("social network", "social media", "digital advertising", "family of apps", "consumer platform"), ("internet content & information",)),
         Archetype.RETAIL_PHYSICAL_NETWORK: (("warehouse club", "retail stores", "retail locations", "supercenter", "grocery stores"), ("discount stores", "department stores", "grocery stores", "retail-variety stores")),
-        Archetype.BANK: (("bank holding company", "banking services", "deposits and lending", "commercial banking"), ("banks - diversified", "banks - regional", "national commercial banks", "state commercial banks")),
-        Archetype.INDUSTRIAL: (("industrial machinery", "heavy machinery", "construction equipment", "aerospace systems", "manufacturing company"), ("farm & heavy construction machinery", "specialty industrial machinery", "aerospace & defense", "construction machinery", "industrial machinery")),
+        # Checklist 11.1: consumer lenders (personal / student / home loans, deposit accounts) are banks, not payment networks.
+        Archetype.BANK: (("bank holding company", "banking services", "deposits and lending", "commercial banking", "checking and savings accounts", "personal loans", "student loans", "home loans"), ("banks - diversified", "banks - regional", "national commercial banks", "state commercial banks")),
+        Archetype.INDUSTRIAL: (("industrial machinery", "heavy machinery", "construction equipment", "aerospace systems", "manufacturing company"), ("farm & heavy construction machinery", "specialty industrial machinery", "aerospace & defense", "construction machinery", "industrial machinery", "auto manufacturers", "motor vehicles")),
         Archetype.PHARMA_BIOTECH: (("pharmaceutical", "biopharmaceutical", "biotechnology", "drug portfolio", "therapeutic"), ("drug manufacturers", "biotechnology", "pharmaceutical preparations")),
         Archetype.COMMODITY_PRODUCER: (("oil and gas", "exploration and production", "integrated energy", "mining company", "commodity producer"), ("oil & gas integrated", "oil & gas e&p", "gold", "copper", "petroleum refining", "crude petroleum")),
         Archetype.PAYMENT_NETWORK: (("payment network", "payments technology", "transaction processing network", "digital payments"), ("credit services",)),
         Archetype.MARKETPLACE_PLATFORM: (("marketplace", "ride sharing", "ridesharing", "delivery platform", "two-sided platform", "mobility platform"), ("internet retail",)),
         Archetype.UTILITY_INFRASTRUCTURE: (("regulated utility", "electric utility", "gas utility", "infrastructure operator", "rate base"), ("utilities - regulated electric", "utilities - diversified")),
     }
+
+    NEEDS_METADATA_MATCH = {Archetype.RETAIL_PHYSICAL_NETWORK}
 
     SECTOR_SIGNALS = {
         Archetype.BANK: ("financial services",),
@@ -608,7 +611,11 @@ class BusinessModelClassifier:
                 if pattern in industry:
                     scores[archetype] += 3
                     evidence[archetype].append(f"industry matches '{pattern}'")
+        # Checklist 11.1: the consumer sectors span car makers, restaurants, apparel and retailers, so for
+        # retail the sector only reinforces a description or industry match; alone it routed Tesla to warehouse retail.
         for archetype, patterns in self.SECTOR_SIGNALS.items():
+            if archetype in self.NEEDS_METADATA_MATCH and scores[archetype] == 0:
+                continue
             if any(pattern in sector for pattern in patterns):
                 scores[archetype] += 1
                 evidence[archetype].append(f"sector '{snapshot.sector}' is consistent with the archetype")
