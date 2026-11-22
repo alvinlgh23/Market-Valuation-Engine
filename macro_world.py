@@ -20,6 +20,9 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parent
 COMPASS_DIR = ROOT / "Centralbank-Compass" / "central-bank-compass"
+# FRED observations live in this repo, not in the nested Compass repo (refresh approved 2026-11-22).
+# scripts/refresh_compass_data.py seeds it from the Compass cache once and refreshes it online.
+COMPASS_CACHE_DIR = ROOT / ".cache" / "compass_fred"
 NEER_FILE = ROOT / "NEER" / "SGD.py"
 KOSPI_FILE = ROOT / "KOSPI" / "KOSPI_Backend_v2.py"
 SUPPORTED_REGIONS = ("US", "JP", "KR", "SG", "EURO_AREA")
@@ -142,20 +145,55 @@ def confidence_label(score: int | float | None) -> str:
     return "LOW"
 
 
+# Which research area each Compass data input feeds. The Compass config does not record this.
+INPUT_AREA = {
+    "core_pce": "inflation", "cpi": "inflation", "cpi_ex_fresh_food": "inflation", "hicp": "inflation", "core_hicp": "inflation",
+    "mas_core_inflation": "inflation", "import_inflation_pressure": "inflation", "inflation_expectations": "inflation",
+    "unemployment": "labor", "payrolls": "labor", "initial_claims": "labor", "wage_growth": "labor",
+    "real_gdp": "growth", "pmi": "growth", "external_demand": "growth",
+    "ten_year_yield": "markets", "two_year_yield": "markets", "credit_spread": "markets", "vix": "markets", "sovereign_spreads": "markets",
+    "usd_jpy": "fx", "usd_sgd": "fx", "eur_usd": "fx", "broad_dollar": "fx", "sgd_neer_shadow_proxy": "fx",
+}
+# Days after which an input counts as out of date, by publication frequency (allows normal release lags).
+STALE_AFTER = {"daily/weekly": 45, "monthly": 150, "quarterly": 270, "annual": 550}
+
+
+def input_record(key: str, series_id: str | None, series: Any, today: date | None = None) -> dict[str, Any] | None:
+    """Latest date, inferred frequency and staleness of one model input (None when it has no data)."""
+    try:
+        index = series.dropna().index
+    except AttributeError:
+        return None
+    if len(index) == 0:
+        return None
+    last = index[-1].date()
+    gaps = sorted((index[i] - index[i - 1]).days for i in range(max(1, len(index) - 6), len(index)))
+    median_gap = gaps[len(gaps) // 2] if gaps else 365
+    frequency = "daily/weekly" if median_gap <= 10 else "monthly" if median_gap <= 40 else "quarterly" if median_gap <= 100 else "annual"
+    age = ((today or date.today()) - last).days
+    return {"key": key, "series_id": series_id, "area": INPUT_AREA.get(key), "last": last.isoformat(),
+            "frequency": frequency, "age_days": age, "stale": age > STALE_AFTER[frequency]}
+
+
 class CentralBankCompassAdapter:
     """Calls the copied Central Bank Compass modules in offline/cache mode."""
 
     CODE_MAP = {"US": "US", "JP": "JP", "SG": "SG", "EURO_AREA": "EZ"}
 
-    def __init__(self, project_dir: Path = COMPASS_DIR):
+    def __init__(self, project_dir: Path = COMPASS_DIR, cache_dir: Path = COMPASS_CACHE_DIR):
         self.project_dir = project_dir
+        self.cache_dir = cache_dir
 
     def _modules(self) -> dict[str, Any]:
         path = str(self.project_dir)
         if path not in sys.path:
             sys.path.insert(0, path)
         os.environ.setdefault("CBC_FRED_OFFLINE", "1")
+        fred = importlib.import_module("src.data_sources.fred")
+        if self.cache_dir.is_dir() and any(self.cache_dir.glob("*.csv")):
+            fred.CACHE_DIR = self.cache_dir    # read and write here; the nested repo's cache stays untouched
         return {
+            "fred": fred,
             "config": importlib.import_module("app"),
             "profiles": importlib.import_module("src.country_profiles"),
             "data": importlib.import_module("src.data_sources"),
@@ -178,6 +216,10 @@ class CentralBankCompassAdapter:
         placeholders = modules["data"].configured_placeholders(config, code)
         signal = modules["policy"].build_policy_signal(indicators, profile, config, warnings, placeholders)
         latest = indicators.latest_observation.date().isoformat() if indicators.latest_observation is not None else None
+        economy = config.get("economies", {}).get(code, {})
+        input_map = economy.get("indicator_map", economy.get("fred_series", {}))
+        inputs = [record for key, series in data.items()
+                  if (record := input_record(key, input_map.get(key) if isinstance(input_map.get(key), str) else (input_map.get(key) or {}).get("series_id"), series))]
         blocks = {}
         evidence = []
         for block_id in ("inflation", "labor", "growth", "financial", "currency"):
@@ -226,6 +268,7 @@ class CentralBankCompassAdapter:
             "evidence": evidence,
             "warnings": signal.warnings,
             "placeholders": placeholders,
+            "inputs": inputs,
             "policy_score": round(float(signal.policy_score), 2),
             "block_scores": {key: round(float(value), 2) for key, value in signal.block_scores.items()},
             "decision_rules": list(signal.decision_rules),
@@ -601,13 +644,18 @@ def region_coverage(region: dict[str, Any], today: date | None = None) -> dict[s
                                  ("Foreign investor flows", False, None)])
         items["fx"].append(("USD/KRW factor", bool(kospi.get("has_fx_factor")), swept))
     areas = [_area(area_id, label, items[area_id]) for area_id, label in COVERAGE_AREAS]
+    stale_inputs = [item for item in (compass.get("inputs") or []) if item.get("stale")] if compass.get("available") else []
+    for area in areas:
+        area["stale"] = [f"{item['key']} ({item['series_id']}, last {item['last']})" for item in stale_inputs if item.get("area") == area["id"]]
+        if area["stale"] and area["state"] in {"FULL", "PARTIAL"}:
+            area["state"] = "STALE"
     available = sum(a["available"] for a in areas)
     expected = sum(a["expected"] for a in areas)
     oldest = min((a["as_of"] for a in areas if a["as_of"]), default=None)
     newest = max((a["newest"] for a in areas if a["newest"]), default=None)
     if available == 0:
         availability = "NOT_AVAILABLE"
-    elif all(a["state"] == "FULL" for a in areas):
+    elif all(a["state"] == "FULL" for a in areas):   # STALE areas also keep a region PARTIAL
         availability = "AVAILABLE"
     else:
         availability = "PARTIAL"
@@ -622,8 +670,10 @@ def region_coverage(region: dict[str, Any], today: date | None = None) -> dict[s
         "newest": newest,
         "freshness": freshness_for(oldest, today),
         "missing": dedupe_ci([name for a in areas for name in a["missing"]]),
+        "stale_inputs": [{"key": item["key"], "series_id": item["series_id"], "area": item.get("area"), "last": item["last"],
+                          "frequency": item["frequency"], "age_days": item["age_days"]} for item in stale_inputs],
         "not_modelled": NOT_MODELLED.get(region.get("id", ""), []),
-        "rule": "AVAILABLE only when every research area has all of its configured indicators; the date is the oldest observation used.",
+        "rule": "AVAILABLE only when every research area has all of its configured indicators and none is out of date; the date is the earliest of each source's latest observation.",
     }
 
 

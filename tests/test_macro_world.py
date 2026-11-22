@@ -147,3 +147,39 @@ def test_korea_without_a_sweep_counts_it_missing():
     region = {"id": "KR", "available": True, "engine_specific": {"kospi": {"current_sweep": False, "export_snapshot": None}}}
     markets = next(area for area in region_coverage(region)["areas"] if area["id"] == "markets")
     assert markets["available"] == 0 and markets["state"] == "MISSING"
+
+
+# --- Out-of-date inputs (Compass refresh, 2026-11-22) ----------------------------------------
+import pandas as pd  # noqa: E402
+
+from macro_world import COMPASS_CACHE_DIR, CentralBankCompassAdapter, input_record  # noqa: E402
+
+
+def test_input_record_infers_frequency_and_staleness():
+    monthly_dead = pd.Series(1.0, index=pd.date_range("2020-01-01", "2021-06-01", freq="MS"))
+    record = input_record("cpi_ex_fresh_food", "JPNCPIALLMINMEI", monthly_dead, today=date(2026, 11, 22))
+    assert (record["frequency"], record["area"], record["stale"]) == ("monthly", "inflation", True)
+    quarterly_lagged = pd.Series(1.0, index=pd.date_range("2024-01-01", "2026-07-01", freq="QS"))
+    assert input_record("real_gdp", "GDPC1", quarterly_lagged, today=date(2026, 11, 22))["stale"] is False
+    assert input_record("pmi", "X", pd.Series(dtype="float64")) is None
+
+
+def test_stale_input_marks_its_area_and_keeps_region_partial():
+    region = _compass_region(missing_value=False)
+    region["engine_specific"]["central_bank_compass"]["inputs"] = [
+        {"key": "cpi_ex_fresh_food", "series_id": "JPNCPIALLMINMEI", "area": "inflation", "last": "2021-06-01", "frequency": "monthly", "age_days": 2000, "stale": True},
+        {"key": "real_gdp", "series_id": "GDPC1", "area": "growth", "last": "2026-07-01", "frequency": "quarterly", "age_days": 144, "stale": False},
+    ]
+    coverage = region_coverage(region)
+    inflation = next(area for area in coverage["areas"] if area["id"] == "inflation")
+    assert inflation["state"] == "STALE"
+    assert [item["series_id"] for item in coverage["stale_inputs"]] == ["JPNCPIALLMINMEI"]
+    assert coverage["availability"] == "PARTIAL"
+
+
+def test_compass_cache_points_at_this_repo_not_the_nested_repo():
+    assert COMPASS_CACHE_DIR.parts[-2:] == (".cache", "compass_fred")
+    adapter = CentralBankCompassAdapter()
+    fred = adapter._modules()["fred"]
+    if COMPASS_CACHE_DIR.is_dir() and any(COMPASS_CACHE_DIR.glob("*.csv")):
+        assert fred.CACHE_DIR == COMPASS_CACHE_DIR

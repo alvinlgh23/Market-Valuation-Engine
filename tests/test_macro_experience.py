@@ -34,8 +34,13 @@ class TestMacroExperience:
 
     def test_compass_rates_are_not_lost_when_core_feed_is_missing(self):
         rates = {item["key"]: item for item in self.system["market_transmission"]["rates"]["metrics"]}
-        assert rates["us_2y"]["raw_value"] == 4.26
-        assert rates["us_10y"]["raw_value"] == 4.63
+        # Values come from the Compass FRED cache, which is refreshed over time (2026-11-22), so compare
+        # with the cache instead of pinning numbers.
+        from macro_world import COMPASS_CACHE_DIR, COMPASS_DIR
+        cache = COMPASS_CACHE_DIR if any(COMPASS_CACHE_DIR.glob("*.csv")) else COMPASS_DIR / "data" / "cache" / "fred"
+        last = lambda series: round(float([line for line in (cache / f"{series}.csv").read_text().splitlines() if line.split(",")[1:2] != [""]][-1].split(",")[1]), 2)
+        assert rates["us_2y"]["raw_value"] == last("DGS2")
+        assert rates["us_10y"]["raw_value"] == last("DGS10")
         assert rates["us_2y"]["source_state"] == "CACHED"
         assert "US 30Y current yield" in self.system["market_transmission"]["rates"]["missing_fields"]
 

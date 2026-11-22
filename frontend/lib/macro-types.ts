@@ -40,7 +40,7 @@ export type MacroRegion = {
   coverage?: MacroCoverage;
 };
 
-export type MacroCoverageArea = { id: string; label: string; state: "FULL" | "PARTIAL" | "MISSING" | "NOT_COVERED" | string; available: number; expected: number; missing: string[]; as_of: string | null; newest: string | null };
+export type MacroCoverageArea = { id: string; label: string; state: "FULL" | "PARTIAL" | "STALE" | "MISSING" | "NOT_COVERED" | string; available: number; expected: number; missing: string[]; stale?: string[]; as_of: string | null; newest: string | null };
 
 export type MacroCoverage = {
   availability: string;
@@ -53,6 +53,7 @@ export type MacroCoverage = {
   newest: string | null;
   freshness: string;
   missing: string[];
+  stale_inputs?: { key: string; series_id: string | null; area: string | null; last: string; frequency: string; age_days: number }[];
   not_modelled: string[];
   rule: string;
 };
