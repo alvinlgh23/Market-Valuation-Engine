@@ -226,7 +226,10 @@ P1 发现的遗留问题：`compute_macro` 只记录 10 年期和前端利率的
 - [x] **11.6** 概览页：列出候选瓶颈和需要的指标，不再显示 Unknown；估值格子读判断卡的估值。
   - 结果（2026-11-22）：公司页"Research details"里，质量条改为"Business type（类型 · 可信度）/ Bottleneck（Not confirmed · N candidates）/ Valuation (live) / Overall research"。主要约束格子在未确认时列出前三个候选瓶颈和确认所需的经营数字（例如 TSLA：Backlog Execution 需要 backlog、Production Capacity 需要 production volume），"QUALITATIVE RESEARCH GAP"改成"WHAT IS MISSING"并点名缺哪些数字。估值格子读判断卡的估值（同一次请求，`lib/company-card.ts` 共用，一分钟内复用）。浏览器核对：TSLA、CAT（显示估值区间和隐含增长）、SOFI（显示银行白话原因）；每页只发一次判断卡请求。公司浏览器脚本已更新并通过。
   - 约束规则本身没有改：仍然要有直接经营指标并观察到方向，才会认定主要瓶颈。
-- [ ] **11.7** 先备份，再重新分析 `.cache/company_economics` 里的存档。
+- [x] **11.7** 先备份，再重新分析 `.cache/company_economics` 里的存档。
+  - 结果（2026-11-22）：18 个档案和索引先备份到 `.cache/backups/backup-company-economics-2026-11-22/`（另一份在临时目录），比对一致后用 `company_research.py analyze --refresh` 逐家重新分析。分类变化只有预期的几家：AMAT 代工 → 半导体设备，META 通用 → 消费平台（旧档案的公司描述是空的），SOFI → 银行，TSLA → 工业。
+  - 重新分析时 MSFT 变成了企业 AI 软件：新的 Yahoo 行业"Software - Infrastructure"让它和声明的偏好"超大规模云"同分，按枚举顺序选错了。改为同分时声明的偏好优先，MSFT 恢复为超大规模云。有测试。
+  - 估值（存档）：AMAT、CAT、COST、CRM、META、MSFT、NVDA、V、WMT 可用（原来 0 家）。AMD、LLY、PLTR、TSLA、UBER、XOM 被现金流对账挡住（TSLA、UBER 要 11.3 批准才能改）；TSM 要 11.4；BAC、SOFI 是银行。
 
 ## 1. Owner 想要什么
 

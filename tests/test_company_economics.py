@@ -94,6 +94,12 @@ class CompanyEconomicsTests(unittest.TestCase):
         retailer = CompanySnapshot("TEST", "Shop Co", "2026-01-01", sector="Consumer Defensive", industry="Discount Stores", business_description="operates retail stores")
         self.assertEqual(BusinessModelClassifier().classify(retailer).primary_archetype, Archetype.RETAIL_PHYSICAL_NETWORK)
 
+    def test_declared_preference_wins_a_tie(self):
+        """Checklist 11.7: with Yahoo's 'Software - Infrastructure' industry, MSFT tied enterprise AI with its hyperscaler preference."""
+        snapshot = CompanySnapshot("MSFT", "Microsoft", "2026-01-01", sector="Technology", industry="Software - Infrastructure",
+                                   business_description="develops software and services", metrics={"gross_margin": 0.69})
+        self.assertEqual(BusinessModelClassifier().classify(snapshot).primary_archetype, Archetype.HYPERSCALER_CLOUD_PLATFORM)
+
     def test_consumer_lender_routes_to_bank_not_payment_network(self):
         """Checklist 11.1: a 'Credit Services' lender with deposit accounts is a bank; card networks keep their route."""
         lender = CompanySnapshot("TEST", "Lend Co", "2026-01-01", sector="Financial Services", industry="Credit Services",

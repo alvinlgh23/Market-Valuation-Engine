@@ -656,7 +656,10 @@ class BusinessModelClassifier:
             override_required = before != candidate
         if override.get("constraint_priority"):
             override_changes.append("constraint_priority: " + ", ".join(override["constraint_priority"]))
-        ranked = sorted(scores, key=lambda key: scores[key], reverse=True)
+        # Checklist 11.7: a declared preference wins ties. MSFT's Yahoo industry ("Software - Infrastructure")
+        # tied enterprise AI software with its hyperscaler preference, and enum order picked the wrong one.
+        preferred_archetype = Archetype(preferred) if preferred else None
+        ranked = sorted(scores, key=lambda key: (scores[key], key == preferred_archetype), reverse=True)
         primary = ranked[0] if scores[ranked[0]] > 0 else Archetype.GENERIC_OPERATING_COMPANY
         explicit_secondary = [Archetype(item) for item in override.get("secondary_archetypes", [])]
         if explicit_secondary:
