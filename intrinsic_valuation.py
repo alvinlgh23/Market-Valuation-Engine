@@ -331,6 +331,20 @@ def _latest_price(ticker_obj, info):
     return None
 
 
+# Checklist 11.5: card networks (Visa, Mastercard) sit in Yahoo's "Credit Services" industry but carry no
+# loan book or deposits, so the bank framework does not fit; lenders in the same industry (AmEx, Capital One,
+# SoFi) keep it. Both conditions are read from the business summary.
+PAYMENT_NETWORK_TERMS = ("transaction processing", "payments technology company", "payment network")
+BALANCE_SHEET_TERMS = ("loan", "lending", "savings account", "checking account", "bank holding", "national association")
+
+
+def is_payment_network(info: dict) -> bool:
+    industry = str(_pick(info, "industry", default="")).lower()
+    summary = str(_pick(info, "longBusinessSummary", default="")).lower()
+    return (industry == "credit services" and any(term in summary for term in PAYMENT_NETWORK_TERMS)
+            and not any(term in summary for term in BALANCE_SHEET_TERMS))
+
+
 def classify_security(ticker: str, info: dict, has_financials: bool) -> str:
     quote_type = str(_pick(info, "quoteType", default="")).upper()
     name = str(_pick(info, "longName", "shortName", default="")).lower()
@@ -346,7 +360,7 @@ def classify_security(ticker: str, info: dict, has_financials: bool) -> str:
         return "INSUFFICIENT_DATA"
     if "reit" in industry or "real estate investment trust" in name:
         return "REIT"
-    if sector == "financial services" or any(term in industry for term in ("bank", "insurance", "capital markets")):
+    if (sector == "financial services" or any(term in industry for term in ("bank", "insurance", "capital markets"))) and not is_payment_network(info):
         return "FINANCIAL_INSTITUTION"
     # Checklist 9.3: semiconductor equipment follows the chipmaker capex cycle.
     cyclical_terms = ("memory", "steel", "copper", "aluminum", "oil & gas", "commodity", "mining", "semiconductor equipment")

@@ -48,7 +48,7 @@ from company_economics import (
     snapshot_from_resolved_security,
 )
 from inflation_pressure import print_inflation_debug, print_inflation_pressure_report
-from intrinsic_valuation import run_valuation
+from intrinsic_valuation import is_payment_network, run_valuation
 from risk_regime import analyze_risk_regime, collect_risk_regime_data, sector_context_for
 
 
@@ -4374,7 +4374,7 @@ def infer_security_type(info, integrity, quality=None):
     shell_pattern = r"\b(blank check|spac|shell)\b"
     if re.search(shell_pattern, name) or re.search(shell_pattern, industry):
         return "SPAC_OR_SHELL"
-    if sector == "financial services" or "bank" in industry or "insurance" in industry or "capital markets" in industry:
+    if (sector == "financial services" or "bank" in industry or "insurance" in industry or "capital markets" in industry) and not is_payment_network(info):
         return "FINANCIAL_INSTITUTION"
     if "reit" in industry or "real estate investment trust" in name:
         return "REIT"

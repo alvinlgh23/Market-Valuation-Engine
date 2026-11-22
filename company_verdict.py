@@ -213,6 +213,21 @@ def flow_axis(ticker: str, etf: str | None, mapping_note: str, store: SignalStor
                         "sector_flow": flow, "removed_by_scorecard": sorted(removed)})
 
 
+def plain_withheld_reason(report: dict[str, Any]) -> str | None:
+    """Checklist 11.5: why fair value is withheld, in words an investor can act on (the model's text stays in detail)."""
+    quality = report.get("data_quality") or {}
+    status, missing = quality.get("status"), quality.get("missing") or []
+    if report.get("company_type") == "Financial Institution":
+        return "Banks and lenders are valued on book value and return on equity, not cash flow. That model is not built yet, so no fair value is shown."
+    if status == "SECURITY_UNIT_AMBIGUITY":
+        return "The accounts are in a different currency from the share price (an ADR). The share-ratio and FX conversion is not built yet."
+    if status == "FAILED_FCFF_RECONCILIATION" and missing:
+        return f"The filings we read do not report {', '.join(missing)}, so cash flow cannot be checked. Nothing is filled in with zero."
+    if status == "FAILED_FCFF_RECONCILIATION":
+        return "Two independent measures of last year's cash flow disagree by more than the allowed gap, so the model will not value the company until the difference is explained."
+    return None
+
+
 def valuation_axis(report: dict[str, Any] | None, observed_growth: float | None, consensus_growth: float | None,
                    implied_erp: float | None, erp_sensitivity: dict[str, Any] | None) -> dict[str, Any]:
     if not report:
@@ -269,7 +284,8 @@ def valuation_axis(report: dict[str, Any] | None, observed_growth: float | None,
         confidence = "LOW"
     else:
         reason = (report.get("data_quality") or {}).get("reason") or reverse.get("reason") or (report.get("final_interpretation") or {}).get("text")
-        return axis("Fair value withheld", missing=[reason or "valuation inputs"], families=["valuation"], detail=detail)
+        detail["model_reason"] = reason
+        return axis("Fair value withheld", missing=[plain_withheld_reason(report) or reason or "valuation inputs"], families=["valuation"], detail=detail)
     if all(value is not None for value in fair.values()) and price is not None:
         evidence.append(f"Model range {fair['bear']:.2f} / {fair['base']:.2f} / {fair['bull']:.2f} (bear/base/bull) against price {price:.2f}; secondary to the priced-growth read.")
     return axis(state, confidence=confidence, evidence=evidence, families=["valuation", "fundamentals"], detail=detail,

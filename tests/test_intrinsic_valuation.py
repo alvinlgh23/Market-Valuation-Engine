@@ -153,6 +153,17 @@ class IntrinsicValuationTests(unittest.TestCase):
         result = classify_security("JPM", {"sector": "Financial Services", "industry": "Banks - Diversified"}, True)
         self.assertEqual(result, "FINANCIAL_INSTITUTION")
 
+    def test_card_network_leaves_bank_framework_but_card_lenders_stay(self):
+        """Checklist 11.5: Visa runs a processing network with no loan book; AmEx and SoFi lend and take deposits."""
+        visa = {"sector": "Financial Services", "industry": "Credit Services", "operatingMargins": 0.67, "freeCashflow": 2e10,
+                "longBusinessSummary": "Visa Inc. operates as a payments technology company. It operates VisaNet, a transaction processing network."}
+        self.assertEqual(classify_security("V", visa, True), "MATURE_OPERATING_COMPANY")
+        amex = {"sector": "Financial Services", "industry": "Credit Services",
+                "longBusinessSummary": "An integrated payments company with a payment network, offering deposits and non-card lending."}
+        self.assertEqual(classify_security("AXP", amex, True), "FINANCIAL_INSTITUTION")
+        lender = {"sector": "Financial Services", "industry": "Credit Services", "longBusinessSummary": "Offers personal loans and savings accounts."}
+        self.assertEqual(classify_security("SOFI", lender, True), "FINANCIAL_INSTITUTION")
+
     def test_growth_software_requires_operating_evidence(self):
         result = classify_security(
             "CRWD",

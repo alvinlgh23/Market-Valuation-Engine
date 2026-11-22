@@ -75,6 +75,19 @@ def test_valuation_axis_reads_priced_growth_first():
     assert converged["detail"]["fixed_erp"] == 0.045 and converged["detail"]["implied_erp"] == -0.008
 
 
+def test_withheld_fair_value_says_why_in_plain_words():
+    """Checklist 11.5: banks, ADR units and cash-flow checks get an investor-readable reason; the model text stays in detail."""
+    bank = cv.valuation_axis({"company": {}, "company_type": "Financial Institution", "reverse_dcf": {},
+                              "data_quality": {"status": "INSUFFICIENT_FOR_FAIR_VALUE", "reason": "Debt and interest are operating inputs."}}, None, None, None, None)
+    assert bank["missing"][0].startswith("Banks and lenders are valued on book value") and bank["detail"]["model_reason"] == "Debt and interest are operating inputs."
+    adr = cv.valuation_axis({"company": {}, "reverse_dcf": {}, "data_quality": {"status": "SECURITY_UNIT_AMBIGUITY", "reason": "TWD vs USD"}}, None, None, None, None)
+    assert "ADR" in adr["missing"][0]
+    gap = cv.valuation_axis({"company": {}, "reverse_dcf": {}, "data_quality": {"status": "FAILED_FCFF_RECONCILIATION", "missing": ["stock-based compensation"], "reason": "x"}}, None, None, None, None)
+    assert "stock-based compensation" in gap["missing"][0] and "zero" in gap["missing"][0]
+    mismatch = cv.valuation_axis({"company": {}, "reverse_dcf": {}, "data_quality": {"status": "FAILED_FCFF_RECONCILIATION", "missing": [], "reason": "x"}}, None, None, None, None)
+    assert mismatch["missing"][0].startswith("Two independent measures")
+
+
 def test_expectations_and_fundamentals_axes():
     rising = cv.expectations_axis({"eps_trend_next_year": {"current": 1.1, "90daysAgo": 1.0}, "revisions_up_30d": 7, "revisions_down_30d": 0, "revenue_growth_next_year": 0.2, "analysts_next_year": 30})
     assert rising["state"] == "Estimates rising"
