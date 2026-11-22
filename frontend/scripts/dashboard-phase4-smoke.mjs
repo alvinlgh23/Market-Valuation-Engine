@@ -40,13 +40,14 @@ try {
   await page.goto(baseUrl, { waitUntil: "networkidle" });
   await page.locator(".today-regime h1").waitFor();
   await pageShot(page, "01-dashboard-desktop.png");
-  await sectionShot(page, ".what-changed-panel", "02-what-changed.png");
-  await sectionShot(page, ".priority-panel", "03-research-priority.png");
-  await sectionShot(page, ".tension-panel", "04-cross-system-signals.png");
-  await sectionShot(page, ".macro-snapshot-panel", "05-global-macro-snapshot.png");
-  await sectionShot(page, ".leadership-panel", "06-market-leadership.png");
-  await sectionShot(page, ".recent-research-panel", "07-recent-company-research.png");
-  await sectionShot(page, ".operations-row", "08-data-freshness-watch-conditions.png");
+  // Today page is charts only (checklist 9.7, revised 2026-11-22).
+  await sectionShot(page, ".env-factors", "02-macro-factors.png");
+  await sectionShot(page, ".today-sectors", "03-sector-leadership.png");
+  await page.locator(".today-heat-row b").first().waitFor({ timeout: 30000 });
+  await sectionShot(page, ".today-watchlist-panel", "04-watchlist-heatmap.png");
+  await sectionShot(page, ".today-moves", "05-market-moves.png");
+  await sectionShot(page, ".today-chips", "06-watch-items.png");
+  if ((await page.locator(".today-bar").count()) < 4) throw new Error("Today page has too few bars.");
 
   await page.goto(baseUrl, { waitUntil: "networkidle" });
   await openSearch(page, "", "09-global-search-default.png");

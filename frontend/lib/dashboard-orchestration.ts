@@ -187,3 +187,29 @@ export function recentCompanyRows(system: ResearchSystem) {
       href: `/company/${company.ticker}`
     }));
 }
+
+/** Today page: sectors by one-month relative strength (the signal the scorecard kept), strongest and weakest. */
+export function sectorLeadershipBars(system: ResearchSystem, each = 5) {
+  const rows = measuredSectors(system)
+    .filter((sector) => typeof sector.rel1m === "number" && Number.isFinite(sector.rel1m))
+    .map((sector) => ({ ticker: sector.ticker, name: sector.name, value: sector.rel1m as number, href: `/markets?sector=${sector.slug}` }))
+    .sort((a, b) => b.value - a.value);
+  if (rows.length <= each * 2) return rows;
+  return [...rows.slice(0, each), ...rows.slice(-each)];
+}
+
+export type MarketMove = { label: string; value: number; unit: string; text: string; note: string; href: string };
+
+/** Today page: observed changes as numbers grouped by unit (%, bp, other), so bars share a scale only within a unit. */
+export function marketMoves(system: ResearchSystem): MarketMove[] {
+  return system.dashboard.what_changed.slice(0, 8).flatMap((item) => {
+    const text = String(item.value ?? "");
+    const match = text.match(/[-+−]?\d+(?:\.\d+)?/);
+    if (!match) return [];
+    const value = Number(match[0].replace("−", "-"));
+    if (!Number.isFinite(value)) return [];
+    const unit = /bp/i.test(text) ? "bp" : /%/.test(text) ? "%" : "level";
+    const note = [item.period, item.interpretation && item.interpretation !== "Observed market change" ? item.interpretation : null].filter(Boolean).join(" · ");
+    return [{ label: String(item.label ?? ""), value, unit, text, note, href: String(item.href || "/macro") }];
+  });
+}

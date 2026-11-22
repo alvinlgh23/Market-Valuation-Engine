@@ -24,8 +24,8 @@ try {
   let response = await page.goto(baseUrl, { waitUntil: "networkidle" });
   if (!response?.ok()) throw new Error(`Dashboard returned ${response?.status()}`);
   await page.locator(".today-regime h1").waitFor();
-  if ((await page.locator(".system-state-strip > a").count()) !== 6) throw new Error("Dashboard does not expose six current-state reads");
-  if ((await page.locator(".priority-panel .ranked-command-list > a").count()) < 5) throw new Error("Dashboard research priority list is under-populated");
+  if ((await page.locator(".env-factors article").count()) < 6) throw new Error("Today page does not show the macro factor tiles");
+  if ((await page.locator(".today-chips .today-chip").count()) < 4) throw new Error("Today page watch items are under-populated");
   await shot(page, "01-dashboard.png", true);
 
   response = await page.goto(`${baseUrl}/macro/world`, { waitUntil: "networkidle" });
