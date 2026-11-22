@@ -23,9 +23,8 @@ export function CompanyResearchIndex({ showBenchmarks, lead }: { showBenchmarks:
     <ResearchShell active="companies" dataState="CACHED">
       <div className="company-index-surface">
         {lead}
-        <header><span>COMPANIES / ON-DEMAND RESEARCH</span><h1>Universal Company Research</h1><p>Resolve any supported equity ticker, classify its economic structure, and build an evidence-traceable profile. No pre-indexed universe is required.</p></header>
-        <form onSubmit={submit}><label htmlFor="company-index-ticker">Ticker or company</label><div><input id="company-index-ticker" autoFocus value={ticker} onChange={(event) => setTicker(event.target.value)} placeholder="AMD" /><button type="submit">Resolve Company →</button></div><small>Version 1 prioritizes direct ticker resolution. Company-name lookup is not inferred.</small></form>
-        <section className="company-index-recent"><header><span>RECENT RESEARCH</span><small>Previously analyzed profiles — not the supported universe</small></header>{recent.length ? recent.map((item) => <Link key={item.ticker} href={`/company/${item.ticker}`}><strong>{item.ticker}</strong><span>{item.name}</span><small>{humanize(item.archetype)}</small><b>{humanize(item.research_state)}</b></Link>) : <p>No on-demand profiles have been generated yet.</p>}</section>
+        <form className="company-open" onSubmit={submit}><label htmlFor="company-index-ticker">Open a company</label><div><input id="company-index-ticker" autoFocus={!lead} value={ticker} onChange={(event) => setTicker(event.target.value)} placeholder="Ticker, e.g. AMD" /><button type="submit">Open →</button></div></form>
+        {recent.length ? <section className="company-recent" aria-label="Recently analysed"><span>Recent</span>{recent.map((item) => <Link key={item.ticker} href={`/company/${item.ticker}`} title={`${item.name} · ${humanize(item.archetype)}`}>{item.ticker}</Link>)}</section> : null}
         {showBenchmarks ? <details className="company-dev-benchmarks"><summary>DEV / REGRESSION BENCHMARKS</summary><p>Fixture-only architecture examples. These are not the production company universe.</p><div>{BENCHMARKS.map((symbol) => <Link key={symbol} href={`/company/${symbol}?fixture=1`}>{symbol}</Link>)}</div></details> : null}
       </div>
     </ResearchShell>

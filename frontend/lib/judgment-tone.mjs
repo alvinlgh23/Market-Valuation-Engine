@@ -32,3 +32,19 @@ export function confidenceDots(confidence) {
 export function percentileWidth(value) {
   return typeof value === "number" && Number.isFinite(value) ? Math.max(0, Math.min(100, value * 100)) : null;
 }
+
+// Checklist 9.6: short cell labels for the watchlist grid; the full state stays in the tooltip.
+const SHORT = {
+  "Money flowing in": "Inflow", "Money flowing out": "Outflow", "Mixed (not persistent)": "Mixed",
+  "Low Chase Risk": "Low", "Chase Risk Not Excessive": "Normal", "Moderate Chase Risk": "Moderate", "High Chase Risk": "High",
+  "Estimates rising": "Rising", "Estimates falling": "Falling", "Estimates stable or mixed": "Stable",
+  "Price implies less growth than observed/consensus": "Priced low", "Price implies contraction beyond the model's floor": "Priced very low",
+  "Price roughly matches observed/consensus growth": "Fair", "Price implies more growth than observed/consensus": "Priced high",
+  "Price implies growth above what the model can reach": "Beyond model", "Fair value withheld": "Withheld",
+  "No confirmed exposure has a current reading": "No reading", "No informative flow signal": "No signal", "Trajectory not established": "Not established",
+};
+
+export function shortState(state) {
+  if (!state) return "—";
+  return SHORT[state] ?? (state.length > 14 ? `${state.slice(0, 13)}…` : state);
+}

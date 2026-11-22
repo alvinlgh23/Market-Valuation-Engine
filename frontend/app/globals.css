@@ -3353,16 +3353,7 @@ body {
 }
 
 /* Watchlist table (checklist 8.2). */
-.watchlist-table { margin: 0 0 32px; font: var(--fs-2)/1.5 var(--font-research); color: var(--research-text); }
-.watchlist-table header h1 { margin: 0; font-size: var(--fs-5); font-weight: 560; }
-.watchlist-table header p, .watchlist-note { color: var(--research-muted); font-size: var(--fs-2); }
-.watchlist-table table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-.watchlist-table th { text-align: left; color: var(--research-muted); font-weight: 500; font-size: var(--fs-1); padding: 8px; border-bottom: 1px solid var(--research-line); }
-.watchlist-table td { padding: 10px 8px; border-bottom: 1px solid var(--research-line); vertical-align: top; }
-.watchlist-table td a { color: var(--research-text); font-weight: 600; }
-.watchlist-table td small { display: block; color: var(--research-caution); font-size: var(--fs-1); }
-.watchlist-table tr.changed td:first-child { box-shadow: inset 2px 0 0 var(--research-caution); }
-@media (max-width: 900px) { .watchlist-table table { display: block; overflow-x: auto; } }
+.watchlist-note { color: var(--research-muted); font-size: var(--fs-2); }
 
 /* Company page (checklist 9.4): one row of deeper views, stored profile folded. */
 .company-deeper { display: flex; flex-wrap: wrap; gap: 8px; margin: -16px 0 24px; }
@@ -3373,3 +3364,36 @@ body {
 .company-details > summary { padding: 14px 0; cursor: pointer; color: var(--research-muted); font: var(--fs-2)/1.4 var(--font-research); }
 .company-details > summary small { margin-left: 8px; color: var(--research-faint); font-size: var(--fs-1); }
 .company-details[open] > summary { color: var(--research-text); }
+
+/* Watchlist grid (checklist 9.6). */
+.watchlist-grid { --tone: var(--research-faint); font: var(--fs-2)/1.4 var(--font-research); color: var(--research-text); }
+.watchlist-grid .tone-supportive { --tone: var(--research-positive); }
+.watchlist-grid .tone-against { --tone: var(--research-negative); }
+.watchlist-grid .tone-mixed { --tone: var(--research-caution); }
+.watchlist-grid .tone-unknown { --tone: var(--research-faint); }
+.watchlist-grid > header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px 24px; margin-bottom: 12px; }
+.watchlist-grid h1 { margin: 0; font-size: var(--fs-5); font-weight: 560; }
+.wl-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; color: var(--research-muted); font-size: var(--fs-1); }
+.wl-legend em { font-style: normal; color: var(--tone); margin-right: 5px; }
+.wl-changed-key::before { content: ""; display: inline-block; width: 10px; height: 10px; margin-right: 6px; border: 2px solid var(--research-accent); vertical-align: -1px; }
+.wl-summary { margin: 0 0 12px; color: var(--research-accent); }
+.wl-table { display: grid; gap: 4px; overflow-x: auto; }
+.wl-row { display: grid; grid-template-columns: 80px repeat(6, minmax(96px, 1fr)) 96px; gap: 4px; align-items: stretch; min-width: 760px; color: inherit; text-decoration: none; }
+.wl-head span { padding: 4px 8px; color: var(--research-muted); font-size: var(--fs-1); }
+.wl-ticker { display: flex; align-items: center; padding: 0 8px; font-weight: 600; }
+.wl-row:not(.wl-head):hover .wl-ticker { color: var(--research-accent); }
+.wl-cell { display: flex; align-items: center; gap: 6px; padding: 10px 8px; background: color-mix(in srgb, var(--tone) 18%, var(--research-surface)); border: 2px solid transparent; font-size: var(--fs-1); white-space: nowrap; }
+.wl-cell em { font-style: normal; color: var(--tone); }
+.wl-cell.changed { border-color: var(--research-accent); }
+.wl-date { display: flex; align-items: center; padding: 0 8px; color: var(--research-faint); font-size: var(--fs-1); }
+
+/* Companies page (checklist 9.6): one ticker box and recent chips under the watchlist grid. */
+.company-open { display: grid; gap: 6px; max-width: 520px; margin: 32px 0 16px; }
+.company-open label { color: var(--research-muted); font: var(--fs-1)/1.4 var(--font-research); }
+.company-open div { display: flex; gap: 8px; }
+.company-open input { flex: 1; padding: 8px 12px; border: 1px solid var(--research-line); background: var(--research-surface); color: var(--research-text); font: var(--fs-2)/1.4 var(--font-research); }
+.company-open button { padding: 8px 16px; border: 1px solid var(--research-accent); background: transparent; color: var(--research-accent); font: var(--fs-2)/1.4 var(--font-research); cursor: pointer; }
+.company-recent { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 32px; font: var(--fs-1)/1.4 var(--font-research); }
+.company-recent > span { margin-right: 6px; color: var(--research-muted); }
+.company-recent a { padding: 3px 10px; border: 1px solid var(--research-line); color: var(--research-text); text-decoration: none; }
+.company-recent a:hover { border-color: var(--research-accent); color: var(--research-accent); }

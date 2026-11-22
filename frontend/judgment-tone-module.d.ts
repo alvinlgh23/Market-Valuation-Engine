@@ -5,4 +5,5 @@ declare module "*judgment-tone.mjs" {
   export function axisTone(axis: string, state: string): Tone;
   export function confidenceDots(confidence: string): 1 | 2 | 3;
   export function percentileWidth(value: unknown): number | null;
+  export function shortState(state: string | null | undefined): string;
 }
