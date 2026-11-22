@@ -721,6 +721,19 @@ def watchlist_drivers(store: SignalStore | None = None, today: dt.date | None = 
     return output
 
 
+HOME_CURRENCIES = ("EUR", "GBP", "JPY", "CHF", "CNY", "HKD", "SGD", "AUD", "CAD", "KRW", "INR", "TWD")
+
+
+def fx_moves(currencies: tuple[str, ...] = HOME_CURRENCIES) -> dict[str, Any]:
+    """Three-month change in units of each home currency per US dollar (checklist 10.9).
+    A USD asset's return in that currency is (1 + USD return) x (1 + change) - 1."""
+    output = {}
+    for currency in currencies:
+        view = home_currency_view(currency)
+        output[currency] = None if view.get("error") else view.get("home_per_usd_3m_change")
+    return {"window": "3M", "home_per_usd_change": output, "as_of": dt.date.today().isoformat(), "source": "Yahoo Finance currency pairs (CUR=X)"}
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="CHAINSTOX company judgment card")
     parser.add_argument("tickers", nargs="*")
@@ -729,7 +742,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--home-currency", help="Show USD returns translated into this currency, e.g. SGD.")
     parser.add_argument("--summary", action="store_true", help="Print the last recorded card states for the watchlist as JSON (no network).")
     parser.add_argument("--drivers", action="store_true", help="Print what moved each watchlist price (macro / market / sector / company) as JSON.")
+    parser.add_argument("--fx", action="store_true", help="Print three-month USD moves against common home currencies as JSON.")
     args = parser.parse_args(argv)
+    if args.fx:
+        print(json.dumps(fx_moves()))
+        return 0
     if args.drivers:
         print(json.dumps(watchlist_drivers(), default=str))
         return 0

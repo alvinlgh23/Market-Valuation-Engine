@@ -151,3 +151,11 @@ def test_reversed_volatility_is_context_not_a_headwind(monkeypatch):
     assert any("not counted as a headwind" in line for line in result["detail"]["context_only"])
     monkeypatch.setattr(cv, "reversed_signals", lambda: set())
     assert cv.macro_axis("FABLESS_SEMICONDUCTOR", environment(volatility=1, semis_cycle=1, usd=-1))["detail"]["confirmed_headwinds"] == 1
+
+
+def test_fx_moves_reports_each_currency_and_none_when_missing(monkeypatch):
+    """Checklist 10.9: home-currency moves for a global audience."""
+    views = {"EUR": {"home_per_usd_3m_change": 0.064}, "JPY": {"error": "JPY=X history unavailable"}}
+    monkeypatch.setattr(cv, "home_currency_view", lambda code: views[code])
+    result = cv.fx_moves(("EUR", "JPY"))
+    assert result["home_per_usd_change"] == {"EUR": 0.064, "JPY": None}

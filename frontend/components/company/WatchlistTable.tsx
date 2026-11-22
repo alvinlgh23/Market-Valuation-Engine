@@ -6,6 +6,8 @@ import { DriverBar, factorBreakdown, PriceDriversLegend, ReadingTag, type Attrib
 
 type Row = { ticker: string; last_card: string | null; axes: Record<string, string>; changed: Array<{ axis: string; from: string; to: string; on: string }> };
 type Drivers = { ticker: string; reading: PriceReading; attribution: Attribution; archetype_source: string | null };
+const CURRENCIES = ["USD", "EUR", "GBP", "JPY", "CHF", "CNY", "HKD", "SGD", "AUD", "CAD", "KRW", "INR", "TWD"];
+function savedCurrency() { try { return window.localStorage.getItem("chainstox.homeCurrency") || "USD"; } catch { return "USD"; } }
 const KIND_ORDER = ["fundamentals", "company", "watch", "noise", "unknown"];
 const AXES = [["flow", "Money flow"], ["crowding", "Crowding"], ["macro", "Macro"], ["expectations", "Expectations"], ["fundamentals", "Fundamentals"], ["valuation", "Valuation"]] as const;
 
@@ -15,6 +17,26 @@ export function WatchlistTable() {
   const [error, setError] = useState<string | null>(null);
   const [drivers, setDrivers] = useState<Record<string, Drivers> | null>(null);
   const [driversError, setDriversError] = useState<string | null>(null);
+  // Checklist 10.9: users are global, so moves can be read in a home currency.
+  // The currency control renders only after client-side data loads, so reading storage here cannot mismatch the server HTML.
+  const [currency, setCurrency] = useState(() => (typeof window === "undefined" ? "USD" : savedCurrency()));
+  const [fx, setFx] = useState<Record<string, number | null> | null>(null);
+  useEffect(() => {
+    if (currency === "USD" || fx) return;
+    let active = true;
+    fetch("/api/research?action=fx-moves", { cache: "no-store" }).then(async (response) => { const body = await response.json(); if (active) setFx(body.fx?.home_per_usd_change ?? {}); }).catch(() => { if (active) setFx({}); });
+    return () => { active = false; };
+  }, [currency, fx]);
+  const chooseCurrency = (value: string) => { setCurrency(value); try { window.localStorage.setItem("chainstox.homeCurrency", value); } catch { /* per-viewer convenience only */ } };
+  const homeMove = (usd: number | undefined) => {
+    if (usd == null) return "—";
+    const usdText = `${usd >= 0 ? "+" : ""}${(usd * 100).toFixed(1)}%`;
+    if (currency === "USD") return usdText;
+    const change = fx?.[currency];
+    if (change == null) return fx ? `${usdText} USD` : usdText;
+    const home = (1 + usd) * (1 + change) - 1;
+    return `${home >= 0 ? "+" : ""}${(home * 100).toFixed(1)}% ${currency}`;
+  };
   useEffect(() => {
     let active = true;
     // Checklist 10.3: what moved each price; loads after the grid (prices may need fetching).
@@ -45,6 +67,8 @@ export function WatchlistTable() {
       <span><b>{count("watch")}</b> some company-specific move</span>
       <span className="pd-kind-company"><b>{count("company") + count("fundamentals")}</b> company-specific{count("fundamentals") ? `, ${count("fundamentals")} with estimates moving` : ""}</span>
       <PriceDriversLegend />
+      <label className="wl-currency">Show moves in <select value={currency} onChange={(event) => chooseCurrency(event.target.value)}>{CURRENCIES.map((code) => <option key={code} value={code}>{code}</option>)}</select></label>
+      {currency !== "USD" && fx?.[currency] != null ? <small>USD {((fx[currency] as number) >= 0 ? "+" : "")}{((fx[currency] as number) * 100).toFixed(1)}% vs {currency} in 3M</small> : null}
     </div> : <p className="wl-summary">{driversError ? `Price drivers unavailable: ${driversError}` : "Working out what moved each price…"}</p>}
     {changedCount ? <p className="wl-summary">{changedCount} of {rows.length} companies changed since their previous card.</p> : null}
     <div className="wl-table" role="table">
@@ -52,7 +76,7 @@ export function WatchlistTable() {
       {[...rows].sort((a, b) => drivers ? KIND_ORDER.indexOf(drivers[a.ticker]?.reading.kind ?? "unknown") - KIND_ORDER.indexOf(drivers[b.ticker]?.reading.kind ?? "unknown") : 0).map((row) => <Link href={`/company/${row.ticker}`} className="wl-row" role="row" key={row.ticker}>
         <span role="cell" className="wl-ticker">{row.ticker}</span>
         <span role="cell" className="wl-drivers">{drivers?.[row.ticker] ? <>
-          <span className="wl-move">{(() => { const w = drivers[row.ticker].attribution?.windows?.["3M"]; return w ? `${w.price_change >= 0 ? "+" : ""}${(w.price_change * 100).toFixed(1)}%` : "—"; })()}</span>
+          <span className="wl-move" title={currency === "USD" ? "3-month price change in US dollars" : `3-month return in ${currency}: USD return combined with the dollar's move against ${currency}. The bar still splits the USD move.`}>{homeMove(drivers[row.ticker].attribution?.windows?.["3M"]?.price_change)}</span>
           <DriverBar parts={drivers[row.ticker].attribution?.windows?.["3M"]?.parts} title={factorBreakdown(drivers[row.ticker].attribution)} />
           <ReadingTag reading={drivers[row.ticker].reading} compact />
         </> : <span className="wl-move">{drivers || driversError ? "—" : "…"}</span>}</span>

@@ -3619,3 +3619,6 @@ body {
 .env-carry-signs { display: flex; flex-wrap: wrap; gap: 4px 8px; }
 .env-carry-signs span { padding: 1px 6px; border: 1px solid var(--research-line); color: var(--research-text); }
 .env-carry > small { color: var(--research-muted); }
+.wl-currency { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; }
+.wl-currency select { background: var(--research-surface); color: var(--research-text); border: 1px solid var(--research-line-strong); padding: 2px 6px; font: inherit; }
+.wl-drivers { grid-template-columns: 82px minmax(90px, 1fr); }
