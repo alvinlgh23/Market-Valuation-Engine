@@ -17,7 +17,14 @@ function Track({ label, value, right }: { label: string; value: number | null; r
 function FactorVisual({ id, factor }: { id: string; factor: EnvironmentFactor }) {
   const r = factor.readings;
   if (num(r.percentile_in_own_history) != null) return <Track label="vs own history" value={num(r.percentile_in_own_history)} />;
-  if (id === "semis_cycle") return <Track label="within year" value={num(r.percentile_within_year)} />;
+  if (id === "semis_cycle") {
+    // Checklist 10.7: Korean chip exports as the leading read when a data.go.kr key is configured.
+    const lead = obj(r.leading_exports);
+    return <div className="env-carry">
+      <Track label="within year" value={num(r.percentile_within_year)} />
+      <small title={String(lead.note ?? "")}>{lead.status === "AVAILABLE" && num(lead.yoy) != null ? `Lead: Korean chip exports ${(num(lead.yoy) as number) >= 0 ? "+" : ""}${((num(lead.yoy) as number) * 100).toFixed(1)}% y/y (${String(lead.month)})` : "Lead (Korean chip exports): needs a data.go.kr key"}</small>
+    </div>;
+  }
   if (id === "liquidity") {
     const policy = obj(r.policy_liquidity), market = obj(r.market_liquidity);
     // Checklist 10.5: the 0-100 scores failed the scorecard (not significant), so only their states are shown.

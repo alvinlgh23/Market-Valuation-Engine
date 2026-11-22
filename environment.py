@@ -325,12 +325,14 @@ def liquidity(core: dict[str, Any], world: dict[str, Any]) -> dict[str, Any]:
 
 
 # ---- semiconductor cycle via KOSPI (checklist 3.7) ------------------------------------------
-def semis_cycle(kospi: dict[str, Any] | None) -> dict[str, Any]:
+def semis_cycle(kospi: dict[str, Any] | None, exports_lead: dict[str, Any] | None = None) -> dict[str, Any]:
     sweep = (kospi or {}).get("sweep") or {}
     tech = next((item for item in sweep.get("results") or [] if item.get("key") == "tech"), None)
     exports = (kospi or {}).get("exports") or {}
     semis_exports = next((item for item in exports.get("items") or [] if item.get("key") == "semiconductors"), None)
-    notes = ["Monthly Korean customs semiconductor exports need DATA_GO_KR_SERVICE_KEY, which is not configured; only the annual export snapshot is available."]
+    lead = exports_lead or {"status": "NEEDS_KEY", "note": "Set DATA_GO_KR_SERVICE_KEY (free at data.go.kr) to read monthly Korean chip exports."}
+    notes = [lead["note"]] if lead.get("status") != "AVAILABLE" else [
+        f"Leading read: Korean chip exports {lead['yoy']:+.1%} year on year in {lead['month']} ({lead['note']})"]
     history = ((tech or {}).get("detail") or {}).get("history") or []
     relative_3m = None
     if len(history) > 63:
@@ -354,7 +356,8 @@ def semis_cycle(kospi: dict[str, Any] | None) -> dict[str, Any]:
         labels[direction], direction,
         {"tech_proxy_vs_kospi_3m": relative_3m, "percentile_within_year": percentile, "kospi_tech_factor_corr": _num(tech.get("corr")),
          "kospi_tech_factor_pval": _num(tech.get("pval")), "kospi_tech_factor_strength": tech.get("strength"),
-         "korea_semiconductor_exports_usd_b": _num((semis_exports or {}).get("value_b")), "exports_period": (semis_exports or {}).get("period")},
+         "korea_semiconductor_exports_usd_b": _num((semis_exports or {}).get("value_b")), "exports_period": (semis_exports or {}).get("period"),
+         "leading_exports": lead},
         source="KOSPI Multi-Factor Signal Monitor (tech factor and export snapshot)", as_of=str(sweep.get("timestamp") or "")[:10] or None,
         notes=notes, confidence="LOW" if direction is None else "MODERATE",
     )
@@ -378,7 +381,8 @@ def volatility_scorecard_note(path=None) -> str | None:
 
 # ---- assembled layer -----------------------------------------------------------------------
 def build_environment(core: dict[str, Any] | None, world: dict[str, Any], inflation: dict[str, Any] | None, kospi: dict[str, Any] | None,
-                      cftc: dict[str, Any] | None = None, store: SignalStore | None = None, boj: dict[str, Any] | None = None) -> dict[str, Any]:
+                      cftc: dict[str, Any] | None = None, store: SignalStore | None = None, boj: dict[str, Any] | None = None,
+                      korea_exports: dict[str, Any] | None = None) -> dict[str, Any]:
     core = core or {}
     store = store or SignalStore()
     macro = core.get("macro") or {}
@@ -396,7 +400,7 @@ def build_environment(core: dict[str, Any] | None, world: dict[str, Any], inflat
         "fed_path": fed_path(core, world, inflation),
         "liquidity": liquidity(core, world),
         "yen_carry": yen_carry(core, world, cftc, boj),
-        "semis_cycle": semis_cycle(kospi),
+        "semis_cycle": semis_cycle(kospi, korea_exports),
     }
     vix_note = volatility_scorecard_note()
     if vix_note:

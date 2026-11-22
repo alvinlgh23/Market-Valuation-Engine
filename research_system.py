@@ -685,8 +685,10 @@ def build_research_system(refresh: bool = False) -> dict[str, Any]:
             })
     cftc_result = isolated("cftc", fetch_cftc_jpy, refresh=refresh)
     boj_result = isolated("boj", fetch_boj_schedule, refresh=refresh)   # checklist 10.6: BOJ meeting calendar
+    from korea_chip_exports import fetch_korea_chip_exports
+    exports_result = isolated("korea-exports", fetch_korea_chip_exports, refresh=refresh)   # checklist 10.7
     environment = build_environment(core_result["payload"], world, inflation_result["payload"], kospi_result["payload"], cftc_result["payload"],
-                                    boj=boj_result["payload"])
+                                    boj=boj_result["payload"], korea_exports=exports_result["payload"])
     carry = environment["factors"]["yen_carry"]
     for edge in world.get("transmissions", []):
         if edge.get("id") == "jp-us-yen-carry":
