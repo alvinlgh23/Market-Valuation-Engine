@@ -23,10 +23,9 @@ COMPASS_DIR = ROOT / "Centralbank-Compass" / "central-bank-compass"
 # FRED observations live in this repo, not in the nested Compass repo (refresh approved 2026-11-22).
 # scripts/refresh_compass_data.py seeds it from the Compass cache once and refreshes it online.
 COMPASS_CACHE_DIR = ROOT / ".cache" / "compass_fred"
-NEER_FILE = ROOT / "NEER" / "SGD.py"
 KOSPI_FILE = ROOT / "KOSPI" / "KOSPI_Backend_v2.py"
-SUPPORTED_REGIONS = ("US", "JP", "KR", "SG", "EURO_AREA")
-ALIASES = {"USA": "US", "JAPAN": "JP", "KOREA": "KR", "SINGAPORE": "SG", "EU": "EURO_AREA", "EZ": "EURO_AREA", "EUROZONE": "EURO_AREA"}
+SUPPORTED_REGIONS = ("US", "JP", "KR", "EURO_AREA")   # Singapore removed 2026-11-22 (global audience)
+ALIASES = {"USA": "US", "JAPAN": "JP", "KOREA": "KR", "EU": "EURO_AREA", "EZ": "EURO_AREA", "EUROZONE": "EURO_AREA"}
 
 
 @dataclass
@@ -93,7 +92,6 @@ COVERAGE_REGISTRY: dict[str, dict[str, Any]] = {
     "US": {"name": "United States", "engines": ["Central Bank Compass", "US Inflation Pressure"]},
     "JP": {"name": "Japan", "engines": ["Central Bank Compass"]},
     "KR": {"name": "South Korea", "engines": ["KOSPI Multi-Factor Signal Monitor"]},
-    "SG": {"name": "Singapore", "engines": ["Central Bank Compass", "Shadow S$NEER Proxy"]},
     "EURO_AREA": {"name": "Euro Area", "engines": ["Central Bank Compass"]},
 }
 
@@ -152,7 +150,7 @@ INPUT_AREA = {
     "unemployment": "labor", "payrolls": "labor", "initial_claims": "labor", "wage_growth": "labor",
     "real_gdp": "growth", "pmi": "growth", "external_demand": "growth",
     "ten_year_yield": "markets", "two_year_yield": "markets", "credit_spread": "markets", "vix": "markets", "sovereign_spreads": "markets",
-    "usd_jpy": "fx", "usd_sgd": "fx", "eur_usd": "fx", "broad_dollar": "fx", "sgd_neer_shadow_proxy": "fx",
+    "usd_jpy": "fx", "eur_usd": "fx", "broad_dollar": "fx",
 }
 # Days after which an input counts as out of date, by publication frequency (allows normal release lags).
 STALE_AFTER = {"daily/weekly": 45, "monthly": 150, "quarterly": 270, "annual": 550}
@@ -178,7 +176,7 @@ def input_record(key: str, series_id: str | None, series: Any, today: date | Non
 class CentralBankCompassAdapter:
     """Calls the copied Central Bank Compass modules in offline/cache mode."""
 
-    CODE_MAP = {"US": "US", "JP": "JP", "SG": "SG", "EURO_AREA": "EZ"}
+    CODE_MAP = {"US": "US", "JP": "JP", "EURO_AREA": "EZ"}
 
     def __init__(self, project_dir: Path = COMPASS_DIR, cache_dir: Path = COMPASS_CACHE_DIR):
         self.project_dir = project_dir
@@ -359,33 +357,6 @@ class CentralBankCompassAdapter:
         return result
 
 
-class NeerAdapter:
-    """Reads the S$NEER engine's last output; nothing is hard-coded (checklist 3.7)."""
-
-    def __init__(self, cache_path: Path | None = None):
-        self.cache_path = cache_path or ROOT / ".cache" / "research" / "neer.json"
-
-    def load(self) -> dict[str, Any]:
-        try:
-            payload = json.loads(self.cache_path.read_text())
-        except (OSError, json.JSONDecodeError):
-            return {"available": False, "current_snapshot": False, "warning": "No S$NEER engine output is cached; basket and policy assumptions are unavailable."}
-        assumptions = payload.get("policy_assumptions") or {}
-        weights = sorted(((item.get("currency"), item.get("weight")) for item in payload.get("fx_components") or [] if isinstance(item.get("weight"), (int, float))), key=lambda pair: -pair[1])
-        return {
-            "available": True,
-            "current_snapshot": bool(payload.get("current")),
-            "as_of": payload.get("as_of"),
-            "basket_count": len(payload.get("fx_components") or []),
-            "largest_weights": dict(weights[:4]),
-            "slope_before": None if assumptions.get("slope_before_pct_pa") is None else assumptions["slope_before_pct_pa"] / 100,
-            "slope_after": None if assumptions.get("slope_after_pct_pa") is None else assumptions["slope_after_pct_pa"] / 100,
-            "policy_change": assumptions.get("policy_change"),
-            "assumed_band": None if assumptions.get("estimated_band_half_width_pct") is None else assumptions["estimated_band_half_width_pct"] / 100,
-            "warning": "Proxy basket, centre, slope and band are modelling assumptions; MAS does not disclose the official basket or band parameters.",
-        }
-
-
 class KospiAdapter:
     """Reads the KOSPI engine's last output; export figures are never hard-coded (checklist 3.7)."""
 
@@ -436,7 +407,6 @@ def format_value(value: Any, kind: str) -> str:
 class MacroRegionEngine:
     def __init__(self, compass: CentralBankCompassAdapter | None = None):
         self.compass = compass or CentralBankCompassAdapter()
-        self.neer = NeerAdapter()
         self.kospi = KospiAdapter()
 
     def unsupported(self, region: str) -> MacroRegionProfile:
@@ -514,24 +484,13 @@ class MacroRegionEngine:
         gaps = list(raw["placeholders"])
         brief = f"{raw['policy_tool']}: {policy_state}. {raw.get('special', {}).get('bias', raw['bias'])} bias with {confidence_label(policy_confidence).lower()} model confidence."
         engines = [{"name": "Central Bank Compass", "role": "Policy, inflation, growth, financial and FX blocks", "status": "CACHED"}]
-        if region == "SG":
-            neer = self.neer.load()
-            evidence.append(MacroEvidence(
-                id="sg-neer-framework", label="Shadow S$NEER basket", value=f"{neer['basket_count']} currency proxy",
-                classification="STRUCTURAL PROXY", evidence_type="PROXY", source="Shadow S$NEER Proxy", source_path=str(NEER_FILE.relative_to(ROOT)),
-                period=neer["policy_change"], freshness="STRUCTURAL", note=neer["warning"],
-            ))
-            fx = next(item for item in components if item.id == "currency")
-            fx.evidence_ids.append("sg-neer-framework")
-            fx.gaps.append("Official MAS band position is unavailable." if neer.get("current_snapshot") else "No persisted current shadow-NEER snapshot; official band position is unavailable.")
-            engines.append({"name": "Shadow S$NEER Proxy", "role": "Transparent currency-policy mechanism", "status": "STRUCTURAL_ONLY"})
         return MacroRegionProfile(
             id=region, name=coverage["name"], available=True, availability="PENDING",
             framework=raw["policy_tool"], brief=brief, as_of=raw["latest"], freshness=freshness_for(raw["latest"]),
             confidence=confidence_label(policy_confidence), components=components, evidence=evidence, engines=engines,
             gaps=dedupe(gaps),
             watch_conditions=build_region_watches(region, raw),
-            engine_specific={"central_bank_compass": raw, **({"shadow_neer": self.neer.load()} if region == "SG" else {})},
+            engine_specific={"central_bank_compass": raw},
         )
 
     def _build_korea(self) -> MacroRegionProfile:
@@ -622,10 +581,6 @@ def region_coverage(region: dict[str, Any], today: date | None = None) -> dict[s
             if area and missing.get("indicator") in placeholders:
                 items[area].append((missing["indicator"], False, None))
         items["liquidity"].extend((d["name"], d.get("value") is not None, latest) for d in (compass.get("liquidity") or {}).get("drivers") or [])
-    neer = specific.get("shadow_neer_live") or specific.get("shadow_neer") or {}
-    if neer:
-        current = bool(neer.get("current")) or bool(neer.get("current_snapshot"))
-        items["fx"].append(("Shadow S$NEER position (proxy)", current, neer.get("as_of")))
     kospi = specific.get("kospi") or {}
     live = specific.get("kospi_live") or {}
     if live.get("sweep"):
@@ -716,8 +671,6 @@ def build_region_watches(region: str, raw: dict[str, Any]) -> list[dict[str, str
                 "current": driver["classification"],
                 "state": "INSUFFICIENT" if driver["classification"] == "MISSING DATA" else "WATCH",
             })
-    if region == "SG":
-        watches.append({"label": "Official SGD NEER band position", "threshold": "Stable official source integrated", "current": "Unavailable", "state": "INSUFFICIENT"})
     return watches
 
 
@@ -728,14 +681,12 @@ class MacroTransmissionEngine:
         us = profiles["US"]
         jp = profiles["JP"]
         eu = profiles["EURO_AREA"]
-        sg = profiles["SG"]
         kr = profiles["KR"]
         return [
             TransmissionEdge("jp-us-yen-carry", "JP", "US", "Yen carry → US risk assets", "JPY funding conditions and Japanese yields can alter leveraged global risk appetite.", "ESTABLISHED", "INSUFFICIENT", "Current state comes from the environment layer's single yen-carry definition when USD/JPY and VIX observations are available.", "LOW" if jp.confidence == "LOW" else "MODERATE", self._ids(jp, ["currency", "financial"]) + self._ids(us, ["financial"]), "A transmission channel is not proof that it caused an observed market move."),
             TransmissionEdge("us-jp-rate-fx", "US", "JP", "US rates → USD/JPY → BOJ pressure", "US/Japan rate conditions transmit through USD/JPY and imported inflation pressure.", "ESTABLISHED", self._paired_state(us, jp), "The Compass explicitly models US rates, USD/JPY and BOJ normalization pressure.", "MODERATE", self._ids(us, ["policy", "financial"]) + self._ids(jp, ["currency", "policy"]), "Direction is model context, not a forecast of the exchange rate."),
             TransmissionEdge("us-eu-rate-fx", "US", "EURO_AREA", "Fed/ECB divergence → EUR/USD", "Relative policy and growth conditions can transmit through EUR/USD and regional financial conditions.", "ESTABLISHED", self._paired_state(us, eu), "Both policy frameworks are integrated; several Euro Area financial subcomponents remain missing.", "MODERATE", self._ids(us, ["policy"]) + self._ids(eu, ["policy", "currency"]), "The Euro Area is a monetary union; this does not represent every EU member's fiscal conditions."),
             TransmissionEdge("us-kr-dollar-kospi", "US", "KR", "US rates/USD → KRW and KOSPI", "Dollar and funding conditions can affect USD/KRW, foreign flows and export-sensitive Korean equities.", "ESTABLISHED", "INSUFFICIENT", "The KOSPI monitor defines the channel, but its current sweep and foreign-flow data are not persisted.", "LOW", self._ids(us, ["policy", "financial"]) + ["kr-export-total", "kr-semi-export"], "Structural plausibility is not an active-signal claim and Granger tests are not causal proof."),
-            TransmissionEdge("us-sg-dollar-neer", "US", "SG", "USD conditions → SGD policy pressure", "Global dollar conditions and trade-weighted FX pressure interact with Singapore's exchange-rate policy framework.", "ESTABLISHED", "INSUFFICIENT", "A current official or shadow-NEER band position is unavailable.", "LOW", self._ids(us, ["policy", "currency"]) + ["sg-neer-framework"], "The S$NEER basket, centre, slope and width are explicit proxy assumptions."),
         ]
 
     @staticmethod

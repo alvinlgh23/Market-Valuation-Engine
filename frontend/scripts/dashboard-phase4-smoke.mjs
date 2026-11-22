@@ -67,10 +67,6 @@ try {
   await page.locator("body").waitFor();
   await pageShot(page, "15-dashboard-to-pltr.png");
 
-  await page.goto(`${baseUrl}/brief`, { waitUntil: "networkidle" });
-  await page.locator("body").waitFor();
-  await pageShot(page, "16-full-market-brief.png");
-
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
   if (overflow) throw new Error("Dashboard desktop has horizontal page overflow.");
   await page.close();
@@ -89,4 +85,4 @@ try {
 }
 
 if (errors.length) throw new Error(errors.join("\n"));
-console.log("Dashboard Phase 4 checks passed; 18 screenshots captured.");
+console.log("Dashboard Phase 4 checks passed; 17 screenshots captured.");

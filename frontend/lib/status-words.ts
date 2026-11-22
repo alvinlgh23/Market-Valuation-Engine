@@ -41,7 +41,7 @@ export function statusTone(raw: unknown): StatusTone | "label" {
   return word ? TONE[word] : "label";
 }
 
-const ACRONYMS = new Set(["US", "FX", "BOJ", "ECB", "FED", "KOSPI", "NEER", "DCF", "FCFF", "RS", "ETF"]);
+const ACRONYMS = new Set(["US", "FX", "BOJ", "ECB", "FED", "KOSPI", "DCF", "FCFF", "RS", "ETF"]);
 
 /** What a badge should say: the status word, or the domain label in sentence case. */
 export function displayStatus(raw: unknown): string {

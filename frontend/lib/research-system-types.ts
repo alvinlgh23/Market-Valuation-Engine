@@ -129,7 +129,6 @@ export type ResearchSystem = {
   modules: {
     inflation: EngineResult<{ metrics: Record<string, InflationMetric>; available: number; total: number; states: Record<string, string>; near_term: string; medium_term: string; horizon_reason: string; fed_sensitivity: string; common_month: string; latest_source: string; validation: Record<string, unknown>; provisional: boolean }>;
     core_market: EngineResult<Record<string, unknown>>;
-    neer: EngineResult<Record<string, unknown>>;
     kospi: EngineResult<Record<string, unknown>>;
     companies: EngineResult<ResearchRow[]>;
   };

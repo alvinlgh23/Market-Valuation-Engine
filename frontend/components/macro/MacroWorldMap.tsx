@@ -5,7 +5,6 @@ const markerPositions: Record<string, [number, number]> = {
   EURO_AREA: [505, 157],
   JP: [785, 195],
   KR: [749, 200],
-  SG: [686, 306],
 };
 
 export function MacroWorldMap({ regions, selected, onSelect, onUnavailable, onHover, onLeave, onHoverUnavailable }: {
@@ -31,8 +30,8 @@ export function MacroWorldMap({ regions, selected, onSelect, onUnavailable, onHo
         const region = regions[id];
         const isSelected = selected === id;
         return <g key={id} className={`macro-map-marker ${isSelected ? "selected" : ""} ${region.availability.toLowerCase()}`} role="button" tabIndex={0} aria-label={`Open ${region.name} macro profile`} onMouseEnter={() => onHover?.(id)} onMouseLeave={() => onLeave?.()} onFocus={() => onHover?.(id)} onBlur={() => onLeave?.()} onClick={() => onSelect(id)} onKeyDown={(event) => (event.key === "Enter" || event.key === " ") && onSelect(id)}>
-          <circle cx={x} cy={y} r={id === "SG" ? 12 : 8} />
-          <circle className="marker-pulse" cx={x} cy={y} r={id === "SG" ? 20 : 15} />
+          <circle cx={x} cy={y} r={8} />
+          <circle className="marker-pulse" cx={x} cy={y} r={15} />
           <text x={x + 14} y={y - 12}>{id === "EURO_AREA" ? "EURO AREA" : id}</text>
         </g>;
       })}

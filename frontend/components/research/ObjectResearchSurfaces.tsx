@@ -64,12 +64,8 @@ export function MarketsResearch({ section, system }: { section: string; system: 
   const core = system.modules.core_market.payload ?? {};
   const sectorList = integrateSectorEngineRows((core.sectors ?? []) as SectorEngineRow[], system.modules.core_market.state, system.sector_flow);
   if (section === "rotation") return <MarketsRotationSurface sectorList={sectorList} selectedSector={sectorParam} view={view} selectedNodeId={node} />;
-  const fragility = (core.fragility ?? {}) as Record<string, unknown>;
-  const risk = (core.risk ?? {}) as Record<string, unknown>;
-  if (section === "defensive-rotation") return <DefensiveRotationSurface risk={risk} state={system.modules.core_market.state} />;
-  if (section === "breadth") return <MarketsRotationSurface sectorList={sectorList} selectedSector="semiconductors" view="breadth" selectedNodeId={null} />;
-  if (section === "crowding") return <MarketsRotationSurface sectorList={sectorList} selectedSector="semiconductors" view="positioning" selectedNodeId={null} />;
-  return <div className="engine-module"><ObjectHeader eyebrow={`MARKETS / ${section.toUpperCase().replaceAll("-", " ")}`} title={title(section)} summary="Cross-asset market structure." state={system.modules.core_market.state} /><RecordGrid record={fragility} /></div>;
+  // Checklist 10.10 (owner, 2026-11-22): the breadth, fragility and defensive-rotation pages were deleted.
+  return <MarketsRotationSurface sectorList={sectorList} selectedSector="semiconductors" view="positioning" selectedNodeId={null} />;
 }
 
 export function SectorResearch({ sector, system }: { sector: string; system: ResearchSystem }) {
@@ -170,7 +166,6 @@ function SectorSnapshot({ sector }: { sector: SectorResearchObject }) {
     <nav className="sector-actions">
       <Link className="primary" href={sectorHref(sector, "structure")}>Explore Sector Structure →</Link>
       <Link href={sectorHref(sector, "leadership")}>Leadership</Link>
-      <Link href={sectorHref(sector, "breadth")}>Breadth</Link>
       <Link href={sectorHref(sector, "positioning")}>Crowding / Positioning</Link>
       <Link href={sectorHref(sector, "report")}>Full Report</Link>
     </nav>
@@ -251,18 +246,12 @@ function MarketsRotationSurface({ sectorList, selectedSector, view, selectedNode
     <SectorSnapshot sector={selected} />
     {view === "structure" || selectedNodeId ? <SectorStructureMap sector={selected} selectedNodeId={selectedNodeId ?? null} /> : null}
     {view === "leadership" ? <SectorLeadership sector={selected} /> : null}
-    {view === "breadth" ? <SectorEvidenceView sector={selected} kind="breadth" /> : null}
     {view === "positioning" ? <SectorEvidenceView sector={selected} kind="positioning" /> : null}
     <MissingSummary items={[
       ...OPTIONAL_COLUMNS.filter((column) => !measuredColumns(sectorList).includes(column)).map((column) => `sector ${column.label.toLowerCase()}`),
       ...(hasPositioningPoints(sectorList) ? [] : ["the leadership-versus-crowding map (needs crowding measurements)"]),
     ]} />
   </div>;
-}
-
-function DefensiveRotationSurface({ risk, state }: { risk: Record<string, unknown>; state: string }) {
-  const evidence = (risk.evidence ?? {}) as Record<string, { label?: string; detail?: string }>;
-  return <div className="engine-module"><ObjectHeader eyebrow="MARKETS / DEFENSIVE ROTATION" title="Risk regime in market context" summary="Whether recent weakness is rotation inside equities or a broad move away from risk." state={state} /><section className="defensive-rotation-grid">{Object.entries(evidence).map(([key, item]) => <article key={key}><span>{title(key)}</span><strong>{item?.label ?? "Unavailable"}</strong><p>{item?.detail ?? "No detail available from current risk-regime payload."}</p></article>)}</section><section className="object-section"><header><div><span>CONTEXT BRIDGE</span><h2>Macro risk → market defensives</h2></div><Link href="/macro/risk">Open Macro Risk Regime →</Link></header><p className="object-narrative">{String(risk.sector_context ?? "Sector weakness should be compared against defensive rotation and breadth before calling it broad risk-off.")}</p></section></div>;
 }
 
 export function CompanyIndex() {
@@ -276,22 +265,6 @@ export function ValuationIndex() {
 }
 
 export function LabsSurface({ section, system }: { section: string; system: ResearchSystem }) {
-  const historical = section === "historical";
-  const fragility = (system.modules.core_market.payload?.fragility ?? {}) as Record<string, unknown>;
-  return <div className="engine-module"><ObjectHeader eyebrow={`LABS / ${section.toUpperCase()}`} title={title(section)} summary={historical ? "Access to cached and prior research states where currently available. Future history is not fabricated." : "Experimental macro fragility research, shown at its actual coverage level."} state={historical ? "PARTIAL" : system.modules.core_market.state} />{historical ? <section className="engine-ledger"><header><h2>Available snapshots</h2><span>Last-valid cache</span></header>{system.dashboard.freshness.map((item, index) => <article key={index}><strong>{item.label ?? item.module ?? "Research engine"}</strong><Badge value={String(item.state ?? "CACHED")} /><span>{String(item.as_of ?? item.context ?? "Timestamp unavailable")}</span></article>)}</section> : <RecordGrid record={fragility} />}</div>;
+  return <div className="engine-module"><ObjectHeader eyebrow={`LABS / ${section.toUpperCase()}`} title={title(section)} summary="Access to cached and prior research states where currently available. Future history is not fabricated." state="PARTIAL" /><section className="engine-ledger"><header><h2>Available snapshots</h2><span>Last-valid cache</span></header>{system.dashboard.freshness.map((item, index) => <article key={index}><strong>{item.label ?? item.module ?? "Research engine"}</strong><Badge value={String(item.state ?? "CACHED")} /><span>{String(item.as_of ?? item.context ?? "Timestamp unavailable")}</span></article>)}</section></div>;
 }
 
-export function FullMarketBrief({ system }: { system: ResearchSystem }) {
-  const sections = [
-    ["Global macro and liquidity", system.modules.core_market.payload?.macro],
-    ["Macro fragility", system.modules.core_market.payload?.fragility],
-    ["Macro catalysts", system.modules.core_market.payload?.catalysts],
-    ["Risk regime and defensive rotation", system.modules.core_market.payload?.risk],
-    ["Sector rotation", system.modules.core_market.payload?.sectors],
-    ["Inflation pressure", system.modules.inflation.payload],
-  ] as const;
-  return <div className="engine-module full-market-brief"><ObjectHeader eyebrow="DASHBOARD / REPORT MODE" title="Full market brief" summary="The full written report from the same data as the other pages." state="CACHED" />
-    <div className="report-mode-notice"><strong>REPORT MODE</strong><span>Interactive investigation remains available through Macro, Markets, Companies, and Valuation.</span><Link href="/">Return to dashboard →</Link></div>
-    {sections.map(([heading, payload], index) => <section className="object-section report-data-section" key={heading}><header><div><span>SECTION {String(index + 1).padStart(2, "0")}</span><h2>{heading}</h2></div></header><pre>{JSON.stringify(payload ?? { state: "UNAVAILABLE" }, null, 2)}</pre></section>)}
-  </div>;
-}

@@ -130,7 +130,6 @@ def test_backfill_writes_each_cutoff_once(store):
 
 
 def test_record_module_never_raises(store, monkeypatch):
-    monkeypatch.setattr(sh, "observations_from_neer", lambda payload, state: (_ for _ in ()).throw(RuntimeError("boom")))
-    monkeypatch.setitem(sh.EXTRACTORS, "neer", sh.observations_from_neer)
-    result = sh.record_module("neer", {"as_of": "2026-11-05"}, "LIVE", store)
+    monkeypatch.setitem(sh.EXTRACTORS, "kospi", lambda payload, state: (_ for _ in ()).throw(RuntimeError("boom")))
+    result = sh.record_module("kospi", {"sweep": {}}, "LIVE", store)
     assert result["state"] == "FAILED" and "boom" in result["error"]

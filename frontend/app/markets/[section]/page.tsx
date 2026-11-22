@@ -4,7 +4,7 @@ import { MarketsRuntime } from "../../../components/research/MarketsRuntime";
 import type { ResearchSystem } from "../../../lib/research-system-types";
 import { loadResearchSystem, researchShellState } from "../../../lib/research-server";
 
-const SECTIONS = ["sectors", "breadth", "crowding", "defensive-rotation"];
+const SECTIONS = ["sectors", "crowding"];   // breadth and defensive-rotation deleted (checklist 10.10)
 export const dynamic = "force-dynamic";
 export function generateStaticParams() { return SECTIONS.map((section) => ({ section })); }
 export default async function MarketsSectionPage({ params }: { params: Promise<{ section: string }> }) {

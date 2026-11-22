@@ -54,24 +54,11 @@ class TestMacroExperience:
     def test_country_briefs_have_distinct_coverage(self):
         regions = self.system["world"]["regions"]
         # Availability is calculated from indicator coverage (2026-11-22); every region misses something.
-        for region_id in ("US", "JP", "KR", "SG", "EURO_AREA"):
+        for region_id in ("US", "JP", "KR", "EURO_AREA"):
             coverage = regions[region_id]["coverage"]
             assert regions[region_id]["availability"] == coverage["availability"] == "PARTIAL"
             assert 0 < coverage["available"] < coverage["expected"]
-        assert regions["US"]["confidence"] != regions["SG"]["confidence"]
-
-    def test_neer_cache_maps_history_and_all_components(self):
-        neer = self.system["modules"]["neer"]["payload"]
-        assert self.system["modules"]["neer"]["state"] == "CACHED"
-        history = neer["history"]
-        # The cache grows with every refresh, so assert structure rather than a fixed length.
-        assert len(history) >= 250
-        assert all({"date", "index", "center", "upper", "lower", "deviation_pct"} <= set(row) for row in history)
-        assert all(earlier["date"] < later["date"] for earlier, later in zip(history, history[1:]))
-        assert history[-1]["date"] == neer["as_of"]
-        assert len(neer["fx_components"]) == 12
-        assert all(isinstance(item["weight"], (int, float)) for item in neer["fx_components"])
-        assert all(isinstance(item["contribution_63d_pct"], (int, float)) for item in neer["fx_components"])
+        assert regions["US"]["confidence"] != regions["KR"]["confidence"]
 
     def test_kospi_cache_maps_factors_and_garch(self):
         kospi = self.system["modules"]["kospi"]["payload"]["sweep"]
@@ -87,7 +74,7 @@ class TestMacroExperience:
         # The fixture's core feed has no USD/JPY or VIX, so the single carry definition is INSUFFICIENT.
         assert edges["jp-us-yen-carry"]["current_state"] == "INSUFFICIENT"
         assert edges["us-kr-dollar-kospi"]["current_state"] == "WATCH"
-        assert edges["us-sg-dollar-neer"]["current_state"] == "WATCH"
+        assert "us-sg-dollar-neer" not in edges   # Singapore removed 2026-11-22
 
     def test_overview_no_longer_renders_generic_unavailable_grid(self):
         root = Path(__file__).resolve().parents[1]

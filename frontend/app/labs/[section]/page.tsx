@@ -4,7 +4,7 @@ import { LabsRuntime } from "../../../components/research/MarketsRuntime";
 import type { ResearchSystem } from "../../../lib/research-system-types";
 import { loadResearchSystem, researchShellState } from "../../../lib/research-server";
 
-const SECTIONS = ["fragility", "historical"];
+const SECTIONS = ["historical"];   // fragility deleted (checklist 10.10)
 export const dynamic = "force-dynamic";
 export function generateStaticParams() { return SECTIONS.map((section) => ({ section })); }
 export default async function LabsPage({ params }: { params: Promise<{ section: string }> }) {

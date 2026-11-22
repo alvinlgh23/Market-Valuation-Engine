@@ -51,7 +51,8 @@ def test_cached_compass_adapter_preserves_evidence_and_gaps():
     world = build_world()
     assert world["regions"]["US"]["engines"][0]["name"] == "Central Bank Compass"
     assert world["regions"]["JP"]["gaps"]
-    assert world["regions"]["SG"]["availability"] == world["regions"]["SG"]["coverage"]["availability"]
+    assert world["regions"]["EURO_AREA"]["availability"] == world["regions"]["EURO_AREA"]["coverage"]["availability"]
+    assert "SG" not in world["regions"]   # Singapore removed 2026-11-22 (global audience)
     assert world["regions"]["KR"]["components"][0]["state"] == "NOT AVAILABLE"
 
 
@@ -81,10 +82,10 @@ def test_freshness_and_period_mismatch_lower_inference_quality():
 
 
 def test_cli_json_for_single_region(capsys):
-    assert run_macro_world_cli(["SG", "--json"]) == 0
+    assert run_macro_world_cli(["EURO_AREA", "--json"]) == 0
     output = json.loads(capsys.readouterr().out)
-    assert set(output["regions"]) == {"SG"}
-    assert output["regions"]["SG"]["framework"].startswith("Singapore Dollar")
+    assert set(output["regions"]) == {"EURO_AREA"}
+    assert output["regions"]["EURO_AREA"]["framework"].startswith("ECB")
     assert output["transmissions"] == []
 
 
@@ -135,8 +136,8 @@ def test_gaps_are_deduplicated_and_not_modelled_topics_are_separate():
 
 def test_oldest_date_is_reported_when_a_newer_proxy_is_merged():
     region = _compass_region()
-    region["id"] = "SG"
-    region["engine_specific"]["shadow_neer_live"] = {"as_of": "2026-11-05", "current": {"index": 1.0}}
+    region["engine_specific"]["kospi"] = {"current_sweep": True, "sweep_timestamp": "2026-11-05 09:23 UTC", "has_fx_factor": True,
+                                          "has_volatility": True, "export_snapshot": None}
     coverage = region_coverage(region)
     assert (coverage["as_of"], coverage["newest"]) == ("2026-07-17", "2026-11-05")
     fx = next(area for area in coverage["areas"] if area["id"] == "fx")

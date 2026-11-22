@@ -146,8 +146,6 @@ def subprocess_json(command: list[str], cwd: Path, timeout: int = 120) -> Any:
     return json.loads(output[min(starts):])
 
 
-def build_neer() -> dict[str, Any]:
-    return subprocess_json([ENGINE_PYTHON, "-B", "SGD.py", "--json"], ROOT / "NEER")
 
 
 def build_kospi() -> dict[str, Any]:
@@ -292,7 +290,6 @@ def build_market_transmission(
     risk = core.get("risk") or {}
     us = world["regions"]["US"]
     jp = world["regions"]["JP"]
-    sg = world["regions"]["SG"]
     euro = world["regions"]["EURO_AREA"]
     compass = us.get("engine_specific", {}).get("central_bank_compass", {})
     indicators = compass.get("indicator_values", {})
@@ -349,7 +346,6 @@ def build_market_transmission(
     regional_fx = [
         ("usd_jpy_yoy", "USD/JPY", jp, "usd_jpy_change_yoy"),
         ("eur_usd_yoy", "EUR/USD", euro, "currency_change_yoy"),
-        ("usd_sgd_yoy", "USD/SGD", sg, "usd_sgd_change_yoy"),
     ]
     fx_moves = []
     for key, label, region, indicator_key in regional_fx:
@@ -431,7 +427,7 @@ def build_market_transmission(
             "moves": fx_moves,
             "history": [],
             "missing_fields": fx_missing,
-            "last_valid_as_of": max(filter(None, (jp.get("as_of"), sg.get("as_of"), euro.get("as_of")))),
+            "last_valid_as_of": max(filter(None, (jp.get("as_of"), euro.get("as_of")))),
             "source_state": source_state,
         },
         "liquidity": {
@@ -459,7 +455,7 @@ def build_market_transmission(
 
 def dashboard_from(world: dict[str, Any], inflation: dict[str, Any] | None, core: dict[str, Any] | None, states: dict[str, str], companies: list[dict[str, Any]]) -> dict[str, Any]:
     regions = world["regions"]
-    us, jp, kr, sg, euro = (regions[key] for key in ("US", "JP", "KR", "SG", "EURO_AREA"))
+    us, jp, kr, euro = (regions[key] for key in ("US", "JP", "KR", "EURO_AREA"))
     core_macro = (core or {}).get("macro") or {}
     risk = (core or {}).get("risk") or {}
     sectors = (core or {}).get("sectors") or []
@@ -480,7 +476,7 @@ def dashboard_from(world: dict[str, Any], inflation: dict[str, Any] | None, core
     ]
 
     changed = []
-    for label, profile, pattern in (("USD/JPY", jp, "USD/JPY YoY"), ("EUR/USD", euro, "EUR/USD YoY"), ("USD/SGD", sg, "USD/SGD YoY"), ("US credit", us, "Credit Spread Change")):
+    for label, profile, pattern in (("USD/JPY", jp, "USD/JPY YoY"), ("EUR/USD", euro, "EUR/USD YoY"), ("US credit", us, "Credit Spread Change")):
         evidence = first_evidence(profile, pattern)
         if evidence:
             changed.append({"label": label, "value": evidence["value"], "period": evidence["period"], "interpretation": evidence["classification"], "href": f"/macro/world?region={profile['id']}&detail=currency"})
@@ -494,7 +490,7 @@ def dashboard_from(world: dict[str, Any], inflation: dict[str, Any] | None, core
                 changed.insert(0, {"label": label, "value": formatted, "period": "3-month change", "interpretation": "Observed market change", "href": href})
 
     priorities = []
-    for profile in (us, jp, euro, sg, kr):
+    for profile in (us, jp, euro, kr):
         for watch in profile.get("watch_conditions", []):
             if watch["state"] in {"WATCH", "TRIGGERED"}:
                 priorities.append({"rank": len(priorities) + 1, "module": profile["name"], **watch, "href": f"/macro/world?region={profile['id']}"})
@@ -522,12 +518,11 @@ def dashboard_from(world: dict[str, Any], inflation: dict[str, Any] | None, core
         {"module": "Macro World / Compass", "state": world["data_state"], "as_of": max(filter(None, (item.get("as_of") for item in regions.values())))},
         {"module": "US Inflation", "state": states["inflation"], "as_of": inflation.get("latest_source") if inflation else None},
         {"module": "Market / Risk / Rotation", "state": states["core_market"], "as_of": max((row.get("as_of") or "" for row in sectors), default=None), "context": "Latest sector observation date; not the response-generation time or a date for every macro input."},
-        {"module": "Singapore NEER", "state": states["neer"], "as_of": None},
         {"module": "Korea KOSPI", "state": states["kospi"], "as_of": kr.get("as_of")},
         {"module": "Company Economics", "state": "CACHED" if companies else "NOT_ANALYZED", "as_of": max((item.get("last_analyzed") or "" for item in companies), default=None)},
     ]
     watches = inflation_watch_conditions(inflation)
-    for profile in (jp, sg, euro, kr):
+    for profile in (jp, euro, kr):
         for watch in profile.get("watch_conditions", [])[:2]:
             watches.append({"module": profile["name"], **watch, "href": f"/macro/world?region={profile['id']}"})
     return {
@@ -575,19 +570,10 @@ def kospi_edge_summary(kospi: dict[str, Any]) -> str:
     return "; ".join(parts) + "."
 
 
-def neer_edge_summary(neer: dict[str, Any]) -> str:
-    current = neer.get("current") or {}
-    deviation = current.get("deviation_pct")
-    return (f"Shadow S$NEER {neer.get('as_of') or 'date unavailable'}: {current.get('band_state') or 'band state unavailable'}"
-            f"{'' if deviation is None else f', {deviation:+.2f}% from the estimated centre'}. The official MAS basket and band are undisclosed; "
-            "the safe-haven test failed (data/neer_safe_haven.json), so this edge is not used for global risk.")
-
-
 def build_research_system(refresh: bool = False) -> dict[str, Any]:
     world = build_world()
     inflation_result = isolated("inflation", build_inflation, refresh=refresh)
     core_result = isolated("core-market", build_core_market, refresh=refresh)
-    neer_result = isolated("neer", build_neer, refresh=refresh)
     kospi_result = isolated("kospi", build_kospi, refresh=refresh)
     if core_result["state"] != "STALE" and core_result["payload"] and core_result["payload"].get("data_quality", {}).get("state") != "AVAILABLE":
         core_result["state"] = "INSUFFICIENT"
@@ -595,36 +581,8 @@ def build_research_system(refresh: bool = False) -> dict[str, Any]:
     states = {
         "inflation": inflation_result["state"],
         "core_market": core_result["state"],
-        "neer": neer_result["state"],
         "kospi": kospi_result["state"],
     }
-    if neer_result["payload"]:
-        sg = world["regions"]["SG"]
-        neer = neer_result["payload"]
-        sg["engine_specific"]["shadow_neer_live"] = neer
-        sg["as_of"] = neer.get("as_of") or sg.get("as_of")
-        sg["gaps"] = [gap for gap in sg["gaps"] if "current shadow-neer" not in gap.lower()]
-        currency = next((item for item in sg["components"] if item["id"] == "currency"), None)
-        if currency:
-            currency.update({
-                "state": neer.get("current", {}).get("band_state", currency["state"]),
-                "summary": f"The observable 12-cross shadow proxy is {neer.get('current', {}).get('deviation_pct', 0):+.2f}% from its estimated centre. The official MAS band remains undisclosed.",
-                "confidence": "MODERATE",
-                "gaps": ["Official MAS basket, weights, centre, slope, and band position are unavailable."],
-            })
-            currency.setdefault("evidence_ids", []).append("sg-neer-current")
-        current_neer = neer.get("current", {})
-        world["evidence_index"]["sg-neer-current"] = {
-            "id": "sg-neer-current", "label": "Current shadow S$NEER proxy",
-            "value": f"{current_neer.get('index', 0):.2f}; {current_neer.get('deviation_pct', 0):+.2f}% vs estimated centre",
-            "classification": current_neer.get("band_state", "UNAVAILABLE"), "evidence_type": "PROXY",
-            "source": neer.get("source", "Shadow S$NEER Proxy"), "source_path": "NEER/SGD.py",
-            "period": neer.get("as_of"), "freshness": "CURRENT", "note": "Current cached proxy observation; official MAS basket and band remain undisclosed.",
-        }
-        for engine in sg["engines"]:
-            if "NEER" in engine["name"]:
-                engine["status"] = "AVAILABLE"
-        sg["watch_conditions"].extend({**watch, "module": "Shadow S$NEER"} for watch in neer.get("watch_conditions", []))
     if kospi_result["payload"]:
         kr = world["regions"]["KR"]
         kospi = kospi_result["payload"]
@@ -677,12 +635,6 @@ def build_research_system(refresh: bool = False) -> dict[str, Any]:
                 "summary": kospi_edge_summary(kospi_result["payload"]),
                 "evidence_ids": list(dict.fromkeys(edge.get("evidence_ids", []) + ["kr-kospi-sweep", "kr-kospi-volatility"])),
             })
-        if edge.get("id") == "us-sg-dollar-neer" and neer_result["payload"]:
-            edge.update({
-                "current_state": "WATCH", "confidence": "MODERATE",
-                "summary": neer_edge_summary(neer_result["payload"]),
-                "evidence_ids": list(dict.fromkeys(edge.get("evidence_ids", []) + ["sg-neer-current"])),
-            })
     cftc_result = isolated("cftc", fetch_cftc_jpy, refresh=refresh)
     boj_result = isolated("boj", fetch_boj_schedule, refresh=refresh)   # checklist 10.6: BOJ meeting calendar
     from korea_chip_exports import fetch_korea_chip_exports
@@ -705,10 +657,10 @@ def build_research_system(refresh: bool = False) -> dict[str, Any]:
         "generated_at": datetime.now().astimezone().isoformat(timespec="seconds"),
         "mode": "LIVE_REFRESH" if refresh else "CACHE_FIRST",
         "engine_states": states,
-        "engine_errors": {"inflation": inflation_result["error"], "core_market": core_result["error"], "neer": neer_result["error"], "kospi": kospi_result["error"]},
+        "engine_errors": {"inflation": inflation_result["error"], "core_market": core_result["error"], "kospi": kospi_result["error"]},
         "history": {
             "inflation": inflation_result.get("history"), "core_market": core_result.get("history"),
-            "neer": neer_result.get("history"), "kospi": kospi_result.get("history"), "world": world_history,
+            "kospi": kospi_result.get("history"), "world": world_history,
         },
         "dashboard": with_two_liquidity_scores(dashboard_from(world, inflation_result["payload"], core_result["payload"], states, companies), environment),
         "world": world,
@@ -718,7 +670,6 @@ def build_research_system(refresh: bool = False) -> dict[str, Any]:
         "modules": {
             "inflation": inflation_result,
             "core_market": core_result,
-            "neer": neer_result,
             "kospi": kospi_result,
             "companies": {"state": "CACHED" if companies else "NOT_ANALYZED", "payload": companies, "error": None},
         },
@@ -731,7 +682,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Build the complete CHAINSTOX research context.")
     parser.add_argument("command", choices=["full", "dashboard", "inventory"], nargs="?", default="full")
     parser.add_argument("--json", action="store_true")
-    parser.add_argument("--live", action="store_true", help="Refresh live-capable market, NEER, and KOSPI engines.")
+    parser.add_argument("--live", action="store_true", help="Refresh live-capable market and KOSPI engines.")
     parser.add_argument("--write-frontend-fixture", type=Path)
     args = parser.parse_args(argv)
     if args.command == "inventory":

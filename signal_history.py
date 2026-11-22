@@ -269,15 +269,6 @@ def observations_from_inflation(payload: dict[str, Any], source_state: str) -> l
     return [item for item in output if item]
 
 
-def observations_from_neer(payload: dict[str, Any], source_state: str) -> list[Observation]:
-    current = payload.get("current") or {}
-    day, source = payload.get("as_of"), "Shadow S$NEER proxy"
-    output = [observation(f"neer.{key}", day, current.get(key), source=source, source_state=source_state)
-              for key in ("index", "estimated_center", "deviation_pct", "volatility_21d_ann_pct", "usd_per_sgd")]
-    output.append(observation("neer.band_state", day, label=current.get("band_state"), source=source, source_state=source_state))
-    return [item for item in output if item]
-
-
 def observations_from_kospi(payload: dict[str, Any], source_state: str) -> list[Observation]:
     sweep = payload.get("sweep") or {}
     day, source = sweep.get("timestamp"), "KOSPI Multi-Factor Signal Monitor"
@@ -335,7 +326,6 @@ EXTRACTORS: dict[str, Callable[[dict[str, Any], str], list[Observation]]] = {
     "cftc": observations_from_cftc,
     "core-market": observations_from_core_market,
     "inflation": observations_from_inflation,
-    "neer": observations_from_neer,
     "kospi": observations_from_kospi,
     "world": observations_from_world,
 }

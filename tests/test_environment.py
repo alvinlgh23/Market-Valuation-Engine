@@ -92,7 +92,7 @@ def test_semis_cycle_reads_kospi_history_and_flags_missing_monthly_exports():
     assert env.semis_cycle(None)["state"] == "Unavailable"
 
 
-def test_empty_inputs_never_raise_and_neer_is_excluded(tmp_path):
+def test_empty_inputs_never_raise(tmp_path):
     result = env.build_environment(None, {"regions": {}}, None, None, store=SignalStore(tmp_path))
     assert set(result["factors"]) >= {"long_rates", "usd", "credit", "volatility", "fed_path", "liquidity", "yen_carry", "semis_cycle", "oil", "inflation", "growth"}
-    assert "neer" in result["excluded"]
+    assert "neer" not in result.get("excluded", {})   # Singapore removed 2026-11-22

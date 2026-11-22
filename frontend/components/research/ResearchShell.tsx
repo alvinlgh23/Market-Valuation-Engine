@@ -11,7 +11,7 @@ import { ChainstoxBrand } from "./ChainstoxBrand";
 export type ResearchDataState = "LIVE" | "CACHED" | "DEMO" | "FIXTURE" | "STALE" | "PARTIAL" | "UNKNOWN" | "INSUFFICIENT" | "INSUFFICIENT_EVIDENCE" | "AVAILABLE" | "FRAMEWORK_REQUIRED" | "NOT_ANALYZED" | "ANALYZING" | "UNSUPPORTED" | "FAILED" | "INSUFFICIENT_DATA";
 
 // Checklist 8.2: three questions instead of one tab per engine. Valuation is reached from each
-// company; Labs and the demo route stay reachable by URL but are not in the top bar.
+// company; Labs stays reachable by URL but is not in the top bar. /demo and /brief were deleted (checklist 10.10).
 const PRIMARY = [
   ["dashboard", "Today", "/"],
   ["companies", "Watchlist", "/companies"],
@@ -21,9 +21,9 @@ const TOP_LEVEL: Record<string, string> = { dashboard: "dashboard", overview: "d
 
 const CONTEXT: Record<string, readonly (readonly [string, string])[]> = {
   macro: [["Overview", "/macro"], ["World Map", "/macro/world"], ["Central Banks", "/macro/central-banks"], ["Inflation", "/macro/inflation"], ["Rates", "/macro/rates"], ["Liquidity", "/macro/liquidity"], ["FX", "/macro/fx"], ["Risk Regime", "/macro/risk"]],
-  markets: [["Sector rotation", "/markets"], ["Macro overview", "/macro"], ["World map", "/macro/world"], ["Central banks", "/macro/central-banks"], ["Inflation", "/macro/inflation"], ["Rates", "/macro/rates"], ["Liquidity", "/macro/liquidity"], ["FX", "/macro/fx"], ["Risk regime", "/macro/risk"], ["Defensive rotation", "/markets/defensive-rotation"]],
+  markets: [["Sector rotation", "/markets"], ["Macro overview", "/macro"], ["World map", "/macro/world"], ["Central banks", "/macro/central-banks"], ["Inflation", "/macro/inflation"], ["Rates", "/macro/rates"], ["Liquidity", "/macro/liquidity"], ["FX", "/macro/fx"], ["Risk regime", "/macro/risk"]],
   valuation: [["Overview", "/valuation"], ["Assumptions", "/valuation/MSFT?view=assumptions"], ["DCF", "/valuation/MSFT?view=dcf"], ["Reverse DCF", "/valuation/MSFT?view=reverse-dcf"], ["Sensitivity", "/valuation/MSFT?view=sensitivity"], ["Validation", "/valuation/MSFT?view=validation"]],
-  labs: [["Fragility", "/labs/fragility"], ["Historical", "/labs/historical"]]
+  labs: [["Historical", "/labs/historical"]]
 };
 
 const STATE_HELP: Record<string, string> = {
@@ -76,7 +76,7 @@ export function ResearchShell({
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [recentCompanies, setRecentCompanies] = useState<RecentCompanyResearch[]>([]);
-  const routeDemoMode = demoMode || searchParams.get("demo") === "1" || pathname === "/demo";
+  const routeDemoMode = demoMode;
   const shellState = routeDemoMode ? "DEMO" : dataState;
   const topActive = TOP_LEVEL[active] ?? active;
   const contextual = ticker && active === "valuation" ? valuationContext(ticker) : ticker ? companyContext(ticker) : CONTEXT[active === "valuation" ? "valuation" : topActive] ?? [];
@@ -84,7 +84,7 @@ export function ResearchShell({
     const q = query.trim().toLowerCase();
     const index = [
       ["MODULE", "Dashboard", "/"], ["MODULE", "Macro", "/macro"], ["MODULE", "Inflation", "/macro/inflation"], ["MODULE", "Rates", "/macro/rates"], ["MODULE", "Risk Regime", "/macro/risk"], ["MODULE", "Liquidity", "/macro/liquidity"], ["MODULE", "Valuation", "/valuation"], ["MODULE", "Full Market Brief", "/brief"],
-      ["REGION", "Japan", "/macro/world?region=JP"], ["REGION", "Singapore", "/macro/world?region=SG"], ["REGION", "South Korea", "/macro/world?region=KR"], ["REGION", "United States", "/macro/world?region=US"], ["REGION", "Euro Area", "/macro/world?region=EURO_AREA"],
+      ["REGION", "Japan", "/macro/world?region=JP"], ["REGION", "South Korea", "/macro/world?region=KR"], ["REGION", "United States", "/macro/world?region=US"], ["REGION", "Euro Area", "/macro/world?region=EURO_AREA"],
       ...sectors.map((sector) => ["SECTOR", sector.name, `/markets?sector=${sector.slug}`] as const),
       ["PRIORITY", "Japan growth pressure", "/macro/world?region=JP"], ["PRIORITY", "Semiconductor breadth", "/markets?sector=semiconductors&view=breadth"], ["PRIORITY", "Risk coverage", "/macro/risk"]
     ] as const;
@@ -126,16 +126,6 @@ export function ResearchShell({
         <button className="quiet-search-trigger" type="button" onClick={() => setSearchOpen(true)} aria-label="Open global search"><span>Global search</span><kbd>⌘K</kbd></button>
         <div className={`data-state data-state-${shellState.toLowerCase().replaceAll("_", "-")}`} title={STATE_HELP[shellState] ?? "Current research data state"}><i />{shellState === "DEMO" || shellState === "FIXTURE" ? displayStatus(shellState) : statusWord(shellState) ?? displayStatus(shellState)}</div>
       </header>
-      {routeDemoMode ? <section className="demo-guide-strip" aria-label="Competition demo guide">
-        <div><span>DETERMINISTIC DEMO</span><strong>Global mechanism {"->"} industry mechanism {"->"} company mechanism {"->"} price expectation {"->"} evidence</strong></div>
-        <nav aria-label="Demo journey">
-          <Link href="/?demo=1">Dashboard</Link>
-          <Link href="/macro/world?mode=transmission&edge=jp-us-yen-carry&demo=1">Japan {"->"} US</Link>
-          <Link href="/markets?sector=semiconductors&view=structure&demo=1">Semiconductors</Link>
-          <Link href="/company/PLTR?fixture=1&view=economics&demo=1">PLTR Economics</Link>
-          <Link href="/valuation/PLTR?view=reverse-dcf&from=demo&demo=1">Price Expectations</Link>
-        </nav>
-      </section> : null}
       <div className={`research-app-body${contextual.length ? " has-context-nav" : ""}`}>
         {contextual.length ? <aside className="context-research-nav"><div><span>{ticker ? `${ticker} / ${topActive === "valuation" ? "VALUATION" : "COMPANY"}` : `${topActive.toUpperCase()} / RESEARCH`}</span><strong>{ticker ? topActive === "valuation" ? "Valuation object" : "Company workspace" : "Investigation"}</strong></div><nav aria-label={`${topActive} research views`}>{contextual.map(([label, href]) => { const hrefUrl = href.split("?"); const queryView = new URLSearchParams(hrefUrl[1] ?? "").get("view"); const selected = queryView ? pathname === hrefUrl[0] && searchParams.get("view") === queryView : currentUrl === href || (href === pathname && !searchParams.get("view")); return <Link className={selected ? "active" : ""} href={href} key={label}>{label}<span>→</span></Link>; })}</nav></aside> : null}
         <main className="research-app-main">{children}</main>

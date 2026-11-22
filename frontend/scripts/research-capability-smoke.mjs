@@ -33,15 +33,6 @@ try {
   await page.getByRole("heading", { name: "World Macro Map" }).waitFor();
   await shot(page, "02-macro-world-map.png", true);
 
-  await page.goto(`${baseUrl}/macro/world?mode=regions&region=SG&detail=currency`, { waitUntil: "networkidle" });
-  await page.getByRole("complementary", { name: "Singapore macro profile" }).waitFor();
-  await shot(page, "03-singapore-brief.png", true);
-  const neer = page.locator("details").filter({ hasText: "SHADOW S$NEER" });
-  await neer.locator("summary").click();
-  await neer.locator(".time-series-chart").waitFor();
-  if ((await neer.locator(".diverging-chart button").count()) !== 12) throw new Error("NEER does not show all 12 FX components");
-  await shot(page, "04-singapore-neer-fx-workspace.png", true);
-
   await page.goto(`${baseUrl}/macro/world?mode=regions&region=JP&detail=policy`, { waitUntil: "networkidle" });
   await page.getByRole("complementary", { name: "Japan macro profile" }).waitFor();
   await shot(page, "05-japan-brief.png", true);
@@ -94,4 +85,4 @@ try {
 }
 
 if (errors.length) throw new Error(errors.join("\n"));
-console.log("Integrated research capability checks passed; 11 requested screenshots captured.");
+console.log("Integrated research capability checks passed; 9 requested screenshots captured.");

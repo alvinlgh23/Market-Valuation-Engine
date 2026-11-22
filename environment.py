@@ -485,5 +485,4 @@ def build_environment(core: dict[str, Any] | None, world: dict[str, Any], inflat
         "risk_regime": {"regime": risk.get("published_regime") or risk.get("regime"), "confidence": risk.get("confidence"), "coverage": risk.get("coverage")},
         "tail_risk": {"yen_carry_unwind": factors["yen_carry"]["readings"].get("carry_state") == "UNWIND_RISK"},
         "contradictions": contradictions,
-        "excluded": {"neer": "S$NEER failed the safe-haven test (data/neer_safe_haven.json) and is not an environment input."},
     }

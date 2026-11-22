@@ -36,27 +36,16 @@ try {
   await page.screenshot({ path: path.join(artifacts, "01-macro-overview.png"), fullPage: true });
   await page.locator(".macro-market-transmission").screenshot({ path: path.join(artifacts, "02-market-transmission.png") });
 
-  const singaporeMarker = page.getByRole("button", { name: "Open Singapore macro profile" });
-  await singaporeMarker.hover();
-  await page.getByText("SINGAPORE", { exact: true }).waitFor();
+  const japanMarker = page.getByRole("button", { name: "Open Japan macro profile" });   // Singapore removed 2026-11-22
+  await japanMarker.hover();
+  await page.getByText("JAPAN", { exact: true }).waitFor();
   await page.getByRole("button", { name: "Brazil not available" }).hover();
   await page.getByText("No verified CHAINSTOX macro engine currently covers this economy.").waitFor();
 
   await open(page, "/macro/world");
   await page.getByRole("heading", { name: "World Macro Map" }).waitFor();
-  if ((await page.locator(".macro-region-index > button").count()) !== 5) throw new Error("World map fallback must list five supported economies");
+  if ((await page.locator(".macro-region-index > button").count()) !== 4) throw new Error("World map must list four supported economies (Singapore removed 2026-11-22)");
   await page.screenshot({ path: path.join(artifacts, "03-world-map.png"), fullPage: true });
-
-  await open(page, "/macro/world?region=SG");
-  await page.getByRole("complementary", { name: "Singapore macro profile" }).waitFor();
-  await page.getByRole("button", { name: "Open NEER" }).waitFor();
-  await page.getByRole("button", { name: "Open Transmission" }).waitFor();
-  await page.screenshot({ path: path.join(artifacts, "04-singapore-selected.png"), fullPage: true });
-  await page.locator("#neer-workspace > summary").click();
-  await page.locator("#neer-workspace .time-series-chart").waitFor();
-  if ((await page.locator("#neer-workspace .neer-component-table > button").count()) !== 12) throw new Error("NEER workspace must expose twelve currency components");
-  await page.screenshot({ path: path.join(artifacts, "05-neer-workspace.png"), fullPage: true });
-  await page.locator("#neer-workspace .macro-engine-visual").nth(1).screenshot({ path: path.join(artifacts, "06-neer-fx-contribution.png") });
 
   await open(page, "/macro/world?region=JP");
   await page.getByRole("complementary", { name: "Japan macro profile" }).waitFor();
@@ -110,4 +99,4 @@ try {
 }
 
 if (errors.length) throw new Error(errors.join("\n"));
-console.log("Macro correction checks passed; 11 requested screenshots captured.");
+console.log("Macro correction checks passed; 8 requested screenshots captured.");
