@@ -48,9 +48,11 @@ class TestMacroExperience:
 
     def test_country_briefs_have_distinct_coverage(self):
         regions = self.system["world"]["regions"]
-        assert regions["US"]["availability"] == "AVAILABLE"
-        for region_id in ("JP", "KR", "SG", "EURO_AREA"):
-            assert regions[region_id]["availability"] == "PARTIAL"
+        # Availability is calculated from indicator coverage (2026-11-22); every region misses something.
+        for region_id in ("US", "JP", "KR", "SG", "EURO_AREA"):
+            coverage = regions[region_id]["coverage"]
+            assert regions[region_id]["availability"] == coverage["availability"] == "PARTIAL"
+            assert 0 < coverage["available"] < coverage["expected"]
         assert regions["US"]["confidence"] != regions["SG"]["confidence"]
 
     def test_neer_cache_maps_history_and_all_components(self):

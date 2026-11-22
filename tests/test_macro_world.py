@@ -51,7 +51,7 @@ def test_cached_compass_adapter_preserves_evidence_and_gaps():
     world = build_world()
     assert world["regions"]["US"]["engines"][0]["name"] == "Central Bank Compass"
     assert world["regions"]["JP"]["gaps"]
-    assert world["regions"]["SG"]["availability"] == "PARTIAL"
+    assert world["regions"]["SG"]["availability"] == world["regions"]["SG"]["coverage"]["availability"]
     assert world["regions"]["KR"]["components"][0]["state"] == "NOT AVAILABLE"
 
 
@@ -86,3 +86,64 @@ def test_cli_json_for_single_region(capsys):
     assert set(output["regions"]) == {"SG"}
     assert output["regions"]["SG"]["framework"].startswith("Singapore Dollar")
     assert output["transmissions"] == []
+
+
+# --- Coverage is calculated, not typed in (2026-11-22) ---------------------------------------
+from macro_world import apply_coverage, region_coverage  # noqa: E402
+
+
+def _compass_region(region_id="JP", missing_value=True, latest="2026-07-17"):
+    evidence = [{"name": "CPI", "value": 2.0}, {"name": "Trend", "value": None if missing_value else 1.0}]
+    return {
+        "id": region_id, "available": True, "gaps": ["Wage growth", "wage growth"],
+        "engine_specific": {"central_bank_compass": {
+            "available": True, "latest": latest, "signal": "HOLD", "placeholders": ["inflation expectations"],
+            "blocks": {"inflation": {"evidence": evidence}},
+            "missing_indicators": [{"block": "inflation", "indicator": "inflation expectations"}],
+            "liquidity": {"drivers": [{"name": "Policy", "value": 1.0}]},
+        }},
+    }
+
+
+def test_coverage_counts_configured_indicators_and_placeholders():
+    coverage = region_coverage(_compass_region(), today=date(2026, 11, 22))
+    inflation = next(area for area in coverage["areas"] if area["id"] == "inflation")
+    assert (inflation["available"], inflation["expected"], inflation["state"]) == (1, 3, "PARTIAL")
+    assert inflation["missing"] == ["Trend", "inflation expectations"]
+    labor = next(area for area in coverage["areas"] if area["id"] == "labor")
+    assert labor["state"] == "NOT_COVERED"
+    assert coverage["availability"] == "PARTIAL"
+    assert coverage["freshness"] == "STALE"          # 2026-07-17 is 128 days old
+    assert coverage["as_of"] == "2026-07-17"
+
+
+def test_availability_is_available_only_when_every_area_is_full():
+    region = _compass_region(missing_value=False)
+    region["engine_specific"]["central_bank_compass"]["placeholders"] = []
+    coverage = region_coverage(region)
+    assert coverage["availability"] == "PARTIAL"     # labour, growth, markets, FX have no indicators
+    empty = {"id": "XX", "available": True, "engine_specific": {}}
+    assert region_coverage(empty)["availability"] == "NOT_AVAILABLE"
+
+
+def test_gaps_are_deduplicated_and_not_modelled_topics_are_separate():
+    region = apply_coverage(_compass_region())
+    assert [gap.lower() for gap in region["gaps"]].count("wage growth") == 1
+    assert "BOJ balance-sheet trend" in region["coverage"]["not_modelled"]
+    assert "BOJ balance-sheet trend" not in region["gaps"]
+
+
+def test_oldest_date_is_reported_when_a_newer_proxy_is_merged():
+    region = _compass_region()
+    region["id"] = "SG"
+    region["engine_specific"]["shadow_neer_live"] = {"as_of": "2026-11-05", "current": {"index": 1.0}}
+    coverage = region_coverage(region)
+    assert (coverage["as_of"], coverage["newest"]) == ("2026-07-17", "2026-11-05")
+    fx = next(area for area in coverage["areas"] if area["id"] == "fx")
+    assert fx["state"] == "FULL"
+
+
+def test_korea_without_a_sweep_counts_it_missing():
+    region = {"id": "KR", "available": True, "engine_specific": {"kospi": {"current_sweep": False, "export_snapshot": None}}}
+    markets = next(area for area in region_coverage(region)["areas"] if area["id"] == "markets")
+    assert markets["available"] == 0 and markets["state"] == "MISSING"

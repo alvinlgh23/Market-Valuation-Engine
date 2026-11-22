@@ -9,6 +9,7 @@ import type { LiquidityScore, MacroCoverageState, MacroLiquidityDriver, MacroTyp
 import type { QuantitativeDatum } from "../../lib/visualization-types";
 import { DivergingBarChart, YieldCurveChart } from "../charts/AnalyticalCharts";
 import { MacroWorldMap } from "./MacroWorldMap";
+import { CoverageBar } from "./CoverageBar";
 
 function Status({ value }: { value: string }) { return <StatusBadge value={value} variant="macro" />; }
 function SectionHeader({ code, title, note, href, action }: { code: string; title: string; note: string; href?: string; action?: string }) {
@@ -63,7 +64,7 @@ export function MacroOverviewSurface({ system }: { system: ResearchSystem }) {
 
     <section className="macro-overview-section macro-overview-world">
       <SectionHeader code="REGIONAL MACRO MAP" title="World research coverage" note="" href="/macro/world" action="Open full world workspace →" />
-      <div className="macro-overview-map-wrap"><MacroWorldMap regions={system.world.regions} onSelect={(id) => router.push(`/macro/world?region=${id}`)} onUnavailable={(label) => setUnavailable(label)} onHover={(id) => { setHoveredRegion(id); setUnavailable(""); }} onHoverUnavailable={(label) => { setUnavailable(label); setHoveredRegion(""); }} onLeave={() => { setHoveredRegion(""); setUnavailable(""); }} />{hover ? <aside className="macro-map-tooltip" aria-live="polite"><header><strong>{hover.name.toUpperCase()}</strong><Status value={hover.availability} /></header><span>Research coverage</span>{hover.components.slice(0, 5).map((component) => <div key={component.id}><b>{component.label}</b><small>{component.confidence}</small></div>)}<p>{hover.brief}</p><Link href={`/macro/world?region=${hover.id}`}>Open {hover.name} →</Link></aside> : null}{unavailable ? <aside className="macro-map-tooltip unavailable"><header><strong>{unavailable.toUpperCase()}</strong><Status value="NOT AVAILABLE" /></header><p>No verified CHAINSTOX macro engine currently covers this economy.</p><button type="button" onClick={() => setUnavailable("")}>Dismiss</button></aside> : null}</div>
+      <div className="macro-overview-map-wrap"><MacroWorldMap regions={system.world.regions} onSelect={(id) => router.push(`/macro/world?region=${id}`)} onUnavailable={(label) => setUnavailable(label)} onHover={(id) => { setHoveredRegion(id); setUnavailable(""); }} onHoverUnavailable={(label) => { setUnavailable(label); setHoveredRegion(""); }} onLeave={() => { setHoveredRegion(""); setUnavailable(""); }} />{hover ? <aside className="macro-map-tooltip" aria-live="polite"><header><strong>{hover.name.toUpperCase()}</strong><CoverageBar coverage={hover.coverage} /></header><span>Research coverage</span>{hover.components.slice(0, 5).map((component) => <div key={component.id}><b>{component.label}</b><small>{component.confidence}</small></div>)}<p>{hover.brief}</p><Link href={`/macro/world?region=${hover.id}`}>Open {hover.name} →</Link></aside> : null}{unavailable ? <aside className="macro-map-tooltip unavailable"><header><strong>{unavailable.toUpperCase()}</strong><Status value="NOT AVAILABLE" /></header><p>No verified CHAINSTOX macro engine currently covers this economy.</p><button type="button" onClick={() => setUnavailable("")}>Dismiss</button></aside> : null}</div>
     </section>
 
     <section className="macro-overview-section macro-channel-overview">

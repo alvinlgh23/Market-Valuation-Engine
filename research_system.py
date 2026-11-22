@@ -14,7 +14,7 @@ import sys
 import math
 from typing import Any, Callable
 
-from macro_world import build_world
+from macro_world import apply_coverage, build_world
 from research_capabilities import capability_payload
 from signal_history import record_module
 from environment import CARRY_EDGE_STATE, build_environment, fetch_cftc_jpy
@@ -668,6 +668,8 @@ def build_research_system(refresh: bool = False) -> dict[str, Any]:
         kr["watch_conditions"].append({"label": "KOSPI volatility regime", "threshold": "GARCH regime remains High with clustering", "current": f"{volatility.get('current_vol', 0):.2f}% / {volatility.get('regime', 'Unavailable')}", "state": "WATCH" if volatility.get("regime") == "High" else "CLEAR"})
     if inflation_result["payload"]:
         world["regions"]["US"]["engine_specific"]["us_inflation"] = inflation_result["payload"]
+    for region in world["regions"].values():   # coverage follows the merged engine outputs
+        apply_coverage(region)
     for edge in world.get("transmissions", []):
         if edge.get("id") == "us-kr-dollar-kospi" and kospi_result["payload"]:
             edge.update({
