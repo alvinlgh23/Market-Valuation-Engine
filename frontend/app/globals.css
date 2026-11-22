@@ -3397,3 +3397,58 @@ body {
 .company-recent > span { margin-right: 6px; color: var(--research-muted); }
 .company-recent a { padding: 3px 10px; border: 1px solid var(--research-line); color: var(--research-text); text-decoration: none; }
 .company-recent a:hover { border-color: var(--research-accent); color: var(--research-accent); }
+
+/* Today page (checklist 9.7): regime line, watchlist changes, glyphs instead of paragraphs. */
+.today-regime { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 16px; margin: 8px 0 20px; padding-bottom: 16px; border-bottom: 1px solid var(--research-line); font-family: var(--font-research); }
+.today-regime span { color: var(--research-muted); font-size: var(--fs-1); text-transform: uppercase; letter-spacing: .06em; }
+.today-regime h1 { margin: 0; color: var(--research-accent); font-size: var(--fs-5); font-weight: 560; }
+.today-regime p { flex: 1 1 320px; margin: 0; color: var(--research-muted); font-size: var(--fs-2); }
+.today-regime a { color: var(--research-text); font-size: var(--fs-2); }
+.today-watchlist { --tone: var(--research-faint); margin-bottom: 20px; font-family: var(--font-research); }
+.today-watchlist header { display: flex; justify-content: space-between; margin-bottom: 8px; color: var(--research-muted); font-size: var(--fs-1); text-transform: uppercase; letter-spacing: .06em; }
+.today-watchlist header a { color: var(--research-text); text-transform: none; letter-spacing: 0; }
+.today-watchlist > div { display: flex; flex-wrap: wrap; gap: 8px; }
+.today-watchlist p { margin: 0; color: var(--research-muted); font-size: var(--fs-2); }
+.today-change { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border: 1px solid var(--research-line); border-left: 3px solid var(--tone); color: var(--research-text); font-size: var(--fs-2); text-decoration: none; }
+.today-change.tone-supportive { --tone: var(--research-positive); }
+.today-change.tone-against { --tone: var(--research-negative); }
+.today-change.tone-mixed { --tone: var(--research-caution); }
+.today-change span { color: var(--research-muted); }
+.today-change em { font-style: normal; color: var(--tone); }
+.ranked-command-list a.today-move { display: grid; grid-template-columns: 84px 16px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 10px 0; }
+.ranked-command-list a.today-move strong { text-align: left; }
+.today-move span { color: var(--research-muted); font-size: var(--fs-1); }
+.today-move em { font-style: normal; color: var(--research-faint); }
+.today-move em.up { color: var(--research-positive); }
+.today-move em.down { color: var(--research-negative); }
+.today-move strong { font-size: var(--fs-3); }
+.today-rs { display: inline-flex; align-items: center; gap: 8px; min-width: 140px; }
+.today-rs i { display: block; height: 6px; max-width: 80px; }
+.today-rs i.up { background: var(--research-positive); }
+.today-rs i.down { background: var(--research-negative); }
+.today-rs b { font-weight: 500; }
+
+/* Market context factors (checklist 9.7). */
+.env-factors { margin: 0 0 32px; font-family: var(--font-research); color: var(--research-text); }
+.env-factors > header { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; margin-bottom: 8px; color: var(--research-muted); font-size: var(--fs-1); }
+.env-factors > header span { text-transform: uppercase; letter-spacing: .06em; }
+.env-factors > div { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; }
+.env-factors article { display: grid; align-content: start; gap: 8px; padding: 12px; border: 1px solid var(--research-line); background: var(--research-surface); }
+.env-factors article > span { color: var(--research-muted); font-size: var(--fs-1); }
+.env-factors article strong { font-size: var(--fs-3); font-weight: 560; line-height: 1.3; }
+.env-factors article strong em { margin-right: 6px; font-style: normal; color: var(--research-accent); }
+.env-track { display: grid; grid-template-columns: auto minmax(40px, 1fr) auto; align-items: center; gap: 8px; color: var(--research-muted); font-size: var(--fs-1); }
+.env-track > div { position: relative; height: 6px; background: var(--research-line); }
+.env-track i { position: absolute; top: -4px; width: 3px; height: 14px; transform: translateX(-1px); background: var(--research-text); }
+.env-track b { color: var(--research-text); font-weight: 500; }
+.env-gauges { display: grid; gap: 6px; }
+.env-split > div { display: flex; height: 8px; gap: 2px; }
+.env-split i { display: block; }
+.env-split i.ease { background: var(--research-muted); }
+.env-split i.hold { background: var(--research-line-strong); }
+.env-split i.tighten { background: var(--research-accent); }
+.env-split small { display: flex; justify-content: space-between; margin-top: 4px; color: var(--research-muted); font-size: var(--fs-1); }
+.env-figure { display: flex; align-items: baseline; gap: 8px; color: var(--research-muted); font-size: var(--fs-1); }
+.env-figure b { color: var(--research-text); font-size: var(--fs-4); font-weight: 560; }
+.env-factors > footer { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.env-factors > footer span { padding: 4px 10px; border: 1px solid var(--research-caution); font-size: var(--fs-1); }

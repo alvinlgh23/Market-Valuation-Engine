@@ -23,7 +23,7 @@ try {
   observe(page);
 
   await open(page, "/macro");
-  await page.getByRole("heading", { name: "Macro overview" }).waitFor();
+  await page.locator(".env-factors").waitFor();
   if (await page.locator(".macro-overview-surface .object-metric-grid").count()) throw new Error("Macro Overview still contains the generic metric grid");
   await page.getByRole("heading", { name: "US Treasury structure" }).waitFor();
   // Since checklist 1.1 Macro renders current data, not the August fixture. The curve is drawn
@@ -100,7 +100,7 @@ try {
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
   observe(mobile);
   await open(mobile, "/macro");
-  await mobile.getByRole("heading", { name: "Macro overview" }).waitFor();
+  await mobile.locator(".env-factors").waitFor();
   const overflow = await mobile.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
   if (overflow) throw new Error("Mobile Macro Overview has horizontal overflow");
   await mobile.screenshot({ path: path.join(artifacts, "11-mobile-macro.png"), fullPage: true });

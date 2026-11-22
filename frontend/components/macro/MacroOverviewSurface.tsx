@@ -1,5 +1,6 @@
 "use client";
 import { StatusBadge } from "../research/StatusBadge";
+import { EnvironmentFactors } from "./EnvironmentFactors";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -44,13 +45,11 @@ export function MacroOverviewSurface({ system }: { system: ResearchSystem }) {
   });
   const fxMoves = transmission.fx.moves.map((metric) => metricDatum(metric, metric.unit));
   const liquidityMoves = transmission.liquidity.drivers.flatMap((driver) => { const datum = driverDatum(driver); return datum ? [datum] : []; });
-  const coreReads = system.dashboard.reads.filter((read) => ["us-policy", "inflation", "liquidity", "risk"].includes(String(read.id)));
 
   return <div className="engine-module macro-overview-surface">
-    <header className="engine-module-header object-page-header"><div><span>MACRO / GLOBAL STATE</span><h1>Macro overview</h1><p>Policy, inflation, rates, liquidity, FX and risk across the US, Japan, Korea, Singapore and the Euro Area.</p></div></header>
-
-    <section className="macro-global-state"><div><span>GLOBAL MACRO STATE</span></div><h2>{system.dashboard.headline.state}</h2><p>{system.dashboard.headline.summary}</p></section>
-    <section className="macro-state-strip">{coreReads.map((read) => <Link href={String(read.href || "/macro")} key={String(read.id)}><span>{read.label}</span><strong>{read.value}</strong><small>{read.state}</small></Link>)}</section>
+    {/* Checklist 9.7: the regime as one line, then every factor as a tile. */}
+    <header className="today-regime"><span>Risk regime</span><h1>{system.dashboard.headline.state}</h1><p>{system.dashboard.headline.summary}</p></header>
+    <EnvironmentFactors environment={system.environment} />
 
     <section className="macro-overview-section macro-market-transmission" aria-label="Market Transmission">
       <SectionHeader code="MARKET TRANSMISSION" title="Rates, dollar, liquidity, and risk" note="" href="/macro/world?mode=transmission" action="Open transmission graph →" />

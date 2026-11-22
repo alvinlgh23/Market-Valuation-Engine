@@ -167,6 +167,7 @@ export function marketLeadershipSummary(system: ResearchSystem) {
     ticker: sector.ticker,
     name: sector.name,
     rel6m: percent(sector.rel6m),
+    rel6mValue: typeof sector.rel6m === "number" ? sector.rel6m : null,
     breadth: sector.breadth,
     crowding: sector.crowding,
     href: `/markets?sector=${sector.slug}`

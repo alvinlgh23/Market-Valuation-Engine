@@ -23,7 +23,7 @@ try {
   observe(page);
   let response = await page.goto(baseUrl, { waitUntil: "networkidle" });
   if (!response?.ok()) throw new Error(`Dashboard returned ${response?.status()}`);
-  await page.getByRole("heading", { name: "What matters now?" }).waitFor();
+  await page.locator(".today-regime h1").waitFor();
   if ((await page.locator(".system-state-strip > a").count()) !== 6) throw new Error("Dashboard does not expose six current-state reads");
   if ((await page.locator(".priority-panel .ranked-command-list > a").count()) < 5) throw new Error("Dashboard research priority list is under-populated");
   await shot(page, "01-dashboard.png", true);
@@ -68,9 +68,10 @@ try {
   await shot(page, "08-transmission-map.png", true);
 
   await page.goto(`${baseUrl}/company/PLTR?fixture=1`, { waitUntil: "networkidle" });
+  await page.locator(".company-details > summary").click();   // checklist 9.4: the stored profile is folded
   await page.getByText("Current economic read").waitFor();
   await shot(page, "09-company-snapshot.png", true);
-  await page.getByRole("button", { name: /Open Economic Map/ }).click();
+  await page.getByRole("button", { name: /^Economic map$/ }).click();
   await page.getByRole("dialog", { name: /Economic Map workspace/i }).waitFor();
   await shot(page, "10-economic-map.png");
 
@@ -82,7 +83,7 @@ try {
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
   observe(mobile);
   await mobile.goto(baseUrl, { waitUntil: "networkidle" });
-  await mobile.getByRole("heading", { name: "What matters now?" }).waitFor();
+  await mobile.locator(".today-regime h1").waitFor();
   const overflow = await mobile.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
   if (overflow) throw new Error("Mobile dashboard has horizontal overflow");
   await shot(mobile, "11-mobile-dashboard.png", true);

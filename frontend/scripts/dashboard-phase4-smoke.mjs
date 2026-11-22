@@ -38,7 +38,7 @@ try {
   observe(page);
 
   await page.goto(baseUrl, { waitUntil: "networkidle" });
-  await page.getByRole("heading", { name: /What matters now/i }).waitFor();
+  await page.locator(".today-regime h1").waitFor();
   await pageShot(page, "01-dashboard-desktop.png");
   await sectionShot(page, ".what-changed-panel", "02-what-changed.png");
   await sectionShot(page, ".priority-panel", "03-research-priority.png");
@@ -77,7 +77,7 @@ try {
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
   observe(mobile);
   await mobile.goto(baseUrl, { waitUntil: "networkidle" });
-  await mobile.getByRole("heading", { name: /What matters now/i }).waitFor();
+  await mobile.locator(".today-regime h1").waitFor();
   const mobileOverflow = await mobile.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
   if (mobileOverflow) throw new Error("Dashboard mobile has horizontal page overflow.");
   await mobile.screenshot({ path: path.join(output, "17-dashboard-mobile.png"), fullPage: false });
