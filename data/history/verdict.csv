@@ -89,3 +89,9 @@ verdict.CAT.flow,2026-11-21,,Money flowing in,company_verdict,LIVE,2026-11-21T12
 verdict.CAT.fundamentals,2026-11-21,,Mixed,company_verdict,LIVE,2026-11-21T12:55:06+08:00
 verdict.CAT.macro,2026-11-21,,No confirmed exposure has a current reading,company_verdict,LIVE,2026-11-21T12:55:06+08:00
 verdict.CAT.valuation,2026-11-21,,Fair value withheld,company_verdict,LIVE,2026-11-21T12:55:06+08:00
+verdict.AMAT.crowding,2026-11-22,,Low Chase Risk,company_verdict,LIVE,2026-11-22T09:42:11+08:00
+verdict.AMAT.expectations,2026-11-22,,Estimates rising,company_verdict,LIVE,2026-11-22T09:42:11+08:00
+verdict.AMAT.flow,2026-11-22,,Money flowing out,company_verdict,LIVE,2026-11-22T09:42:11+08:00
+verdict.AMAT.fundamentals,2026-11-22,,Mixed,company_verdict,LIVE,2026-11-22T09:42:11+08:00
+verdict.AMAT.macro,2026-11-22,,Headwind,company_verdict,LIVE,2026-11-22T09:42:11+08:00
+verdict.AMAT.valuation,2026-11-22,,Fair value withheld,company_verdict,LIVE,2026-11-22T09:42:11+08:00
