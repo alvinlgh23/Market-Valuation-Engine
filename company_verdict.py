@@ -479,6 +479,12 @@ def build_card(ticker: str, environment: dict[str, Any], core: dict[str, Any], s
     with contextlib.redirect_stdout(io.StringIO()):
         heat = (vm.heat_rows([ticker]) or [None])[0]
     expectations = collect_expectations(ticker)
+    # Checklist 10.1: what moved the price (macro / market / sector / company).
+    from price_attribution import build_attribution
+    try:
+        attribution = build_attribution(ticker, archetype, etf)
+    except Exception as exc:  # noqa: BLE001
+        attribution = {"status": "UNAVAILABLE", "reason": f"{type(exc).__name__}: {exc}"}
     from sector_flow import latest_sector_flow
     sector_flow = latest_sector_flow(store, etf) if etf else None
     from relative_scales import relative_readings
@@ -529,6 +535,7 @@ def build_card(ticker: str, environment: dict[str, Any], core: dict[str, Any], s
         "falsification": falsification(economics),
         "next_catalysts": next_catalysts(expectations.get("next_earnings_date"), fomc, today),
         "families": {family: sorted(key for key, value in axes.items() if family in value["families"]) for family in FAMILIES},
+        "attribution": attribution,
         "home_currency": home_currency_view(home_currency) if home_currency else None,
         "errors": errors,
         "disclaimer": "Research map, not a recommendation. Axes are shown separately and never combined into a score.",
