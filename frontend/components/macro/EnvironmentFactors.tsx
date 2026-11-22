@@ -37,7 +37,23 @@ function FactorVisual({ id, factor }: { id: string; factor: EnvironmentFactor })
     return <Track label="ISM PMI (50 = flat)" value={(pmi - 40) / 20} right={pmi.toFixed(1)} />;
   }
   if (id === "oil" && num(r.change_3m_pct) != null) return <div className="env-figure"><b>{(num(r.change_3m_pct) as number) >= 0 ? "+" : ""}{(num(r.change_3m_pct) as number).toFixed(1)}%</b><span>3 months · WTI {String(r.wti ?? "—")}</span></div>;
-  if (id === "yen_carry" && num(r.usdjpy_level) != null) return <div className="env-figure"><b>{(num(r.usdjpy_level) as number).toFixed(1)}</b><span>USD/JPY · US–JP 10Y {String(num(r.us_jp_10y_spread_pp)?.toFixed(2) ?? "—")} pp</span></div>;
+  if (id === "yen_carry") {
+    // Checklist 10.6: early warning = fuel (why the trade is crowded) + trigger (what could close it).
+    const w = obj(r.warning);
+    const fuel = Array.isArray(w.fuel) ? (w.fuel as string[]) : [], trigger = Array.isArray(w.trigger) ? (w.trigger as string[]) : [];
+    const missing = Array.isArray(w.missing) ? (w.missing as string[]) : [];
+    const level = String(w.level ?? "UNKNOWN");
+    return <div className="env-carry">
+      <div className={`env-carry-level level-${level.toLowerCase()}`} title={String(w.rule ?? "")}>Unwind warning: <b>{level.toLowerCase()}</b>{missing.length ? <small> · incomplete</small> : null}</div>
+      <div className="env-carry-signs">
+        <span title={fuel.join("\n") || "No fuel signs"}>Fuel {fuel.length}/3</span>
+        <span title={trigger.join("\n") || "No trigger signs"}>Trigger {trigger.length}/3</span>
+        <span>{w.next_boj_meeting ? `BOJ ${String(w.next_boj_meeting)} (${String(w.days_to_meeting)}d)` : "BOJ date unavailable"}</span>
+      </div>
+      {num(r.usdjpy_level) != null ? <small>USD/JPY {(num(r.usdjpy_level) as number).toFixed(1)} · US–JP 10Y gap {num(w.us_jp_gap_pp)?.toFixed(2) ?? "—"} pp{num(w.gap_change_3m_pp) != null ? ` (${(num(w.gap_change_3m_pp) as number) >= 0 ? "+" : ""}${(num(w.gap_change_3m_pp) as number).toFixed(2)} in 3M)` : ""}</small> : null}
+      {missing.length ? <small className="env-untested">Missing: {missing.join(", ")}</small> : null}
+    </div>;
+  }
   return null;
 }
 

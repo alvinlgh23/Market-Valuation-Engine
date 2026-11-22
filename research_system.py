@@ -17,7 +17,7 @@ from typing import Any, Callable
 from macro_world import apply_coverage, build_world
 from research_capabilities import capability_payload
 from signal_history import record_module
-from environment import CARRY_EDGE_STATE, build_environment, fetch_cftc_jpy
+from environment import CARRY_EDGE_STATE, build_environment, fetch_boj_schedule, fetch_cftc_jpy
 from sector_flow import all_sector_flow
 
 
@@ -684,7 +684,9 @@ def build_research_system(refresh: bool = False) -> dict[str, Any]:
                 "evidence_ids": list(dict.fromkeys(edge.get("evidence_ids", []) + ["sg-neer-current"])),
             })
     cftc_result = isolated("cftc", fetch_cftc_jpy, refresh=refresh)
-    environment = build_environment(core_result["payload"], world, inflation_result["payload"], kospi_result["payload"], cftc_result["payload"])
+    boj_result = isolated("boj", fetch_boj_schedule, refresh=refresh)   # checklist 10.6: BOJ meeting calendar
+    environment = build_environment(core_result["payload"], world, inflation_result["payload"], kospi_result["payload"], cftc_result["payload"],
+                                    boj=boj_result["payload"])
     carry = environment["factors"]["yen_carry"]
     for edge in world.get("transmissions", []):
         if edge.get("id") == "jp-us-yen-carry":

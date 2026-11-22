@@ -2,7 +2,7 @@
 export type DriverRow = {
   ticker: string;
   reading?: { kind: string; label: string; short?: string };
-  attribution?: { windows?: Record<string, { price_change?: number; macro_by_factor?: Record<string, number>; parts?: Record<string, number> }> };
+  attribution?: { betas?: Record<string, number>; windows?: Record<string, { price_change?: number; macro_by_factor?: Record<string, number>; parts?: Record<string, number> }> };
 };
 
 let shared: Promise<DriverRow[]> | null = null;

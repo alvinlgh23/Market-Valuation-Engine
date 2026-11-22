@@ -3610,3 +3610,12 @@ body {
 .today-headline { display: block !important; }
 .today-headline-chips { justify-content: flex-start; }
 .today-headline-chips > * { flex: 0 0 auto; text-transform: none !important; letter-spacing: normal !important; font-family: var(--font-research) !important; font-size: var(--fs-1) !important; }
+/* Checklist 10.6: yen carry early warning */
+.env-carry { display: grid; gap: 5px; font-size: var(--fs-1); }
+.env-carry-level { color: var(--research-muted); }
+.env-carry-level b { text-transform: capitalize; color: var(--research-text); }
+.env-carry-level.level-elevated b { color: var(--research-caution); }
+.env-carry-level.level-high b { color: var(--research-negative); }
+.env-carry-signs { display: flex; flex-wrap: wrap; gap: 4px 8px; }
+.env-carry-signs span { padding: 1px 6px; border: 1px solid var(--research-line); color: var(--research-text); }
+.env-carry > small { color: var(--research-muted); }

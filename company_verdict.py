@@ -717,7 +717,7 @@ def watchlist_drivers(store: SignalStore | None = None, today: dt.date | None = 
         attribution = payload["attribution"] or {}
         output.append({"ticker": ticker, "archetype": payload.get("archetype"), "archetype_source": payload.get("archetype_source"),
                        "expectations": expectations, "reading": payload["reading"],
-                       "attribution": {key: attribution.get(key) for key in ("status", "reason", "as_of", "fit", "factor_labels", "windows")}})
+                       "attribution": {key: attribution.get(key) for key in ("status", "reason", "as_of", "fit", "factor_labels", "windows", "betas")}})
     return output
 
 

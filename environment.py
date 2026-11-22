@@ -22,8 +22,10 @@ validation found no stable linear beta to USD/JPY for any archetype.
 from __future__ import annotations
 
 import csv
+import datetime as dt
 import io
 import math
+import re
 from typing import Any
 
 from signal_history import SignalStore
@@ -82,14 +84,17 @@ CARRY_DIRECTION = {"ACCUMULATING": 1, "STABLE": 0, "UNWIND_RISK": -1, "INSUFFICI
 CARRY_EDGE_STATE = {"UNWIND_RISK": "ACTIVE", "ACCUMULATING": "WATCH", "STABLE": "DORMANT", "INSUFFICIENT": "INSUFFICIENT"}
 
 
-def yen_carry(core: dict[str, Any], world: dict[str, Any], cftc: dict[str, Any] | None = None) -> dict[str, Any]:
+def yen_carry(core: dict[str, Any], world: dict[str, Any], cftc: dict[str, Any] | None = None, boj: dict[str, Any] | None = None) -> dict[str, Any]:
     macro = core.get("macro") or {}
     jp = ((world.get("regions") or {}).get("JP") or {}).get("engine_specific", {}).get("central_bank_compass", {}) or {}
     us_10y, jgb_10y = _num(macro.get("tnx_level")), _num((jp.get("indicator_values") or {}).get("ten_year_yield"))
     normalization = _num(((jp.get("special") or {}).get("probabilities") or {}).get("normalization"))
     state = yen_carry_state(macro.get("usdjpy_3m"), macro.get("vix_level"))
     notes = ["A switch, not a score: it is not averaged with other factors. No archetype showed a stable linear beta to USD/JPY over five years."]
-    if normalization is not None and normalization >= 0.5:
+    stale_inflation = any(item.get("stale") and item.get("area") == "inflation" for item in jp.get("inputs") or [])
+    if stale_inflation:
+        notes.append("The Compass BOJ normalisation probability is not used: its Japan inflation input stopped updating (see the world map).")
+    elif normalization is not None and normalization >= 0.5:
         notes.append(f"Bank of Japan normalisation probability is {normalization:.0%}; a hike would narrow the rate gap that funds the carry trade.")
     readings = {
         "usdjpy_level": _num(macro.get("usdjpy_level")), "usdjpy_3m": _num(macro.get("usdjpy_3m")), "vix_level": _num(macro.get("vix_level")),
@@ -101,6 +106,11 @@ def yen_carry(core: dict[str, Any], world: dict[str, Any], cftc: dict[str, Any] 
         readings["cftc_as_of"] = cftc.get("as_of")
         if cftc["leveraged_net"] < 0:
             notes.append(f"Leveraged funds are net short yen futures ({cftc['leveraged_net']:,} contracts, CFTC {cftc.get('as_of')}): carry positioning that can unwind.")
+    try:
+        gaps = us_japan_gap_history()
+    except Exception:  # noqa: BLE001 - the warning reports the gap as missing instead
+        gaps = []
+    readings["warning"] = carry_warning(readings, state, cftc, boj, gaps)
     return _entry(CARRY_LABELS[state], CARRY_DIRECTION[state], {**readings, "carry_state": state},
                   source="Core market (USD/JPY, VIX) with Central Bank Compass Japan context", as_of=macro.get("tnx_observed_at"),
                   notes=notes, confidence="MODERATE" if state != "INSUFFICIENT" else "LOW")
@@ -128,6 +138,116 @@ def fetch_cftc_jpy(timeout: int = 20) -> dict[str, Any]:
     if not parsed:
         raise ValueError("Japanese yen row not found in the CFTC weekly file.")
     return parsed
+
+
+# ---- Yen carry early warning (checklist 10.6) -----------------------------------------------
+BOJ_SCHEDULE_URL = "https://www.boj.or.jp/en/mopo/mpmsche_minu/index.htm"
+MONTHS = {name: index for index, name in enumerate(["jan", "feb", "mar", "apr", "may", "june", "july", "aug", "sept", "oct", "nov", "dec"], start=1)}
+WIDE_GAP_PP = 2.0          # US-Japan 10Y gap that makes borrowing yen attractive
+NARROWING_PP = 0.30        # gap narrowing over three months that has preceded unwinds
+MEETING_WINDOW_DAYS = 21   # a BOJ decision this close is a possible trigger
+
+
+def parse_boj_schedule(html: str) -> list[str]:
+    """Decision days (the last day of each two-day meeting) from the BOJ schedule page."""
+    text = re.sub(r"<[^>]+>", " ", html)
+    text = re.sub(r"\s+", " ", text)
+    meetings: set[str] = set()
+    for match in re.finditer(r"Table\s*:\s*(20\d\d)\s+Date of MPM(.*?)(?=Table\s*:|$)", text):
+        year, body = int(match.group(1)), match.group(2)
+        # A meeting cell looks like "Jan. 22 (Thurs.), 23 (Fri.)"; release dates have a single day.
+        for cell in re.finditer(r"([A-Z][a-z]{2,4})\.?\s+(\d{1,2})\s*\([A-Za-z.]+\),\s*(?:([A-Z][a-z]{2,4})\.?\s+)?(\d{1,2})\s*\([A-Za-z.]+\)", body):
+            month = MONTHS.get((cell.group(3) or cell.group(1)).lower().rstrip("."))
+            if month:
+                try:
+                    meetings.add(dt.date(year, month, int(cell.group(4))).isoformat())
+                except ValueError:
+                    continue
+    return sorted(meetings)
+
+
+def fetch_boj_schedule(timeout: int = 20) -> dict[str, Any]:
+    from urllib.request import Request, urlopen
+    request = Request(BOJ_SCHEDULE_URL, headers={"User-Agent": "chainstox-research"})
+    with urlopen(request, timeout=timeout) as response:
+        meetings = parse_boj_schedule(response.read().decode("utf-8", errors="replace"))
+    if not meetings:
+        raise ValueError("No meeting dates found on the BOJ schedule page.")
+    return {"meetings": meetings, "source": BOJ_SCHEDULE_URL, "fetched_on": dt.date.today().isoformat()}
+
+
+def us_japan_gap_history() -> list[tuple[str, float]]:
+    """Monthly US 10Y minus JGB 10Y from the refreshed Compass FRED cache (DGS10 daily, IRLTLT01JPM156N monthly)."""
+    from macro_world import COMPASS_CACHE_DIR, COMPASS_DIR
+
+    def read(series: str) -> list[tuple[str, float]]:
+        for folder in (COMPASS_CACHE_DIR, COMPASS_DIR / "data" / "cache" / "fred"):
+            path = folder / f"{series}.csv"
+            if path.exists():
+                rows = []
+                for line in path.read_text().splitlines()[1:]:
+                    day, _, value = line.partition(",")
+                    if _num_text(value) is not None:
+                        rows.append((day[:10], float(value)))
+                return rows
+        return []
+
+    us, jp = read("DGS10"), dict(read("IRLTLT01JPM156N"))
+    monthly: dict[str, list[float]] = {}
+    for day, value in us:
+        monthly.setdefault(day[:7] + "-01", []).append(value)
+    return [(month, sum(values) / len(values) - jp[month]) for month, values in sorted(monthly.items()) if month in jp]
+
+
+def _num_text(value: str) -> float | None:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def carry_warning(readings: dict[str, Any], carry_state: str, cftc: dict[str, Any] | None, boj: dict[str, Any] | None,
+                  gap_history: list[tuple[str, float]], today: dt.date | None = None) -> dict[str, Any]:
+    """Fuel (why a carry trade is crowded) plus trigger (what could force it to close). Rules are fixed and tested."""
+    today = today or dt.date.today()
+    fuel, trigger, missing = [], [], []
+    gap = gap_history[-1][1] if gap_history else None
+    gap_3m = gap - gap_history[-4][1] if len(gap_history) >= 4 else None
+    if gap is None:
+        missing.append("US-Japan 10Y gap")
+    elif gap >= WIDE_GAP_PP:
+        fuel.append(f"US-Japan 10Y gap is wide at {gap:.2f} pp, so borrowing yen to buy dollar assets pays")
+    net = _num((cftc or {}).get("leveraged_net"))
+    if net is None:
+        missing.append("CFTC leveraged-fund yen position")
+    elif net < 0:
+        fuel.append(f"Leveraged funds are net short yen ({int(net):,} contracts, CFTC {cftc.get('as_of')})")
+    usdjpy_3m = _num(readings.get("usdjpy_3m"))
+    if usdjpy_3m is not None and usdjpy_3m >= 0.03:
+        fuel.append(f"Yen has weakened {usdjpy_3m:.1%} in three months, extending the trade")
+    meetings = [day for day in (boj or {}).get("meetings", []) if day >= today.isoformat()]
+    next_meeting = meetings[0] if meetings else None
+    days_to_meeting = (dt.date.fromisoformat(next_meeting) - today).days if next_meeting else None
+    if next_meeting is None:
+        missing.append("BOJ meeting calendar")
+    elif days_to_meeting <= MEETING_WINDOW_DAYS:
+        trigger.append(f"BOJ decides on {next_meeting} ({days_to_meeting} days); a hike or hawkish signal narrows the gap")
+    if gap_3m is not None and gap_3m <= -NARROWING_PP:
+        trigger.append(f"The gap narrowed {abs(gap_3m):.2f} pp over three months")
+    if usdjpy_3m is not None and usdjpy_3m <= -0.03:
+        trigger.append(f"Yen already strengthened {abs(usdjpy_3m):.1%} in three months: unwinding may be under way")
+    if carry_state == "UNWIND_RISK" or (len(fuel) >= 2 and trigger):
+        level = "HIGH"
+    elif len(fuel) >= 2 or (fuel and trigger):
+        level = "ELEVATED"
+    elif not fuel and not trigger and len(missing) >= 2:
+        level = "UNKNOWN"
+    else:
+        level = "LOW"
+    return {"level": level, "complete": not missing, "fuel": fuel, "trigger": trigger, "missing": missing, "us_jp_gap_pp": gap, "gap_change_3m_pp": gap_3m,
+            "gap_as_of": gap_history[-1][0] if gap_history else None, "next_boj_meeting": next_meeting, "days_to_meeting": days_to_meeting,
+            "scenario": {"usdjpy_move": -0.08, "label": "an August-2024-style unwind (USD/JPY about -8% in three weeks)"},
+            "rule": "HIGH: carry already unwinding, or two fuel signs plus a trigger. ELEVATED: two fuel signs, or one plus a trigger."}
 
 
 # ---- Fed path (checklist 3.4) -------------------------------------------------------------
@@ -258,7 +378,7 @@ def volatility_scorecard_note(path=None) -> str | None:
 
 # ---- assembled layer -----------------------------------------------------------------------
 def build_environment(core: dict[str, Any] | None, world: dict[str, Any], inflation: dict[str, Any] | None, kospi: dict[str, Any] | None,
-                      cftc: dict[str, Any] | None = None, store: SignalStore | None = None) -> dict[str, Any]:
+                      cftc: dict[str, Any] | None = None, store: SignalStore | None = None, boj: dict[str, Any] | None = None) -> dict[str, Any]:
     core = core or {}
     store = store or SignalStore()
     macro = core.get("macro") or {}
@@ -275,7 +395,7 @@ def build_environment(core: dict[str, Any] | None, world: dict[str, Any], inflat
                                      source="VIX level"),
         "fed_path": fed_path(core, world, inflation),
         "liquidity": liquidity(core, world),
-        "yen_carry": yen_carry(core, world, cftc),
+        "yen_carry": yen_carry(core, world, cftc, boj),
         "semis_cycle": semis_cycle(kospi),
     }
     vix_note = volatility_scorecard_note()
