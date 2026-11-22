@@ -402,6 +402,15 @@ def routing_evidence(ticker: str, info: dict, kind: str, has_financials: bool) -
     return evidence
 
 
+def _growth_inputs(symbol, info, revenue):
+    """Checklist 9.2: trailing-12-month growth from SEC filings, with the basis stated."""
+    try:
+        from growth_inputs import revenue_growth_inputs
+        return revenue_growth_inputs(symbol, info, revenue)
+    except Exception as exc:  # noqa: BLE001
+        return {"selected_growth": None, "basis": f"growth inputs failed: {type(exc).__name__}: {exc}"}
+
+
 def collect_valuation_data(ticker: str) -> dict:
     symbol = ticker.strip().upper()
     ticker_obj = yf.Ticker(symbol)
@@ -495,6 +504,7 @@ def collect_valuation_data(ticker: str) -> dict:
         "price": price,
         "revenue_history": revenue,
         "unfiled_periods_skipped": unfiled_periods,
+        "growth_inputs": _growth_inputs(symbol, info, revenue),
         "operating_income_history": operating_income,
         "gross_profit_history": gross_profit,
         "latest_revenue": latest_revenue,
@@ -937,9 +947,12 @@ def _extended_reverse(data, base_items, years, decay):
     return {"converged": True, "status": "CONVERGED", "required_year_1_revenue_growth": mid}
 
 
-def extended_horizon(data, assumptions, kind, spreads=None):
-    """Checklist 7.6: run only when observed growth exceeds the company type's first-year cap."""
-    observed = _pick(data["info"], "revenueGrowth")
+def extended_horizon(data, assumptions, kind, spreads=None, observed_override=None):
+    """Checklist 7.6: run only when observed growth exceeds the company type's first-year cap.
+
+    observed_override (checklist 9.2 candidate) replaces Yahoo's one-quarter revenueGrowth.
+    """
+    observed = _pick(data["info"], "revenueGrowth") if observed_override is None else observed_override
     cap = GROWTH_CAPS.get(kind)
     if not _number(observed) or cap is None or observed <= cap:
         return {"state": "NOT_TRIGGERED", "observed_growth": observed, "type_cap": cap,
@@ -1019,6 +1032,17 @@ def _blended_reverse(data, base_items, weight, years, decay):
     return {**base, "converged": True, "status": "CONVERGED", "required_year_1_revenue_growth": mid,
             "required_5y_revenue_cagr": (1 - weight) * five_cagr + weight * ten_cagr,
             "five_year_model_5y_cagr": five_cagr, "ten_year_model_first_5y_cagr": ten_cagr, "residual_per_share": difference}
+
+
+def ttm_candidate(data, assumptions, kind, spreads, scenarios, reverse):
+    """Checklist 9.2 (parallel; not the default): the phase-in driven by trailing-12-month growth."""
+    growth = data.get("growth_inputs")
+    if not growth or growth.get("selected_growth") is None:
+        return {"state": "NOT_COMPUTED", "default": False, "reason": "Growth inputs were not collected (offline data) or no filed growth exists."}
+    extended = extended_horizon(data, assumptions, kind, spreads, observed_override=growth["selected_growth"])
+    return {"state": "COMPUTED", "default": False, "growth_inputs": growth, "extended_horizon_state": extended.get("state"),
+            **phased_fair_value(data, assumptions, scenarios, extended, reverse),
+            "note": "Parallel calculation for owner review (checklist 9.2); the headline still uses Yahoo's one-quarter growth."}
 
 
 def phased_fair_value(data, assumptions, scenarios, extended, reverse):
@@ -1603,6 +1627,7 @@ def build_valuation_report(ticker: str, overrides: dict | None = None, data: dic
     report["scenario_spreads"] = scenario_spread_record(data, rates, overrides, spreads, spread_basis)
     report["extended_horizon"] = extended_horizon(data, assumptions, kind, spreads)
     report["fair_value"] = phased_fair_value(data, assumptions, scenarios, report["extended_horizon"], reverse)
+    report["fair_value_ttm_candidate"] = ttm_candidate(data, assumptions, kind, spreads, scenarios, reverse)
     report["sensitivity"] = sensitivity
     report["reverse_dcf"] = reverse
     report["cross_checks"] = cross_checks
@@ -1639,6 +1664,7 @@ def build_valuation_report(ticker: str, overrides: dict | None = None, data: dic
         report["sensitivity"] = {}
         report["reverse_dcf"] = {"status": "VALIDATION_FAILED", "reason": "Critical valuation checks failed."}
         report["fair_value"] = {"method": "WITHHELD", "fair_value": {}, "reason": "Critical valuation checks failed."}
+        report["fair_value_ttm_candidate"] = {"state": "WITHHELD", "default": False, "fair_value": {}, "reason": "Critical valuation checks failed."}
         report["cross_checks"] = {"notes": ["Authoritative values withheld after critical validation failure."]}
         report["final_interpretation"] = {"text": "Fair value withheld: " + "; ".join(validation["reasons"])}
     report["_data"] = data
