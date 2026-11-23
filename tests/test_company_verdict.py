@@ -88,6 +88,28 @@ def test_withheld_fair_value_says_why_in_plain_words():
     assert mismatch["missing"][0].startswith("Two independent measures")
 
 
+def two_base_report(primary_cagr, alternate_cagr):
+    shown = report("CONVERGED", converged=True, required_5y_revenue_cagr=primary_cagr)
+    shown["data_quality"] = {"status": "CASH_FLOW_MEASURES_DIFFER", "reason": "two measures differ"}
+    shown["cash_flow_bases"] = {"gap_pct": 0.28, "operating_profit_base": 9.3e9, "cash_flow_statement_base": 6.7e9,
+                                "alternate": {"reverse_dcf": {"status": "CONVERGED", "converged": True, "required_5y_revenue_cagr": alternate_cagr},
+                                              "fair_value": {}, "scenarios": {"bear": 50.0, "base": 70.0, "bull": 95.0}}}
+    return shown
+
+
+def test_two_cash_flow_bases_publish_only_a_reading_that_holds_on_both():
+    """Checklist 12.1: same reading on both bases -> published with the range and one step less confidence."""
+    same = cv.valuation_axis(two_base_report(0.325, 0.386), 0.10, 0.16, None, None)
+    assert same["state"] == "Price implies more growth than observed/consensus" and same["confidence"] == "LOW"
+    assert "+32.5% to +38.6%" in same["evidence"][0] and "holds on both bases" in same["evidence"][1]
+    assert same["detail"]["fair_value"]["base"] == 80.0
+    assert same["detail"]["cash_flow_bases"]["fair_value"]["cash_flow_statement"]["base"] == 70.0
+    split = cv.valuation_axis(two_base_report(0.147, 0.013), 0.139, 0.159, None, None)
+    assert split["state"] == "Depends on which cash-flow measure" and split["confidence"] == "LOW"
+    assert split["detail"]["fair_value"] == {} and split["missing"][0].startswith("No single fair value")
+    assert "+1.3% to +14.7%" in split["evidence"][0]
+
+
 def test_expectations_and_fundamentals_axes():
     rising = cv.expectations_axis({"eps_trend_next_year": {"current": 1.1, "90daysAgo": 1.0}, "revisions_up_30d": 7, "revisions_down_30d": 0, "revenue_growth_next_year": 0.2, "analysts_next_year": 30})
     assert rising["state"] == "Estimates rising"
@@ -172,3 +194,22 @@ def test_fx_moves_reports_each_currency_and_none_when_missing(monkeypatch):
     monkeypatch.setattr(cv, "home_currency_view", lambda code: views[code])
     result = cv.fx_moves(("EUR", "JPY"))
     assert result["home_per_usd_change"] == {"EUR": 0.064, "JPY": None}
+
+
+def test_bank_reading_compares_implied_and_latest_roe():
+    """Checklist 12.2."""
+    bank = {"status": "AVAILABLE", "price_to_book": 1.54, "latest_roe": 0.057, "implied_roe": 0.218, "cost_of_equity": 0.15, "beta": 2.24, "method": "m"}
+    high = cv.valuation_axis({"bank_implied_roe": bank}, None, None, None, None)
+    assert high["state"] == "Price implies higher ROE than the bank earns" and "21.8%" in high["evidence"][0]
+    assert cv.valuation_axis({"bank_implied_roe": {**bank, "implied_roe": 0.116, "latest_roe": 0.106}}, None, None, None, None)["state"] == "Price roughly matches the bank's ROE"
+    assert cv.valuation_axis({"bank_implied_roe": {**bank, "implied_roe": 0.08, "latest_roe": 0.15}}, None, None, None, None)["state"] == "Price implies lower ROE than the bank earns"
+
+
+def test_adr_figures_convert_to_the_quoted_share():
+    """Checklist 12.3: a company-level valuation in TWD is read against the USD ADR price."""
+    twd = report("NO_ECONOMIC_SOLUTION", high_case_value=7000.0, low_case_value=1000.0)
+    twd["company"]["current_market_price"] = 10_000.0
+    twd["unit_bridge"] = {"quote_per_model_share": 0.03}
+    axis = cv.valuation_axis(twd, 0.3, 0.25, None, None)
+    assert axis["detail"]["price"] == 300.0 and axis["detail"]["fair_value"]["base"] == 80.0 * 0.03
+    assert "210.00 vs price 300.00" in axis["evidence"][0]

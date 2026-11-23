@@ -46,16 +46,36 @@ def test_explicit_units_win():
     assert rows["wafer_volume"].unit == "million 12-inch-equivalent wafers"
 
 @pytest.mark.parametrize("ticker,financial,quote", [("TSM", "TWD", "USD"), ("TSM", "USD", "USD"), ("OTHER", "EUR", "USD")])
-def test_real_valuation_execution_blocks_unit_mismatch(ticker, financial, quote):
+def test_real_valuation_execution_blocks_unit_mismatch_without_fx(ticker, financial, quote):
+    """Checklist 12.3: without an FX rate (or with no currency gap to bridge) the unit gate still withholds."""
+    from unittest.mock import patch
     from test_intrinsic_valuation import fixture_data
     from intrinsic_valuation import build_valuation_report
     data = fixture_data()
     data["ticker"] = ticker
     data["info"].update(financialCurrency=financial, currency=quote)
-    report = build_valuation_report(ticker, data=data)
+    with patch("intrinsic_valuation._fx_rate", return_value=(None, None)):
+        report = build_valuation_report(ticker, data=data)
     assert report["validation"]["status"] == "FAILED"
     assert report["data_quality"]["status"] == "SECURITY_UNIT_AMBIGUITY"
     assert not report["scenarios"] and not report["sensitivity"] and not report["reverse_dcf"]
+
+
+def test_currency_mismatch_is_valued_at_company_level_with_fx():
+    """Checklist 12.3 (owner approval 2026-11-23): market cap converted at the FX rate; no ADR ratio needed."""
+    from unittest.mock import patch
+    from test_intrinsic_valuation import fixture_data
+    from intrinsic_valuation import build_valuation_report
+    data = fixture_data()
+    data["ticker"] = "OTHER"
+    data["info"].update(financialCurrency="EUR", currency="USD")
+    with patch("intrinsic_valuation._fx_rate", return_value=(1.10, "2026-11-23")):
+        report = build_valuation_report("OTHER", data=data)
+    bridge = report["unit_bridge"]
+    assert bridge["method"] == "COMPANY_LEVEL" and bridge["fx"] == 1.10
+    assert report["company"]["currency"] == "EUR"
+    assert abs(report["company"]["current_market_price"] * bridge["quote_per_model_share"] - bridge["quote_price"]) < 1e-6
+    assert report["data_quality"]["reason"].startswith("Valued at company level in EUR")
 
 def test_positive_capacity_does_not_prove_easing():
     from company_economics import CompanySnapshot

@@ -228,15 +228,120 @@ def plain_withheld_reason(report: dict[str, Any]) -> str | None:
     return None
 
 
+LOWER_CONFIDENCE = {"HIGH": "MODERATE", "MODERATE": "LOW", "LOW": "LOW"}
+BASE_LABEL = {"operating_profit": "operating-profit base", "cash_flow_statement": "cash-flow-statement base"}
+
+
+def _range_text(low: float | None, high: float | None, fmt) -> str:
+    if low is None or high is None:
+        return "n/a"
+    low, high = sorted((low, high))
+    return fmt(low) if abs(high - low) < 1e-9 else f"{fmt(low)} to {fmt(high)}"
+
+
+ROE_BAND = 0.02   # implied vs latest ROE within two points reads as "roughly matches"
+QUOTE_UNIT_KEYS = {"current_market_price", "fair_value_per_share", "high_case_value", "low_case_value", "bear", "base", "bull"}
+
+
+def _scale(node: Any, factor: float) -> Any:
+    if isinstance(node, dict):
+        return {key: (value * factor if key in QUOTE_UNIT_KEYS and isinstance(value, (int, float)) and not isinstance(value, bool) else _scale(value, factor))
+                for key, value in node.items()}
+    return node
+
+
+def in_quote_units(report: dict[str, Any]) -> dict[str, Any]:
+    """Checklist 12.3: per-share figures of a company-level (ADR) valuation, converted to the quoted share price."""
+    bridge = report.get("unit_bridge") or {}
+    factor = _num(bridge.get("quote_per_model_share"))
+    if not factor:
+        return report
+    converted = dict(report)
+    for key in ("company", "scenarios", "fair_value", "reverse_dcf", "cash_flow_bases"):
+        if key in report:
+            converted[key] = _scale(report[key], factor)
+    return converted
+
+
+def bank_axis(bank: dict[str, Any], price: float | None = None, observed_growth: float | None = None,
+              consensus_growth: float | None = None) -> dict[str, Any]:
+    """Checklist 12.2: what the price assumes about a bank's return on equity."""
+    implied, latest = _num(bank.get("implied_roe")), _num(bank.get("latest_roe"))
+    if implied > latest + ROE_BAND:
+        state = "Price implies higher ROE than the bank earns"
+    elif implied < latest - ROE_BAND:
+        state = "Price implies lower ROE than the bank earns"
+    else:
+        state = "Price roughly matches the bank's ROE"
+    evidence = [f"Price-to-book {bank['price_to_book']:.2f} with a {bank['cost_of_equity']:.1%} cost of equity (beta {bank.get('beta', 0):.2f}) implies a sustained ROE of {implied:.1%}; latest annual ROE {latest:.1%}.",
+                "Banks are not valued on cash flow; single-stage justified price-to-book with 2.5% long-run growth."]
+    return axis(state, confidence="LOW", evidence=evidence, families=["valuation", "fundamentals"],
+                detail={"bank_implied_roe": bank, "fair_value": {}, "notes": [bank.get("method")], "price": price,
+                        "observed_growth": observed_growth, "consensus_next_year_growth": consensus_growth},
+                missing=["regulatory capital and payout history", "ROE history (one year used)"])
+
+
 def valuation_axis(report: dict[str, Any] | None, observed_growth: float | None, consensus_growth: float | None,
                    implied_erp: float | None, erp_sensitivity: dict[str, Any] | None) -> dict[str, Any]:
+    """Checklist 12.1: when the two cash-flow measures differ, read both and publish only what holds on both.
+    12.2: banks read the ROE the price implies. 12.3: ADR figures are converted to the quoted share first."""
+    bank = (report or {}).get("bank_implied_roe") or {}
+    if bank.get("status") == "AVAILABLE":
+        return bank_axis(bank, _num((report.get("company") or {}).get("current_market_price")), observed_growth, consensus_growth)
+    if report and report.get("unit_bridge"):
+        report = in_quote_units(report)
+    bases = (report or {}).get("cash_flow_bases") or {}
+    if not bases or (report.get("data_quality") or {}).get("status") != "CASH_FLOW_MEASURES_DIFFER":
+        return _single_valuation_axis(report, observed_growth, consensus_growth, implied_erp, erp_sensitivity)
+    alt_source = bases.get("alternate") or {}
+    alternate_report = {**report, "reverse_dcf": alt_source.get("reverse_dcf") or {}, "fair_value": alt_source.get("fair_value") or {},
+                        "scenarios": {name: {"fair_value_per_share": value} for name, value in (alt_source.get("scenarios") or {}).items()}}
+    shown = _single_valuation_axis(report, observed_growth, consensus_growth, implied_erp, erp_sensitivity)
+    other = _single_valuation_axis(alternate_report, observed_growth, consensus_growth, implied_erp, erp_sensitivity)
+    gap = _num(bases.get("gap_pct"))
+    rev_a, rev_b = _reverse_of(report), _reverse_of(alternate_report)
+    implied = [_num(rev.get("required_5y_revenue_cagr")) if rev.get("converged") else None for rev in (rev_a, rev_b)]
+    reach = [_num(rev.get("high_case_value")) for rev in (rev_a, rev_b)]
+    detail = {**shown["detail"], "cash_flow_bases": {
+        "gap_pct": gap, "operating_profit_base": bases.get("operating_profit_base"), "cash_flow_statement_base": bases.get("cash_flow_statement_base"),
+        "readings": {"operating_profit": shown["state"], "cash_flow_statement": other["state"]},
+        "implied_5y_revenue_cagr": {"operating_profit": implied[0], "cash_flow_statement": implied[1]},
+        "fair_value": {"operating_profit": shown["detail"].get("fair_value"), "cash_flow_statement": other["detail"].get("fair_value")}}}
+    if None not in implied:
+        span = f"Price implies {_range_text(implied[0], implied[1], _pct)} five-year revenue CAGR"
+    elif None not in reach and shown["state"] == other["state"] and "above what the model can reach" in shown["state"]:
+        span = f"Even 50% first-year growth values the share at {_range_text(reach[0], reach[1], lambda v: f'{v:.2f}')}"
+    else:
+        span = None
+    measures = f"the two measures of last year's free cash flow differ by {gap:.0%}" if gap is not None else "the two measures of last year's free cash flow differ"
+    if shown["state"] == other["state"] and shown["state"] != "Fair value withheld":
+        evidence = [f"{span} on the two cash-flow bases; observed {_pct(observed_growth)}, consensus next year {_pct(consensus_growth)}." if span else shown["evidence"][0] if shown["evidence"] else "",
+                    f"The reading holds on both bases, though {measures}."]
+        return axis(shown["state"], direction=shown["direction"], confidence=LOWER_CONFIDENCE.get(shown["confidence"], "LOW"),
+                    evidence=[item for item in evidence if item], missing=shown["missing"], families=shown["families"], detail=detail)
+    detail["fair_value"] = {}
+    evidence = [f"{span} depending on the base; observed {_pct(observed_growth)}, consensus next year {_pct(consensus_growth)}." if span
+                else f"Operating-profit base: {shown['state']}; cash-flow-statement base: {other['state']}."]
+    return axis("Depends on which cash-flow measure", confidence="LOW", evidence=evidence, families=["valuation"], detail=detail,
+                missing=[f"No single fair value: {measures}, and the answer changes with the measure "
+                         f"({shown['state'].lower()} on the operating-profit base, {other['state'].lower()} on the cash-flow-statement base)."])
+
+
+def _reverse_of(report: dict[str, Any]) -> dict[str, Any]:
+    """The reverse DCF the card reads: the phased headline's when it has one (checklist 7.6), else the five-year one."""
+    headline = report.get("fair_value") or {}
+    return (headline.get("reverse_dcf") if headline.get("fair_value") else None) or report.get("reverse_dcf") or {}
+
+
+def _single_valuation_axis(report: dict[str, Any] | None, observed_growth: float | None, consensus_growth: float | None,
+                           implied_erp: float | None, erp_sensitivity: dict[str, Any] | None) -> dict[str, Any]:
     if not report:
         return axis("Valuation unavailable", missing=["valuation report"], families=["valuation"])
     price = _num((report.get("company") or {}).get("current_market_price"))
     headline = report.get("fair_value") or {}
     if headline.get("fair_value"):
         # Checklist 7.6 (owner decision): the ten-year model is phased in above the type's growth cap.
-        reverse = headline.get("reverse_dcf") or report.get("reverse_dcf") or {}
+        reverse = _reverse_of(report)
         fair = {name: _num(headline["fair_value"].get(name)) for name in ("bear", "base", "bull")}
     else:
         reverse = report.get("reverse_dcf") or {}

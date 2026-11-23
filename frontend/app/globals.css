@@ -532,6 +532,7 @@ html {
 .valuation-badge-framework-required, .valuation-badge-provisional, .valuation-badge-market-above-bull, .valuation-badge-no-economic-solution, .valuation-badge-model-conservative, .valuation-badge-model-aggressive { border-color: var(--research-faint); color: var(--research-accent); }
 .valuation-badge-failed, .valuation-badge-insufficient-data, .valuation-badge-unavailable, .valuation-badge-fair-value-not-calculated { border-color: var(--research-line-strong); color: var(--research-negative); }
 .valuation-view-nav { display: flex; gap: 4px; overflow-x: auto; border-bottom: 1px solid var(--mi-line-strong); padding: 10px 0 0; }
+.valuation-unit-note { margin: 12px 0 0; border-left: 2px solid var(--mi-accent); padding: 8px 12px; color: var(--mi-text-2); font-size: var(--fs-1); line-height: 1.5; }   /* checklist 12.3 */
 .valuation-view-nav a { flex: 0 0 auto; border: 1px solid transparent; border-bottom: 0; padding: 12px 14px; color: var(--mi-muted); font: 650 var(--fs-1)/1 var(--mi-mono); text-transform: uppercase; }
 .valuation-view-nav a.active, .valuation-view-nav a:hover { border-color: var(--mi-line-strong); background: var(--mi-surface); color: var(--mi-text); }
 .valuation-overview-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(360px, .85fr); gap: 24px; margin-top: 28px; }

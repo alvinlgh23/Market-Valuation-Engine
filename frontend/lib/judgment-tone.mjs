@@ -14,6 +14,11 @@ const TONES = {
     "Price roughly matches observed/consensus growth": "mixed",
     "Price implies more growth than observed/consensus": "against",
     "Price implies growth above what the model can reach": "against",
+    // Checklist 12.1 / 12.2
+    "Depends on which cash-flow measure": "mixed",
+    "Price implies lower ROE than the bank earns": "supportive",
+    "Price roughly matches the bank's ROE": "mixed",
+    "Price implies higher ROE than the bank earns": "against",
   },
 };
 
@@ -41,6 +46,8 @@ const SHORT = {
   "Price implies less growth than observed/consensus": "Priced low", "Price implies contraction beyond the model's floor": "Priced very low",
   "Price roughly matches observed/consensus growth": "Fair", "Price implies more growth than observed/consensus": "Priced high",
   "Price implies growth above what the model can reach": "Beyond model", "Fair value withheld": "Withheld",
+  "Depends on which cash-flow measure": "Depends", "Price implies lower ROE than the bank earns": "Priced low",
+  "Price roughly matches the bank's ROE": "Fair", "Price implies higher ROE than the bank earns": "Priced high",
   "No confirmed exposure has a current reading": "No reading", "No informative flow signal": "No signal", "Trajectory not established": "Not established",
 };
 

@@ -127,7 +127,7 @@ def test_blended_reverse_dcf_reprices_the_phased_model():
 
 def test_withheld_valuation_withholds_the_headline():
     data = fixture_data(); data["info"]["revenueGrowth"] = 0.23
-    data["latest_operating_income"] = 400.0   # FCFF reconciliation fails (as in test_intrinsic_valuation)
+    data["depreciation_amortization"] = None   # a missing FCFF input still withholds (checklist 12.1 runs both bases only when nothing is missing)
     report = report_for(data)
     assert report["validation"]["status"] == "FAILED"
     assert report["fair_value"]["method"] == "WITHHELD" and report["fair_value"]["fair_value"] == {}

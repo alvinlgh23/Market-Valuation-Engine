@@ -61,7 +61,10 @@ export type ValuationReport = {
     valuation_method: string;
     as_of: string;
     current_market_price: number | null;
+    currency?: string;
   };
+  unit_bridge?: { method?: string; note?: string; fx?: number; fx_pair?: string; quote_price?: number; quote_per_model_share?: number };
+  cash_flow_bases?: { gap_pct?: number; operating_profit_base?: number; cash_flow_statement_base?: number };
   valuation_method_selection: { company_type: string; selected_framework: string; routing_evidence: string[] };
   data_quality: { status?: string; missing?: string[]; reason?: string };
   historical_base: Record<string, unknown>;
@@ -130,6 +133,7 @@ export function headlineFairValues(report: ValuationReport): Record<"bear" | "ba
 }
 
 export function valuationState(report: ValuationReport) {
+  if (report.data_quality?.status === "BANK_IMPLIED_ROE") return "Bank: Price-Implied ROE";   // checklist 12.2
   if (report.fallback?.required_specialized_framework) return "Framework Required";
   if (report.validation.status === "FAILED") return "Failed Validation";
   if (report.data_quality?.status === "FAILED_FCFF_RECONCILIATION") return "Fair Value Not Calculated";

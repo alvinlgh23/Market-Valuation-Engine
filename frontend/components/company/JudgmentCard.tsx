@@ -107,6 +107,9 @@ function ValueRange({ card }: { card: Card }) {
   const price = num(detail.price);
   const values = { bear: num(fair.bear), base: num(fair.base), bull: num(fair.bull), market: price };
   const scale = fairValueCoordinates(values);
+  // Checklist 12.2: a bank shows the ROE its price implies against the ROE it earns.
+  const bank = obj(detail.bank_implied_roe);
+  if (num(bank.implied_roe) != null && num(bank.latest_roe) != null) return <div className="jc-range jc-range-empty"><span>Price-implied ROE</span><b>{((num(bank.implied_roe) ?? 0) * 100).toFixed(1)}%</b><small>Earns {((num(bank.latest_roe) ?? 0) * 100).toFixed(1)}% · price-to-book {(num(bank.price_to_book) ?? 0).toFixed(2)}</small></div>;
   if (!scale.valid) return <div className="jc-range jc-range-empty"><span>Model value</span><b>Withheld</b><small>{card.axes.valuation?.missing?.[0] ?? card.axes.valuation?.state}</small></div>;
   const weight = num(detail.ten_year_weight);
   return <div className="jc-range" aria-label="Model value range against price">

@@ -156,13 +156,18 @@ def _money(value, currency="$"):
     return "Unavailable" if not _number(value) else f"{currency}{value:,.2f}"
 
 
-def _large(value):
+def _money_prefix(currency: str | None = None) -> str:
+    return "$" if not currency or currency == "USD" else f"{currency} "
+
+
+def _large(value, currency: str | None = None):
     if not _number(value):
         return "Unavailable"
+    prefix = _money_prefix(currency)
     for scale, suffix in ((1e12, "T"), (1e9, "B"), (1e6, "M")):
         if abs(value) >= scale:
-            return f"${value / scale:,.2f}{suffix}"
-    return f"${value:,.0f}"
+            return f"{prefix}{value / scale:,.2f}{suffix}"
+    return f"{prefix}{value:,.0f}"
 
 
 def _historical_fcff_reconciliation(
@@ -635,7 +640,7 @@ def _required_data_missing(data: dict) -> list[str]:
     return missing
 
 
-def _market_rates(data: dict) -> dict:
+def _risk_free() -> tuple[float, str]:
     risk_free = None
     try:
         hist = yf.Ticker("^TNX").history(period="5d")
@@ -643,14 +648,26 @@ def _market_rates(data: dict) -> dict:
             risk_free = float(hist["Close"].dropna().iloc[-1]) / 100
     except Exception:
         pass
-    rf_source = "Yahoo Finance US 10Y Treasury (^TNX), latest close"
     if not _number(risk_free):
-        risk_free = 0.043
-        rf_source = "transparent fallback: 4.3% US 10Y proxy"
-    beta = data["beta"] if _number(data["beta"]) and 0.25 <= data["beta"] <= 3 else 1.0
-    beta_source = "Yahoo Finance beta" if beta == data["beta"] else "fallback beta of 1.0"
+        return 0.043, "transparent fallback: 4.3% US 10Y proxy"
+    return risk_free, "Yahoo Finance US 10Y Treasury (^TNX), latest close"
+
+
+def _cost_of_equity(data: dict) -> dict:
+    risk_free, rf_source = _risk_free()
+    beta = data["beta"] if _number(data.get("beta")) and 0.25 <= data["beta"] <= 3 else 1.0
+    beta_source = "Yahoo Finance beta" if beta == data.get("beta") else "fallback beta of 1.0"
     erp = 0.045
-    cost_equity = risk_free + beta * erp
+    return {"risk_free_rate": risk_free, "risk_free_source": rf_source, "beta": beta, "beta_source": beta_source,
+            "equity_risk_premium": erp, "cost_of_equity": risk_free + beta * erp}
+
+
+def _market_rates(data: dict) -> dict:
+    equity_inputs = _cost_of_equity(data)
+    risk_free, rf_source = equity_inputs["risk_free_rate"], equity_inputs["risk_free_source"]
+    beta, beta_source = equity_inputs["beta"], equity_inputs["beta_source"]
+    erp = equity_inputs["equity_risk_premium"]
+    cost_equity = equity_inputs["cost_of_equity"]
     interest = _row(data["income"], "Interest Expense", "Interest Expense Non Operating")
     pretax_cost_debt = 0.055
     if interest and data["debt"] > 0:
@@ -1410,6 +1427,122 @@ def _cross_checks(data, scenarios):
     return {"metrics": metrics, "notes": notes, "historical_peer_ranges": "Unavailable from the current verified data feed; no range was invented."}
 
 
+# Checklist 12.2 (owner approval 2026-11-23): banks are read by what the price assumes about return on equity.
+# Single-stage justified price-to-book: P/B = (ROE - g) / (COE - g), so the sustained ROE the price implies is
+# g + P/B x (COE - g). COE = 10Y Treasury + beta x 4.5% and g = 2.5%, the same conventions as the company DCF.
+# Book value and ROE come from the annual statements; anything missing leaves the reading unavailable.
+BANK_LONG_RUN_GROWTH = 0.025
+
+
+def bank_implied_roe(data: dict, cost_of_equity: dict | None = None) -> dict:
+    equity = _row(data.get("balance"), "Common Stock Equity", "Stockholders Equity")
+    income = _row(data.get("income"), "Net Income Common Stockholders", "Net Income")
+    market_cap = data.get("market_cap")
+    missing = [name for name, ok in (("common equity (two years)", len(equity) >= 2 and equity[0] > 0 and equity[1] > 0),
+                                     ("net income to common", bool(income)), ("market capitalisation", _number(market_cap) and market_cap > 0)) if not ok]
+    if missing:
+        return {"status": "UNAVAILABLE", "missing": missing}
+    rates = cost_of_equity or _cost_of_equity(data)
+    coe, g = rates["cost_of_equity"], BANK_LONG_RUN_GROWTH
+    roe = income[0] / ((equity[0] + equity[1]) / 2)
+    price_to_book = market_cap / equity[0]
+    implied = g + price_to_book * (coe - g)
+    return {"status": "AVAILABLE", "price_to_book": price_to_book, "latest_roe": roe, "implied_roe": implied,
+            "cost_of_equity": coe, "beta": rates["beta"], "risk_free_rate": rates["risk_free_rate"], "long_run_growth": g,
+            "method": "Justified P/B = (ROE - g) / (COE - g); implied ROE = g + P/B x (COE - g)",
+            "basis": "Latest annual net income to common over average common equity; P/B from current market cap over latest common equity."}
+
+
+# Checklist 12.3 (owner approval 2026-11-23): an ADR whose accounts are in another currency is valued at company
+# level. The market value is the provider's quote-currency market cap converted at the latest FX rate, divided by
+# the same share count the statements use, so no ADR ratio is needed; per-share results convert back to the quote
+# by one factor (quote price / price per model share).
+def _fx_rate(base: str, quote: str) -> tuple[float | None, str | None]:
+    try:
+        hist = yf.Ticker(f"{base}{quote}=X").history(period="5d")
+        if hist is not None and not hist.empty:
+            close = hist["Close"].dropna()
+            return float(close.iloc[-1]), str(close.index[-1].date())
+    except Exception:
+        pass
+    return None, None
+
+
+def _company_level_bridge(data: dict, fx_loader=None) -> dict | None:
+    info = data.get("info") or {}
+    financial = info.get("financialCurrency")
+    quote = info.get("currency") or data.get("currency")
+    market_cap, shares, quote_price = data.get("market_cap"), data.get("shares"), data.get("price")
+    if not (financial and quote and financial != quote and _number(market_cap) and market_cap > 0
+            and _number(shares) and shares > 0 and _number(quote_price) and quote_price > 0):
+        return None
+    fx, fx_date = (fx_loader or _fx_rate)(financial, quote)
+    if not _number(fx) or fx <= 0:
+        return None
+    market_cap_financial = market_cap / fx
+    price_financial = market_cap_financial / shares
+    bridge = {"method": "COMPANY_LEVEL", "financial_currency": financial, "quote_currency": quote,
+              "fx_pair": f"{financial}{quote}", "fx": fx, "fx_date": fx_date, "market_cap_quote": market_cap,
+              "market_cap_financial": market_cap_financial, "shares": shares, "quote_price": quote_price,
+              "price_per_model_share": price_financial, "quote_per_model_share": quote_price / price_financial,
+              "note": (f"Valued at company level in {financial}: market cap {quote} {market_cap / 1e9:,.0f}B at {fx:.5f} {quote}/{financial}. "
+                       f"Per-share figures are per statement share ({financial} {price_financial:,.2f} at today's price) and convert to the quoted price by one factor.")}
+    return {**data, "price": price_financial, "market_cap": market_cap_financial, "currency": financial, "_unit_bridge": bridge}
+
+
+# Checklist 12.1 (owner approval 2026-11-23): when the two measures of last year's FCFF disagree by more than
+# the tolerance, the question is whether the answer depends on which one is used. Both are run; the report keeps
+# the operating-profit base (unchanged method) and carries the cash-flow-statement run alongside, and the
+# judgment card publishes only a conclusion that holds on both. Formulas and the tolerance are unchanged;
+# missing inputs or a non-positive measure still withhold.
+def _two_bases_eligible(reconciliation: dict) -> bool:
+    return (not reconciliation.get("missing") and _number(reconciliation.get("nopat_based_fcff"))
+            and _number(reconciliation.get("cfo_based_fcff"))
+            and reconciliation["nopat_based_fcff"] > 0 and reconciliation["cfo_based_fcff"] > 0)
+
+
+def _scenario_values(report: dict) -> dict:
+    return {name: (report.get("scenarios", {}).get(name) or {}).get("fair_value_per_share") for name in ("bear", "base", "bull")}
+
+
+def _two_base_report(ticker: str, overrides: dict, data: dict, reconciliation: dict) -> dict:
+    primary = build_valuation_report(ticker, overrides, {**data, "_fcff_base": "nopat"})
+    alternate = build_valuation_report(ticker, overrides, {**data, "_fcff_base": "cfo"})
+    nopat, cfo = reconciliation["nopat_based_fcff"], reconciliation["cfo_based_fcff"]
+    gap = abs(nopat - cfo) / max(abs(nopat), abs(cfo))
+    primary["cash_flow_bases"] = {
+        "status": "MEASURES_DIFFER",
+        "operating_profit_base": nopat,
+        "cash_flow_statement_base": cfo,
+        "gap_pct": gap,
+        "tolerance": reconciliation.get("tolerance"),
+        "shown_base": "operating_profit",
+        "alternate": {
+            "base": "cash_flow_statement",
+            "reverse_dcf": alternate.get("reverse_dcf") or {},
+            "fair_value": alternate.get("fair_value") or {},
+            "scenarios": _scenario_values(alternate),
+            "validation_status": (alternate.get("validation") or {}).get("status"),
+        },
+    }
+    if (primary.get("validation") or {}).get("status") == "FAILED":
+        return primary
+    currency = data.get("currency")
+    note = (
+        f"Two measures of last year's free cash flow differ by {gap:.0%} (operating profit {_large(nopat, currency)}, "
+        f"cash-flow statement {_large(cfo, currency)}; allowed gap {_large(reconciliation.get('tolerance'), currency)}). "
+        "Both were run: this report uses the operating-profit base and carries the cash-flow-statement result alongside. "
+    )
+    quality = primary.get("data_quality") or {}
+    primary["data_quality"] = {**quality, "status": "CASH_FLOW_MEASURES_DIFFER", "reason": note + str(quality.get("reason") or "")}
+    validation = primary.get("validation") or {}
+    if validation.get("status") == "PASSED":
+        validation["status"] = "PROVISIONAL"
+    validation.setdefault("reasons", []).append(note.strip())
+    primary["validation"] = primary["internal_validation"] = validation
+    return primary
+
+
 def build_valuation_report(ticker: str, overrides: dict | None = None, data: dict | None = None) -> dict:
     overrides = overrides or {}
     # A pre-collected normalized source object may be shared by Company
@@ -1434,6 +1567,7 @@ def build_valuation_report(ticker: str, overrides: dict | None = None, data: dic
             "valuation_method": selected_method,
             "as_of": data["as_of"],
             "current_market_price": data["price"],
+            "currency": data.get("currency"),
         },
         "valuation_method_selection": {
             "company_type": company_type,
@@ -1500,6 +1634,13 @@ def build_valuation_report(ticker: str, overrides: dict | None = None, data: dic
             "next_implementation_stage": f"Implement {framework} only after the required verified data is available.",
         }
         report["data_quality"] = {"status": "INSUFFICIENT_FOR_FAIR_VALUE", "missing": missing, "reason": reason}
+        if kind == "FINANCIAL_INSTITUTION":
+            bank = bank_implied_roe(data)
+            report["bank_implied_roe"] = bank
+            if bank["status"] == "AVAILABLE":
+                report["data_quality"] = {"status": "BANK_IMPLIED_ROE", "missing": ["regulatory capital and payout history", "ROE history (one year used)"],
+                                          "reason": (f"No cash-flow DCF for a bank. Price-to-book {bank['price_to_book']:.2f} with a {bank['cost_of_equity']:.1%} cost of equity "
+                                                     f"implies a sustained ROE of {bank['implied_roe']:.1%}; the latest annual ROE is {bank['latest_roe']:.1%}.")}
         validation = {
             "status": "PROVISIONAL",
             "checks": {
@@ -1516,9 +1657,16 @@ def build_valuation_report(ticker: str, overrides: dict | None = None, data: dic
         return report
 
     from security_units import valuation_unit_gate
-    unit_gate = valuation_unit_gate(data)
+    unit_gate = valuation_unit_gate(data) if not data.get("_unit_bridge") else {"status": "COMPANY_LEVEL", "passed": True, "reasons": [], "bridge": data["_unit_bridge"]}
     report["security_unit_validation"] = unit_gate
     if not unit_gate["passed"]:
+        bridged = _company_level_bridge(data)
+        if bridged is not None:
+            result = build_valuation_report(ticker, overrides, bridged)
+            result["unit_bridge"] = bridged["_unit_bridge"]
+            quality = result.get("data_quality") or {}
+            result["data_quality"] = {**quality, "reason": bridged["_unit_bridge"]["note"] + " " + str(quality.get("reason") or "")}
+            return result
         reason = " ".join(unit_gate["reasons"])
         report["data_quality"] = {"status": "SECURITY_UNIT_AMBIGUITY", "reason": reason, "missing": ["validated security-unit bridge"]}
         report["validation"] = {"status": "FAILED", "checks": {"security_units": unit_gate}, "reasons": [reason]}
@@ -1555,7 +1703,10 @@ def build_valuation_report(ticker: str, overrides: dict | None = None, data: dic
 
     reconciliation = _historical_fcff_reconciliation(data, sbc_policy)
     report["historical_fcff_reconciliation"] = reconciliation
-    if reconciliation["status"] != "PASSED":
+    forced_base = data.get("_fcff_base")
+    if reconciliation["status"] != "PASSED" and not forced_base and _two_bases_eligible(reconciliation):
+        return _two_base_report(ticker, overrides, data, reconciliation)
+    if reconciliation["status"] != "PASSED" and not forced_base:
         report["data_quality"] = {
             "status": "FAILED_FCFF_RECONCILIATION",
             "missing": reconciliation.get("missing", []),
@@ -1576,8 +1727,9 @@ def build_valuation_report(ticker: str, overrides: dict | None = None, data: dic
         report["_data"] = data
         return report
 
-    # The reconciled NOPAT construction is the historical FCFF forecast base.
-    data["latest_fcff"] = reconciliation["calculated_fcff"]
+    # The reconciled NOPAT construction is the historical FCFF forecast base (checklist 12.1: or the
+    # cash-flow-statement measure when the two-base run asks for it).
+    data["latest_fcff"] = reconciliation["cfo_based_fcff"] if forced_base == "cfo" else reconciliation["calculated_fcff"]
 
     missing = _required_data_missing(data)
     if missing:
@@ -1632,7 +1784,7 @@ def build_valuation_report(ticker: str, overrides: dict | None = None, data: dic
     reverse = _reverse_dcf(data, assumptions["base"])
     validation = _validate(data, assumptions, scenarios, reverse, sensitivity, rates)
     validation["checks"]["historical_fcff_reconciliation"] = {
-        "passed": True,
+        "passed": reconciliation["status"] == "PASSED",
         "detail": reconciliation["reason"],
     }
     base_dilution = _assumption_value(assumptions["base"], "annual_dilution")
@@ -1753,8 +1905,8 @@ def build_valuation_report(ticker: str, overrides: dict | None = None, data: dic
         "base_fair_value": base_value,
         "text": (
             f"The explicit scenarios produce a fair-value range of "
-            f"${headline['bear']:,.2f}–${headline['bull']:,.2f} per share, "
-            f"with a ${base_value:,.2f} base-case estimate. "
+            f"{_money_prefix(data.get('currency'))}{headline['bear']:,.2f}–{_money_prefix(data.get('currency'))}{headline['bull']:,.2f} per share, "
+            f"with a {_money_prefix(data.get('currency'))}{base_value:,.2f} base-case estimate. "
             + (f"{report['fair_value']['reason']} " if report["fair_value"]["method"] == "PHASED" else "")
             + "This is a research estimate, not a recommendation, and is highly sensitive to discount rate, durable cash-flow margin, growth, and dilution."
         ),
