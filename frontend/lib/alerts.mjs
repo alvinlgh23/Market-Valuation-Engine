@@ -122,7 +122,7 @@ function factorAlert(id, factor, effects, asOf) {
  * Build the ranked alert list.
  * @param {{ environment?: any, drivers?: any[], summary?: any[] }} input
  */
-export function buildAlerts({ environment, drivers, summary } = {}) {
+export function buildAlerts({ environment, drivers } = {}) {
   const factors = obj(environment?.factors);
   const asOf = environment?.as_of ?? null;
   const alerts = [];
@@ -163,21 +163,6 @@ export function buildAlerts({ environment, drivers, summary } = {}) {
       href: "/macro/liquidity"
     });
   }
-  for (const row of summary ?? []) {
-    // Checklist 18.13: only a change made under the same rules is news; a rule revision is not.
-    for (const change of (row.changed ?? []).filter((item) => item.origin === "COMPANY")) {
-      alerts.push({
-        id: `card-${row.ticker}-${change.axis}`, kind: "company", tone: "info", ticker: row.ticker,
-        title: `${row.ticker} ${(AXIS_NAMES[change.axis] ?? change.axis).toLowerCase()}: ${String(change.to).toLowerCase()}`,
-        metric: `was ${String(change.from).toLowerCase()}`,
-        holdings: [], more: 0, holdingsLabel: null, score: 0.003,
-        criteria: { rule: AXIS_RULES[change.axis] ?? "The company card's reading for this axis; open the company for its evidence.",
-                    now: `${change.from} → ${change.to} on ${change.on}`, exposure: null, asOf: change.on,
-                    track: { predictive: false, verdict: "NOT_TESTED", text: "Card readings have not been tested against returns yet." }, notes: [] },
-        href: `/company/${row.ticker}`
-      });
-    }
-  }
   // Effects that already happened rank above a scenario, which ranks above an unmeasured condition and card changes.
   return alerts.sort((a, b) => (TIER[b.kind] - TIER[a.kind]) || b.score - a.score);
 }
@@ -192,7 +177,7 @@ export function marketRead(alerts, environment) {
   const regime = obj(environment?.risk_regime).regime;
   const chip = regime ? `Regime: ${String(regime).toLowerCase()}` : null;
   if (!macro.length) {
-    return { chip, tone: "mixed", headline: "No macro condition is weighing on your holdings right now.",
+    return { chip, tone: "mixed", headline: "No macro condition has weighed on your holdings over three months.",
              note: alerts.length ? `${alerts.length} company reading${alerts.length === 1 ? "" : "s"} changed since the previous cards.` : "Nothing changed since the previous cards." };
   }
   const names = macro.slice(0, 3).map((item) => NOUNS[item.factor] ?? item.title.toLowerCase());
@@ -202,8 +187,8 @@ export function marketRead(alerts, environment) {
   return {
     chip, tone: "against",
     headline: macro.length > 3
-      ? `${count} conditions weigh on your holdings, led by ${list}.`
-      : `${count} condition${macro.length === 1 ? " weighs" : "s weigh"} on your holdings: ${list}.`,
+      ? `${count} conditions have weighed on your holdings over three months, led by ${list}.`
+      : `${count} condition${macro.length === 1 ? " has" : "s have"} weighed on your holdings over three months: ${list}.`,
     note: predictive ? `${predictive} of ${macro.length} has predicted next-month S&P 500 returns in our tests.` : "None of these has predicted next-month S&P 500 returns in our tests: read them as conditions, not forecasts."
   };
 }
@@ -219,4 +204,73 @@ export function dataAge(asOf, today) {
     if (next.getUTCDay() !== 0 && next.getUTCDay() !== 6) days += 1;
   }
   return { days, stale: days > STALE_BUSINESS_DAYS };
+}
+
+
+// ---- Checklist 18.14: what needs attention next, kept apart from why holdings moved ----------
+const WINDOW_AHEAD = 21, WINDOW_BEHIND = 7;
+
+function daysBetween(from, to) {
+  const a = new Date(`${String(from).slice(0, 10)}T00:00:00Z`), b = new Date(`${String(to).slice(0, 10)}T00:00:00Z`);
+  return Number.isNaN(a.getTime()) || Number.isNaN(b.getTime()) ? null : Math.round((b - a) / 86400000);
+}
+function shortDate(day) {
+  const date = new Date(`${String(day).slice(0, 10)}T00:00:00Z`);
+  return date.toLocaleDateString("en-US", { day: "numeric", month: "short", timeZone: "UTC" });
+}
+function inDays(n) { return n === 0 ? "today" : n === 1 ? "tomorrow" : `in ${n} days`; }
+
+/**
+ * Forward-looking items only: scheduled events, readings that changed under the same rules, and
+ * patterns that passed our tests. Conditions without a forecasting record are not here.
+ * @param {{ events?: any, summary?: any[], environment?: any, today: string }} input
+ */
+export function attentionItems({ events, summary, environment, today } = {}) {
+  const items = [];
+  for (const row of summary ?? []) {
+    for (const change of (row.changed ?? []).filter((item) => item.origin === "COMPANY")) {
+      const estimates = change.axis === "expectations";
+      items.push({
+        id: `card-${row.ticker}-${change.axis}`, kind: estimates ? "estimates" : "card", tone: "info", ticker: row.ticker, order: 0,
+        title: estimates ? `Analysts turned on ${row.ticker}: ${String(change.to).toLowerCase()}` : `${row.ticker} ${(AXIS_NAMES[change.axis] ?? change.axis).toLowerCase()}: ${String(change.to).toLowerCase()}`,
+        metric: `was ${String(change.from).toLowerCase()}`,
+        criteria: { rule: AXIS_RULES[change.axis] ?? "The company card's reading for this axis; open the company for its evidence.",
+                    now: `${change.from} → ${change.to} on ${change.on}, under the same rules as before.`, exposure: null, asOf: change.on,
+                    track: { predictive: false, verdict: "NOT_TESTED", text: "Card readings have not been tested against returns yet." }, notes: [] },
+        href: `/company/${row.ticker}`
+      });
+    }
+  }
+  for (const item of events?.earnings ?? []) {
+    if (!item.date) continue;
+    const n = daysBetween(today, item.date);
+    if (n == null) continue;
+    if (n >= 0 && n <= WINDOW_AHEAD) {
+      items.push({ id: `earnings-${item.ticker}`, kind: "earnings", tone: "info", ticker: item.ticker, order: 1 + n / 100,
+        title: `${item.ticker} reports earnings on ${shortDate(item.date)}`, metric: inDays(n),
+        criteria: { rule: "The company's next scheduled earnings report (Yahoo Finance calendar), shown three weeks ahead.", now: `Scheduled for ${item.date}.`, exposure: null, asOf: events.date ?? today, track: null, notes: [] },
+        href: `/company/${item.ticker}` });
+    } else if (n < 0 && -n <= WINDOW_BEHIND) {
+      items.push({ id: `reported-${item.ticker}`, kind: "reported", tone: "info", ticker: item.ticker, order: 0.5,
+        title: `${item.ticker} reported earnings on ${shortDate(item.date)}`, metric: `${-n} day${-n === 1 ? "" : "s"} ago`,
+        criteria: { rule: "A holding reported in the last seven days; its card reads the new quarter.", now: `Reported ${item.date}.`, exposure: null, asOf: events.date ?? today, track: null, notes: [] },
+        href: `/company/${item.ticker}` });
+    }
+  }
+  const fomc = events?.fomc?.date;
+  const n = fomc ? daysBetween(today, fomc) : null;
+  if (n != null && n >= 0 && n <= WINDOW_AHEAD) {
+    items.push({ id: "fomc", kind: "fomc", tone: "info", order: 1 + n / 100, title: `Fed rate decision on ${shortDate(fomc)}`, metric: inDays(n),
+      criteria: { rule: "The next FOMC decision (federalreserve.gov calendar), shown three weeks ahead. The Macro page shows what futures expect.", now: `Decision on ${fomc}.`, exposure: null, asOf: today, track: null, notes: [] },
+      href: "/macro" });
+  }
+  const fear = obj(environment?.factors).volatility;
+  if (fear && fear.direction === 1 && fear.track_record?.predictive) {
+    items.push({ id: "pattern-fear", kind: "pattern", tone: "tested", order: 2,
+      title: "Fear is high: in our tests that came before better months for the S&P 500", metric: unusualness(factorPercentile(fear)) ?? fear.state,
+      criteria: { rule: FACTOR_RULES.volatility, now: [`${fear.state}.`, historySentence("volatility", fear)].filter(Boolean).join(" "), exposure: null,
+                  asOf: fear.as_of ?? environment?.as_of ?? null, track: track(fear), notes: ["A pattern from the past, not a promise."] },
+      href: "/macro" });
+  }
+  return items.sort((a, b) => a.order - b.order);
 }

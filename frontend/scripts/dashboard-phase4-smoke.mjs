@@ -56,9 +56,11 @@ try {
   await page.locator(".tdy-alert, .tdy-alerts .tdy-empty").first().waitFor({ timeout: 120000 });
   await sectionShot(page, ".tdy-alerts", "05-alerts.png");
   // Checklist 14.4: every alert opens its criteria (rule and track record) on hover or focus.
-  if (await page.locator(".tdy-alert").count()) {
-    await page.locator(".tdy-alert .crit").first().focus();
-    const criteria = page.locator(".tdy-alert .crit-pop").first();
+  // Checklist 18.14: forward-looking items first, then why holdings moved; the latter carry a track record.
+  await page.locator(".tdy-attention").waitFor();
+  if (await page.locator(".tdy-moved .tdy-alert").count()) {
+    await page.locator(".tdy-moved .tdy-alert .crit").first().focus();
+    const criteria = page.locator(".tdy-moved .tdy-alert .crit-pop").first();
     await criteria.waitFor({ state: "visible" });
     if (!/Rule[\s\S]*Track record/.test(await criteria.innerText())) throw new Error("Alert criteria are missing the rule or track record.");
     await sectionShot(page, ".tdy-alerts", "06-alert-criteria.png");

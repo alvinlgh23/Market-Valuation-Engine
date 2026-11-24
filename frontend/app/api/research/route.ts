@@ -1,5 +1,7 @@
 import { runPythonJson, runtimeError, PythonRuntimeError } from "../../../lib/python-runtime";
 import { NextRequest, NextResponse } from "next/server";
+import { readFile, rename, writeFile } from "node:fs/promises";
+import path from "node:path";
 import { analyzeValuation, type ValuationOverrides } from "../../../lib/valuation-service";
 import { loadResearchSystem } from "../../../lib/research-server";
 
@@ -50,8 +52,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ status: "FAILED", runtime_error: runtimeError(error), error: runtimeError(error).message }, { status: 502 });
     }
   }
-  if (action === "company-verdict" || action === "watchlist-summary" || action === "watchlist-drivers" || action === "fx-moves") {
+  if (action === "company-verdict" || action === "watchlist-summary" || action === "watchlist-drivers" || action === "fx-moves" || action === "watchlist-events") {
     try {
+      if (action === "watchlist-events") return NextResponse.json({ status: "OK", ...(await runPythonJson<Record<string, unknown>>(["-B", "company_verdict.py", "--events"], 180_000)) });
       if (action === "fx-moves") return NextResponse.json({ status: "OK", fx: await runPythonJson<unknown>(["-B", "company_verdict.py", "--fx"], 120_000) });
       if (action === "watchlist-drivers") return NextResponse.json({ status: "OK", rows: await runPythonJson<unknown[]>(["-B", "company_verdict.py", "--drivers"], 240_000) });
       if (action === "watchlist-summary") return NextResponse.json({ status: "OK", rows: await runPythonJson<unknown[]>(["-B", "company_verdict.py", "--summary"], 60_000) });
@@ -86,12 +89,37 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({ data: scope === "dashboard" ? full.dashboard : scope === "world" ? full.world : full, meta: result.meta });
 }
 
+// Checklist 18.15: the reader edits their own watchlist. Tickers are validated before data/watchlist.json is rewritten.
+const TICKER = /^[A-Z][A-Z0-9.^=-]{0,11}$/;
+const MAX_WATCHLIST = 40;
+async function setWatchlist(tickers: unknown) {
+  if (!Array.isArray(tickers)) return { status: 400, body: { status: "FAILED", errors: ["A list of tickers is required."] } };
+  const clean = Array.from(new Set(tickers.map((item) => String(item ?? "").trim().toUpperCase()))).filter(Boolean);
+  const invalid = clean.filter((item) => !TICKER.test(item));
+  if (invalid.length) return { status: 400, body: { status: "FAILED", errors: [`Not a ticker: ${invalid.join(", ")}`] } };
+  if (clean.length > MAX_WATCHLIST) return { status: 400, body: { status: "FAILED", errors: [`At most ${MAX_WATCHLIST} companies.`] } };
+  const file = path.resolve(process.cwd(), "..", "data", "watchlist.json");
+  let existing: Record<string, unknown> = {};
+  try { existing = JSON.parse(await readFile(file, "utf8")) as Record<string, unknown>; } catch { existing = {}; }
+  const temporary = `${file}.tmp`;
+  // Same layout as the hand-written file (tickers on one line), so saving an unchanged list changes nothing.
+  const others = Object.entries(existing).filter(([key]) => key !== "tickers").map(([key, value]) => `,\n  ${JSON.stringify(key)}: ${JSON.stringify(value)}`).join("");
+  await writeFile(temporary, `{\n  "tickers": [${clean.map((item) => JSON.stringify(item)).join(", ")}]${others}\n}\n`);
+  await rename(temporary, file);
+  storyCache = null;   // the story's holdings step follows the list
+  return { status: 200, body: { status: "OK", tickers: clean } };
+}
+
 export async function POST(request: NextRequest) {
-  let body: { action?: string; ticker?: string; refresh?: boolean; overrides?: ValuationOverrides };
+  let body: { action?: string; ticker?: string; refresh?: boolean; overrides?: ValuationOverrides; tickers?: unknown };
   try {
     body = await request.json() as typeof body;
   } catch {
     return NextResponse.json({ status: "FAILED", errors: ["A JSON request body is required."] }, { status: 400 });
+  }
+  if (body?.action === "watchlist-set") {
+    const result = await setWatchlist(body.tickers);
+    return NextResponse.json(result.body, { status: result.status });
   }
   if (!body || typeof body.ticker !== "string" || !body.ticker.trim() || !["company-analyze", "valuation-analyze"].includes(body.action || "")) {
     return NextResponse.json({ status: "FAILED", errors: ["A supported action and ticker are required."] }, { status: 400 });

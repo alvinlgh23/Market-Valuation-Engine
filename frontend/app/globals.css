@@ -3880,3 +3880,22 @@ html, body { background: var(--research-bg); font-family: var(--font-research); 
 .tdy-watch-row { grid-template-columns: 56px repeat(6, minmax(0, 1fr)); gap: 6px; }
 .tdy-watch-row span { min-width: 0; overflow-wrap: anywhere; }
 @media (max-width: 760px) { .tdy-watch-row { grid-template-columns: 48px repeat(6, minmax(0, 1fr)); font-size: 11.5px; } }
+/* Checklist 18.14: scheduled and tested items */
+.tdy-alert.tone-tested .tdy-alert-head a i { background: var(--research-positive); }
+.tdy-moved { margin-top: 16px; }
+.tdy-moved .tdy-alert-head a { font-weight: 400; color: #d6d6db; }
+/* Checklist 18.15: editing the watchlist */
+.wl-edit-toggle { margin-left: auto; padding: 6px 12px; border: 1px solid var(--research-line-strong); border-radius: 8px; background: transparent; color: var(--research-text); font: 13px var(--font-research); cursor: pointer; }
+.wl-edit-toggle:hover { border-color: var(--research-muted); }
+.wl-editor { margin: 12px 0 16px; padding: 16px; border: 1px solid var(--research-line); border-radius: 12px; background: var(--research-surface); }
+.wl-editor-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.wl-editor-chips span { display: inline-flex; align-items: center; gap: 6px; padding: 4px 6px 4px 10px; border: 1px solid var(--research-line-strong); border-radius: 8px; font: 13px var(--font-mono); }
+.wl-editor-chips button { border: 0; background: transparent; color: var(--research-muted); font-size: 15px; line-height: 1; cursor: pointer; }
+.wl-editor-chips button:hover { color: var(--research-negative); }
+.wl-editor form { display: flex; gap: 8px; margin-top: 12px; }
+.wl-editor input { width: 140px; padding: 7px 10px; border: 1px solid var(--research-line-strong); border-radius: 8px; background: var(--research-bg); color: var(--research-text); font: 13px var(--font-mono); text-transform: uppercase; }
+.wl-editor form button { padding: 7px 12px; border: 1px solid var(--research-line-strong); border-radius: 8px; background: transparent; color: var(--research-text); font: 13px var(--font-research); cursor: pointer; }
+.wl-editor form .wl-editor-save { margin-left: auto; background: var(--research-text); color: var(--research-bg); border-color: var(--research-text); }
+.wl-editor form .wl-editor-save:disabled { opacity: .4; cursor: default; }
+.wl-editor-error { margin: 8px 0 0; color: var(--research-negative); font-size: 13px; }
+.wl-editor-note { margin: 8px 0 0; color: var(--research-faint); font-size: 12px; }

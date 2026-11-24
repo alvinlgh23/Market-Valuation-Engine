@@ -317,6 +317,10 @@ def valuation_axis(report: dict[str, Any] | None, observed_growth: float | None,
         span = f"Price implies {_range_text(implied[0], implied[1], _pct)} five-year revenue CAGR"
     elif None not in reach and shown["state"] == other["state"] and "above what the model can reach" in shown["state"]:
         span = f"Even 50% first-year growth values the share at {_range_text(reach[0], reach[1], lambda v: f'{v:.2f}')}"
+        stretches = [value for value in (shown["detail"].get("price_to_max_case"), other["detail"].get("price_to_max_case")) if value is not None]
+        if stretches:
+            detail["price_to_max_case"] = min(stretches)      # the more generous base: the smaller stretch
+            span = f"The price is {_range_text(min(stretches), max(stretches), lambda v: f'{v:.1f}x')} what even 50% first-year growth justifies"
     else:
         span = None
     measures = f"the two measures of last year's free cash flow differ by {gap:.0%}" if gap is not None else "the two measures of last year's free cash flow differ"
@@ -421,7 +425,12 @@ def _single_valuation_axis(report: dict[str, Any] | None, observed_growth: float
         high, low = _num(reverse.get("high_case_value")), _num(reverse.get("low_case_value"))
         if high is not None and price is not None and high < price:
             state = "Price implies growth above what the model can reach"
-            evidence.append(f"Even 50% first-year growth values the share at {high:.2f} vs price {price:.2f}; {reference_text(observed_growth, consensus_growth, band)}.")
+            # Checklist 18.16: how far beyond, so companies above the ceiling can still be compared.
+            if high > 0:
+                detail["price_to_max_case"] = price / high
+            stretch = f"The price is {price / high:.1f}x what even 50% first-year growth justifies ({high:.2f} vs {price:.2f})" if high > 0 else \
+                f"Even 50% first-year growth values the share at {high:.2f} vs price {price:.2f}"
+            evidence.append(f"{stretch}; {reference_text(observed_growth, consensus_growth, band)}.")
         elif low is not None and price is not None and low > price:
             state = "Price implies contraction beyond the model's floor"
             evidence.append(f"Even -20% first-year growth values the share at {low:.2f} vs price {price:.2f}.")
@@ -601,7 +610,11 @@ def changes_since_last(ticker: str, axes: dict[str, dict[str, Any]], store: Sign
 
 
 def record_verdict(ticker: str, axes: dict[str, dict[str, Any]], store: SignalStore, today: str) -> int:
-    return store.append([observation(f"verdict.{ticker}.{key}", today, label=value["state"], source=VERDICT_SOURCE, source_state="LIVE") for key, value in axes.items()])
+    # Checklist 18.16: the valuation row also stores how far above the model's ceiling the price is.
+    def value_of(key: str, axis_value: dict[str, Any]) -> float | None:
+        return _num((axis_value.get("detail") or {}).get("price_to_max_case")) if key == "valuation" else None
+    return store.append([observation(f"verdict.{ticker}.{key}", today, value=value_of(key, value), label=value["state"], source=VERDICT_SOURCE, source_state="LIVE")
+                         for key, value in axes.items()])
 
 
 # ---- data collection (network) ---------------------------------------------------------------
@@ -889,7 +902,7 @@ def watchlist_summary(store: SignalStore | None = None) -> list[dict[str, Any]]:
     """Last recorded card states per watchlist company, read from history only (no network)."""
     store = store or SignalStore()
     tickers = json.loads(WATCHLIST_PATH.read_text()).get("tickers", []) if WATCHLIST_PATH.exists() else []
-    output = []
+    output, stretch = [], {}
     for ticker in tickers:
         axes, last_date, changed = {}, None, []
         for key in ("macro", "flow", "valuation", "crowding", "expectations", "fundamentals"):
@@ -897,13 +910,57 @@ def watchlist_summary(store: SignalStore | None = None) -> list[dict[str, Any]]:
             if not rows:
                 continue
             axes[key] = rows[-1]["label"]
+            if key == "valuation" and rows[-1].get("value") is not None:
+                stretch[ticker] = rows[-1]["value"]
             last_date = max(last_date or rows[-1]["observation_date"], rows[-1]["observation_date"])
             if len(rows) >= 2 and rows[-2]["label"] != rows[-1]["label"]:
                 changed.append({"axis": key, "from": rows[-2]["label"], "to": rows[-1]["label"], "on": rows[-1]["observation_date"],
                                 "origin": change_origin(rows[-2].get("source"), rows[-1].get("source"))})
-        output.append({"ticker": ticker, "last_card": last_date, "axes": axes, "changed": changed})
+        output.append({"ticker": ticker, "last_card": last_date, "axes": axes, "changed": changed, "price_to_max_case": stretch.get(ticker)})
     output.sort(key=lambda item: (-len(item["changed"]), item["last_card"] is None, item["ticker"]))
     return output
+
+
+EVENTS_CACHE = ROOT / ".cache" / "events"   # one file per day (checklist 18.14)
+
+
+def _earnings_date(ticker: str) -> str | None:
+    import yfinance as yf
+    try:
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            calendar = yf.Ticker(ticker).calendar or {}
+        dates = calendar.get("Earnings Date") or []
+        return str(dates[0]) if dates else None
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def watchlist_events(today: dt.date | None = None) -> dict[str, Any]:
+    """Scheduled events for the watchlist: each company's next earnings date and the next FOMC decision.
+    Cached for the day; the list follows the current watchlist."""
+    today = today or dt.date.today()
+    tickers = json.loads(WATCHLIST_PATH.read_text()).get("tickers", []) if WATCHLIST_PATH.exists() else []
+    path = EVENTS_CACHE / f"{today.isoformat()}.json"
+    cached = {}
+    try:
+        cached = json.loads(path.read_text())
+    except (OSError, json.JSONDecodeError):
+        cached = {}
+    earnings = dict(cached.get("earnings") or {})
+    for ticker in tickers:
+        if ticker not in earnings:
+            earnings[ticker] = _earnings_date(ticker)
+    fomc = cached.get("fomc") or next_fomc(today)
+    payload = {"date": today.isoformat(), "earnings": earnings, "fomc": fomc}
+    try:
+        EVENTS_CACHE.mkdir(parents=True, exist_ok=True)
+        temporary = path.with_suffix(".tmp")
+        temporary.write_text(json.dumps(payload))
+        temporary.replace(path)
+    except OSError:
+        pass
+    return {"date": today.isoformat(), "earnings": [{"ticker": ticker, "date": earnings.get(ticker)} for ticker in tickers],
+            "fomc": fomc, "source": "Yahoo Finance earnings calendar; federalreserve.gov FOMC calendar"}
 
 
 def save_attribution(ticker: str, payload: dict[str, Any]) -> None:
@@ -1000,12 +1057,16 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--summary", action="store_true", help="Print the last recorded card states for the watchlist as JSON (no network).")
     parser.add_argument("--drivers", action="store_true", help="Print what moved each watchlist price (macro / market / sector / company) as JSON.")
     parser.add_argument("--fx", action="store_true", help="Print three-month USD moves against common home currencies as JSON.")
+    parser.add_argument("--events", action="store_true", help="Print the watchlist's next earnings dates and the next FOMC decision as JSON.")
     args = parser.parse_args(argv)
     if args.fx:
         print(json.dumps(fx_moves()))
         return 0
     if args.drivers:
         print(json.dumps(watchlist_drivers(), default=str))
+        return 0
+    if args.events:
+        print(json.dumps(watchlist_events(), default=str))
         return 0
     if args.summary:
         print(json.dumps(watchlist_summary(), indent=2))

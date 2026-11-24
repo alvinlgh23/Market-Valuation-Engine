@@ -1,6 +1,6 @@
 // Checklist 14.2: alert rules for the Today page.
 import assert from "node:assert/strict";
-import { buildAlerts, dataAge, marketRead } from "../lib/alerts.mjs";
+import { attentionItems, buildAlerts, dataAge, marketRead } from "../lib/alerts.mjs";
 
 const weak = { predictive: false, verdict: "WEAK", text: "Has not reliably predicted next-month S&P 500 returns (r = -0.17, t = -1.0, 35 months)." };
 const environment = {
@@ -50,11 +50,8 @@ assert.equal(carry.metric, "BOJ 2026-12-18 · 24d");
 const liquidity = alerts.find((item) => item.id === "liquidity");
 assert.equal(liquidity.holdings.length, 0);
 assert.match(liquidity.holdingsNote, /No measured link/);
-// Card changes come after the macro conditions.
-assert.equal(ids[ids.length - 1], "card-MSFT-expectations");
-// A reading that moved because the rules changed (or may have) is not an alert.
-assert.ok(!ids.some((id) => id.startsWith("card-V-")));
-assert.equal(alerts[alerts.length - 1].title, "MSFT estimates: estimates stable or mixed");
+// Card changes are not part of why holdings moved; they belong to "Needs your attention" (18.14).
+assert.ok(!ids.some((id) => id.startsWith("card-")));
 
 // Liquidity that disagrees between policy and market raises no alert.
 const split = structuredClone(environment);
@@ -64,15 +61,15 @@ assert.ok(!buildAlerts({ environment: split, drivers, summary: [] }).some((item)
 // Market read: built from the alerts, and honest that none of them forecasts.
 const read = marketRead(alerts, environment);
 assert.equal(read.chip, "Regime: narrow leadership unwind");
-assert.equal(read.headline, "Four conditions weigh on your holdings, led by falling risky bonds, the stronger dollar and the yen.");
-assert.equal(marketRead(alerts.slice(0, 2), environment).headline, "Two conditions weigh on your holdings: falling risky bonds and the stronger dollar.");
+assert.equal(read.headline, "Four conditions have weighed on your holdings over three months, led by falling risky bonds, the stronger dollar and the yen.");
+assert.equal(marketRead(alerts.slice(0, 2), environment).headline, "Two conditions have weighed on your holdings over three months: falling risky bonds and the stronger dollar.");
 // Factors without a percentile show their own figure, not the state again.
 const growth = buildAlerts({ environment: { factors: { growth: { state: "Weakening", direction: -1, readings: { ism_pmi: 47.9 }, notes: [] } } },
   drivers: [{ ticker: "CAT", attribution: { windows: { "3M": { macro_by_factor: { growth: -0.025 } } } } }] });
 assert.equal(growth[0].metric, "Factory index 47.9");
 assert.match(read.note, /^None of these has predicted/);
 const calm = marketRead(buildAlerts({ environment: { factors: {} }, drivers: [], summary }), {});
-assert.equal(calm.headline, "No macro condition is weighing on your holdings right now.");
+assert.equal(calm.headline, "No macro condition has weighed on your holdings over three months.");
 assert.equal(calm.chip, null);
 
 // Data age in business days: 4 Nov to 24 Nov 2026 is 14 business days; Friday to Monday is one.
@@ -94,3 +91,22 @@ assert.equal(historyLabel(0.9, "price"), "Expensive for its history");
 assert.equal(historyLabel(0.25, "strength"), "Weaker than usual");
 assert.equal(historyLabel(0.5), "About usual");
 console.log("Plain-word rules passed.");
+
+// Checklist 18.14: forward-looking items only.
+const events = { date: "2026-11-24", fomc: { date: "2026-12-09" },
+  earnings: [{ ticker: "CRM", date: "2026-12-03" }, { ticker: "COST", date: "2026-12-11" }, { ticker: "NVDA", date: "2026-11-18" },
+             { ticker: "MSFT", date: "2027-01-28" }, { ticker: "OLD", date: "2026-11-01" }, { ticker: "NONE", date: null }] };
+const fearful = { factors: { volatility: { state: "Elevated", direction: 1, readings: { percentile_in_own_history: 0.97 }, notes: [],
+  track_record: { predictive: true, verdict: "INFORMATIVE", text: "Tested over 35 months: higher readings were followed by a better next month for the S&P 500." } } } };
+const attention = attentionItems({ events, summary, environment: fearful, today: "2026-11-24" });
+assert.deepEqual(attention.map((item) => item.id), ["card-MSFT-expectations", "reported-NVDA", "earnings-CRM", "fomc", "earnings-COST", "pattern-fear"]);
+assert.equal(attention[0].title, "Analysts turned on MSFT: estimates stable or mixed");
+assert.equal(attention.find((item) => item.id === "earnings-CRM").metric, "in 9 days");
+assert.equal(attention.find((item) => item.id === "reported-NVDA").metric, "6 days ago");
+assert.equal(attention.find((item) => item.id === "fomc").title, "Fed rate decision on Dec 9");
+assert.equal(attention.find((item) => item.id === "pattern-fear").metric, "Extreme");
+// Changes under different or unknown rules, and patterns without a passing record, never appear.
+assert.ok(!attention.some((item) => item.id.startsWith("card-V-")));
+const untested = attentionItems({ events: { earnings: [] }, summary: [], environment: { factors: { volatility: { ...fearful.factors.volatility, track_record: { predictive: false } } } }, today: "2026-11-24" });
+assert.equal(untested.length, 0);
+console.log("Attention rules passed.");

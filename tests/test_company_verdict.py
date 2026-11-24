@@ -228,7 +228,8 @@ def test_adr_figures_convert_to_the_quoted_share():
     twd["unit_bridge"] = {"quote_per_model_share": 0.03}
     axis = cv.valuation_axis(twd, 0.3, 0.25, None, None)
     assert axis["detail"]["price"] == 300.0 and axis["detail"]["fair_value"]["base"] == 80.0 * 0.03
-    assert "210.00 vs price 300.00" in axis["evidence"][0]
+    assert "1.4x what even 50% first-year growth justifies (210.00 vs 300.00)" in axis["evidence"][0]
+    assert abs(axis["detail"]["price_to_max_case"] - 300 / 210) < 1e-9
 
 
 def test_fundamentals_follow_the_latest_quarter_and_fall_back_to_the_profile():
@@ -275,3 +276,17 @@ def test_a_reading_that_moved_because_the_rules_moved_is_not_news(tmp_path):
     assert change[0]["origin"] == "UNKNOWN"
     cv.record_verdict("V", {"valuation": {"state": "Price implies more growth than observed/consensus"}}, store, "2026-11-25")
     assert store.rows("verdict.V.valuation")[-1]["source"] == cv.VERDICT_SOURCE
+
+
+
+def test_the_stretch_above_the_ceiling_is_recorded_and_summarised(tmp_path, monkeypatch):
+    store = SignalStore(tmp_path)
+    axes = {"valuation": {"state": "Price implies growth above what the model can reach", "detail": {"price_to_max_case": 3.2}},
+            "flow": {"state": "Money flowing in", "detail": {}}}
+    cv.record_verdict("NVDA", axes, store, "2026-11-25")
+    assert store.rows("verdict.NVDA.valuation")[-1]["value"] == 3.2
+    assert store.rows("verdict.NVDA.flow")[-1]["value"] is None
+    watchlist = tmp_path / "watchlist.json"
+    watchlist.write_text('{"tickers": ["NVDA"]}')
+    monkeypatch.setattr(cv, "WATCHLIST_PATH", watchlist)
+    assert cv.watchlist_summary(store)[0]["price_to_max_case"] == 3.2

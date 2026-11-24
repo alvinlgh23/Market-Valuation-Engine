@@ -1,11 +1,11 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { CARD_AXES } from "../../lib/watchlist-summary";
+import { CARD_AXES, cellLabel } from "../../lib/watchlist-summary";
 import { axisTone, shortState, TONE_GLYPH, TONE_LABEL } from "../../lib/judgment-tone.mjs";
 import { DriverBar, factorBreakdown, PriceDriversLegend, ReadingTag, type Attribution, type PriceReading } from "./PriceDrivers";
 
-type Row = { ticker: string; last_card: string | null; axes: Record<string, string>; changed: Array<{ axis: string; from: string; to: string; on: string; origin?: string }> };
+type Row = { ticker: string; last_card: string | null; axes: Record<string, string>; price_to_max_case?: number | null; changed: Array<{ axis: string; from: string; to: string; on: string; origin?: string }> };
 type Drivers = { ticker: string; reading: PriceReading; attribution: Attribution; archetype_source: string | null };
 const CURRENCIES = ["USD", "EUR", "GBP", "JPY", "CHF", "CNY", "HKD", "SGD", "AUD", "CAD", "KRW", "INR", "TWD"];
 function savedCurrency() { try { return window.localStorage.getItem("chainstox.homeCurrency") || "USD"; } catch { return "USD"; } }
@@ -20,6 +20,7 @@ export function WatchlistTable() {
   const [driversError, setDriversError] = useState<string | null>(null);
   // Checklist 10.9: users are global, so moves can be read in a home currency.
   // The currency control renders only after client-side data loads, so reading storage here cannot mismatch the server HTML.
+  const [editing, setEditing] = useState(false);
   const [currency, setCurrency] = useState(() => (typeof window === "undefined" ? "USD" : savedCurrency()));
   const [fx, setFx] = useState<Record<string, number | null> | null>(null);
   useEffect(() => {
@@ -64,8 +65,10 @@ export function WatchlistTable() {
   return <section className="watchlist-grid" aria-label="Watchlist">
     <header>
       <h1>Watchlist</h1>
+      <button type="button" className="wl-edit-toggle" onClick={() => setEditing(!editing)} aria-expanded={editing}>{editing ? "Close" : "Edit list"}</button>
       <div className="wl-legend">{(["supportive", "against", "mixed", "unknown"] as const).map((tone) => <span key={tone} className={`tone-${tone}`}><em aria-hidden>{TONE_GLYPH[tone]}</em>{TONE_LABEL[tone]}</span>)}<span className="wl-changed-key">changed since last card</span></div>
     </header>
+    {editing ? <WatchlistEditor tickers={rows.map((row) => row.ticker)} /> : null}
     {drivers ? <div className="wl-drivers-summary" aria-label="What is moving the watchlist">
       <span><b>{count("noise")}</b> moved with macro, market or sector; company part normal</span>
       <span><b>{count("watch")}</b> some company-specific move</span>
@@ -89,11 +92,50 @@ export function WatchlistTable() {
           const tone = state ? axisTone(key, state) : "unknown";
           const change = companyChanges(row).find((item) => item.axis === key);
           return <span role="cell" key={key} className={`wl-cell tone-${tone}${change ? " changed" : ""}`} title={`${label}: ${state ?? "no card"}${change ? ` (was ${change.from})` : ""}`}>
-            <em aria-hidden>{TONE_GLYPH[tone]}</em>{shortState(state)}
+            <em aria-hidden>{TONE_GLYPH[tone]}</em>{cellLabel(shortState(state), key, row)}
           </span>;
         })}
         <span role="cell" className="wl-date">{row.last_card ?? "—"}</span>
       </Link>)}
     </div>
   </section>;
+}
+
+
+// Checklist 18.15: the reader's own list. Saved to data/watchlist.json; the page reloads to read it.
+const TICKER = /^[A-Z][A-Z0-9.^=-]{0,11}$/;
+function WatchlistEditor({ tickers }: { tickers: string[] }) {
+  const [list, setList] = useState(tickers);
+  const [draft, setDraft] = useState("");
+  const [message, setMessage] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const add = () => {
+    const ticker = draft.trim().toUpperCase();
+    if (!ticker) { setMessage("Type a ticker first, such as AAPL."); return; }
+    if (!TICKER.test(ticker)) { setMessage(`${ticker} doesn't look like a ticker.`); return; }
+    if (list.includes(ticker)) { setMessage(`${ticker} is already on the list.`); return; }
+    if (list.length >= 40) { setMessage("The list holds at most 40 companies."); return; }
+    setList([...list, ticker]); setDraft(""); setMessage(null);
+  };
+  const save = async () => {
+    setSaving(true); setMessage(null);
+    try {
+      const response = await fetch("/api/research", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "watchlist-set", tickers: list }) });
+      const body = await response.json();
+      if (!response.ok || body.status !== "OK") { setMessage((body.errors ?? ["Couldn't save the list."]).join(" ")); setSaving(false); return; }
+      window.location.reload();
+    } catch (failure) {
+      setMessage(`Couldn't save the list: ${failure instanceof Error ? failure.message : String(failure)}`); setSaving(false);
+    }
+  };
+  const changed = list.join(",") !== tickers.join(",");
+  return <div className="wl-editor" aria-label="Edit watchlist">
+    <div className="wl-editor-chips">{list.map((ticker) => <span key={ticker}>{ticker}<button type="button" aria-label={`Remove ${ticker}`} onClick={() => setList(list.filter((item) => item !== ticker))}>×</button></span>)}</div>
+    <form onSubmit={(event) => { event.preventDefault(); add(); }}>
+      <input value={draft} onChange={(event) => { setDraft(event.target.value); setMessage(null); }} placeholder="AAPL" aria-label="Ticker to add" />
+      <button type="submit">Add</button>
+      <button type="button" className="wl-editor-save" disabled={!changed || saving} onClick={save}>{saving ? "Saving…" : "Save list"}</button>
+    </form>
+    {message ? <p className="wl-editor-error" role="alert">{message}</p> : <p className="wl-editor-note">New companies get their first reading when their card is opened.</p>}
+  </div>;
 }

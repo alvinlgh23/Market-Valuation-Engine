@@ -1,16 +1,17 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { buildAlerts, dataAge, marketRead, pct, type Alert } from "../../lib/alerts.mjs";
+import { attentionItems, buildAlerts, dataAge, marketRead, pct, type Alert } from "../../lib/alerts.mjs";
 import { axisTone, shortState } from "../../lib/judgment-tone.mjs";
 import { sectorLeadershipBars } from "../../lib/dashboard-orchestration";
 import type { ResearchSystem } from "../../lib/research-system-types";
 import { loadWatchlistDrivers, type DriverRow } from "../../lib/watchlist-drivers";
-import { CARD_AXES, loadWatchlistSummary, type SummaryRow } from "../../lib/watchlist-summary";
+import { CARD_AXES, cellLabel, loadWatchlistSummary, type SummaryRow } from "../../lib/watchlist-summary";
+import { loadWatchlistEvents, type WatchlistEvents } from "../../lib/watchlist-events";
 import { Criteria } from "./Criteria";
 import { StoryDigest } from "../story/MarketStoryView";
 
-// Checklist 14.3: Today answers one question — what needs my attention — and nothing else.
+// Checklist 14.3 / 18.14: Today answers what needs attention next, then explains why holdings moved.
 // Every reading opens its criteria on hover; detail lives on the Macro, Markets and company pages.
 
 const WATCH_AXES = CARD_AXES;
@@ -21,7 +22,7 @@ function Card({ title, aside, children, className = "" }: { title?: string; asid
 }
 
 function Holdings({ alert }: { alert: Alert }) {
-  if (!alert.holdings.length) return alert.holdingsNote ? <p className="tdy-alert-note">{alert.holdingsNote}</p> : null;
+  if (!alert.holdings?.length) return alert.holdingsNote ? <p className="tdy-alert-note">{alert.holdingsNote}</p> : null;
   return <div className="tdy-holdings">
     {alert.holdings.map((item) => <Link key={item.ticker} href={`/company/${item.ticker}`} className="tdy-chip">{item.ticker} <b className={item.value < 0 ? "down" : "up"}>{pct(item.value)}</b></Link>)}
     {alert.more ? <span className="tdy-more">+{alert.more} more</span> : null}
@@ -44,9 +45,11 @@ function AlertRow({ alert }: { alert: Alert }) {
 export function TodayView({ system, status }: { system: ResearchSystem; status?: ReactNode }) {
   const [drivers, setDrivers] = useState<DriverRow[] | null>(null);
   const [summary, setSummary] = useState<SummaryRow[] | null>(null);
+  const [events, setEvents] = useState<WatchlistEvents | null>(null);
   const [showAll, setShowAll] = useState(false);
   useEffect(() => {
     let active = true;
+    loadWatchlistEvents().then((value) => { if (active) setEvents(value); });
     loadWatchlistDrivers().then((rows) => { if (active) setDrivers(rows); });
     loadWatchlistSummary().then((rows) => { if (active) setSummary(rows); });
     return () => { active = false; };
@@ -58,6 +61,7 @@ export function TodayView({ system, status }: { system: ResearchSystem; status?:
   const age = dataAge(environment?.as_of, today);
   const alerts = useMemo(() => buildAlerts({ environment, drivers: drivers ?? [], summary: summary ?? [] }), [environment, drivers, summary]);
   const read = marketRead(alerts, environment);
+  const attention = useMemo(() => attentionItems({ events: events ?? undefined, summary: summary ?? [], environment, today }), [events, summary, environment, today]);
   const loading = drivers == null || summary == null;
   const shown = showAll ? alerts : alerts.slice(0, VISIBLE_ALERTS);
   const sectors = sectorLeadershipBars(system, 4);
@@ -84,9 +88,16 @@ export function TodayView({ system, status }: { system: ResearchSystem; status?:
       <StoryDigest />
     </div>
 
-    <Card title="Needs your attention" aside={<small>Hover any line for its rule</small>} className="tdy-alerts">
+    {/* Checklist 18.14: what to look at next, apart from why holdings moved. */}
+    <Card title="Needs your attention" aside={<small>Scheduled events, changed readings and tested patterns</small>} className="tdy-alerts tdy-attention">
+      {events == null || summary == null ? <p className="tdy-empty">Checking your holdings&apos; calendar…</p> : null}
+      {events != null && summary != null && !attention.length ? <p className="tdy-empty">Nothing needs your attention: no earnings or Fed decision in the next three weeks, and no reading changed.</p> : null}
+      <ul>{attention.map((item) => <AlertRow key={item.id} alert={item} />)}</ul>
+    </Card>
+
+    <Card title="Why your holdings moved · last 3 months" aside={<small>Explains the past; not a forecast</small>} className="tdy-alerts tdy-moved">
       {loading && !alerts.length ? <p className="tdy-empty">Reading your holdings…</p> : null}
-      {!loading && !alerts.length ? <p className="tdy-empty">Nothing needs your attention: no condition is weighing on your holdings and no card changed.</p> : null}
+      {!loading && !alerts.length ? <p className="tdy-empty">No macro condition moved your holdings by a point or more.</p> : null}
       <ul>{shown.map((alert) => <AlertRow key={alert.id} alert={alert} />)}</ul>
       {alerts.length > VISIBLE_ALERTS ? <button type="button" className="tdy-toggle" onClick={() => setShowAll(!showAll)}>{showAll ? "Show fewer" : `Show ${alerts.length - VISIBLE_ALERTS} more`}</button> : null}
     </Card>
@@ -100,7 +111,7 @@ export function TodayView({ system, status }: { system: ResearchSystem; status?:
             {WATCH_AXES.map(([key]) => {
               const state = row.axes[key];
               const change = row.changed.find((item) => item.axis === key && item.origin === "COMPANY");
-              return <span key={key} role="cell" className={`tone-${state ? axisTone(key, state) : "unknown"}${change ? " changed" : ""}`} title={`${state ?? "No card yet"}${change ? ` (was ${change.from}, changed ${change.on})` : ""}`}>{shortState(state)}</span>;
+              return <span key={key} role="cell" className={`tone-${state ? axisTone(key, state) : "unknown"}${change ? " changed" : ""}`} title={`${state ?? "No card yet"}${change ? ` (was ${change.from}, changed ${change.on})` : ""}`}>{cellLabel(shortState(state), key, row)}</span>;
             })}
           </Link>)}
         </div>}

@@ -95,6 +95,13 @@ function AxisVisual({ name, axis }: { name: string; axis: Axis }) {
   }
   if (name === "valuation") {
     const implied = num(detail.implied_5y_revenue_cagr);
+    // Checklist 18.16: above the model's ceiling, show how far above, so companies stay comparable.
+    const stretch = num(detail.price_to_max_case);
+    if (implied == null && stretch != null) {
+      return <div className="jc-compare" title="Share price divided by the value even 50% first-year sales growth would justify. 1x would be just reachable; higher means further beyond.">
+        <div><span>Price vs best case</span><i style={{ width: `${Math.min(100, (stretch / 4) * 100)}%` }} /><b>{stretch.toFixed(1)}x</b></div>
+      </div>;
+    }
     // Checklist 15.6: five-year growth the price assumes against two references of similar length.
     const band = obj(detail.growth_band);
     const rows: Array<[string, number | null]> = band.consensus_2y != null || band.history_3y != null
