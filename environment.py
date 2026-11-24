@@ -435,11 +435,11 @@ def track_record(signal: str | None, scorecard: dict[str, Any] | None) -> dict[s
     verdict = entry.get("verdict")
     if not signal or not entry or corr is None or t_stat is None:
         return {"signal": signal, "verdict": "NOT_TESTED", "predictive": False, "text": "Not tested against market returns yet."}
-    stats = f"r = {corr:+.2f}, t = {t_stat:.1f}, {samples} months"
+    # Plain words; the statistics stay in the fields below (owner request 2026-11-24).
     if verdict in PREDICTIVE_VERDICTS:
-        text = f"Tested: higher readings were followed by {'higher' if corr > 0 else 'lower'} next-month S&P 500 returns ({stats})."
+        text = f"Tested over {samples} months: higher readings were followed by a {'better' if corr > 0 else 'worse'} next month for the S&P 500."
     else:
-        text = f"Has not reliably predicted next-month S&P 500 returns ({stats})."
+        text = f"Tested over {samples} months: it has not reliably told us how the S&P 500 does the next month."
     return {"signal": signal, "verdict": verdict, "predictive": verdict in PREDICTIVE_VERDICTS, "corr": corr, "t_stat": t_stat,
             "samples": samples, "horizon": "1M", "text": text}
 

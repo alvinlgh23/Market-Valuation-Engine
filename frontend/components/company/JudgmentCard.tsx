@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { loadCompanyCard } from "../../lib/company-card";
 import { fairValueCoordinates } from "../../lib/fair-value-scale.mjs";
+import { historyLabel, versusHistory } from "../../lib/plain-words.mjs";
 import { axisTone, confidenceDots, percentileWidth, TONE_GLYPH, TONE_LABEL, type Tone } from "../../lib/judgment-tone.mjs";
 import { PriceDriversPanel, type Attribution, type PriceReading } from "./PriceDrivers";
 
@@ -27,13 +28,14 @@ function obj(value: unknown) { return (value && typeof value === "object" ? valu
 
 /** A horizontal 0-100 bar with a marker; label on the left, value on the right. */
 /** `highIsAgainst`: for valuation-type readings a high percentile is expensive, so the colours run the other way. */
-function PercentileBar({ label, value, note, highIsAgainst = false }: { label: string; value: unknown; note?: string; highIsAgainst?: boolean }) {
+function PercentileBar({ label, value, note, highIsAgainst = false, period }: { label: string; value: unknown; note?: string; highIsAgainst?: boolean; period: string }) {
   const width = percentileWidth(value);
   if (width == null) return null;
-  return <div className="jc-bar" title={note}>
+  // Plain words instead of a percentile (owner request 2026-11-24); the exact place is in the tooltip.
+  return <div className="jc-bar" title={[note, versusHistory(value, period)].filter(Boolean).join(" ")}>
     <span>{label}</span>
     <div className={`jc-bar-track${highIsAgainst ? " reverse" : ""}`}><i style={{ left: `${width}%` }} /></div>
-    <b>{Math.round(width)}th pct</b>
+    <b>{historyLabel(value, highIsAgainst ? "price" : "strength")}</b>
   </div>;
 }
 
@@ -44,10 +46,10 @@ function Chip({ tone, children }: { tone: Tone; children: React.ReactNode }) {
 /** Small visual per axis, drawn from the card's detail fields only. */
 function AxisVisual({ name, axis }: { name: string; axis: Axis }) {
   const detail = axis.detail;
-  if (name === "flow") return <PercentileBar label={`${String(detail.sector_etf ?? "Sector")} vs SPY`} value={detail.percentile} note="One-month relative strength, percentile of its own stored history" />;
+  if (name === "flow") return <PercentileBar label={`${String(detail.sector_etf ?? "Sector")} vs SPY`} value={detail.percentile} note="How the sector did against the S&P 500 over one month, compared with its own record." period="its stored record" />;
   if (name === "crowding") {
     const own = obj(detail.valuation_in_own_history);
-    return <PercentileBar label="P/S vs own history" value={own.state === "AVAILABLE" ? own.percentile : null} highIsAgainst note="Price-to-sales percentile in the company's own history; higher is more expensive" />;
+    return <PercentileBar label="P/S vs own history" value={own.state === "AVAILABLE" ? own.percentile : null} highIsAgainst note="Price-to-sales compared with the company's own history; higher is more expensive." period="its own history" />;
   }
   if (name === "macro") {
     const rows = Array.isArray(detail.exposures) ? (detail.exposures as Array<Record<string, unknown>>) : [];

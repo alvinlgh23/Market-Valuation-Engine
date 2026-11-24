@@ -28,7 +28,9 @@ const ids = alerts.map((item) => item.id);
 // Credit is outside its middle band and cost PLTR 12.4 points: the top alert.
 assert.equal(ids[0], "factor-credit");
 assert.deepEqual(alerts[0].holdings, [{ ticker: "PLTR", value: -0.124 }]);
-assert.equal(alerts[0].metric, "15th percentile");
+assert.equal(alerts[0].metric, "Unusual");
+assert.match(alerts[0].criteria.now, /^Risk appetite fading\. Lower than 85 of every 100 readings in the past three years\.$/);
+assert.ok(!JSON.stringify(alerts).match(/\d+(st|nd|rd|th) (pct|percentile)/), "no percentile jargon in alerts");
 assert.equal(alerts[0].criteria.track.predictive, false);
 // The dollar only lists the holding it hurt; AMD's -0.4 point credit effect is below the 1-point floor.
 assert.deepEqual(alerts.find((item) => item.id === "factor-usd").holdings, [{ ticker: "AMD", value: -0.061 }]);
@@ -61,7 +63,7 @@ assert.equal(marketRead(alerts.slice(0, 2), environment).headline, "Two conditio
 // Factors without a percentile show their own figure, not the state again.
 const growth = buildAlerts({ environment: { factors: { growth: { state: "Weakening", direction: -1, readings: { ism_pmi: 47.9 }, notes: [] } } },
   drivers: [{ ticker: "CAT", attribution: { windows: { "3M": { macro_by_factor: { growth: -0.025 } } } } }] });
-assert.equal(growth[0].metric, "PMI 47.9");
+assert.equal(growth[0].metric, "Factory index 47.9");
 assert.match(read.note, /^None of these has predicted/);
 const calm = marketRead(buildAlerts({ environment: { factors: {} }, drivers: [], summary }), {});
 assert.equal(calm.headline, "No macro condition is weighing on your holdings right now.");
@@ -72,3 +74,17 @@ assert.deepEqual(dataAge("2026-11-04", "2026-11-24"), { days: 14, stale: true })
 assert.deepEqual(dataAge("2026-11-20", "2026-11-23"), { days: 1, stale: false });
 assert.deepEqual(dataAge(null, "2026-11-24"), { days: null, stale: true });
 console.log("Alert rules passed.");
+
+// Plain words for a reading's place in its own history.
+const { unusualness, versusHistory, historyLabel } = await import("../lib/plain-words.mjs");
+assert.equal(unusualness(0.5), "Typical");
+assert.equal(unusualness(0.69), "Slightly unusual");
+assert.equal(unusualness(0.15), "Unusual");
+assert.equal(unusualness(0.97), "Extreme");
+assert.equal(unusualness(null), null);
+assert.equal(versusHistory(0.69), "Higher than 69 of every 100 readings in the past three years.");
+assert.equal(versusHistory(0.15, "the past year"), "Lower than 85 of every 100 readings in the past year.");
+assert.equal(historyLabel(0.9, "price"), "Expensive for its history");
+assert.equal(historyLabel(0.25, "strength"), "Weaker than usual");
+assert.equal(historyLabel(0.5), "About usual");
+console.log("Plain-word rules passed.");

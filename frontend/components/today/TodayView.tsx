@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { buildAlerts, dataAge, FACTOR_NAMES, FACTOR_RULES, marketRead, pct, type Alert } from "../../lib/alerts.mjs";
+import { buildAlerts, dataAge, factorFigure, FACTOR_NAMES, FACTOR_RULES, historySentence, marketRead, pct, type Alert } from "../../lib/alerts.mjs";
 import { axisTone, shortState } from "../../lib/judgment-tone.mjs";
 import { sectorLeadershipBars } from "../../lib/dashboard-orchestration";
 import type { EnvironmentFactor, ResearchSystem } from "../../lib/research-system-types";
@@ -16,20 +16,7 @@ const FACTOR_ORDER = ["fed_path", "long_rates", "usd", "credit", "volatility", "
 const WATCH_AXES: Array<[string, string]> = [["macro", "Macro"], ["flow", "Flow"], ["expectations", "Estimates"], ["valuation", "Valuation"]];
 const VISIBLE_ALERTS = 5;
 
-function num(value: unknown) { return typeof value === "number" && Number.isFinite(value) ? value : null; }
 function obj(value: unknown) { return (value && typeof value === "object" ? value : {}) as Record<string, unknown>; }
-function ordinal(value: number) { const n = Math.round(value * 100); return `${n}th pct`; }
-
-function factorFigure(id: string, factor: EnvironmentFactor): string | null {
-  const r = factor.readings ?? {};
-  const percentile = num(r.percentile_in_own_history) ?? num(r.percentile_within_year);
-  if (id === "fed_path") { const tighten = num(r.probability_tightening_3m); return tighten == null ? null : `Hike ${Math.round(tighten * 100)}%`; }
-  if (id === "growth" && num(r.ism_pmi) != null) return `PMI ${(num(r.ism_pmi) as number).toFixed(1)}`;
-  if (id === "oil" && num(r.change_3m_pct) != null) return `${(num(r.change_3m_pct) as number) >= 0 ? "+" : "−"}${Math.abs(num(r.change_3m_pct) as number).toFixed(1)}% 3M`;
-  if (id === "yen_carry") { const level = String(obj(r.warning).level ?? ""); return level ? `Warning ${level.toLowerCase()}` : null; }
-  return percentile == null ? null : ordinal(percentile);
-}
-
 function factorState(id: string, factor: EnvironmentFactor) {
   if (id === "liquidity") {
     const r = factor.readings ?? {};
@@ -113,7 +100,7 @@ export function TodayView({ system, status }: { system: ResearchSystem; status?:
           const figure = factorFigure(id, factor);
           const glyph = factor.direction === 1 ? "▲" : factor.direction === -1 ? "▼" : "•";
           return <li key={id}>
-            <Criteria align={FACTOR_ORDER.indexOf(id) % 2 ? "right" : "left"} criteria={{ rule: FACTOR_RULES[id] ?? factor.source, now: [factor.state, figure].filter(Boolean).join(" · "), asOf: factor.as_of ?? environment?.as_of, track: factor.track_record ?? null, notes: factor.notes }}>
+            <Criteria align={FACTOR_ORDER.indexOf(id) % 2 ? "right" : "left"} criteria={{ rule: FACTOR_RULES[id] ?? factor.source, now: [`${factor.state}.`, historySentence(id, factor) ?? (figure ? `${figure}.` : null)].filter(Boolean).join(" "), asOf: factor.as_of ?? environment?.as_of, track: factor.track_record ?? null, notes: factor.notes }}>
               <span className="tdy-factor-name">{FACTOR_NAMES[id]}</span>
             </Criteria>
             <span className="tdy-factor-state"><em aria-hidden="true">{glyph}</em>{factorState(id, factor)}</span>

@@ -103,9 +103,10 @@ def test_track_record_says_whether_a_factor_has_predicted_returns():
         "hyg_ief": {"verdict": "WEAK", "horizons": {"1M": {"corr": -0.17, "t_stat": -1.0, "samples": 35}}},
         "vix_level": {"verdict": "INFORMATIVE", "horizons": {"1M": {"corr": 0.44, "t_stat": 2.8, "samples": 35}}}}}
     weak = env.track_record("hyg_ief", scorecard)
-    assert not weak["predictive"] and weak["text"].startswith("Has not reliably predicted") and "35 months" in weak["text"]
+    assert not weak["predictive"] and weak["text"] == "Tested over 35 months: it has not reliably told us how the S&P 500 does the next month."
+    assert weak["t_stat"] == -1.0 and weak["corr"] == -0.17
     informative = env.track_record("vix_level", scorecard)
-    assert informative["predictive"] and "followed by higher next-month" in informative["text"]
+    assert informative["predictive"] and "followed by a better next month" in informative["text"]
     assert env.track_record(None, scorecard)["verdict"] == "NOT_TESTED"
     assert env.track_record("tnx_3m", None)["verdict"] == "NOT_TESTED"
 

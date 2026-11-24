@@ -63,6 +63,12 @@ def _pct(value: float | None, digits: int = 1) -> str:
     return "n/a" if value is None else f"{value * 100:+.{digits}f}%"
 
 
+def _versus(p: float, noun: str, period: str) -> str:
+    """A place in history in plain words, not a percentile (owner request 2026-11-24)."""
+    n = round(p * 100)
+    return f"higher than {n} of every 100 {noun} {period}" if n >= 50 else f"lower than {100 - n} of every 100 {noun} {period}"
+
+
 def _size(value: float | None, digits: int = 1) -> str:
     """Unsigned magnitude, for sentences that already say lead/lag or up/down."""
     return "n/a" if value is None else f"{abs(value) * 100:.{digits}f}%"
@@ -185,11 +191,11 @@ def flow_axis(ticker: str, etf: str | None, mapping_note: str, store: SignalStor
     state = names.get(current, "Unavailable") if held >= 6 else "Mixed (not persistent)"
     prior = store.value_observations_ago(signal, 21)
     direction = None if prior is None else "strengthening" if latest > prior[1] else "weakening" if latest < prior[1] else "unchanged"
-    evidence = [f"{etf} {horizon} relative strength vs SPY {_pct(latest)} on {latest_day}, {percentile:.0%} percentile of its stored history; same bucket {held} of last 10 observations."]
+    evidence = [f"{etf} against the S&P 500 over {({'1M': 'one month', '3M': 'three months', '6M': 'six months'}).get(horizon, horizon)}: {_pct(latest)} on {latest_day}, {_versus(percentile, 'readings', 'in its stored record')}; the same reading on {held} of the last 10 days."]
     flow = sector_flow or {}
     volume_parts = []
     if flow.get("dollar_volume_percentile") is not None:
-        volume_parts.append(f"dollar volume at the {flow['dollar_volume_percentile']:.0%} percentile")
+        volume_parts.append(f"trading value {_versus(flow['dollar_volume_percentile'], 'days', 'in its record')}")
     if flow.get("updown_volume_20d") is not None:
         volume_parts.append(f"up/down volume {flow['updown_volume_20d']:.2f}")
     if flow.get("breadth_50") is not None and "breadth_50" not in removed:
@@ -408,7 +414,7 @@ def crowding_axis(heat: dict[str, Any] | None, sector_flow: dict[str, Any] | Non
     missing = ["positioning data (short interest, options, fund ownership)"]
     # Checklist 7.3 step 2: the valuation part is read against the company's own history first.
     if valuation.get("state") == "AVAILABLE":
-        evidence = [f"Price-to-sales {valuation['current']:.1f}, at the {valuation['percentile']:.0%} percentile of its own history since {valuation['first'][:4]}; {technicals}."]
+        evidence = [f"Price-to-sales {valuation['current']:.1f}, {_versus(valuation['percentile'], 'days', 'since ' + valuation['first'][:4])}; {technicals}."]
     else:
         evidence = [f"Heat {heat.get('heat'):.0f}/100 on the absolute scale (valuation {heat.get('valuation_heat'):.0f}, momentum {heat.get('momentum_heat'):.0f}); {technicals}."]
         missing.append(f"valuation in own history ({valuation.get('reason') or valuation.get('state') or 'not computed'})")
@@ -471,7 +477,7 @@ def fundamentals_axis(economics: dict[str, Any] | None, relative: dict[str, Any]
         evidence.append(f"Current revenue growth {_pct(growth)}.")
     quality = (relative or {}).get("quality") or {}
     if quality.get("quality_percentile") is not None:
-        evidence.append(f"Quality at the {quality['quality_percentile']:.0%} percentile of {quality['peers']} sector peers (absolute score {quality['metrics']['score']['value']:.0f}/100).")
+        evidence.append(f"Business quality better than {quality['quality_percentile']:.0%} of its {quality['peers']} sector peers (score {quality['metrics']['score']['value']:.0f} of 100).")
     return axis(state, confidence="MODERATE" if unknown == 0 else "LOW", evidence=evidence, families=["fundamentals"],
                 missing=[f"{key.replace('_', ' ')}" for key, value in states.items() if value in (None, "INSUFFICIENT_EVIDENCE")],
                 detail={"peer_quality": quality, "financial_translation": states, "current_revenue_growth": growth, "archetype": (economics.get("classification") or {}).get("primary_archetype")})

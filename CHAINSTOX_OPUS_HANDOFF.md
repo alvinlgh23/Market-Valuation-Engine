@@ -275,6 +275,7 @@ P1 发现的遗留问题：`compute_macro` 只记录 10 年期和前端利率的
 - [x] **14.3** 今日页面重做：一句话市场判断（由提醒拼出，不用模型生成）、因子列表、"Needs your attention"提醒列表（默认 5 条）、自选股四个维度、行业 1 个月相对标普。市场变动、观察项和矛盾提示从今日页移除（宏观页仍有）。
 - [x] **14.4** 判断标准悬停：`components/today/Criteria.tsx`，悬停或键盘聚焦显示规则、当前数值、持股影响的算法、检验记录（"Tested" / "Condition, not a forecast" / "Not tested"）和数据日期。
 - [ ] **14.5** 公司页、宏观页、估值页按同一风格重排，长文字收进悬停或展开区（待 owner 看过今日页面后再做）。
+- [x] **14.7** 不再显示百分位（owner 2026-11-24："一般人根本不会明白"）。共用规则 `frontend/lib/plain-words.mjs`：列表和提醒只写"Typical / Slightly unusual / Unusual / Extreme"（中间三分之一为 Typical，外侧五分之一为 Unusual，外侧二十分之一为 Extreme）；估值和强弱条写"Pricier than usual / Weaker than usual"等；精确位置只在悬停里写成一句话，例如"Higher than 69 of every 100 readings in the past three years."。检验记录也去掉 r、t，改为"Tested over 35 months: it has not reliably told us how the S&P 500 does the next month."（统计值仍保存在数据字段里）。判断卡的 Python 说明句同样改写。计算和阈值都没有改。
 - [x] **14.6** 数据超过 2 个交易日就在今日页顶部显示琥珀色提示，写明"提醒描述的是那一天，不是今天"。
 
 实测（存档数据，截至 2026-11-04，已过 14 个交易日）：头条为"Seven conditions weigh on your holdings, led by credit, the chip cycle and the dollar."；第一条提醒是信用风险偏好转弱（第 15 百分位），对 PLTR −12.4%、META −9.3%、UBER −8.6%、CRM −7.8%。七条宏观提醒都标为"Condition, not a forecast"或"Not tested"。

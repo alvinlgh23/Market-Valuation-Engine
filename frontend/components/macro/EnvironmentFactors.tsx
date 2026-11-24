@@ -1,5 +1,6 @@
 import type { EnvironmentFactor, EnvironmentLayer } from "../../lib/research-system-types";
 import { FactorImpact } from "./FactorImpact";
+import { unusualness, versusHistory } from "../../lib/plain-words.mjs";
 
 const ORDER: Array<[string, string]> = [["fed_path", "Fed path"], ["long_rates", "US 10Y yield"], ["usd", "US dollar"], ["credit", "Credit"], ["volatility", "Volatility"], ["liquidity", "Liquidity"],
   ["growth", "Growth"], ["inflation", "Inflation"], ["oil", "Oil"], ["semis_cycle", "Chip cycle"], ["yen_carry", "Yen carry"]];
@@ -8,10 +9,11 @@ function num(value: unknown) { return typeof value === "number" && Number.isFini
 function obj(value: unknown) { return (value && typeof value === "object" ? value : {}) as Record<string, unknown>; }
 
 /** Neutral 0-100 track: macro factors have no good or bad end, so there is no colour scale. */
-function Track({ label, value, right }: { label: string; value: number | null; right?: string }) {
+function Track({ label, value, right, period = "the past three years" }: { label: string; value: number | null; right?: string; period?: string }) {
   if (value == null) return null;
   const position = Math.max(0, Math.min(100, value * 100));
-  return <div className="env-track"><span>{label}</span><div><i style={{ left: `${position}%` }} /></div><b>{right ?? `${Math.round(position)}th pct`}</b></div>;
+  // Plain words instead of a percentile (owner request 2026-11-24); the exact place is in the tooltip.
+  return <div className="env-track" title={right ? undefined : versusHistory(value, period) ?? undefined}><span>{label}</span><div><i style={{ left: `${position}%` }} /></div><b>{right ?? unusualness(value)}</b></div>;
 }
 
 function FactorVisual({ id, factor }: { id: string; factor: EnvironmentFactor }) {
@@ -20,16 +22,16 @@ function FactorVisual({ id, factor }: { id: string; factor: EnvironmentFactor })
     // Checklist 10.8: one line on why the dollar moves (Fed vs ECB policy gap).
     const d = obj(r.driver_fed_ecb);
     return <div className="env-carry">
-      <Track label="vs own history" value={num(r.percentile_in_own_history)} />
+      <Track label="vs past 3 years" value={num(r.percentile_in_own_history)} />
       {d.status === "AVAILABLE" ? <small title={String(d.text ?? "")}>Fed–ECB gap {num(d.gap_pp)?.toFixed(2)} pp{num(d.gap_change_3m_pp) != null ? ` (${(num(d.gap_change_3m_pp) as number) >= 0 ? "+" : ""}${(num(d.gap_change_3m_pp) as number).toFixed(2)} in 3M)` : ""}</small> : null}
     </div>;
   }
-  if (num(r.percentile_in_own_history) != null) return <Track label="vs own history" value={num(r.percentile_in_own_history)} />;
+  if (num(r.percentile_in_own_history) != null) return <Track label="vs past 3 years" value={num(r.percentile_in_own_history)} />;
   if (id === "semis_cycle") {
     // Checklist 10.7: Korean chip exports as the leading read when a data.go.kr key is configured.
     const lead = obj(r.leading_exports);
     return <div className="env-carry">
-      <Track label="within year" value={num(r.percentile_within_year)} />
+      <Track label="vs past year" value={num(r.percentile_within_year)} period="the past year" />
       <small title={String(lead.note ?? "")}>{lead.status === "AVAILABLE" && num(lead.yoy) != null ? `Lead: Korean chip exports ${(num(lead.yoy) as number) >= 0 ? "+" : ""}${((num(lead.yoy) as number) * 100).toFixed(1)}% y/y (${String(lead.month)})` : "Lead (Korean chip exports): needs a data.go.kr key"}</small>
     </div>;
   }
@@ -49,7 +51,7 @@ function FactorVisual({ id, factor }: { id: string; factor: EnvironmentFactor })
   }
   if (id === "growth" && num(r.ism_pmi) != null) {
     const pmi = num(r.ism_pmi) as number;
-    return <Track label="ISM PMI (50 = flat)" value={(pmi - 40) / 20} right={pmi.toFixed(1)} />;
+    return <Track label="Factory index (under 50 = shrinking)" value={(pmi - 40) / 20} right={pmi.toFixed(1)} />;
   }
   if (id === "oil" && num(r.change_3m_pct) != null) return <div className="env-figure"><b>{(num(r.change_3m_pct) as number) >= 0 ? "+" : ""}{(num(r.change_3m_pct) as number).toFixed(1)}%</b><span>3 months · WTI {String(r.wti ?? "—")}</span></div>;
   if (id === "yen_carry") {

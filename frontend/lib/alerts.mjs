@@ -5,6 +5,8 @@
 // what it reads now, the data date) and the scorecard's track record, so the page can say whether
 // the condition has ever predicted returns. Most have not, and the alert says so.
 
+import { unusualness, versusHistory } from "./plain-words.mjs";
+
 export const FACTOR_NAMES = {
   fed_path: "Fed path", long_rates: "US 10Y yield", usd: "US dollar", credit: "Credit", volatility: "Volatility", liquidity: "Liquidity",
   growth: "Growth", inflation: "Inflation", oil: "Oil", semis_cycle: "Chip cycle", yen_carry: "Yen carry"
@@ -12,29 +14,29 @@ export const FACTOR_NAMES = {
 
 // The rule each factor's state already follows (environment.py), in plain words.
 export const FACTOR_RULES = {
-  long_rates: "The US 10-year yield's three-month change, ranked against its own three-year history. Above the 67th percentile reads rising, below the 33rd falling.",
-  usd: "The dollar index's (DXY) three-month change, ranked against its own three-year history. Above the 67th percentile reads strengthening, below the 33rd weakening.",
-  credit: "High-yield bonds (HYG) minus Treasuries (IEF) over three months, ranked against its own three-year history. Below the 33rd percentile reads risk appetite fading.",
-  volatility: "The VIX level ranked against its own three-year history. Above the 67th percentile reads elevated, below the 33rd low.",
-  growth: "ISM manufacturing PMI. Below 50 and falling over three months reads weakening; above 50 and rising reads improving.",
-  inflation: "The US Inflation Pressure Engine's one-to-three-month reading.",
-  oil: "WTI crude's three-month change. Above +5% reads rising, below -5% falling.",
-  semis_cycle: "Samsung and SK Hynix against KOSPI over three months, ranked within the past year. Below the 33rd percentile reads weakening.",
-  fed_path: "Central Bank Compass policy bias (hawkish or dovish) with its three-month move probabilities.",
-  liquidity: "Policy liquidity (Central Bank Compass) reads contracting and market liquidity (rates 30%, front-end rates 15%, dollar 25%, curve 10%, credit 20%) is below 40 of 100.",
-  yen_carry: "Unwind warning: HIGH when the carry is already unwinding, or two fuel signs plus a trigger; ELEVATED with two fuel signs, or one plus a trigger."
+  long_rates: "How far the US 10-year Treasury yield moved over three months, compared with every three-month move in the past three years. A rise bigger than two-thirds of them reads rising; smaller than one-third reads falling.",
+  usd: "How far the dollar index (DXY) moved over three months, compared with every three-month move in the past three years. A rise bigger than two-thirds of them reads strengthening; smaller than one-third reads weakening.",
+  credit: "How risky company bonds (HYG) did against safe Treasuries (IEF) over three months, compared with the past three years. Worse than two-thirds of that history reads risk appetite fading; better reads improving.",
+  volatility: "The VIX, the market's fear gauge, compared with the past three years. Higher than two-thirds of that history reads elevated; lower than one-third reads low.",
+  growth: "The ISM manufacturing index, a monthly survey of factories where below 50 means activity is shrinking. Below 50 and falling over three months reads weakening; above 50 and rising reads improving.",
+  inflation: "The US Inflation Pressure Engine's reading for the next one to three months.",
+  oil: "How much WTI crude oil moved over three months. Up more than 5% reads rising; down more than 5% reads falling.",
+  semis_cycle: "Samsung and SK Hynix shares against the Korean market over three months, compared with the past year. Worse than two-thirds of that year reads weakening.",
+  fed_path: "The Central Bank Compass reading of the Fed's leaning (toward hikes or cuts) and its odds of a move in the next three months.",
+  liquidity: "Policy liquidity (Central Bank Compass) reads contracting, and market liquidity (rates 30%, short-term rates 15%, dollar 25%, yield curve 10%, credit 20%) is below 40 of 100.",
+  yen_carry: "Unwind warning: high when the carry trade is already unwinding, or two fuel signs plus a trigger; elevated with two fuel signs, or one plus a trigger."
 };
 
-export const EXPOSURE_RULE = "The part of each company's three-month price move explained by this factor, from weekly sensitivities fitted on the two years before. Statistical, not causal. Shown at 1 point or more.";
-export const CARRY_EXPOSURE_RULE = "Each holding's weekly sensitivity to USD/JPY over two years, times an 8% fall (the August 2024 unwind). A rough size, not a forecast.";
+export const EXPOSURE_RULE = "The part of each company's share-price move over the last three months that this factor explains, based on how the stock reacted to it in the two years before. A statistical estimate, not proof of cause. Shown when it is 1 point or more.";
+export const CARRY_EXPOSURE_RULE = "How much each holding has moved with the yen over two years, applied to an 8% drop in the dollar against the yen (the size of August 2024). A rough size, not a forecast.";
 export const MIN_EFFECT = 0.01;
 const CARRY_MOVE = -0.08;
 const STALE_BUSINESS_DAYS = 2;
 
 const AXIS_NAMES = { macro: "Macro", flow: "Flow", crowding: "Crowding", expectations: "Estimates", fundamentals: "Fundamentals", valuation: "Valuation" };
 const AXIS_RULES = {
-  expectations: "Estimates rising: next-year EPS estimate up more than 2% over 90 days with more upward than downward revisions in 30 days; falling is the reverse.",
-  valuation: "What the price implies (reverse DCF) against consensus growth for the next fiscal year; more than 5 points apart reads higher or lower."
+  expectations: "Estimates rising: analysts raised next year's earnings-per-share forecast by more than 2% over 90 days, with more raising than cutting in the last 30 days. Falling is the reverse.",
+  valuation: "The yearly sales growth the share price assumes, compared with analysts' forecast for the next fiscal year. More than 5 points apart reads higher or lower."
 };
 
 const TIER = { macro: 3, carry: 2, liquidity: 1, company: 0 };
@@ -43,18 +45,24 @@ function num(value) { return typeof value === "number" && Number.isFinite(value)
 function obj(value) { return value && typeof value === "object" ? value : {}; }
 export function pct(value, digits = 1) { return `${value >= 0 ? "+" : "−"}${Math.abs(value * 100).toFixed(digits)}%`; }
 
-function percentileText(factor) {
-  const value = num(obj(factor.readings).percentile_in_own_history) ?? num(obj(factor.readings).percentile_within_year);
-  return value == null ? null : `${Math.round(value * 100)}th percentile`;
+function factorPercentile(factor) {
+  return num(obj(factor.readings).percentile_in_own_history) ?? num(obj(factor.readings).percentile_within_year);
+}
+
+/** Where the reading sits in its own history, as a plain sentence (hover panels). */
+export function historySentence(id, factor) {
+  const p = factorPercentile(factor);
+  return p == null ? null : versusHistory(p, id === "semis_cycle" ? "the past year" : "the past three years");
 }
 
 /** The one figure an alert shows beside its title. */
 export function factorFigure(id, factor) {
   const r = obj(factor.readings);
-  if (id === "fed_path" && num(r.probability_tightening_3m) != null) return `Hike odds ${Math.round(r.probability_tightening_3m * 100)}%`;
-  if (id === "growth" && num(r.ism_pmi) != null) return `PMI ${r.ism_pmi.toFixed(1)}`;
-  if (id === "oil" && num(r.change_3m_pct) != null) return `${r.change_3m_pct >= 0 ? "+" : "−"}${Math.abs(r.change_3m_pct).toFixed(1)}% in 3M`;
-  return percentileText(factor);
+  if (id === "fed_path" && num(r.probability_tightening_3m) != null) return `${Math.round(r.probability_tightening_3m * 100)}% chance of a hike`;
+  if (id === "growth" && num(r.ism_pmi) != null) return `Factory index ${r.ism_pmi.toFixed(1)}`;
+  if (id === "oil" && num(r.change_3m_pct) != null) return `${r.change_3m_pct >= 0 ? "+" : "−"}${Math.abs(r.change_3m_pct).toFixed(1)}% in 3 months`;
+  if (id === "yen_carry" && obj(r.warning).level) return `Warning ${String(obj(r.warning).level).toLowerCase()}`;
+  return unusualness(factorPercentile(factor));
 }
 
 function track(factor) {
@@ -82,7 +90,7 @@ function carryHits(drivers) {
 function factorAlert(id, factor, effects, asOf) {
   const hurt = effects.filter((item) => item.value < 0);
   if (!hurt.length) return null;
-  const now = [factor.state, factorFigure(id, factor)].filter(Boolean).join(" · ");
+  const now = [`${factor.state}.`, historySentence(id, factor) ?? (factorFigure(id, factor) ? `${factorFigure(id, factor)}.` : null)].filter(Boolean).join(" ");
   return {
     id: `factor-${id}`, kind: "macro", tone: "against", factor: id,
     title: `${FACTOR_NAMES[id]}: ${factor.state.toLowerCase()}`,

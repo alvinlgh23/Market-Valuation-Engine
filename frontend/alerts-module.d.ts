@@ -25,6 +25,7 @@ declare module "*alerts.mjs" {
   export const CARRY_EXPOSURE_RULE: string;
   export const MIN_EFFECT: number;
   export function pct(value: number, digits?: number): string;
+  export function historySentence(id: string, factor: unknown): string | null;
   export function factorFigure(id: string, factor: unknown): string | null;
   export function factorEffects(drivers: unknown[] | undefined, factor: string): AlertHolding[];
   export function buildAlerts(input?: { environment?: unknown; drivers?: unknown[]; summary?: unknown[] }): Alert[];
