@@ -5,6 +5,7 @@ import { PythonRuntimeError, runPythonJson, runtimeError } from "./python-runtim
 let memoryCache: { at: number; value: typeof fixture } | null = null;
 let researchInflight: Promise<typeof fixture> | null = null;
 const CACHE_MS = 15 * 60 * 1000;
+const REFRESH_TIMEOUT_MS = 15 * 60 * 1000;
 
 function coreSnapshotId(system: typeof fixture) {
   return createHash("sha256").update(JSON.stringify(system.modules.core_market.payload)).digest("hex").slice(0, 16);
@@ -20,7 +21,9 @@ export async function loadResearchSystem(refresh = false) {
     try {
       if (!researchInflight) {
         const args = ["-B", "research_system.py", "full", "--json", ...(refresh ? ["--live"] : [])];
-        researchInflight = runPythonJson<typeof fixture>(args).finally(() => { researchInflight = null; });
+        // A live refresh re-downloads every market, inflation and KOSPI series and takes several minutes;
+        // the 3-minute default meant it was always stopped before it could save anything.
+        researchInflight = runPythonJson<typeof fixture>(args, refresh ? REFRESH_TIMEOUT_MS : undefined).finally(() => { researchInflight = null; });
       }
       full = await researchInflight;
       if (!full?.modules?.core_market || !full.dashboard || !full.world) throw new PythonRuntimeError("INVALID_JSON", "Malformed research payload.");

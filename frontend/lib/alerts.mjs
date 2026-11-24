@@ -183,7 +183,7 @@ export function buildAlerts({ environment, drivers, summary } = {}) {
 
 const NOUNS = { fed_path: "the Fed", long_rates: "rising long-term rates", usd: "the stronger dollar", credit: "falling risky bonds", volatility: "market fear", liquidity: "tight money",
   growth: "shrinking factories", inflation: "inflation", oil: "oil prices", semis_cycle: "lagging chip stocks", yen_carry: "the yen" };
-const COUNT_WORDS = { 1: "One", 2: "Two", 3: "Three", 4: "Four", 5: "Five", 6: "Six", 7: "Seven" };
+const COUNT_WORDS = { 1: "One", 2: "Two", 3: "Three", 4: "Four", 5: "Five", 6: "Six", 7: "Seven", 8: "Eight", 9: "Nine", 10: "Ten", 11: "Eleven", 12: "Twelve" };
 
 /** One sentence for the top of the page, built from the alerts, never from a model. */
 export function marketRead(alerts, environment) {
