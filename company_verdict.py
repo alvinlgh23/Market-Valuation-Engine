@@ -86,8 +86,27 @@ def sector_etf_for(ticker: str, yahoo_sector: str | None) -> tuple[str | None, s
     for etf, members in vm.SECTOR_CANDIDATES.items():
         if ticker.upper() in members and etf != ticker.upper():
             return etf, "listed constituent in the sector engine's candidate list"
+    # Checklist 18.18: S&P 500 members use their official GICS sector before Yahoo's own label.
+    gics = gics_sector(ticker)
+    if gics in GICS_SECTOR_ETF:
+        return GICS_SECTOR_ETF[gics], f"GICS sector '{gics}' (S&P 500 membership list)"
     etf = YAHOO_SECTOR_ETF.get(str(yahoo_sector or "").strip().lower())
     return (etf, f"proxy from Yahoo sector '{yahoo_sector}'") if etf else (None, "no sector mapping")
+
+
+GICS_SECTOR_ETF = {"Information Technology": "XLK", "Financials": "XLF", "Health Care": "XLV", "Consumer Discretionary": "XLY",
+                   "Consumer Staples": "XLP", "Energy": "XLE", "Industrials": "XLI", "Materials": "XLB", "Utilities": "XLU",
+                   "Real Estate": "XLRE", "Communication Services": "XLC"}
+
+
+def gics_sector(ticker: str) -> str | None:
+    """GICS sector from the cached S&P 500 membership list (market_earnings); None outside the index."""
+    try:
+        members = json.loads((ROOT / ".cache" / "market_earnings" / "members.json").read_text())
+    except (OSError, json.JSONDecodeError):
+        return None
+    wanted = ticker.upper().replace("-", ".")
+    return next((item.get("sector") for item in members if str(item.get("symbol", "")).upper() == wanted), None)
 
 
 # ---- axes ----------------------------------------------------------------------------------
@@ -586,7 +605,7 @@ def falsification(economics: dict[str, Any] | None) -> list[str]:
 
 # Checklist 18.13: every recorded card carries the version of the rules that produced it. Raise this
 # whenever a card rule changes, so a reading that moved because the rules moved is not shown as news.
-VERDICT_RULES_VERSION = "2026-11-24"
+VERDICT_RULES_VERSION = "2026-11-24b"   # b: GICS sector mapping (18.18)
 VERDICT_SOURCE = f"company_verdict@{VERDICT_RULES_VERSION}"
 
 
@@ -1013,12 +1032,13 @@ def watchlist_drivers(store: SignalStore | None = None, today: dt.date | None = 
     for ticker in tickers:
         cached = load_attribution(ticker)
         expectations = next((row["label"] for row in reversed(store.rows(f"verdict.{ticker}.expectations")) if row["label"]), None)
-        fresh_format = (((cached or {}).get("attribution") or {}).get("windows") or {}).get("3M", {}).get("parts_basis") == "simple"
+        from price_attribution import METHOD_VERSION
+        fresh_format = ((cached or {}).get("attribution") or {}).get("method_version") == METHOD_VERSION
         if cached and cached.get("date") == today.isoformat() and cached.get("attribution") and fresh_format:
             payload = cached
         else:
             archetype, source = _stored_archetype(ticker)
-            etf = (cached or {}).get("sector_etf") or sector_etf_for(ticker, None)[0]
+            etf = sector_etf_for(ticker, None)[0] or (cached or {}).get("sector_etf")   # 18.18: the current mapping first
             try:
                 attribution = build_attribution(ticker, archetype or "GENERIC_OPERATING_COMPANY", etf) if archetype else \
                     {"status": "UNAVAILABLE", "reason": "No archetype on record yet; open the company card once."}

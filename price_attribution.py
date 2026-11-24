@@ -22,6 +22,10 @@ import math
 from typing import Any, Callable
 
 FIT_WEEKS = 104
+METHOD_VERSION = 2       # 18.17 equal-weight sector benchmark, 18.19 VIX not a cause
+EQUAL_WEIGHT = {"XLK": "RSPT", "XLC": "RSPC", "XLY": "RSPD", "XLP": "RSPS", "XLV": "RSPH", "XLF": "RSPF", "XLE": "RSPG",
+                "XLI": "RSPN", "XLB": "RSPM", "XLU": "RSPU", "XLRE": "RSPR", "SMH": "XSD"}
+NOT_A_CAUSE = {"volatility"}
 WINDOWS = (("1M", 4), ("3M", 13))
 MIN_FIT_WEEKS = 80
 HISTORY_PERIOD = "5y"
@@ -127,8 +131,12 @@ def build_attribution(ticker: str, archetype: str, sector_etf: str | None,
     if fetch is None:
         import Valuation_model as vm
         fetch = vm.fetch_history
-    exposures = [item for item in exposures_for(archetype, sector_etf=sector_etf) if FACTORS[item["factor"]].proxy and item.get("validation") != "DOWNGRADED"]
-    needed = {ticker, "SPY", *([sector_etf] if sector_etf else []), *(t for item in exposures for t in FACTORS[item["factor"]].tickers)}
+    # Checklist 18.19: the VIX moves with the market's own fall, so it is not counted as an outside cause.
+    exposures = [item for item in exposures_for(archetype, sector_etf=sector_etf)
+                 if FACTORS[item["factor"]].proxy and item.get("validation") != "DOWNGRADED" and item["factor"] not in NOT_A_CAUSE]
+    # Checklist 18.17: an equal-weight sector benchmark, so a heavyweight is not explained by its own weight.
+    benchmark = EQUAL_WEIGHT.get(sector_etf, sector_etf) if sector_etf else None
+    needed = {ticker, "SPY", *([benchmark] if benchmark else []), *(t for item in exposures for t in FACTORS[item["factor"]].tickers)}
     histories, missing = {}, []
     for symbol in sorted(needed):
         frame = fetch(symbol, HISTORY_PERIOD)
@@ -146,13 +154,14 @@ def build_attribution(ticker: str, archetype: str, sector_etf: str | None,
             dropped.append(item["factor"])
         else:
             factors[item["factor"]] = series
-    sector = _weekly_close(histories[sector_etf]) if sector_etf and sector_etf in histories else None
+    sector = _weekly_close(histories[benchmark]) if benchmark and benchmark in histories else None
     result = attribute(_weekly_close(histories[ticker]), _weekly_close(histories["SPY"]), sector, factors)
     result.update({
         "ticker": ticker, "archetype": archetype, "sector_etf": sector_etf if sector is not None else None,
+        "sector_benchmark": benchmark if sector is not None else None, "method_version": METHOD_VERSION,
         "factor_labels": {fid: FACTORS[fid].label for fid in factors},
         "factors_dropped": dropped, "missing_histories": missing,
-        "method": "Weekly log returns; sensitivities from the 104 weeks before the window; market and sector cleaned of macro factors; company = remainder.",
+        "method": "Weekly log returns of completed weeks; sensitivities from the 104 weeks before the window; market and an equal-weight sector benchmark cleaned of macro factors; the VIX is not a cause; company = remainder.",
     })
     return result
 

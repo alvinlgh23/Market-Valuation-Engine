@@ -290,3 +290,14 @@ def test_the_stretch_above_the_ceiling_is_recorded_and_summarised(tmp_path, monk
     watchlist.write_text('{"tickers": ["NVDA"]}')
     monkeypatch.setattr(cv, "WATCHLIST_PATH", watchlist)
     assert cv.watchlist_summary(store)[0]["price_to_max_case"] == 3.2
+
+
+def test_sp500_members_map_by_gics_before_yahoo(tmp_path, monkeypatch):
+    cache = tmp_path / ".cache" / "market_earnings"
+    cache.mkdir(parents=True)
+    (cache / "members.json").write_text('[{"symbol": "UBER", "sector": "Industrials"}, {"symbol": "BRK.B", "sector": "Financials"}]')
+    monkeypatch.setattr(cv, "ROOT", tmp_path)
+    assert cv.sector_etf_for("UBER", "Technology")[0] == "XLI"
+    assert cv.sector_etf_for("BRK-B", None)[0] == "XLF"
+    assert cv.sector_etf_for("SHOP", "Technology") == ("XLK", "proxy from Yahoo sector 'Technology'")   # outside the S&P 500
+    assert cv.sector_etf_for("TSM", "Technology")[0] == "SMH"   # the sector engine's own list still comes first

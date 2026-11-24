@@ -136,3 +136,22 @@ def test_unfinished_week_is_dropped_not_dated_in_the_future():
     assert weekly.index[-1] == pd.Timestamp("2026-11-20")      # last completed Friday, not 27 November
     full = pd.bdate_range("2026-11-02", "2026-11-27")
     assert _weekly_close(pd.DataFrame({"Close": range(1, len(full) + 1)}, index=full)).index[-1] == pd.Timestamp("2026-11-27")
+
+
+def test_equal_weight_benchmark_and_no_vix_cause():
+    """18.17 / 18.19: a heavyweight is measured against an equal-weight sector, and the VIX is not a cause."""
+    import numpy as np
+    import pandas as pd
+    from price_attribution import build_attribution
+    days = pd.bdate_range("2023-01-02", periods=900)
+    rng = np.random.default_rng(3)
+    asked = []
+
+    def fetch(symbol, period):
+        asked.append(symbol)
+        return pd.DataFrame({"Close": 100 * np.exp(np.cumsum(rng.normal(0, 0.01, len(days))))}, index=days)
+
+    result = build_attribution("NVDA", "FABLESS_SEMICONDUCTOR", "SMH", fetch=fetch)
+    assert "XSD" in asked and "SMH" not in asked and "^VIX" not in asked
+    assert result["sector_etf"] == "SMH" and result["sector_benchmark"] == "XSD"
+    assert "volatility" not in result["factors"] and result["method_version"] == 2
