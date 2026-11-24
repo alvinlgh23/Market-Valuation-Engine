@@ -96,3 +96,22 @@ def test_empty_inputs_never_raise(tmp_path):
     result = env.build_environment(None, {"regions": {}}, None, None, store=SignalStore(tmp_path))
     assert set(result["factors"]) >= {"long_rates", "usd", "credit", "volatility", "fed_path", "liquidity", "yen_carry", "semis_cycle", "oil", "inflation", "growth"}
     assert "neer" not in result.get("excluded", {})   # Singapore removed 2026-11-22
+
+
+def test_track_record_says_whether_a_factor_has_predicted_returns():
+    scorecard = {"macro": {
+        "hyg_ief": {"verdict": "WEAK", "horizons": {"1M": {"corr": -0.17, "t_stat": -1.0, "samples": 35}}},
+        "vix_level": {"verdict": "INFORMATIVE", "horizons": {"1M": {"corr": 0.44, "t_stat": 2.8, "samples": 35}}}}}
+    weak = env.track_record("hyg_ief", scorecard)
+    assert not weak["predictive"] and weak["text"].startswith("Has not reliably predicted") and "35 months" in weak["text"]
+    informative = env.track_record("vix_level", scorecard)
+    assert informative["predictive"] and "followed by higher next-month" in informative["text"]
+    assert env.track_record(None, scorecard)["verdict"] == "NOT_TESTED"
+    assert env.track_record("tnx_3m", None)["verdict"] == "NOT_TESTED"
+
+
+def test_every_factor_carries_a_track_record(tmp_path):
+    factors = env.build_environment(None, {"regions": {}}, None, None, store=SignalStore(tmp_path))["factors"]
+    assert all("track_record" in factor for factor in factors.values())
+    assert factors["fed_path"]["track_record"]["verdict"] == "NOT_TESTED"
+    assert factors["credit"]["track_record"]["signal"] == "hyg_ief"

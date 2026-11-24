@@ -55,6 +55,17 @@ function valuationContext(ticker: string) {
   return [["Overview", root], ["Economics vs Model", `${root}?view=economics-model`], ["DCF", `${root}?view=dcf`], ["Assumptions", `${root}?view=assumptions`], ["Reverse DCF", `${root}?view=reverse-dcf`], ["Sensitivity", `${root}?view=sensitivity`], ["Validation", `${root}?view=validation`], ["Evidence", `${root}?view=evidence`]] as const;
 }
 
+/** Thin outline icons for the sidebar (1.5px stroke, 20px box). */
+function RailIcon({ name }: { name: string }) {
+  const paths: Record<string, ReactNode> = {
+    dashboard: <><path d="M4 10.5 12 4l8 6.5" /><path d="M6 9v10h12V9" /></>,
+    companies: <><path d="M8 6h12M8 12h12M8 18h12" /><circle cx="4.5" cy="6" r=".9" /><circle cx="4.5" cy="12" r=".9" /><circle cx="4.5" cy="18" r=".9" /></>,
+    markets: <><circle cx="12" cy="12" r="8" /><path d="M4 12h16M12 4c2.5 2.4 2.5 13.6 0 16M12 4c-2.5 2.4-2.5 13.6 0 16" /></>,
+    search: <><circle cx="11" cy="11" r="6" /><path d="m20 20-4.5-4.5" /></>
+  };
+  return <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>;
+}
+
 export function ResearchShell({
   children,
   active = "dashboard",
@@ -116,16 +127,16 @@ export function ResearchShell({
 
   const currentUrl = `${pathname}${searchParams.size ? `?${searchParams.toString()}` : ""}`;
   return (
-    <div className="research-app-shell object-driven-shell">
-      <header className="research-app-header object-header">
-        <ChainstoxBrand />
-        <button className="mobile-nav-trigger" type="button" onClick={() => setMobileNavOpen(!mobileNavOpen)} aria-expanded={mobileNavOpen} aria-label="Toggle navigation">Menu</button>
-        <nav className={`primary-research-nav${mobileNavOpen ? " open" : ""}`} aria-label="Primary research objects">
-          {PRIMARY.map(([key, label, href]) => <Link key={key} className={topActive === key ? "active" : ""} href={href} onClick={() => setMobileNavOpen(false)}>{label}</Link>)}
+    <div className="research-app-shell object-driven-shell rail-shell">
+      {/* Checklist 14.1: a quiet icon sidebar instead of the top bar; labels appear on hover. */}
+      <aside className="app-rail" aria-label="Primary">
+        <ChainstoxBrand compact />
+        <nav className={`app-rail-nav${mobileNavOpen ? " open" : ""}`} aria-label="Primary research objects">
+          {PRIMARY.map(([key, label, href]) => <Link key={key} className={topActive === key ? "active" : ""} href={href} aria-label={label} data-label={label} onClick={() => setMobileNavOpen(false)}><RailIcon name={key} /></Link>)}
+          <button type="button" onClick={() => setSearchOpen(true)} aria-label="Search (⌘K)" data-label="Search  ⌘K"><RailIcon name="search" /></button>
         </nav>
-        <button className="quiet-search-trigger" type="button" onClick={() => setSearchOpen(true)} aria-label="Open global search"><span>Global search</span><kbd>⌘K</kbd></button>
-        <div className={`data-state data-state-${shellState.toLowerCase().replaceAll("_", "-")}`} title={STATE_HELP[shellState] ?? "Current research data state"}><i />{shellState === "DEMO" || shellState === "FIXTURE" ? displayStatus(shellState) : statusWord(shellState) ?? displayStatus(shellState)}</div>
-      </header>
+        <div className={`app-rail-state data-state-${shellState.toLowerCase().replaceAll("_", "-")}`} title={`${shellState === "DEMO" || shellState === "FIXTURE" ? displayStatus(shellState) : statusWord(shellState) ?? displayStatus(shellState)}: ${STATE_HELP[shellState] ?? "Current research data state"}`}><i /></div>
+      </aside>
       <div className={`research-app-body${contextual.length ? " has-context-nav" : ""}`}>
         {contextual.length ? <aside className="context-research-nav"><div><span>{ticker ? `${ticker} / ${topActive === "valuation" ? "VALUATION" : "COMPANY"}` : `${topActive.toUpperCase()} / RESEARCH`}</span><strong>{ticker ? topActive === "valuation" ? "Valuation object" : "Company workspace" : "Investigation"}</strong></div><nav aria-label={`${topActive} research views`}>{contextual.map(([label, href]) => { const hrefUrl = href.split("?"); const queryView = new URLSearchParams(hrefUrl[1] ?? "").get("view"); const selected = queryView ? pathname === hrefUrl[0] && searchParams.get("view") === queryView : currentUrl === href || (href === pathname && !searchParams.get("view")); return <Link className={selected ? "active" : ""} href={href} key={label}>{label}<span>→</span></Link>; })}</nav></aside> : null}
         <main className="research-app-main">{children}</main>

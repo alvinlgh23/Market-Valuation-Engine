@@ -23,9 +23,9 @@ try {
   observe(page);
   let response = await page.goto(baseUrl, { waitUntil: "networkidle" });
   if (!response?.ok()) throw new Error(`Dashboard returned ${response?.status()}`);
-  await page.locator(".today-regime h1").waitFor();
-  if ((await page.locator(".env-factors article").count()) < 6) throw new Error("Today page does not show the macro factor tiles");
-  if ((await page.locator(".today-chips .today-chip").count()) < 4) throw new Error("Today page watch items are under-populated");
+  await page.locator(".tdy-headline").waitFor();
+  if ((await page.locator(".tdy-factors li").count()) < 6) throw new Error("Today page does not show the macro factors");
+  await page.locator(".tdy-alert, .tdy-alerts .tdy-empty").first().waitFor({ timeout: 120000 });
   await shot(page, "01-dashboard.png", true);
 
   response = await page.goto(`${baseUrl}/macro/world`, { waitUntil: "networkidle" });
@@ -74,7 +74,7 @@ try {
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
   observe(mobile);
   await mobile.goto(baseUrl, { waitUntil: "networkidle" });
-  await mobile.locator(".today-regime h1").waitFor();
+  await mobile.locator(".tdy-headline").waitFor();
   const overflow = await mobile.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
   if (overflow) throw new Error("Mobile dashboard has horizontal overflow");
   await shot(mobile, "11-mobile-dashboard.png", true);

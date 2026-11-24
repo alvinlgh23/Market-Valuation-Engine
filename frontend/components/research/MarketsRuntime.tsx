@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ResearchSystem } from "../../lib/research-system-types";
 import { LabsSurface, MarketsResearch, SectorResearch } from "./ObjectResearchSurfaces";
-import { ResearchDashboard } from "./ResearchDashboard";
+import { TodayView } from "../today/TodayView";
 import { reconcileResearchResponse, type ResearchResponse } from "../../lib/research-response";
 import { DataStatus, type DataStatusInfo } from "./DataStatus";
 
@@ -56,7 +56,7 @@ export function LabsRuntime({ initial, initialMeta, section }: { initial: Resear
   return <>{status}<LabsSurface section={section} system={system} /></>;
 }
 
-export function DashboardRuntime({ initial, initialMeta, onModule }: { initial: ResearchSystem; initialMeta?: ResearchResponse["meta"]; onModule: (module: string) => void }) {
+export function DashboardRuntime({ initial, initialMeta }: { initial: ResearchSystem; initialMeta?: ResearchResponse["meta"]; onModule?: (module: string) => void }) {
   const { system, status } = useResearchRuntime(initial, initialMeta);
-  return <>{status}<ResearchDashboard system={system} onModule={onModule} /></>;
+  return <TodayView system={system} status={status} />;
 }

@@ -14,6 +14,7 @@
     "test:charts": "node scripts/chart-normalization-test.mjs",
     "test:fair-value-scale": "node scripts/fair-value-scale-test.mjs",
     "test:judgment-tone": "node scripts/judgment-tone-test.mjs",
+    "test:alerts": "node scripts/alerts-test.mjs",
     "test:today-visual": "node scripts/today-visual-test.mjs",
     "test:macro": "node scripts/macro-coverage-test.mjs",
     "smoke:visualizations": "node scripts/visualization-smoke.mjs",

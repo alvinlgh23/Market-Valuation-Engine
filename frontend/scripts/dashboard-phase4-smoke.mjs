@@ -38,16 +38,24 @@ try {
   observe(page);
 
   await page.goto(baseUrl, { waitUntil: "networkidle" });
-  await page.locator(".today-regime h1").waitFor();
+  // Checklist 14.3: Today is a market read, factor list, ranked alerts, watchlist and sectors.
+  await page.locator(".tdy-headline").waitFor();
   await pageShot(page, "01-dashboard-desktop.png");
-  // Today page is charts only (checklist 9.7, revised 2026-11-22).
-  await sectionShot(page, ".env-factors", "02-macro-factors.png");
-  await sectionShot(page, ".today-sectors", "03-sector-leadership.png");
-  await page.locator(".today-heat-row b").first().waitFor({ timeout: 30000 });
-  await sectionShot(page, ".today-watchlist-panel", "04-watchlist-heatmap.png");
-  await sectionShot(page, ".today-moves", "05-market-moves.png");
-  await sectionShot(page, ".today-chips", "06-watch-items.png");
-  if ((await page.locator(".today-bar").count()) < 4) throw new Error("Today page has too few bars.");
+  if ((await page.locator(".tdy-factors li").count()) < 6) throw new Error("Today page shows too few factors.");
+  await sectionShot(page, ".tdy-factors", "02-macro-factors.png");
+  await sectionShot(page, ".tdy-sectors", "03-sector-leadership.png");
+  await page.locator(".tdy-watch-row b").first().waitFor({ timeout: 30000 });
+  await sectionShot(page, ".tdy-watch", "04-watchlist.png");
+  await page.locator(".tdy-alert, .tdy-alerts .tdy-empty").first().waitFor({ timeout: 120000 });
+  await sectionShot(page, ".tdy-alerts", "05-alerts.png");
+  // Checklist 14.4: every alert opens its criteria (rule and track record) on hover or focus.
+  if (await page.locator(".tdy-alert").count()) {
+    await page.locator(".tdy-alert .crit").first().focus();
+    const criteria = page.locator(".tdy-alert .crit-pop").first();
+    await criteria.waitFor({ state: "visible" });
+    if (!/Rule[\s\S]*Track record/.test(await criteria.innerText())) throw new Error("Alert criteria are missing the rule or track record.");
+    await sectionShot(page, ".tdy-alerts", "06-alert-criteria.png");
+  }
 
   await page.goto(baseUrl, { waitUntil: "networkidle" });
   await openSearch(page, "", "09-global-search-default.png");
@@ -74,7 +82,7 @@ try {
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
   observe(mobile);
   await mobile.goto(baseUrl, { waitUntil: "networkidle" });
-  await mobile.locator(".today-regime h1").waitFor();
+  await mobile.locator(".tdy-headline").waitFor();
   const mobileOverflow = await mobile.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
   if (mobileOverflow) throw new Error("Dashboard mobile has horizontal page overflow.");
   await mobile.screenshot({ path: path.join(output, "17-dashboard-mobile.png"), fullPage: false });

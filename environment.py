@@ -420,6 +420,40 @@ def volatility_scorecard_note(path=None) -> str | None:
     return None
 
 
+# Checklist 14.2: each factor carries the scorecard's verdict, so an alert can say whether the
+# condition has ever predicted anything. Only factors with a tested signal are mapped.
+TRACK_SIGNALS = {"long_rates": "tnx_3m", "usd": "dxy_3m", "credit": "hyg_ief", "volatility": "vix_level",
+                 "liquidity": "liquidity_score", "yen_carry": "usdjpy_3m"}
+PREDICTIVE_VERDICTS = {"INFORMATIVE", "REVERSED"}
+
+
+def track_record(signal: str | None, scorecard: dict[str, Any] | None) -> dict[str, Any]:
+    """The scorecard result for one macro signal at the one-month horizon, in plain words."""
+    entry = ((scorecard or {}).get("macro") or {}).get(signal or "") or {}
+    month = (entry.get("horizons") or {}).get("1M") or {}
+    corr, t_stat, samples = _num(month.get("corr")), _num(month.get("t_stat")), month.get("samples")
+    verdict = entry.get("verdict")
+    if not signal or not entry or corr is None or t_stat is None:
+        return {"signal": signal, "verdict": "NOT_TESTED", "predictive": False, "text": "Not tested against market returns yet."}
+    stats = f"r = {corr:+.2f}, t = {t_stat:.1f}, {samples} months"
+    if verdict in PREDICTIVE_VERDICTS:
+        text = f"Tested: higher readings were followed by {'higher' if corr > 0 else 'lower'} next-month S&P 500 returns ({stats})."
+    else:
+        text = f"Has not reliably predicted next-month S&P 500 returns ({stats})."
+    return {"signal": signal, "verdict": verdict, "predictive": verdict in PREDICTIVE_VERDICTS, "corr": corr, "t_stat": t_stat,
+            "samples": samples, "horizon": "1M", "text": text}
+
+
+def load_scorecard(path=None) -> dict[str, Any] | None:
+    import json
+    from pathlib import Path
+    path = path or Path(__file__).resolve().parent / "data" / "signal_validation.json"
+    try:
+        return json.loads(Path(path).read_text())
+    except (OSError, ValueError):
+        return None
+
+
 # ---- assembled layer -----------------------------------------------------------------------
 def build_environment(core: dict[str, Any] | None, world: dict[str, Any], inflation: dict[str, Any] | None, kospi: dict[str, Any] | None,
                       cftc: dict[str, Any] | None = None, store: SignalStore | None = None, boj: dict[str, Any] | None = None,
@@ -468,6 +502,9 @@ def build_environment(core: dict[str, Any] | None, world: dict[str, Any], inflat
     factors["growth"] = _entry({1: "Improving", 0: "Mixed", -1: "Weakening", None: "Unavailable"}[growth_direction], growth_direction,
                                {"ism_pmi": ism, "ism_trend_3m": ism_trend, "consumer_sentiment": _num(fragility.get("consumer_sentiment"))},
                                source="ISM manufacturing PMI and consumer sentiment", as_of=as_of)
+    scorecard = load_scorecard()
+    for key, factor in factors.items():
+        factor["track_record"] = track_record(TRACK_SIGNALS.get(key), scorecard)
     risk = core.get("risk") or {}
     contradictions = []
     if factors["fed_path"]["readings"].get("divergence"):
