@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { CARD_AXES, cellLabel } from "../../lib/watchlist-summary";
+import { CARD_AXES, cellLabel, resetWatchlistLoaders } from "../../lib/watchlist-summary";
 import { axisTone, shortState, TONE_GLYPH, TONE_LABEL } from "../../lib/judgment-tone.mjs";
 import { DriverBar, factorBreakdown, PriceDriversLegend, ReadingTag, type Attribution, type PriceReading } from "./PriceDrivers";
 
@@ -20,7 +20,32 @@ export function WatchlistTable() {
   const [driversError, setDriversError] = useState<string | null>(null);
   // Checklist 10.9: users are global, so moves can be read in a home currency.
   // The currency control renders only after client-side data loads, so reading storage here cannot mismatch the server HTML.
-  const [editing, setEditing] = useState(false);
+  const [toast, setToast] = useState<{ text: string; undo?: () => void } | null>(null);
+  // Checklist 19.1: the list changes at once; the save runs behind it and a failure puts the list back.
+  const saveList = async (tickers: string[], previous: Row[]) => {
+    try {
+      const response = await fetch("/api/research", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "watchlist-set", tickers }) });
+      const body = await response.json();
+      if (!response.ok || body.status !== "OK") throw new Error((body.errors ?? ["Couldn't save the list."]).join(" "));
+      resetWatchlistLoaders();
+    } catch (failure) {
+      setRows(previous); setToast({ text: failure instanceof Error ? failure.message : "Couldn't save the list." });
+    }
+  };
+  const removeTicker = (ticker: string) => {
+    if (!rows) return;
+    const previous = rows, index = rows.findIndex((row) => row.ticker === ticker);
+    const next = rows.filter((row) => row.ticker !== ticker);
+    setRows(next); void saveList(next.map((row) => row.ticker), previous);
+    setToast({ text: `Removed ${ticker}`, undo: () => { const restored = [...next]; restored.splice(index, 0, previous[index]); setRows(restored); void saveList(restored.map((row) => row.ticker), next); } });
+  };
+  const addTicker = (ticker: string) => {
+    if (!rows || rows.some((row) => row.ticker === ticker)) return;
+    const previous = rows, next = [...rows, { ticker, last_card: null, axes: {}, changed: [] }];
+    setRows(next); void saveList(next.map((row) => row.ticker), previous);
+    setToast({ text: `Added ${ticker}. Open it once for its first reading.` });
+  };
+  useEffect(() => { if (!toast) return; const timer = setTimeout(() => setToast(null), 6000); return () => clearTimeout(timer); }, [toast]);
   const [currency, setCurrency] = useState(() => (typeof window === "undefined" ? "USD" : savedCurrency()));
   const [fx, setFx] = useState<Record<string, number | null> | null>(null);
   useEffect(() => {
@@ -65,10 +90,10 @@ export function WatchlistTable() {
   return <section className="watchlist-grid" aria-label="Watchlist">
     <header>
       <h1>Watchlist</h1>
-      <button type="button" className="wl-edit-toggle" onClick={() => setEditing(!editing)} aria-expanded={editing}>{editing ? "Close" : "Edit list"}</button>
+      <TickerAdd existing={rows.map((row) => row.ticker)} onAdd={addTicker} />
       <div className="wl-legend">{(["supportive", "against", "mixed", "unknown"] as const).map((tone) => <span key={tone} className={`tone-${tone}`}><em aria-hidden>{TONE_GLYPH[tone]}</em>{TONE_LABEL[tone]}</span>)}<span className="wl-changed-key">changed since last card</span></div>
     </header>
-    {editing ? <WatchlistEditor tickers={rows.map((row) => row.ticker)} /> : null}
+    {toast ? <div className="wl-toast" role="status">{toast.text}{toast.undo ? <button type="button" onClick={() => { toast.undo?.(); setToast(null); }}>Undo</button> : null}</div> : null}
     {drivers ? <div className="wl-drivers-summary" aria-label="What is moving the watchlist">
       <span><b>{count("noise")}</b> moved with macro, market or sector; company part normal</span>
       <span><b>{count("watch")}</b> some company-specific move</span>
@@ -95,47 +120,35 @@ export function WatchlistTable() {
             <em aria-hidden>{TONE_GLYPH[tone]}</em>{cellLabel(shortState(state), key, row)}
           </span>;
         })}
-        <span role="cell" className="wl-date">{row.last_card ?? "—"}</span>
+        <span role="cell" className="wl-date">{row.last_card ?? "—"}<button type="button" className="wl-remove" aria-label={`Remove ${row.ticker} from the watchlist`} title={`Remove ${row.ticker}`} onClick={(event) => { event.preventDefault(); event.stopPropagation(); removeTicker(row.ticker); }}>×</button></span>
       </Link>)}
     </div>
   </section>;
 }
 
 
-// Checklist 18.15: the reader's own list. Saved to data/watchlist.json; the page reloads to read it.
-const TICKER = /^[A-Z][A-Z0-9.^=-]{0,11}$/;
-function WatchlistEditor({ tickers }: { tickers: string[] }) {
-  const [list, setList] = useState(tickers);
-  const [draft, setDraft] = useState("");
+// Checklist 19.1: add by typing a ticker or a company name; suggestions come from the SEC company list.
+function TickerAdd({ existing, onAdd }: { existing: string[]; onAdd: (ticker: string) => void }) {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<Array<{ ticker: string; name: string }>>([]);
   const [message, setMessage] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-  const add = () => {
-    const ticker = draft.trim().toUpperCase();
-    if (!ticker) { setMessage("Type a ticker first, such as AAPL."); return; }
-    if (!TICKER.test(ticker)) { setMessage(`${ticker} doesn't look like a ticker.`); return; }
-    if (list.includes(ticker)) { setMessage(`${ticker} is already on the list.`); return; }
-    if (list.length >= 40) { setMessage("The list holds at most 40 companies."); return; }
-    setList([...list, ticker]); setDraft(""); setMessage(null);
+  useEffect(() => {
+    if (!query.trim()) return;
+    let active = true;
+    const timer = setTimeout(() => {
+      fetch(`/api/research?action=ticker-search&q=${encodeURIComponent(query.trim())}`, { cache: "no-store" })
+        .then((response) => response.json()).then((body) => { if (active) setResults(Array.isArray(body.results) ? body.results : []); }).catch(() => { if (active) setResults([]); });
+    }, 150);
+    return () => { active = false; clearTimeout(timer); };
+  }, [query]);
+  const pick = (ticker: string) => {
+    if (existing.includes(ticker)) { setMessage(`${ticker} is already on the list.`); return; }
+    if (existing.length >= 40) { setMessage("The list holds at most 40 companies."); return; }
+    onAdd(ticker); setQuery(""); setResults([]); setMessage(null);
   };
-  const save = async () => {
-    setSaving(true); setMessage(null);
-    try {
-      const response = await fetch("/api/research", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "watchlist-set", tickers: list }) });
-      const body = await response.json();
-      if (!response.ok || body.status !== "OK") { setMessage((body.errors ?? ["Couldn't save the list."]).join(" ")); setSaving(false); return; }
-      window.location.reload();
-    } catch (failure) {
-      setMessage(`Couldn't save the list: ${failure instanceof Error ? failure.message : String(failure)}`); setSaving(false);
-    }
-  };
-  const changed = list.join(",") !== tickers.join(",");
-  return <div className="wl-editor" aria-label="Edit watchlist">
-    <div className="wl-editor-chips">{list.map((ticker) => <span key={ticker}>{ticker}<button type="button" aria-label={`Remove ${ticker}`} onClick={() => setList(list.filter((item) => item !== ticker))}>×</button></span>)}</div>
-    <form onSubmit={(event) => { event.preventDefault(); add(); }}>
-      <input value={draft} onChange={(event) => { setDraft(event.target.value); setMessage(null); }} placeholder="AAPL" aria-label="Ticker to add" />
-      <button type="submit">Add</button>
-      <button type="button" className="wl-editor-save" disabled={!changed || saving} onClick={save}>{saving ? "Saving…" : "Save list"}</button>
-    </form>
-    {message ? <p className="wl-editor-error" role="alert">{message}</p> : <p className="wl-editor-note">New companies get their first reading when their card is opened.</p>}
-  </div>;
+  return <form className="wl-add" onSubmit={(event) => { event.preventDefault(); if (results[0]) pick(results[0].ticker); else if (query.trim()) setMessage(`No listed company matches "${query.trim()}".`); }}>
+    <input value={query} onChange={(event) => { setQuery(event.target.value); setMessage(null); if (!event.target.value.trim()) setResults([]); }} placeholder="Add a company: AAPL or Apple" aria-label="Add a company to the watchlist" autoComplete="off" />
+    {results.length ? <ul role="listbox">{results.map((item) => <li key={item.ticker}><button type="button" onClick={() => pick(item.ticker)} disabled={existing.includes(item.ticker)}><b>{item.ticker}</b><span>{item.name}</span>{existing.includes(item.ticker) ? <small>on the list</small> : null}</button></li>)}</ul> : null}
+    {message ? <p role="alert">{message}</p> : null}
+  </form>;
 }

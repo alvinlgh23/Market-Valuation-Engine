@@ -16,3 +16,10 @@ export const CARD_AXES: ReadonlyArray<readonly [string, string]> = [["flow", "Mo
 export function cellLabel(short: string, axis: string, row: { price_to_max_case?: number | null }) {
   return axis === "valuation" && short === "Beyond model" && typeof row.price_to_max_case === "number" ? `Beyond model · ${row.price_to_max_case.toFixed(1)}x` : short;
 }
+
+/** After the list changes, the next read fetches it again (summary, drivers and events). */
+export function resetWatchlistLoaders() {
+  shared = null;
+  void import("./watchlist-drivers").then((module) => module.resetWatchlistDrivers?.());
+  void import("./watchlist-events").then((module) => module.resetWatchlistEvents());
+}

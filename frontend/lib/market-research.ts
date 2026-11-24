@@ -397,7 +397,7 @@ export const sectors: SectorResearchObject[] = [
 ];
 
 export function sectorBySlug(slug?: string | null): SectorResearchObject {
-  const normalized = (slug || "semiconductors").toLowerCase().replaceAll("_", "-");
+  const normalized = (slug || "technology").toLowerCase().replaceAll("_", "-");
   return sectors.find((sector) => sector.slug === normalized || sector.name.toLowerCase() === normalized || sector.ticker.toLowerCase() === normalized) ?? sectors[0];
 }
 
@@ -422,6 +422,15 @@ function flowFields(flow?: SectorFlowRow) {
 
 /** Sector money-flow measurements from sector_flow.py (checklist P5); dated separately from relative strength. */
 export type SectorFlowRow = { etf?: string; as_of?: string | null; breadth_50?: number | null; breadth_200?: number | null; dollar_volume_percentile?: number | null; updown_volume_20d?: number | null; rs_persistence_63?: number | null; crowding?: string | null; crowding_state?: string | null; breadth_basis?: string };
+
+/** Checklist 19.2: a plain sentence from the measurements, not hand-written commentary. */
+export function sectorSentence(sector: { rel1m: number | null; rel6m: number | null }) {
+  const m1 = sector.rel1m, m6 = sector.rel6m;
+  if (m1 == null) return "No recent measurement.";
+  const lead = `${m1 >= 0 ? "Beat" : "Trailed"} the S&P 500 by ${Math.abs(m1 * 100).toFixed(1)} points over one month`;
+  if (m6 == null) return `${lead}.`;
+  return `${lead}, ${(m1 >= 0) === (m6 >= 0) ? "in line with" : "against"} its six-month trend (${m6 >= 0 ? "+" : "−"}${Math.abs(m6 * 100).toFixed(1)} points).`;
+}
 
 export function integrateSectorEngineRows(rows: SectorEngineRow[] | undefined, state = "UNKNOWN", flow?: Record<string, SectorFlowRow>): SectorResearchObject[] {
   const byTicker = new Map<string, SectorEngineRow>();
@@ -454,7 +463,7 @@ export function integrateSectorEngineRows(rows: SectorEngineRow[] | undefined, s
       rel1m: invalid ? null : finite(row?.rel_1m), rel3m: invalid ? null : finite(row?.rel_3m), rel6m: invalid ? null : finite(row?.rel_6m),
       ...flowFields(flow?.[sector.ticker]),
       momentum: "Unverified", stage: "Unavailable", heat: "Unavailable",
-      currentRead: invalid ? `Measurement withheld: ${reason}` : row && [row.rel_1m, row.rel_3m, row.rel_6m].some(value => finite(value) != null) ? "Dated Python relative strength is available; broader leadership and crowding conclusions require additional evidence." : "Structural sector map available; no finite relative-strength measurements in this snapshot.",
+      currentRead: invalid ? `Measurement withheld: ${reason}` : sectorSentence({ rel1m: finite(row?.rel_1m), rel6m: finite(row?.rel_6m) }),
       leaders: sector.leaders.map(leader => ({ ...leader, relativeStrength: null, condition: "Structural role; current leadership unverified" })),
       sourceState: !row || invalid ? "UNAVAILABLE" : stale ? "STALE" : state === "CACHED" ? "CACHED" : "PARTIAL",
       lastUpdated: row?.as_of || "Observation date unavailable",

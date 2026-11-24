@@ -1,5 +1,6 @@
 "use client";
 import { StatusBadge } from "./StatusBadge";
+import { MarketsOverview } from "../markets/MarketsOverview";
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -63,9 +64,9 @@ export function MarketsResearch({ section, system }: { section: string; system: 
   const node = params.get("node");
   const core = system.modules.core_market.payload ?? {};
   const sectorList = integrateSectorEngineRows((core.sectors ?? []) as SectorEngineRow[], system.modules.core_market.state, system.sector_flow);
-  if (section === "rotation") return <MarketsRotationSurface sectorList={sectorList} selectedSector={sectorParam} view={view} selectedNodeId={node} />;
-  // Checklist 10.10 (owner, 2026-11-22): the breadth, fragility and defensive-rotation pages were deleted.
-  return <MarketsRotationSurface sectorList={sectorList} selectedSector="semiconductors" view="positioning" selectedNodeId={null} />;
+  // Checklist 19.2: with no sector chosen, Markets is the whole-market overview.
+  if (!sectorParam) return <MarketsOverview sectorList={sectorList} asOf={sectorList.map((item) => item.lastUpdated).filter((day) => /^\d{4}-/.test(day)).sort().pop()} />;
+  return <MarketsRotationSurface sectorList={sectorList} selectedSector={sectorParam} view={section === "rotation" ? view : "positioning"} selectedNodeId={node} />;
 }
 
 export function SectorResearch({ sector, system }: { sector: string; system: ResearchSystem }) {
@@ -233,9 +234,9 @@ function reportPayload(sector: SectorResearchObject, heading: string) {
 }
 
 function MarketsRotationSurface({ sectorList, selectedSector, view, selectedNodeId }: { sectorList: SectorResearchObject[]; selectedSector?: string | null; view?: string | null; selectedNodeId?: string | null }) {
-  const normalized = (selectedSector || "semiconductors").toLowerCase().replaceAll("_", "-");
+  const normalized = (selectedSector || "").toLowerCase().replaceAll("_", "-");
   const selected = sectorList.find((sector) => sector.slug === normalized || sector.name.toLowerCase() === normalized || sector.ticker.toLowerCase() === normalized);
-  if (!selected) return <section className="valuation-framework-state"><h1>Sector unavailable</h1><p>No structural research object matches {selectedSector}.</p><Link href="/markets">Return to sector overview →</Link></section>;
+  if (!selected) return <section className="valuation-framework-state"><h1>Sector unavailable</h1><p>No structural research object matches {selectedSector}.</p><Link href="/markets">Back to all sectors →</Link></section>;
   if (view === "report") return <div className="engine-module"><SectorReport sector={selected} /></div>;
   return <div className="engine-module markets-research-surface">
     <ObjectHeader eyebrow="MARKETS / SECTOR ROTATION" title="Where leadership is moving" summary="Relative strength of sector and theme ETFs against SPY over one, three and six months." state={selected.sourceState} />

@@ -3915,3 +3915,54 @@ html, body { background: var(--research-bg); font-family: var(--font-research); 
 .jc-operating .tone-against { color: var(--research-negative); }
 .snapshot-operating-note { color: var(--research-faint); font-size: 12px; }
 @media (max-width: 760px) { .jc-operating li { grid-template-columns: minmax(0, 1fr) 56px; } .jc-operating li small, .jc-operating li em { grid-column: 1 / -1; } }
+
+/* Checklist 19.2: Markets overview - 11 sectors, then themes */
+.mkt { width: min(1180px, 100%); margin: 0 auto; padding: 40px 44px 90px; color: var(--research-text); font-family: var(--font-research); }
+.mkt .up { color: var(--research-positive); } .mkt .down { color: var(--research-negative); }
+.mkt-horizons { display: inline-flex; padding: 3px; border: 1px solid var(--research-line); border-radius: 10px; background: var(--research-surface); }
+.mkt-horizons button { padding: 6px 12px; border: 0; border-radius: 7px; background: transparent; color: var(--research-muted); font: 13px var(--font-research); cursor: pointer; transition: background .15s, color .15s; }
+.mkt-horizons button.active { background: rgba(255, 255, 255, .09); color: var(--research-text); }
+.mkt-read { margin: -6px 0 18px; color: var(--research-muted); font-size: 14px; }
+.mkt-heat { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+.mkt-tile { display: flex; flex-direction: column; gap: 4px; min-height: 104px; padding: 14px 16px; border: 1px solid var(--research-line); border-radius: 12px; color: var(--research-text); text-decoration: none; transition: transform .15s, border-color .15s; }
+.mkt-tile:hover { transform: translateY(-2px); border-color: var(--research-line-strong); }
+.mkt-tile span { font-size: 13px; color: #d4d4da; }
+.mkt-tile b { margin-top: auto; font: 500 24px var(--font-mono); letter-spacing: -0.02em; }
+.mkt-tile small { color: var(--research-faint); font-size: 11.5px; }
+.mkt-tile.up-strong { background: rgba(62, 207, 142, .16); } .mkt-tile.up { background: rgba(62, 207, 142, .07); }
+.mkt-tile.down-strong { background: rgba(242, 85, 90, .16); } .mkt-tile.down { background: rgba(242, 85, 90, .07); }
+.mkt-tile.up-strong b, .mkt-tile.up b { color: var(--research-positive); } .mkt-tile.down-strong b, .mkt-tile.down b { color: var(--research-negative); }
+.mkt-themes { margin-top: 18px; }
+.mkt-themes li a { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) 64px; align-items: center; gap: 12px; padding: 8px 0; border-top: 1px solid var(--research-line); color: var(--research-text); text-decoration: none; font-size: 13px; }
+.mkt-themes li:first-child a { border-top: 0; }
+.mkt-themes li a:hover { background: rgba(255, 255, 255, .02); }
+.mkt-themes li span { display: flex; gap: 10px; align-items: baseline; min-width: 0; }
+.mkt-themes li span b { font: 500 13px var(--font-mono); }
+.mkt-themes li span small { overflow: hidden; color: var(--research-faint); font-size: 12px; white-space: nowrap; text-overflow: ellipsis; }
+.mkt-themes li i { display: block; height: 6px; border-radius: 3px; background: var(--research-positive); opacity: .7; }
+.mkt-themes li i.down, .mkt-themes li i.down-strong { background: var(--research-negative); }
+.mkt-themes li em { font: 12px var(--font-mono); font-style: normal; text-align: right; }
+@media (max-width: 760px) { .mkt { padding: 22px 16px 60px; } .mkt .tdy-top { flex-direction: column; align-items: flex-start; } .mkt-heat { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* Checklist 19.1: remove from a row, add by search, undo in a toast */
+.wl-row { position: relative; }
+.wl-date { position: relative; }
+.wl-remove { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); display: grid; place-items: center; width: 26px; height: 26px; border: 1px solid var(--research-line-strong); border-radius: 7px; background: var(--research-surface-raised); color: var(--research-muted); font-size: 16px; line-height: 1; cursor: pointer; opacity: 0; transition: opacity .12s, color .12s, border-color .12s; }
+.wl-row:hover .wl-remove, .wl-remove:focus-visible { opacity: 1; }
+.wl-remove:hover { color: var(--research-negative); border-color: var(--research-negative); }
+@media (hover: none) { .wl-remove { opacity: 1; } }
+.wl-add { position: relative; margin-left: auto; }
+.wl-add input { width: 260px; padding: 8px 12px; border: 1px solid var(--research-line-strong); border-radius: 9px; background: var(--research-surface); color: var(--research-text); font: 13px var(--font-research); }
+.wl-add input:focus { outline: none; border-color: var(--research-muted); }
+.wl-add ul { position: absolute; z-index: 30; top: calc(100% + 6px); right: 0; width: 340px; margin: 0; padding: 6px; list-style: none; border: 1px solid var(--research-line-strong); border-radius: 12px; background: #17171b; box-shadow: 0 16px 40px rgba(0, 0, 0, .5); }
+.wl-add li button { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: 10px; align-items: baseline; width: 100%; padding: 8px 10px; border: 0; border-radius: 8px; background: transparent; color: var(--research-text); font: 13px var(--font-research); text-align: left; cursor: pointer; }
+.wl-add li button:hover:not(:disabled) { background: rgba(255, 255, 255, .06); }
+.wl-add li button:disabled { opacity: .45; cursor: default; }
+.wl-add li b { font: 500 13px var(--font-mono); }
+.wl-add li span { overflow: hidden; color: var(--research-muted); white-space: nowrap; text-overflow: ellipsis; }
+.wl-add li small { color: var(--research-faint); font-size: 11.5px; }
+.wl-add p { position: absolute; top: calc(100% + 6px); right: 0; margin: 0; color: var(--research-negative); font-size: 12px; white-space: nowrap; }
+.wl-toast { position: fixed; left: 50%; bottom: 28px; z-index: 80; display: flex; align-items: center; gap: 14px; padding: 10px 14px; transform: translateX(-50%); border: 1px solid var(--research-line-strong); border-radius: 10px; background: #1b1b20; box-shadow: 0 12px 32px rgba(0, 0, 0, .5); color: var(--research-text); font-size: 13px; animation: wl-toast-in .18s ease-out; }
+.wl-toast button { padding: 0; border: 0; background: none; color: #8fb8ee; font: 500 13px var(--font-research); cursor: pointer; }
+@keyframes wl-toast-in { from { opacity: 0; transform: translate(-50%, 8px); } to { opacity: 1; transform: translate(-50%, 0); } }
+@media (max-width: 760px) { .wl-add { width: 100%; margin: 10px 0 0; } .wl-add input { width: 100%; } .wl-add ul { width: 100%; } }

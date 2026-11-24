@@ -12,3 +12,5 @@ export function loadWatchlistDrivers(): Promise<DriverRow[]> {
     .catch(() => { shared = null; return []; });
   return shared;
 }
+
+export function resetWatchlistDrivers() { shared = null; }

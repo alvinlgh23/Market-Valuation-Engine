@@ -43,8 +43,26 @@ async function runMarketStory() {
   return storyInflight;
 }
 
+// Checklist 19.1: ticker suggestions for adding to the watchlist, from the cached SEC company list.
+let tickerIndex: Array<{ ticker: string; name: string }> | null = null;
+async function searchTickers(query: string) {
+  if (!tickerIndex) {
+    try {
+      const raw = JSON.parse(await readFile(path.resolve(process.cwd(), "..", ".cache", "sec_company", "company_tickers.json"), "utf8")) as Record<string, { ticker: string; title: string }>;
+      tickerIndex = Object.values(raw).map((row) => ({ ticker: String(row.ticker).toUpperCase(), name: String(row.title) }));
+    } catch { tickerIndex = []; }
+  }
+  const q = query.trim().toUpperCase();
+  if (!q) return [];
+  const exact = tickerIndex.filter((row) => row.ticker === q);
+  const prefix = tickerIndex.filter((row) => row.ticker !== q && row.ticker.startsWith(q));
+  const named = q.length >= 2 ? tickerIndex.filter((row) => !row.ticker.startsWith(q) && row.name.toUpperCase().includes(q)) : [];
+  return [...exact, ...prefix, ...named].slice(0, 8);
+}
+
 export async function GET(request: NextRequest) {
   const action = request.nextUrl.searchParams.get("action");
+  if (action === "ticker-search") return NextResponse.json({ status: "OK", results: await searchTickers(request.nextUrl.searchParams.get("q") ?? "") });
   if (action === "market-story") {
     try {
       return NextResponse.json({ status: "OK", ...(await runMarketStory() as Record<string, unknown>) });
