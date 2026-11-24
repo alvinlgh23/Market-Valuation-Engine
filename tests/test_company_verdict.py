@@ -229,3 +229,37 @@ def test_adr_figures_convert_to_the_quoted_share():
     axis = cv.valuation_axis(twd, 0.3, 0.25, None, None)
     assert axis["detail"]["price"] == 300.0 and axis["detail"]["fair_value"]["base"] == 80.0 * 0.03
     assert "210.00 vs price 300.00" in axis["evidence"][0]
+
+
+def test_fundamentals_follow_the_latest_quarter_and_fall_back_to_the_profile():
+    quarterly = {"status": "AVAILABLE", "summary": "Quarter to Sep 2026: sales +17% from a year earlier.",
+                 "change": {"state": "IMPROVING", "label": "Improving", "reasons": ["operating margin up 3.1 points"]},
+                 "health": {"state": "FAIR", "label": "Fair", "reason": "net debt 2.1x EBITDA"}}
+    axis = cv.fundamentals_axis(None, None, quarterly)
+    assert axis["state"] == "Improving" and axis["detail"]["basis"] == "latest quarterly report"
+    assert axis["evidence"][0].startswith("Quarter to Sep 2026") and "operating margin up 3.1 points" in axis["evidence"][1]
+    flat = cv.fundamentals_axis(None, None, {**quarterly, "change": {"state": "NO_CHANGE", "label": "No change", "reasons": []}})
+    assert flat["state"] == "No change"
+    profile = {"financial_translation": {"revenue": {"state": "NEGATIVE"}, "margin": {"state": "NEGATIVE"}}}
+    unknown = {**quarterly, "change": {"state": "UNKNOWN", "label": "Not enough data", "reasons": []}}
+    assert cv.fundamentals_axis(profile, None, unknown)["state"] == "Deteriorating"
+    assert cv.fundamentals_axis(profile, None, {"status": "UNAVAILABLE"})["state"] == "Deteriorating"
+
+
+def test_valuation_band_compares_five_year_growth_with_two_and_three_year_references():
+    band = {"consensus_2y": 0.12, "history_3y": 0.08}
+    assert cv.band_reading(0.20, band) == "Price implies more growth than observed/consensus"     # above both + 5 points
+    assert cv.band_reading(0.02, band) == "Price implies less growth than observed/consensus"     # below both - 5 points
+    assert cv.band_reading(0.10, band) == "Price roughly matches observed/consensus growth"
+    assert cv.band_reading(0.16, band) == "Price roughly matches observed/consensus growth"       # within 5 points of the higher one
+    assert cv.band_reading(0.20, {"consensus_2y": None, "history_3y": 0.08}) == "Price implies more growth than observed/consensus"
+    assert cv.reference_text(None, None, band) == "analysts expect +12.0% a year over the next two years and the last three years grew +8.0% a year"
+    assert cv.growth_band_from({"revenue_cagr_2y_consensus": None, "revenue_cagr_3y_history": None}) is None
+
+
+def test_two_year_consensus_and_three_year_history():
+    assert abs(cv.consensus_two_year_cagr({"yearAgoRevenue": 100.0}, {"avg": 121.0}) - 0.10) < 1e-12
+    assert cv.consensus_two_year_cagr({}, {"avg": 121.0}) is None
+    annual = pd.DataFrame({"2025": [133.1], "2024": [121.0], "2023": [110.0], "2022": [100.0]}, index=["Total Revenue"])
+    assert abs(cv.history_cagr(annual) - 0.10) < 1e-9
+    assert cv.history_cagr(annual.iloc[:, :3]) is None

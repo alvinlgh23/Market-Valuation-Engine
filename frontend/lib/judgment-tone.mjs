@@ -7,7 +7,7 @@ const TONES = {
   flow: { "Money flowing in": "supportive", "Money flowing out": "against", "Mixed (not persistent)": "mixed" },
   crowding: { "Low Chase Risk": "supportive", "Chase Risk Not Excessive": "supportive", "Moderate Chase Risk": "mixed", "High Chase Risk": "against" },
   expectations: { "Estimates rising": "supportive", "Estimates falling": "against", "Estimates stable or mixed": "mixed" },
-  fundamentals: { Improving: "supportive", Deteriorating: "against", Mixed: "mixed" },
+  fundamentals: { Improving: "supportive", Deteriorating: "against", Mixed: "mixed", "No change": "mixed" },
   valuation: {
     "Price implies less growth than observed/consensus": "supportive",
     "Price implies contraction beyond the model's floor": "supportive",

@@ -171,6 +171,37 @@ PROXY_ETF: dict[Archetype, str | None] = {
     Archetype.GENERIC_OPERATING_COMPANY: None,
 }
 
+# Checklist 15.1: a company with no specific type still gets its sector's usual exposures, so every
+# sector is covered. Keyed by the SPDR sector ETF the company maps to. Hypotheses, validated the same way.
+SECTOR_DEFAULTS: dict[str, tuple[Exposure, ...]] = {
+    "XLK": (E("long_rates", -1, "Technology value sits in distant cash flows, so higher discount rates cut it most."),
+            E("usd", -1, "Much of the sector's revenue is earned abroad; a stronger dollar shrinks it in dollars."),
+            E("credit", +1, "Moves with risk appetite.")),
+    "XLC": (E("long_rates", -1, "Growth-weighted media and platforms are long-duration equity."),
+            E("credit", +1, "Advertising budgets follow risk appetite.")),
+    "XLY": (E("growth", +1, "Discretionary spending rises and falls with the economy."),
+            E("credit", +1, "Consumers and retailers depend on easy credit."),
+            E("long_rates", -1, "Higher rates raise the cost of big-ticket purchases.")),
+    "XLP": (E("inflation", -1, "Input costs rise faster than prices can be passed on."),
+            E("long_rates", -1, "Steady dividend payers compete with bond yields."),
+            E("volatility", +1, "Defensive: tends to hold up when fear rises.")),
+    "XLV": (E("volatility", +1, "Defensive: demand for health care does not follow the cycle."),),
+    "XLF": (E("long_rates", +1, "Higher long rates widen lending margins."),
+            E("credit", +1, "Loan losses and deal activity follow risk appetite.")),
+    "XLE": (E("oil", +1, "Revenue moves with the oil price."),
+            E("inflation", +1, "Energy prices are part of inflation.")),
+    "XLI": (E("growth", +1, "Orders follow the economic cycle."),
+            E("usd", -1, "Exporters lose when the dollar strengthens."),
+            E("credit", +1, "Capital spending depends on financing.")),
+    "XLB": (E("growth", +1, "Demand for materials follows industrial activity."),
+            E("usd", -1, "Commodities priced in dollars fall when the dollar rises."),
+            E("inflation", +1, "Material prices rise with inflation.")),
+    "XLU": (E("long_rates", -1, "Bond-like dividends compete with yields; heavy borrowing costs more."),
+            E("volatility", +1, "Defensive: steady regulated earnings.")),
+    "XLRE": (E("long_rates", -1, "Property values and borrowing costs move against rates."),
+             E("credit", +1, "Refinancing depends on credit markets.")),
+}
+
 LIQUIDITY_SENSITIVE = frozenset(archetype for archetype, entries in EXPOSURES.items() if any(item.factor == "yen_carry" for item in entries))
 
 
@@ -183,12 +214,17 @@ def load_validation(path: Path = VALIDATION_PATH) -> dict[str, Any]:
         return {}
 
 
-def exposures_for(archetype: str | Archetype, validation: dict[str, Any] | None = None) -> list[dict[str, Any]]:
-    """Exposure entries for an archetype with their validation status attached."""
+def exposures_for(archetype: str | Archetype, validation: dict[str, Any] | None = None, sector_etf: str | None = None) -> list[dict[str, Any]]:
+    """Exposure entries for an archetype with their validation status attached. An archetype with no
+    entries of its own (the generic type) falls back to its sector's defaults (checklist 15.1)."""
     key = Archetype(archetype) if not isinstance(archetype, Archetype) else archetype
     results = (validation if validation is not None else load_validation()).get("results", {})
     output = []
-    for item in EXPOSURES.get(key, ()):
+    entries = EXPOSURES.get(key, ())
+    claim = "STRUCTURAL_HYPOTHESIS"
+    if not entries and sector_etf in SECTOR_DEFAULTS:
+        entries, claim = SECTOR_DEFAULTS[sector_etf], "SECTOR_DEFAULT_HYPOTHESIS"
+    for item in entries:
         factor = FACTORS[item.factor]
         tested = results.get(key.value, {}).get(item.factor)
         output.append({
@@ -196,7 +232,7 @@ def exposures_for(archetype: str | Archetype, validation: dict[str, Any] | None 
             "factor_label": factor.label,
             "rising_means": factor.rising_means,
             "environment_signals": list(factor.environment_signals),
-            "claim_type": "STRUCTURAL_HYPOTHESIS",
+            "claim_type": claim,
             "validation": tested["status"] if tested else "UNTESTED",
             "evidence": tested,
         })

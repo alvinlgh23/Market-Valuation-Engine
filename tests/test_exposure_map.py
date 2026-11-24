@@ -56,3 +56,16 @@ def test_stored_validation_has_a_result_for_every_entry():
     for archetype, entries in em.EXPOSURES.items():
         for item in entries:
             assert stored["results"][archetype.value][item.factor]["status"] in {"CONFIRMED", "WEAK", "DOWNGRADED", "UNTESTED"}
+
+
+def test_generic_company_gets_its_sectors_default_exposures():
+    from exposure_map import SECTOR_DEFAULTS, exposures_for
+    assert set(SECTOR_DEFAULTS) == {"XLK", "XLC", "XLY", "XLP", "XLV", "XLF", "XLE", "XLI", "XLB", "XLU", "XLRE"}
+    utility = exposures_for("GENERIC_OPERATING_COMPANY", validation={}, sector_etf="XLU")
+    assert [item["factor"] for item in utility] == ["long_rates", "volatility"]
+    assert all(item["claim_type"] == "SECTOR_DEFAULT_HYPOTHESIS" and item["validation"] == "UNTESTED" for item in utility)
+    assert exposures_for("GENERIC_OPERATING_COMPANY", validation={}) == []
+    # A company with its own type keeps its own exposures; the sector default never overrides them.
+    bank = exposures_for("BANK", validation={}, sector_etf="XLU")
+    assert {item["factor"] for item in bank} == {"long_rates", "credit", "volatility"}
+    assert all(item["claim_type"] == "STRUCTURAL_HYPOTHESIS" for item in bank)

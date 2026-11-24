@@ -91,7 +91,7 @@ def sector_etf_for(ticker: str, yahoo_sector: str | None) -> tuple[str | None, s
 
 
 # ---- axes ----------------------------------------------------------------------------------
-def macro_axis(archetype: str, environment: dict[str, Any]) -> dict[str, Any]:
+def macro_axis(archetype: str, environment: dict[str, Any], sector_etf: str | None = None) -> dict[str, Any]:
     from exposure_map import LIQUIDITY_SENSITIVE, exposures_for
     from company_economics_registry import Archetype
 
@@ -100,7 +100,7 @@ def macro_axis(archetype: str, environment: dict[str, Any]) -> dict[str, Any]:
     # what already moved prices; they are shown but not counted as a forward tailwind or headwind.
     reversed_ids = {"volatility"} if "vix_score" in reversed_signals() else set()
     rows, tail, head, missing = [], 0, 0, []
-    for exposure in exposures_for(archetype):
+    for exposure in exposures_for(archetype, sector_etf=sector_etf):
         if exposure["factor"] == "yen_carry":
             continue  # a switch, handled below
         if exposure["validation"] == "DOWNGRADED":
@@ -288,7 +288,7 @@ def bank_axis(bank: dict[str, Any], price: float | None = None, observed_growth:
 
 
 def valuation_axis(report: dict[str, Any] | None, observed_growth: float | None, consensus_growth: float | None,
-                   implied_erp: float | None, erp_sensitivity: dict[str, Any] | None) -> dict[str, Any]:
+                   implied_erp: float | None, erp_sensitivity: dict[str, Any] | None, band: dict[str, Any] | None = None) -> dict[str, Any]:
     """Checklist 12.1: when the two cash-flow measures differ, read both and publish only what holds on both.
     12.2: banks read the ROE the price implies. 12.3: ADR figures are converted to the quoted share first."""
     bank = (report or {}).get("bank_implied_roe") or {}
@@ -298,12 +298,12 @@ def valuation_axis(report: dict[str, Any] | None, observed_growth: float | None,
         report = in_quote_units(report)
     bases = (report or {}).get("cash_flow_bases") or {}
     if not bases or (report.get("data_quality") or {}).get("status") != "CASH_FLOW_MEASURES_DIFFER":
-        return _single_valuation_axis(report, observed_growth, consensus_growth, implied_erp, erp_sensitivity)
+        return _single_valuation_axis(report, observed_growth, consensus_growth, implied_erp, erp_sensitivity, band)
     alt_source = bases.get("alternate") or {}
     alternate_report = {**report, "reverse_dcf": alt_source.get("reverse_dcf") or {}, "fair_value": alt_source.get("fair_value") or {},
                         "scenarios": {name: {"fair_value_per_share": value} for name, value in (alt_source.get("scenarios") or {}).items()}}
-    shown = _single_valuation_axis(report, observed_growth, consensus_growth, implied_erp, erp_sensitivity)
-    other = _single_valuation_axis(alternate_report, observed_growth, consensus_growth, implied_erp, erp_sensitivity)
+    shown = _single_valuation_axis(report, observed_growth, consensus_growth, implied_erp, erp_sensitivity, band)
+    other = _single_valuation_axis(alternate_report, observed_growth, consensus_growth, implied_erp, erp_sensitivity, band)
     gap = _num(bases.get("gap_pct"))
     rev_a, rev_b = _reverse_of(report), _reverse_of(alternate_report)
     implied = [_num(rev.get("required_5y_revenue_cagr")) if rev.get("converged") else None for rev in (rev_a, rev_b)]
@@ -321,12 +321,12 @@ def valuation_axis(report: dict[str, Any] | None, observed_growth: float | None,
         span = None
     measures = f"the two measures of last year's free cash flow differ by {gap:.0%}" if gap is not None else "the two measures of last year's free cash flow differ"
     if shown["state"] == other["state"] and shown["state"] != "Fair value withheld":
-        evidence = [f"{span} on the two cash-flow bases; observed {_pct(observed_growth)}, consensus next year {_pct(consensus_growth)}." if span else shown["evidence"][0] if shown["evidence"] else "",
+        evidence = [f"{span} on the two cash-flow bases; {reference_text(observed_growth, consensus_growth, band)}." if span else shown["evidence"][0] if shown["evidence"] else "",
                     f"The reading holds on both bases, though {measures}."]
         return axis(shown["state"], direction=shown["direction"], confidence=LOWER_CONFIDENCE.get(shown["confidence"], "LOW"),
                     evidence=[item for item in evidence if item], missing=shown["missing"], families=shown["families"], detail=detail)
     detail["fair_value"] = {}
-    evidence = [f"{span} depending on the base; observed {_pct(observed_growth)}, consensus next year {_pct(consensus_growth)}." if span
+    evidence = [f"{span} depending on the base; {reference_text(observed_growth, consensus_growth, band)}." if span
                 else f"Operating-profit base: {shown['state']}; cash-flow-statement base: {other['state']}."]
     return axis("Depends on which cash-flow measure", confidence="LOW", evidence=evidence, families=["valuation"], detail=detail,
                 missing=[f"No single fair value: {measures}, and the answer changes with the measure "
@@ -339,8 +339,40 @@ def _reverse_of(report: dict[str, Any]) -> dict[str, Any]:
     return (headline.get("reverse_dcf") if headline.get("fair_value") else None) or report.get("reverse_dcf") or {}
 
 
+# Checklist 15.6 (owner-approved 2026-11-24): the five-year growth the price assumes is compared with
+# two references of similar length, analysts' two-year yearly growth and the last three years' actual
+# yearly growth, instead of one year of forecasts. More than 5 points above both: priced high; more than
+# 5 points below both: priced low; otherwise it roughly matches.
+BAND_MARGIN = 0.05
+
+
+def growth_band_from(expectations: dict[str, Any] | None) -> dict[str, Any] | None:
+    band = {"consensus_2y": _num((expectations or {}).get("revenue_cagr_2y_consensus")), "history_3y": _num((expectations or {}).get("revenue_cagr_3y_history"))}
+    return band if any(value is not None for value in band.values()) else None
+
+
+def band_reading(implied: float, band: dict[str, Any]) -> str:
+    references = [value for value in (band.get("consensus_2y"), band.get("history_3y")) if value is not None]
+    if implied > max(references) + BAND_MARGIN:
+        return "Price implies more growth than observed/consensus"
+    if implied < min(references) - BAND_MARGIN:
+        return "Price implies less growth than observed/consensus"
+    return "Price roughly matches observed/consensus growth"
+
+
+def reference_text(observed: float | None, consensus: float | None, band: dict[str, Any] | None) -> str:
+    if band:
+        parts = []
+        if band.get("consensus_2y") is not None:
+            parts.append(f"analysts expect {_pct(band['consensus_2y'])} a year over the next two years")
+        if band.get("history_3y") is not None:
+            parts.append(f"the last three years grew {_pct(band['history_3y'])} a year")
+        return " and ".join(parts)
+    return f"observed {_pct(observed)}, consensus next year {_pct(consensus)}"
+
+
 def _single_valuation_axis(report: dict[str, Any] | None, observed_growth: float | None, consensus_growth: float | None,
-                           implied_erp: float | None, erp_sensitivity: dict[str, Any] | None) -> dict[str, Any]:
+                           implied_erp: float | None, erp_sensitivity: dict[str, Any] | None, band: dict[str, Any] | None = None) -> dict[str, Any]:
     if not report:
         return axis("Valuation unavailable", missing=["valuation report"], families=["valuation"])
     price = _num((report.get("company") or {}).get("current_market_price"))
@@ -372,7 +404,10 @@ def _single_valuation_axis(report: dict[str, Any] | None, observed_growth: float
         implied = _num(reverse.get("required_5y_revenue_cagr"))
         detail["implied_5y_revenue_cagr"] = implied
         reference = consensus_growth if consensus_growth is not None else observed_growth
-        if implied is None or reference is None:
+        detail["growth_band"] = band
+        if implied is not None and band:
+            state = band_reading(implied, band)
+        elif implied is None or reference is None:
             state = "Priced growth known; no comparison growth"
         elif implied > reference + 0.05:
             state = "Price implies more growth than observed/consensus"
@@ -380,13 +415,13 @@ def _single_valuation_axis(report: dict[str, Any] | None, observed_growth: float
             state = "Price implies less growth than observed/consensus"
         else:
             state = "Price roughly matches observed/consensus growth"
-        evidence.append(f"Price {price} implies {_pct(implied)} five-year revenue CAGR; observed {_pct(observed_growth)}, consensus next year {_pct(consensus_growth)}.")
+        evidence.append(f"The price {price} assumes sales grow {_pct(implied)} a year for five years; {reference_text(observed_growth, consensus_growth, band)}.")
         confidence = "MODERATE"
     elif status == "NO_ECONOMIC_SOLUTION":
         high, low = _num(reverse.get("high_case_value")), _num(reverse.get("low_case_value"))
         if high is not None and price is not None and high < price:
             state = "Price implies growth above what the model can reach"
-            evidence.append(f"Even 50% first-year growth values the share at {high:.2f} vs price {price:.2f}; consensus next-year growth {_pct(consensus_growth)}.")
+            evidence.append(f"Even 50% first-year growth values the share at {high:.2f} vs price {price:.2f}; {reference_text(observed_growth, consensus_growth, band)}.")
         elif low is not None and price is not None and low > price:
             state = "Price implies contraction beyond the model's floor"
             evidence.append(f"Even -20% first-year growth values the share at {low:.2f} vs price {price:.2f}.")
@@ -455,7 +490,24 @@ def expectations_axis(expectations: dict[str, Any] | None) -> dict[str, Any]:
                 evidence=evidence, families=["fundamentals"], detail=expectations)
 
 
-def fundamentals_axis(economics: dict[str, Any] | None, relative: dict[str, Any] | None = None) -> dict[str, Any]:
+QUARTER_STATES = {"IMPROVING": "Improving", "DETERIORATING": "Deteriorating", "MIXED": "Mixed", "NO_CHANGE": "No change"}
+
+
+def fundamentals_axis(economics: dict[str, Any] | None, relative: dict[str, Any] | None = None, quarterly: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Checklist 15.5: the latest quarterly report decides whether the business changed; the stored
+    economics profile is the fallback when the quarter cannot be read."""
+    if quarterly and quarterly.get("status") == "AVAILABLE":
+        shift = quarterly.get("change") or {}
+        finances = quarterly.get("health") or {}
+        if shift.get("state") in QUARTER_STATES:
+            evidence = [quarterly["summary"]]
+            if shift.get("reasons"):
+                evidence.append(f"{QUARTER_STATES[shift['state']]}: {'; '.join(shift['reasons'])}.")
+            if finances.get("state") == "NOT_APPLICABLE":
+                evidence.append(f"Finances: {finances['reason']}")
+            return axis(QUARTER_STATES[shift["state"]], confidence="MODERATE", evidence=evidence, families=["fundamentals"],
+                        detail={"quarterly": quarterly, "basis": "latest quarterly report",
+                                "archetype": ((economics or {}).get("classification") or {}).get("primary_archetype")})
     if not economics:
         return axis("Company economics unavailable", missing=["company economics"], families=["fundamentals"])
     translation = economics.get("financial_translation") or {}
@@ -555,6 +607,23 @@ def forward_fiscal_year(current_fiscal_year_end: dt.date | None, today: dt.date)
     return "+1y", following
 
 
+def consensus_two_year_cagr(this_year: dict[str, Any], next_year: dict[str, Any]) -> float | None:
+    """Yearly sales growth analysts expect from the last reported fiscal year to two years after it."""
+    base, target = _num(this_year.get("yearAgoRevenue")), _num(next_year.get("avg"))
+    return (target / base) ** 0.5 - 1 if base and target and base > 0 and target > 0 else None
+
+
+def history_cagr(annual) -> float | None:
+    """Actual yearly sales growth over the last three reported fiscal years (four annual figures)."""
+    try:
+        values = [float(value) for value in annual.loc["Total Revenue"].dropna().tolist()]   # newest first
+    except Exception:  # noqa: BLE001
+        return None
+    if len(values) < 4 or values[3] <= 0 or values[0] <= 0:
+        return None
+    return (values[0] / values[3]) ** (1 / 3) - 1
+
+
 def collect_expectations(ticker: str, today: dt.date | None = None) -> dict[str, Any]:
     import yfinance as yf
     try:
@@ -562,6 +631,7 @@ def collect_expectations(ticker: str, today: dt.date | None = None) -> dict[str,
             handle = yf.Ticker(ticker)
             trend, revisions, revenue, calendar = handle.eps_trend, handle.eps_revisions, handle.revenue_estimate, handle.calendar
             year_end_stamp = (handle.info or {}).get("nextFiscalYearEnd")
+            annual = handle.income_stmt
     except Exception as exc:  # noqa: BLE001
         return {"error": f"{type(exc).__name__}: {exc}"}
     def row(frame, period):
@@ -577,12 +647,14 @@ def collect_expectations(ticker: str, today: dt.date | None = None) -> dict[str,
     next_year_revenue = row(revenue, period)
     rev = row(revisions, period)
     earnings_dates = (calendar or {}).get("Earnings Date") or []
+    cagr_2y, cagr_3y = consensus_two_year_cagr(row(revenue, "0y"), row(revenue, "+1y")), history_cagr(annual)
     return {
         "eps_trend_next_year": row(trend, period),
         "revisions_up_30d": rev.get("upLast30days"), "revisions_down_30d": rev.get("downLast30days"),
         "revenue_growth_next_year": _num(next_year_revenue.get("growth")), "analysts_next_year": next_year_revenue.get("numberOfAnalysts"),
         "forward_period": period, "forward_fiscal_year_end": year_end.isoformat() if year_end else None,
         "next_earnings_date": str(earnings_dates[0]) if earnings_dates else None,
+        "revenue_cagr_2y_consensus": cagr_2y, "revenue_cagr_3y_history": cagr_3y,
         "source": "Yahoo Finance analyst estimates via yfinance",
     }
 
@@ -646,6 +718,12 @@ def build_card(ticker: str, environment: dict[str, Any], core: dict[str, Any], s
         errors["valuation"] = f"{type(exc).__name__}: {exc}"
     economics = build_company_economics(snapshot_from_valuation_data(data), report).to_dict()["company_economics"]
     archetype = (economics.get("classification") or {}).get("primary_archetype") or "GENERIC_OPERATING_COMPANY"
+    # Checklist 15.5: the latest quarterly report, read with fixed rules.
+    try:
+        import quarterly_read
+        quarterly = quarterly_read.collect(ticker, is_bank=archetype == "BANK")
+    except Exception as exc:  # noqa: BLE001
+        quarterly = {"status": "UNAVAILABLE", "reason": f"{type(exc).__name__}: {exc}"}
     info = data.get("info") or {}
     etf, mapping = sector_etf_for(ticker, info.get("sector"))
     company_vs_sector = None
@@ -680,17 +758,18 @@ def build_card(ticker: str, environment: dict[str, Any], core: dict[str, Any], s
     headline = (report or {}).get("fair_value") or {}
     observed_growth = _num(headline.get("observed_growth")) if _num(headline.get("observed_growth")) is not None else _num(info.get("revenueGrowth"))
     axes = {
-        "macro": macro_axis(archetype, environment),
+        "macro": macro_axis(archetype, environment, etf),
         "flow": flow_axis(ticker, etf, mapping, store, company_vs_sector, sector_flow),
-        "valuation": valuation_axis(report, observed_growth, expectations.get("revenue_growth_next_year"), _num((core.get("macro") or {}).get("erp")), erp_sensitivity),
+        "valuation": valuation_axis(report, observed_growth, expectations.get("revenue_growth_next_year"), _num((core.get("macro") or {}).get("erp")), erp_sensitivity,
+                                    growth_band_from(expectations)),
         "crowding": crowding_axis(heat, sector_flow, relative),
         "expectations": expectations_axis(expectations),
-        "fundamentals": fundamentals_axis(economics, relative),
+        "fundamentals": fundamentals_axis(economics, relative, quarterly),
     }
     risk = environment.get("risk_regime") or {}
     tactical_env = f"Market regime (context only, not predictive): {risk.get('regime') or 'unavailable'}"
     from exposure_map import exposures_for
-    exposed = {item["factor"] for item in exposures_for(archetype)}
+    exposed = {item["factor"] for item in exposures_for(archetype, sector_etf=etf)}
     card = {
         "schema_version": "1.0",
         "ticker": ticker,

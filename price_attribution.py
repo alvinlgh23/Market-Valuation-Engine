@@ -114,7 +114,7 @@ def build_attribution(ticker: str, archetype: str, sector_etf: str | None,
     if fetch is None:
         import Valuation_model as vm
         fetch = vm.fetch_history
-    exposures = [item for item in exposures_for(archetype) if FACTORS[item["factor"]].proxy and item.get("validation") != "DOWNGRADED"]
+    exposures = [item for item in exposures_for(archetype, sector_etf=sector_etf) if FACTORS[item["factor"]].proxy and item.get("validation") != "DOWNGRADED"]
     needed = {ticker, "SPY", *([sector_etf] if sector_etf else []), *(t for item in exposures for t in FACTORS[item["factor"]].tickers)}
     histories, missing = {}, []
     for symbol in sorted(needed):

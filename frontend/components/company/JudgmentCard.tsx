@@ -69,6 +69,21 @@ function AxisVisual({ name, axis }: { name: string; axis: Axis }) {
     </div>;
   }
   if (name === "fundamentals") {
+    // Checklist 15.5: the latest quarter's numbers, and the finances verdict, as chips.
+    const quarter = obj(detail.quarterly);
+    if (quarter.status === "AVAILABLE") {
+      const health = obj(quarter.health);
+      const signed = (value: unknown, scale = 100, unit = "%") => typeof value === "number" ? `${value >= 0 ? "+" : "−"}${Math.abs(value * scale).toFixed(unit === "%" ? 0 : 1)}${unit}` : null;
+      const chips: Array<[string, Tone, string]> = [];
+      const growth = signed(quarter.revenue_yoy);
+      if (growth) chips.push([`Sales ${growth}`, Number(quarter.revenue_yoy) >= 0 ? "supportive" : "against", "Sales against the same quarter a year earlier"]);
+      const margin = signed(quarter.margin_change, 100, " pts");
+      if (margin) chips.push([`Margin ${margin}`, Number(quarter.margin_change) > 0.01 ? "supportive" : Number(quarter.margin_change) < -0.01 ? "against" : "mixed", "Operating margin against a year earlier"]);
+      const beat = signed(quarter.eps_surprise);
+      if (beat) chips.push([`EPS vs forecast ${beat}`, Number(quarter.eps_surprise) >= 0 ? "supportive" : "against", "Earnings per share against the analysts' forecast"]);
+      if (health.state && health.state !== "UNKNOWN") chips.push([`Finances: ${String(health.label).toLowerCase()}`, health.state === "STRONG" ? "supportive" : health.state === "WEAK" ? "against" : health.state === "FAIR" ? "mixed" : "unknown", String(health.reason ?? "")]);
+      return <div className="jc-chips">{chips.map(([text, tone, title]) => <span key={text} title={title}><Chip tone={tone}>{text}</Chip></span>)}</div>;
+    }
     const parts = obj(detail.financial_translation);
     const entries = Object.entries(parts);
     if (!entries.length) return null;
@@ -77,12 +92,15 @@ function AxisVisual({ name, axis }: { name: string; axis: Axis }) {
   }
   if (name === "valuation") {
     const implied = num(detail.implied_5y_revenue_cagr);
-    const reference = num(detail.consensus_next_year_growth) ?? num(detail.observed_growth);
-    if (implied == null || reference == null) return null;
-    const top = Math.max(implied, reference, 0.01);
-    return <div className="jc-compare" title="Revenue growth the price implies (reverse DCF, five-year CAGR) against consensus next-year growth">
-      <div><span>Priced in</span><i style={{ width: `${Math.max(2, (Math.max(implied, 0) / top) * 100)}%` }} /><b>{pct(implied, 0)}</b></div>
-      <div><span>Consensus</span><i style={{ width: `${Math.max(2, (Math.max(reference, 0) / top) * 100)}%` }} /><b>{pct(reference, 0)}</b></div>
+    // Checklist 15.6: five-year growth the price assumes against two references of similar length.
+    const band = obj(detail.growth_band);
+    const rows: Array<[string, number | null]> = band.consensus_2y != null || band.history_3y != null
+      ? [["Priced in, 5 yrs", implied], ["Analysts, 2 yrs", num(band.consensus_2y)], ["Last 3 yrs", num(band.history_3y)]]
+      : [["Priced in", implied], ["Consensus", num(detail.consensus_next_year_growth) ?? num(detail.observed_growth)]];
+    if (implied == null || rows.slice(1).every(([, value]) => value == null)) return null;
+    const top = Math.max(...rows.map(([, value]) => value ?? 0), 0.01);
+    return <div className="jc-compare" title="Yearly sales growth the share price assumes for five years, against analysts' two-year forecast and the last three years. More than 5 points above both reads priced high; more than 5 points below both, priced low.">
+      {rows.filter(([, value]) => value != null).map(([label, value]) => <div key={label}><span>{label}</span><i style={{ width: `${Math.max(2, (Math.max(value as number, 0) / top) * 100)}%` }} /><b>{pct(value, 0)}</b></div>)}
     </div>;
   }
   return null;
