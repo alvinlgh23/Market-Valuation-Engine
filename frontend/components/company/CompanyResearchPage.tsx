@@ -11,7 +11,7 @@ import { ResearchLabel } from "./ResearchPrimitives";
 import { ReportMode } from "./ReportMode";
 import { JudgmentCard } from "./JudgmentCard";
 import { OperationalResearch } from "./OperationalResearch";
-import { BottleneckCandidates, candidateBottlenecks, useLiveValuation } from "./StoredProfileReads";
+import { BottleneckCandidates, candidateBottlenecks, useLiveValuation, useOperating } from "./StoredProfileReads";
 
 function queryState(): { workspace: CompanyWorkspaceKind | null; node: string | null } {
   if (typeof window === "undefined") return { workspace: null, node: null };
@@ -105,6 +105,7 @@ export function CompanyResearchPage({ company, dataState = "FIXTURE", initialWor
 
   const marketRead = displayStatus(company.raw.market_expectations_comparison.state);
   const liveValuation = useLiveValuation(company.ticker);
+  const operating = useOperating(company.ticker);
   const unconfirmed = company.primaryConstraint.constraint === "UNKNOWN";
   const candidates = candidateBottlenecks(company.raw.constraints.candidate_assessments, company.raw.constraints.candidate_constraints);
   const neededNumbers = candidates.map((item) => item.needs).filter((item): item is string => Boolean(item));
@@ -159,7 +160,7 @@ export function CompanyResearchPage({ company, dataState = "FIXTURE", initialWor
 
           <section className="snapshot-constraint snapshot-block">
             <header><span>02</span><strong>Primary Constraint</strong><button type="button" onClick={() => { openWorkspace("economics"); setTimeout(() => selectNode(company.raw.economic_graph.nodes.find((node) => node.type === "constraint")?.id ?? ""), 0); }}>Inspect →</button></header>
-            {unconfirmed ? <BottleneckCandidates candidates={candidates} /> : <><h3>{company.primaryConstraint.label}</h3>
+            {operating?.status === "AVAILABLE" ? <><h3>{operating.summary}</h3><p className="snapshot-operating-note">From SEC filings: each figure&apos;s change against sales growth. See the operating signals on the card above.</p></> : unconfirmed ? <BottleneckCandidates candidates={candidates} /> : <><h3>{company.primaryConstraint.label}</h3>
             <dl><div><dt>Binding</dt><dd>{humanize(company.primaryConstraint.constraint_status || "EVIDENCE_INSUFFICIENT")}</dd></div><div><dt>Direction</dt><dd>{humanize(company.primaryConstraint.direction_status || company.primaryConstraint.direction)}</dd></div><div><dt>Evidence</dt><dd>{company.primaryConstraint.basis}</dd></div></dl></>}
           </section>
 

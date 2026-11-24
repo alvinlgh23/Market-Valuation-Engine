@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { loadCompanyCard } from "../../lib/company-card";
 import { fairValueCoordinates } from "../../lib/fair-value-scale.mjs";
 import { historyLabel, versusHistory } from "../../lib/plain-words.mjs";
+import { OperatingSignals, type Operating } from "./StoredProfileReads";
 import { axisTone, confidenceDots, percentileWidth, TONE_GLYPH, TONE_LABEL, type Tone } from "../../lib/judgment-tone.mjs";
 import { PriceDriversPanel, type Attribution, type PriceReading } from "./PriceDrivers";
 
@@ -11,7 +12,7 @@ type Card = {
   ticker: string; name: string; archetype: string; sector_etf: string | null; generated_on: string;
   axes: Record<string, Axis>;
   horizons: Record<string, { window: string; context?: string; axes: string[] }>;
-  contradictions: string[]; changes: Array<{ axis: string; from: string; to: string; since: string }>; falsification: string[];
+  contradictions: string[]; changes: Array<{ axis: string; from: string; to: string; since: string }>; falsification: string[]; operating?: unknown;
   next_catalysts: { earnings: string | null; last_earnings?: string | null; fomc: string | null };
   disclaimer: string;
   attribution?: Attribution; price_reading?: PriceReading;
@@ -204,6 +205,7 @@ export function JudgmentCard({ ticker }: { ticker: string }) {
         {horizon.axes.map((name) => card.axes[name] ? <AxisTile key={name} name={name} axis={card.axes[name]} /> : null)}
       </article>)}
     </div>
+    <OperatingSignals operating={card.operating as Operating | undefined} />
     {card.contradictions.length || companyChanges(card).length ? <div className="jc-flags">
       {card.contradictions.map((item) => <span key={item} className="jc-flag tone-mixed"><em aria-hidden>!</em>{item}</span>)}
       {companyChanges(card).map((item) => <span key={item.axis} className="jc-flag"><em aria-hidden>↻</em>{AXIS_LABEL[item.axis] ?? item.axis}: {item.from} → {item.to}</span>)}

@@ -3899,3 +3899,19 @@ html, body { background: var(--research-bg); font-family: var(--font-research); 
 .wl-editor form .wl-editor-save:disabled { opacity: .4; cursor: default; }
 .wl-editor-error { margin: 8px 0 0; color: var(--research-negative); font-size: 13px; }
 .wl-editor-note { margin: 8px 0 0; color: var(--research-faint); font-size: 12px; }
+/* Checklist 18.22: operating signals from filings */
+.jc-operating { margin-top: 14px; padding: 14px 16px; border: 1px solid var(--research-line); border-radius: 12px; background: var(--research-surface); }
+.jc-operating header { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.jc-operating h3 { margin: 0; font-size: 13px; font-weight: 500; }
+.jc-operating header small, .jc-operating-missing { color: var(--research-faint); font-size: 12px; }
+.jc-operating > p { margin: 8px 0 10px; font-size: 14px; }
+.jc-operating > p.tone-against { color: var(--research-negative); }
+.jc-operating ul { margin: 0; padding: 0; list-style: none; }
+.jc-operating li { display: grid; grid-template-columns: minmax(0, 1.4fr) 64px 90px minmax(0, 1.4fr); gap: 10px; padding: 6px 0; border-top: 1px solid var(--research-line); font-size: 13px; align-items: baseline; }
+.jc-operating li b { font: 500 13px var(--font-mono); text-align: right; }
+.jc-operating li small { color: var(--research-faint); font: 12px var(--font-mono); }
+.jc-operating li em { font-style: normal; }
+.jc-operating .tone-supportive { color: var(--research-positive); }
+.jc-operating .tone-against { color: var(--research-negative); }
+.snapshot-operating-note { color: var(--research-faint); font-size: 12px; }
+@media (max-width: 760px) { .jc-operating li { grid-template-columns: minmax(0, 1fr) 56px; } .jc-operating li small, .jc-operating li em { grid-column: 1 / -1; } }

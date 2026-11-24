@@ -772,6 +772,12 @@ def build_card(ticker: str, environment: dict[str, Any], core: dict[str, Any], s
         quarterly = quarterly_read.collect(ticker, is_bank=archetype == "BANK")
     except Exception as exc:  # noqa: BLE001
         quarterly = {"status": "UNAVAILABLE", "reason": f"{type(exc).__name__}: {exc}"}
+    # Checklist 18.22: operating signals from standard SEC fields, by company type.
+    try:
+        import operating_metrics
+        operating = operating_metrics.collect(ticker, archetype)
+    except Exception as exc:  # noqa: BLE001
+        operating = {"status": "UNAVAILABLE", "reason": f"{type(exc).__name__}: {exc}", "signals": [], "summary": "Operating figures unavailable."}
     info = data.get("info") or {}
     etf, mapping = sector_etf_for(ticker, info.get("sector"))
     company_vs_sector = None
@@ -823,6 +829,7 @@ def build_card(ticker: str, environment: dict[str, Any], core: dict[str, Any], s
         "ticker": ticker,
         "name": data.get("company"),
         "archetype": archetype,
+        "operating": operating,
         "sector_etf": etf,
         "generated_on": today.isoformat(),
         "environment_as_of": environment.get("as_of"),
