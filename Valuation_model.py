@@ -38,6 +38,8 @@ from datetime import datetime, timedelta, timezone
 
 import yfinance as yf
 
+from data_sources.market_history import fetch_yahoo_history
+
 from company_report import print_company_intelligence_report
 from company_economics import (
     build_company_economics,
@@ -46,7 +48,7 @@ from company_economics import (
     snapshot_from_resolved_security,
 )
 from inflation_pressure import print_inflation_debug, print_inflation_pressure_report
-from intrinsic_valuation import run_valuation
+from intrinsic_valuation import is_payment_network, run_valuation
 from risk_regime import analyze_risk_regime, collect_risk_regime_data, sector_context_for
 
 
@@ -272,6 +274,7 @@ MACRO_FALLBACKS = {
 
 DEFAULT_PROVIDER_CACHE_TTL_SECONDS = 3600
 _PROVIDER_CACHE = {}
+_MARKET_PROVIDER_DIAGNOSTICS = {}
 
 
 def pct(v):
@@ -399,17 +402,40 @@ def fetch_history(ticker, period="1y"):
     if cached is not None:
         return cached
     try:
-        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
-            hist = yf.download(ticker, period=period, interval="1d", progress=False, auto_adjust=True)
-        if hist.empty:
+        import pandas as pd
+
+        result = fetch_yahoo_history(ticker, period=period)
+        _MARKET_PROVIDER_DIAGNOSTICS[cache_key] = result.to_dict()
+        if not result.observations:
             return None
-        if hasattr(hist.columns, "levels"):
-            hist.columns = hist.columns.get_level_values(0)
-        hist = hist.dropna()
+        hist = pd.DataFrame(
+            {"Close": [item.value for item in result.observations]},
+            index=pd.to_datetime([item.date for item in result.observations]),
+        )
         provider_cache_set(cache_key, hist)
         return hist
-    except Exception:
+    except Exception as exc:
+        _MARKET_PROVIDER_DIAGNOSTICS[cache_key] = {
+            "ticker": ticker,
+            "provider": "Yahoo Finance chart API",
+            "provider_status": "INVALID",
+            "source_status": "INVALID",
+            "error": f"{type(exc).__name__}: {exc}",
+        }
         return None
+
+
+def market_provider_diagnostics(include_observations=False):
+    """Return compact typed provider outcomes unless replay rows are requested."""
+    output = {}
+    for key, value in _MARKET_PROVIDER_DIAGNOSTICS.items():
+        item = dict(value)
+        observations = item.get("observations") or []
+        item["observation_count"] = len(observations)
+        if not include_observations:
+            item.pop("observations", None)
+        output[key] = item
+    return output
 
 
 def fetch_ticker_info(ticker_obj):
@@ -463,14 +489,17 @@ def rsi(hist, period=14):
     return float(100 - (100 / (1 + rs)))
 
 
-def relative_change(ticker, benchmark="SPY", days=63):
-    asset = fetch_history(ticker, "1y")
-    bench = fetch_history(benchmark, "1y")
+def relative_change_from_histories(asset, bench, days=63):
+    """Pure form of relative_change for already-fetched (or date-truncated) histories."""
     asset_ret = price_change(asset, days)
     bench_ret = price_change(bench, days)
     if asset_ret is None or bench_ret is None:
         return None
     return asset_ret - bench_ret
+
+
+def relative_change(ticker, benchmark="SPY", days=63):
+    return relative_change_from_histories(fetch_history(ticker, "1y"), fetch_history(benchmark, "1y"), days)
 
 
 def score_from_change(change, bullish_when_positive=True, scale=0.08):
@@ -544,13 +573,9 @@ def risk_perception_label(vix_level):
 
 
 def carry_condition_label(usdjpy_3m, vix_level):
-    if usdjpy_3m is None and vix_level is None:
-        return "Unavailable"
-    if (usdjpy_3m is not None and usdjpy_3m < -0.03) or (vix_level is not None and vix_level > 24):
-        return "Unwind Risk"
-    if usdjpy_3m is not None and usdjpy_3m > 0.02 and (vix_level is None or vix_level < 20):
-        return "Supportive"
-    return "Neutral"
+    """CLI wording for the single yen-carry definition in environment.yen_carry_state."""
+    from environment import yen_carry_state
+    return {"INSUFFICIENT": "Unavailable", "UNWIND_RISK": "Unwind Risk", "ACCUMULATING": "Supportive", "STABLE": "Neutral"}[yen_carry_state(usdjpy_3m, vix_level)]
 
 
 def m2_trend_label(m2_trend):
@@ -914,20 +939,37 @@ def latest_period_change(rows, periods=1):
     return latest, trend
 
 
+def _months_back(day, months):
+    import datetime as _dt
+    parsed = _dt.date.fromisoformat(str(day)[:10])
+    index = parsed.year * 12 + parsed.month - 1 - months
+    return f"{index // 12:04d}-{index % 12 + 1:02d}"
+
+
 def latest_yoy(rows, periods=12):
+    """Year-on-year change matched by month, not by row count, so a missing month (the October 2025
+    CPI was never published) cannot turn a 12-month change into a 13-month one. The change in the
+    year-on-year rate over three months is matched the same way."""
     if not rows or len(rows) <= periods:
         return None, None
-    latest = rows[-1][1]
-    prior = rows[-1 - periods][1]
-    if prior == 0:
+    try:
+        by_month = {str(day)[:7]: value for day, value in rows}
+        # The latest month whose year-ago month exists (October 2026 has none, so September is used).
+        latest_day, latest, prior = None, None, None
+        for day, value in reversed(rows[-6:]):
+            candidate = by_month.get(_months_back(day, periods))
+            if candidate:
+                latest_day, latest, prior = day, value, candidate
+                break
+        if prior is None:
+            return None, None
+        current_yoy = latest / prior - 1
+        three_ago = _months_back(latest_day, 3)
+        level, base = by_month.get(three_ago), by_month.get(_months_back(latest_day, periods + 3))
+        prior_yoy = level / base - 1 if level is not None and base else None
+        return current_yoy, (current_yoy - prior_yoy) if prior_yoy is not None else None
+    except (TypeError, ValueError):
         return None, None
-    current_yoy = latest / prior - 1
-    if len(rows) <= periods + 3:
-        return current_yoy, None
-    prior_yoy_base = rows[-1 - periods - 3][1]
-    prior_yoy_level = rows[-4][1]
-    prior_yoy = prior_yoy_level / prior_yoy_base - 1 if prior_yoy_base else None
-    return current_yoy, (current_yoy - prior_yoy) if prior_yoy is not None else None
 
 
 def compute_macro_fragility(macro=None):
@@ -1115,6 +1157,71 @@ def macro_catalyst_warning(label, source, value):
     return f"{label}: Unavailable from {source}."
 
 
+def macro_scores(tnx_3m, front_rate_3m, dxy_3m, yield_curve, hyg_ief, vix_level):
+    """Pure macro scoring used by compute_macro and the signal-history backfill.
+
+    The formula and weights are unchanged from compute_macro; they were only moved here so
+    a historical cutoff can be scored with the same arithmetic.
+    """
+    rate_score = score_from_change(tnx_3m, bullish_when_positive=False, scale=0.12)
+    front_rate_score = score_from_change(front_rate_3m, bullish_when_positive=False, scale=0.12)
+    usd_score = score_from_change(dxy_3m, bullish_when_positive=False, scale=0.06)
+    curve_score = 60 if yield_curve and yield_curve > 0 else 40 if yield_curve and yield_curve < 0 else 50
+    vix_score = 75 if vix_level and vix_level < 16 else 60 if vix_level and vix_level < 22 else 35 if vix_level else 50
+    credit_score = score_from_change(hyg_ief, bullish_when_positive=True, scale=0.05)
+
+    liquidity_score = (rate_score * 0.30) + (front_rate_score * 0.15) + (usd_score * 0.25) + (curve_score * 0.10) + (credit_score * 0.20)
+    risk_score = (vix_score * 0.55) + (credit_score * 0.45)
+    macro_score = (liquidity_score * 0.60) + (risk_score * 0.40)
+    return {
+        "rate_score": rate_score,
+        "front_rate_score": front_rate_score,
+        "usd_score": usd_score,
+        "curve_score": curve_score,
+        "vix_score": vix_score,
+        "credit_score": credit_score,
+        "liquidity_score": liquidity_score,
+        "risk_score": risk_score,
+        "macro_score": macro_score,
+    }
+
+
+# Checklist 7.4: the three macro scores stay; factor_states shows each input on its own, with no
+# good/bad direction (the exposure map decides that per company). The percentile is the
+# reading's position in its own stored history (signal_history); fewer than 60 stored
+# observations gives none. Inputs are the very values compute_macro scored.
+MACRO_FACTORS = (
+    ("long_rates", "US 10Y yield", "tnx_level", "tnx_3m", "macro.tnx_3m", ("Rising", "Flat", "Falling")),
+    ("front_rates", "Front-end yield", "front_rate_level", "front_rate_3m", "macro.front_rate_3m", ("Rising", "Flat", "Falling")),
+    ("usd", "US dollar (DXY)", "dxy_level", "dxy_3m", "macro.dxy_3m", ("Strengthening", "Flat", "Weakening")),
+    ("credit", "Credit risk appetite (HYG vs IEF)", None, "hyg_ief", "macro.hyg_ief", ("Improving", "Steady", "Fading")),
+    ("volatility", "VIX", "vix_level", None, "macro.vix_level", ("Elevated", "Normal", "Low")),
+    ("curve", "10Y minus front-end", "yield_curve", None, "macro.yield_curve", ("Steep", "Normal", "Flat or inverted")),
+    ("money_supply", "M2, 6-month change", None, "m2_6m", "macro.m2_6m", ("Expanding fast", "Normal", "Slowing")),
+)
+
+
+def macro_factor_states(macro, store=None):
+    from signal_history import SignalStore
+    store = store or SignalStore()
+    as_of = macro.get("tnx_observed_at")
+    states = {}
+    for key, label, level_key, change_key, signal_id, words in MACRO_FACTORS:
+        value = macro.get(change_key or level_key)
+        percentile = store.percentile(signal_id, value=value, as_of=as_of) if is_number(value) else None
+        state = "Unavailable" if not is_number(value) else "Insufficient history" if percentile is None else words[0] if percentile >= 0.67 else words[2] if percentile <= 0.33 else words[1]
+        states[key] = {
+            "label": label,
+            "level": macro.get(level_key) if level_key else None,
+            "change_3m": macro.get(change_key) if change_key else None,
+            "reading_used": change_key or level_key,
+            "percentile_in_own_history": percentile,
+            "state": state,
+            "as_of": as_of,
+        }
+    return states
+
+
 def compute_macro():
     from treasury_semantics import treasury_curve
     tnx_level, tnx_3m, tnx_source, tnx_sources = fetch_macro_level_change(MACRO_FALLBACKS["tnx"])
@@ -1145,16 +1252,10 @@ def compute_macro():
     curve_metadata = treasury_curve(tnx_level, front_rate_level, front_rate_ticker, tnx_date, front_rate_date)
     curve_metadata["source"] = f"{tnx_source or 'Unavailable'} / Yahoo Finance ({front_rate_ticker})"
 
-    rate_score = score_from_change(tnx_3m, bullish_when_positive=False, scale=0.12)
-    front_rate_score = score_from_change(front_rate_3m, bullish_when_positive=False, scale=0.12)
-    usd_score = score_from_change(dxy_3m, bullish_when_positive=False, scale=0.06)
-    curve_score = 60 if yield_curve and yield_curve > 0 else 40 if yield_curve and yield_curve < 0 else 50
-    vix_score = 75 if vix_level and vix_level < 16 else 60 if vix_level and vix_level < 22 else 35 if vix_level else 50
-    credit_score = score_from_change(hyg_ief, bullish_when_positive=True, scale=0.05)
-
-    liquidity_score = (rate_score * 0.30) + (front_rate_score * 0.15) + (usd_score * 0.25) + (curve_score * 0.10) + (credit_score * 0.20)
-    risk_score = (vix_score * 0.55) + (credit_score * 0.45)
-    macro_score = (liquidity_score * 0.60) + (risk_score * 0.40)
+    scores = macro_scores(tnx_3m, front_rate_3m, dxy_3m, yield_curve, hyg_ief, vix_level)
+    liquidity_score = scores["liquidity_score"]
+    risk_score = scores["risk_score"]
+    macro_score = scores["macro_score"]
 
     spy = yf.Ticker("SPY")
     spy_info = {}
@@ -1195,7 +1296,7 @@ def compute_macro():
         if warning
     ]
 
-    return {
+    result = {
         "tnx_level": tnx_level,
         "tnx_3m": tnx_3m,
         "tnx_source": tnx_source or "Unavailable",
@@ -1228,42 +1329,102 @@ def compute_macro():
         "macro_score": macro_score,
         "provider_warnings": provider_warnings,
     }
+    try:
+        result["factor_states"] = macro_factor_states(result)
+    except Exception as exc:  # noqa: BLE001 - the history store must not break the macro scan
+        result["factor_states"] = {"error": f"{type(exc).__name__}: {exc}"}
+    return result
+
+
+def sector_row_from_histories(ticker, name, hist, spy_hist):
+    """Pure sector scoring for one ETF given its history and SPY's over the same window.
+
+    compute_sectors and the signal-history backfill both call this, so a historical cutoff
+    is scored with exactly the live arithmetic. Formula and weights are unchanged.
+    """
+    rel_1m = relative_change_from_histories(hist, spy_hist, 21)
+    rel_3m = relative_change_from_histories(hist, spy_hist, 63)
+    rel_6m = relative_change_from_histories(hist, spy_hist, 126)
+    close = float(hist["Close"].iloc[-1])
+    high_252 = float(hist["Close"].tail(252).max())
+    breakout = (close / high_252 - 1) if high_252 else None
+
+    momentum_score = (
+        score_from_change(rel_1m, True, 0.06) * 0.35
+        + score_from_change(rel_3m, True, 0.10) * 0.40
+        + score_from_change(rel_6m, True, 0.16) * 0.25
+    )
+    breakout_score = score_from_change(breakout, True, 0.08)
+    score = momentum_score * 0.75 + breakout_score * 0.25
+    return {
+        "ticker": ticker,
+        "name": name,
+        "rel_1m": rel_1m,
+        "rel_3m": rel_3m,
+        "rel_6m": rel_6m,
+        "breakout": breakout,
+        "score": score,
+        "as_of": str(hist.index[-1])[:10],
+    }
+
+
+# Checklist 7.2: 34 ETFs of very different kinds shared one leaderboard, so high-volatility
+# themes dominated both ends. Each ETF now has a tier, volatility-adjusted relative strength
+# and a rank inside its tier. score and the overall order are unchanged.
+SECTOR_TIERS = {
+    "GICS_SECTOR": ("XLK", "XLY", "XLC", "XLE", "XLF", "XLI", "XLB", "XLV", "XLU", "XLP", "XLRE"),
+    "INDUSTRY": ("SMH", "IGV", "CIBR", "XBI", "KRE", "KBE", "ITB", "XRT", "IYT", "ITA", "JETS"),
+    "THEME": ("URA", "TAN", "ICLN", "COPX", "KWEB", "QTUM", "UFO"),
+    "ASSET": ("SLV", "DBA", "IBIT", "GLD", "DBC"),
+}
+TIER_OF = {ticker: tier for tier, tickers in SECTOR_TIERS.items() for ticker in tickers}
+TIER_ORDER = tuple(SECTOR_TIERS)
+VOL_ADJ_WEIGHTS = {"rel_1m": (21, 0.35), "rel_3m": (63, 0.40), "rel_6m": (126, 0.25)}
+
+
+def vol_adjusted_fields(row, hist, spy_hist):
+    """Relative return divided by the tracking volatility of (ETF - SPY) daily returns over the same window."""
+    output = {"tier": TIER_OF.get(row["ticker"], "UNTIERED")}
+    if hist is None or spy_hist is None:
+        return output
+    daily = (hist["Close"].pct_change() - spy_hist["Close"].pct_change().reindex(hist.index)).dropna()
+    composite, weight_used = 0.0, 0.0
+    for key, (window, weight) in VOL_ADJ_WEIGHTS.items():
+        value = row.get(key)
+        tail = daily.tail(window)
+        tracking = float(tail.std()) * (window ** 0.5) if len(tail) >= window else None
+        adjusted = value / tracking if is_number(value) and tracking else None
+        output[f"{key}_vol_adj"] = adjusted
+        if adjusted is not None:
+            composite += weight * adjusted
+            weight_used += weight
+    output["vol_adj_score"] = composite / weight_used if weight_used else None
+    return output
+
+
+def rank_within_tiers(rows):
+    for tier in {row.get("tier") for row in rows}:
+        members = sorted((row for row in rows if row.get("tier") == tier and row.get("vol_adj_score") is not None), key=lambda row: row["vol_adj_score"], reverse=True)
+        for position, row in enumerate(members, 1):
+            row["rank_in_tier"] = position
+    for row in rows:
+        row.setdefault("rank_in_tier", None)
+    return rows
 
 
 def compute_sectors():
     rows = []
+    spy_hist = fetch_history("SPY", "1y")
     for ticker, name in SECTOR_ETFS.items():
         hist = fetch_history(ticker, "1y")
         if hist is None:
             continue
-
-        rel_1m = relative_change(ticker, "SPY", 21)
-        rel_3m = relative_change(ticker, "SPY", 63)
-        rel_6m = relative_change(ticker, "SPY", 126)
-        close = float(hist["Close"].iloc[-1])
-        high_252 = float(hist["Close"].tail(252).max())
-        breakout = (close / high_252 - 1) if high_252 else None
-
-        momentum_score = (
-            score_from_change(rel_1m, True, 0.06) * 0.35
-            + score_from_change(rel_3m, True, 0.10) * 0.40
-            + score_from_change(rel_6m, True, 0.16) * 0.25
-        )
-        breakout_score = score_from_change(breakout, True, 0.08)
-        score = momentum_score * 0.75 + breakout_score * 0.25
-
-        rows.append({
-            "ticker": ticker,
-            "name": name,
-            "rel_1m": rel_1m,
-            "rel_3m": rel_3m,
-            "rel_6m": rel_6m,
-            "breakout": breakout,
-            "score": score,
-            "as_of": str(hist.index[-1])[:10],
-            "source": "Yahoo Finance / Python sector engine",
-        })
-    return sorted(rows, key=lambda row: row["score"], reverse=True)
+        row = sector_row_from_histories(ticker, name, hist, spy_hist)
+        row.update(vol_adjusted_fields(row, hist, spy_hist))
+        row["source"] = "Yahoo Finance / Python sector engine"
+        row["provider_diagnostic"] = market_provider_diagnostics().get(f"history:{ticker}:1y", {})
+        rows.append(row)
+    return sorted(rank_within_tiers(rows), key=lambda row: row["score"], reverse=True)
 
 
 def company_quality_rows(tickers):
@@ -1311,6 +1472,12 @@ def company_quality_rows(tickers):
         rows.append({
             "ticker": ticker,
             "name": safe(info, "shortName", "longName", default=ticker),
+            "sector": safe(info, "sector"),
+            "industry": safe(info, "industry"),
+            "beta": safe(info, "beta"),
+            "market_cap": safe(info, "marketCap"),
+            "quote_type": safe(info, "quoteType"),
+            "summary": safe(info, "longBusinessSummary", default=""),
             "rev_growth": rev_growth,
             "earnings_growth": earnings_growth,
             "op_margin": op_margin,
@@ -1524,17 +1691,91 @@ def momentum_weakness_label(heat):
     return None
 
 
-AI_LEADERS = {"NVDA", "AVGO", "TSM", "ASML", "AMD", "MRVL"}
-MATURE_QUALITY = {"AAPL", "MSFT", "GOOGL", "META", "V", "MA", "COST", "BRK-B"}
-LIQUIDITY_SENSITIVE = {"COIN", "MSTR", "MARA", "RIOT", "CLSK", "IREN", "HOOD", "IBIT"}
-NARRATIVE_DECAY = {"PYPL"}
-IDENTITY_UNCERTAINTY = {"RBLX"}
-SPECULATIVE_TURNAROUND = {"INTC"}
-EXPENSIVE_CONVICTION_GROWTH = {"PLTR"}
-HARD_ASSET_ROTATION = {
-    "NEM", "GOLD", "AEM", "WPM", "FNV", "KGC", "PAAS", "AGI", "GFI", "HMY",
-    "FCX", "SCCO", "TECK", "BHP", "RIO", "VALE", "XOM", "CVX", "COP", "CF", "MOS", "AA",
-}
+# Checklist 6.3: the narrative classifier used hand-maintained ticker lists, so a company
+# outside the lists could never receive these labels. Each list is now a rule over measured
+# inputs from company_quality_rows and heat_rows. Thresholds are stated here and are model
+# policy, not calibrated estimates.
+CRYPTO_TERMS = ("bitcoin", "crypto", "digital asset", "blockchain")
+SEMICONDUCTOR_TERMS = ("semiconductor",)
+HARD_ASSET_TERMS = ("gold", "silver", "copper", "mining", "metals", "aluminum", "oil & gas", "fertilizer", "agricultural inputs", "steel")
+
+
+def _text(quality, *keys):
+    return " ".join(str(quality.get(key) or "") for key in keys).lower()
+
+
+def is_liquidity_sensitive(quality, heat):
+    """Digital-asset industry or name, or equity beta of at least 2.5 (was COIN, MSTR, miners, HOOD, IBIT).
+
+    The business summary is not searched: payment companies mention crypto without being crypto assets.
+    """
+    beta = quality.get("beta")
+    return any(term in _text(quality, "industry", "name") for term in CRYPTO_TERMS) or (is_number(beta) and beta >= 2.5)
+
+
+def is_ai_infrastructure_leader(quality, heat):
+    """Semiconductor business, quality >= 70, positive FCF, revenue growth >= 15% (was NVDA, AVGO, TSM, ASML, AMD, MRVL)."""
+    growth = quality.get("rev_growth")
+    return (any(term in _text(quality, "industry") for term in SEMICONDUCTOR_TERMS) and quality.get("score", 0) >= 70
+            and is_number(quality.get("fcf")) and quality["fcf"] > 0 and is_number(growth) and growth >= 0.15)
+
+
+def is_mature_institutional_quality(quality, heat):
+    """Market cap >= $200B, quality >= 70 and positive FCF (was AAPL, MSFT, GOOGL, META, V, MA, COST, BRK-B)."""
+    cap = quality.get("market_cap")
+    return is_number(cap) and cap >= 200e9 and quality.get("score", 0) >= 70 and is_number(quality.get("fcf")) and quality["fcf"] > 0
+
+
+def is_narrative_decay(quality, heat, rel_strength):
+    """Positive FCF, revenue growth < 8%, forward P/E < 15 and 3M relative strength below -5% (was PYPL)."""
+    growth, pe = quality.get("rev_growth"), heat.get("forward_pe")
+    return (is_number(quality.get("fcf")) and quality["fcf"] > 0 and is_number(growth) and growth < 0.08
+            and is_number(pe) and 0 < pe < 15 and rel_strength is not None and rel_strength < -0.05)
+
+
+def is_identity_uncertain(quality, heat):
+    """Revenue growth >= 20% with a negative operating margin (was RBLX)."""
+    growth, margin = quality.get("rev_growth"), quality.get("op_margin")
+    return is_number(growth) and growth >= 0.20 and is_number(margin) and margin < 0
+
+
+def is_speculative_turnaround(quality, heat):
+    """Market cap >= $50B, operating margin < 5% and revenue growth <= 5% (was INTC)."""
+    cap, margin, growth = quality.get("market_cap"), quality.get("op_margin"), quality.get("rev_growth")
+    return is_number(cap) and cap >= 50e9 and is_number(margin) and margin < 0.05 and (not is_number(growth) or growth <= 0.05)
+
+
+def is_expensive_conviction_growth(quality, heat):
+    """Quality >= 75, revenue growth >= 25% and forward P/E > 60 or EV/sales > 20 (was PLTR)."""
+    growth, pe, ev_sales = quality.get("rev_growth"), heat.get("forward_pe"), heat.get("ev_sales")
+    return (quality.get("score", 0) >= 75 and is_number(growth) and growth >= 0.25
+            and ((is_number(pe) and pe > 60) or (is_number(ev_sales) and ev_sales > 20)))
+
+
+# Most specific rule first: a high-beta chip leader is an AI leader, a premium-multiple grower
+# is not "mature quality", and a miner is a hard asset before it is a value or decay story.
+NARRATIVE_RULE_ORDER = ("ai_infrastructure_leader", "liquidity_sensitive", "expensive_conviction_growth", "hard_asset",
+                        "mature_institutional_quality", "narrative_decay", "identity_uncertain", "speculative_turnaround")
+
+
+def narrative_rule(quality, heat, rel_strength):
+    """Name of the first rule that matches, in NARRATIVE_RULE_ORDER, or None."""
+    checks = {
+        "ai_infrastructure_leader": lambda: is_ai_infrastructure_leader(quality, heat),
+        "liquidity_sensitive": lambda: is_liquidity_sensitive(quality, heat),
+        "expensive_conviction_growth": lambda: is_expensive_conviction_growth(quality, heat),
+        "hard_asset": lambda: is_hard_asset(quality, heat),
+        "mature_institutional_quality": lambda: is_mature_institutional_quality(quality, heat),
+        "narrative_decay": lambda: is_narrative_decay(quality, heat, rel_strength),
+        "identity_uncertain": lambda: is_identity_uncertain(quality, heat),
+        "speculative_turnaround": lambda: is_speculative_turnaround(quality, heat),
+    }
+    return next((name for name in NARRATIVE_RULE_ORDER if checks[name]()), None)
+
+
+def is_hard_asset(quality, heat):
+    """Basic materials or energy sector, or a mining/metals/oil/fertilizer industry (was a 22-ticker list)."""
+    return str(quality.get("sector") or "").lower() in {"basic materials", "energy"} or any(term in _text(quality, "industry") for term in HARD_ASSET_TERMS)
 
 
 def narrative_template(label, drivers, interpretation, market_interpretation=None):
@@ -1586,8 +1827,9 @@ def narrative_classification(quality, heat, rel_strength, pe_score):
         or (rel_strength is not None and rel_strength < 0.05)
     )
     unstable_earnings_base = forward_pe is not None and forward_pe < 0
+    rule = narrative_rule(quality, heat, rel_strength)
 
-    if ticker in LIQUIDITY_SENSITIVE:
+    if rule == "liquidity_sensitive":
         return narrative_template(
             "Liquidity-Sensitive Narrative Asset",
             [
@@ -1601,7 +1843,7 @@ def narrative_classification(quality, heat, rel_strength, pe_score):
             ],
         )
 
-    if ticker in AI_LEADERS and quality_score >= 70 and stable_fcf:
+    if rule == "ai_infrastructure_leader":
         return narrative_template(
             "Institutional AI Leader",
             [
@@ -1616,7 +1858,7 @@ def narrative_classification(quality, heat, rel_strength, pe_score):
             ],
         )
 
-    if ticker in MATURE_QUALITY and stable_fcf and quality_score >= 70:
+    if rule == "mature_institutional_quality":
         return narrative_template(
             "Mature Institutional Quality / Momentum Repair",
             [
@@ -1631,7 +1873,7 @@ def narrative_classification(quality, heat, rel_strength, pe_score):
             ],
         )
 
-    if ticker in NARRATIVE_DECAY:
+    if rule == "narrative_decay":
         return narrative_template(
             "Narrative Decay / Weakening Mature Platform",
             [
@@ -1646,7 +1888,7 @@ def narrative_classification(quality, heat, rel_strength, pe_score):
             ],
         )
 
-    if ticker in IDENTITY_UNCERTAINTY:
+    if rule == "identity_uncertain":
         return narrative_template(
             "Identity Uncertainty",
             [
@@ -1672,7 +1914,7 @@ def narrative_classification(quality, heat, rel_strength, pe_score):
             ],
         )
 
-    if ticker in SPECULATIVE_TURNAROUND:
+    if rule == "speculative_turnaround":
         return narrative_template(
             "Speculative Turnaround",
             [
@@ -1687,7 +1929,7 @@ def narrative_classification(quality, heat, rel_strength, pe_score):
             ],
         )
 
-    if ticker in EXPENSIVE_CONVICTION_GROWTH and quality_score >= 75:
+    if rule == "expensive_conviction_growth":
         drivers = [
             "strong revenue and earnings acceleration",
             "high financial quality",
@@ -1708,7 +1950,7 @@ def narrative_classification(quality, heat, rel_strength, pe_score):
             ],
         )
 
-    if ticker in HARD_ASSET_ROTATION:
+    if rule == "hard_asset":
         if stable_fcf and quality_score >= 55:
             label = "Defensive Hard-Asset Rotation"
             drivers = [
@@ -2553,6 +2795,32 @@ def intensity_label(score, low="Low", mid="Moderate", high="High", extreme="Extr
     return low
 
 
+def policy_liquidity_text():
+    """Compass policy liquidity for the CLI, shown beside the market score (checklist 3.5)."""
+    try:
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            from macro_world import build_world
+            compass = build_world(["US"])["regions"]["US"]["engine_specific"]["central_bank_compass"]
+        liquidity = compass.get("liquidity") or {}
+        if liquidity.get("score") is None:
+            return "Unavailable"
+        return f"{liquidity.get('classification')} ({liquidity['score']:.0f}/100, Compass data as of {compass.get('latest')})"
+    except Exception as exc:  # noqa: BLE001 - display only
+        return f"Unavailable ({type(exc).__name__})"
+
+
+def print_macro_factor_states(states):
+    """Checklist 7.4 step 2: each macro input on its own, against its own history, before the scores."""
+    if not isinstance(states, dict) or "error" in states:
+        return
+    print("Macro Factors (state vs own history; no good/bad direction):")
+    for item in states.values():
+        percentile = item.get("percentile_in_own_history")
+        where = "" if percentile is None else f" · {percentile:.0%} percentile"
+        print(f"  {item['label']}: {item['state']}{where}")
+    print()
+
+
 def print_global_liquidity_conditions(data):
     dxy_rising = data["dxy_3m"] is not None and data["dxy_3m"] > 0
     dxy_label = "Unavailable" if data.get("dxy_3m") is None else "Rising" if dxy_rising else "Falling / Stable"
@@ -2566,10 +2834,12 @@ def print_global_liquidity_conditions(data):
     print("GLOBAL LIQUIDITY CONDITIONS")
     print("=================================================")
     print()
-    print(f"Liquidity Regime: {liquidity_regime_label(data['liquidity_score'])}")
+    print(f"Market Liquidity (price-based): {liquidity_regime_label(data['liquidity_score'])} ({data['liquidity_score']:.0f}/100)")
+    print(f"Policy Liquidity (Compass): {policy_liquidity_text()}")
     print(f"Risk Perception: {risk_perception_label(data['vix_level'])}")
     print(f"Carry Conditions: {carry_condition_label(data.get('usdjpy_3m'), data['vix_level'])}")
     print()
+    print_macro_factor_states(data.get("factor_states"))
     print(f"US 10Y Treasury Yield: {pct(data['tnx_level'] / 100 if data['tnx_level'] else None)}")
     print(f"US 30Y Treasury Yield: {pct(data['tyx_level'] / 100 if data.get('tyx_level') else None)}")
     print(f"DXY Trend: {dxy_label} ({signed_pct(data['dxy_3m'])} 3M)")
@@ -2906,16 +3176,26 @@ def print_macro_command():
         print(item)
 
 
+TIER_LABELS = {"GICS_SECTOR": "Sectors", "INDUSTRY": "Industries", "THEME": "Themes", "ASSET": "Assets", "UNTIERED": "Other"}
+
+
 def print_sectors_command(show_all=False):
+    """Checklist 7.2 step 2: leaders are ranked inside their tier on volatility-adjusted strength."""
     rows = compute_sectors()
-    print("Sector Rotation Leaderboard:")
-    print()
-    limit = len(rows) if show_all else 3
-    for idx, row in enumerate(rows[:limit], 1):
-        print(
-            f"{idx}. {row['name']} {emoji_for_sector(row['name'])}  "
-            f"(1M {signed_pct(row['rel_1m'])}, 3M {signed_pct(row['rel_3m'])}, 6M {signed_pct(row['rel_6m'])} vs SPY)"
-        )
+    print("Sector Rotation Leaderboard (ranked within tier, volatility-adjusted):")
+    limit = None if show_all else 3
+    for tier in (*TIER_ORDER, "UNTIERED"):
+        members = sorted((row for row in rows if row.get("tier") == tier), key=lambda row: (row.get("rank_in_tier") is None, row.get("rank_in_tier") or 0))
+        if not members:
+            continue
+        print()
+        print(f"{TIER_LABELS[tier]}:")
+        for row in members[:limit]:
+            print(
+                f"{row.get('rank_in_tier') or '-'}. {row['name']} {emoji_for_sector(row['name'])}  "
+                f"(1M {signed_pct(row['rel_1m'])}, 3M {signed_pct(row['rel_3m'])}, 6M {signed_pct(row['rel_6m'])} vs SPY; "
+                f"3M per unit of tracking volatility {signed_fmt(row.get('rel_3m_vol_adj'), 2)})"
+            )
 
 
 def print_sector_command(raw_sector):
@@ -3551,6 +3831,7 @@ def print_usage():
     print("  python model.py fair-value MSFT  # alias for value")
     print("  python model.py economics PLTR   # company economics only")
     print("  python model.py company-economics PLTR --json")
+    print("  python model.py verdict NVDA      # company judgment card (add --watchlist, --json, --home-currency SGD)")
     print("  python model.py research-system inventory --json")
     print("  python model.py research-system dashboard --json")
     print("  python model.py research-system full --live --json")
@@ -3673,6 +3954,9 @@ def run_cli(args):
         except ValueError as exc:
             print(f"Valuation input error: {exc}", file=sys.stderr)
             return 2
+    elif command in {"verdict", "card", "judgment"}:
+        from company_verdict import main as run_company_verdict
+        return run_company_verdict(args[1:])
     elif command in {"10", "economics", "company-economics"}:
         ticker = args[1] if len(args) >= 2 else "PLTR"
         extra = args[2:]
@@ -4107,7 +4391,7 @@ def infer_security_type(info, integrity, quality=None):
     shell_pattern = r"\b(blank check|spac|shell)\b"
     if re.search(shell_pattern, name) or re.search(shell_pattern, industry):
         return "SPAC_OR_SHELL"
-    if sector == "financial services" or "bank" in industry or "insurance" in industry or "capital markets" in industry:
+    if (sector == "financial services" or "bank" in industry or "insurance" in industry or "capital markets" in industry) and not is_payment_network(info):
         return "FINANCIAL_INSTITUTION"
     if "reit" in industry or "real estate investment trust" in name:
         return "REIT"

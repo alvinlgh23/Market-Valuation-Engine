@@ -1,0 +1,64 @@
+[
+  {
+    "route": "/markets",
+    "request": "http://localhost:3001/api/research?scope=full",
+    "status": 200,
+    "meta": {
+      "source": "PYTHON_CACHE",
+      "core_snapshot_id": "0a78957806f2b431",
+      "fallback": false,
+      "generated_at": "2026-11-05T17:10:05+08:00"
+    }
+  },
+  {
+    "route": "/labs/fragility",
+    "request": "http://localhost:3001/api/research?scope=full",
+    "status": 200,
+    "meta": {
+      "source": "MEMORY_CACHE",
+      "core_snapshot_id": "0a78957806f2b431",
+      "fallback": false,
+      "generated_at": "2026-11-05T17:10:05+08:00"
+    }
+  },
+  {
+    "route": "/",
+    "request": "http://localhost:3001/api/research?scope=full",
+    "status": 200,
+    "meta": {
+      "source": "MEMORY_CACHE",
+      "core_snapshot_id": "0a78957806f2b431",
+      "fallback": false,
+      "generated_at": "2026-11-05T17:10:05+08:00"
+    }
+  },
+  {
+    "route": "/markets",
+    "request": "http://localhost:3001/api/research?scope=full",
+    "status": 200,
+    "meta": {
+      "source": "MEMORY_CACHE",
+      "core_snapshot_id": "0a78957806f2b431",
+      "fallback": false,
+      "generated_at": "2026-11-05T17:10:05+08:00"
+    }
+  },
+  {
+    "route": "refresh",
+    "request": "http://localhost:3001/api/research?scope=full&refresh=1",
+    "status": 200,
+    "meta": {
+      "source": "LIVE_REFRESH",
+      "core_snapshot_id": "c5076ffb979e5551",
+      "fallback": false,
+      "generated_at": "2026-11-05T17:10:52+08:00"
+    },
+    "coreState": "LIVE",
+    "error": null,
+    "rowCount": 34
+  },
+  {
+    "offlineTransport": "PASS",
+    "retainedTableRows": 34
+  }
+]

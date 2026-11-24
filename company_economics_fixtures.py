@@ -8,6 +8,11 @@ from company_economics import CompanySnapshot
 
 
 def _snapshot(ticker, name, sector, industry, description, metrics, operational):
+    # Historical synthetic operating examples are not issuer disclosures and
+    # must never enter the exported research judgment path.
+    operational = {}
+    monetary = {"revenue", "prior_revenue", "operating_income", "prior_operating_income", "fcf", "prior_fcf", "capex", "assets"}
+    metrics = {key: value * 1_000_000 if key in monetary else value for key, value in metrics.items()}
     periods = {key: "FY2025 vs FY2024" for key in metrics | operational}
     sources = {key: "deterministic fixture" for key in metrics | operational}
     histories = {

@@ -94,6 +94,36 @@ def _statement(ticker_obj, *attrs):
     return None
 
 
+UNFILED_KEY_ROWS = {"income": ("Total Revenue", "Operating Revenue"), "cashflow": ("Operating Cash Flow", "Total Cash From Operating Activities")}
+
+
+def drop_unfiled_periods(income, cashflow, balance):
+    """Checklist 9.1: drop fiscal years the provider lists before the annual report is filed.
+
+    Yahoo adds a column for a fiscal year as soon as it ends, with only a few rows filled. A period
+    counts as unfiled when its revenue (income statement) or operating cash flow (cash-flow
+    statement) is missing. The same period dates are dropped from all three statements, so every
+    row still starts at the same fiscal year. Returns the frames and the dropped dates.
+    """
+    unfiled = set()
+    for frame, key in ((income, "income"), (cashflow, "cashflow")):
+        if frame is None or frame.empty:
+            continue
+        row = next((name for name in UNFILED_KEY_ROWS[key] if name in frame.index), None)
+        if row is None:
+            continue
+        unfiled.update(column for column in frame.columns if not _number(frame.at[row, column]))
+
+    def keep(frame):
+        if frame is None or frame.empty or not unfiled:
+            return frame
+        kept = [column for column in frame.columns if column not in unfiled]
+        return frame.loc[:, kept] if kept else None
+
+    dates = sorted(str(getattr(column, "date", lambda: column)()) for column in unfiled)
+    return keep(income), keep(cashflow), keep(balance), dates
+
+
 def _row(frame, *names) -> list[float]:
     if frame is None:
         return []
@@ -126,13 +156,18 @@ def _money(value, currency="$"):
     return "Unavailable" if not _number(value) else f"{currency}{value:,.2f}"
 
 
-def _large(value):
+def _money_prefix(currency: str | None = None) -> str:
+    return "$" if not currency or currency == "USD" else f"{currency} "
+
+
+def _large(value, currency: str | None = None):
     if not _number(value):
         return "Unavailable"
+    prefix = _money_prefix(currency)
     for scale, suffix in ((1e12, "T"), (1e9, "B"), (1e6, "M")):
         if abs(value) >= scale:
-            return f"${value / scale:,.2f}{suffix}"
-    return f"${value:,.0f}"
+            return f"{prefix}{value / scale:,.2f}{suffix}"
+    return f"{prefix}{value:,.0f}"
 
 
 def _historical_fcff_reconciliation(
@@ -301,6 +336,20 @@ def _latest_price(ticker_obj, info):
     return None
 
 
+# Checklist 11.5: card networks (Visa, Mastercard) sit in Yahoo's "Credit Services" industry but carry no
+# loan book or deposits, so the bank framework does not fit; lenders in the same industry (AmEx, Capital One,
+# SoFi) keep it. Both conditions are read from the business summary.
+PAYMENT_NETWORK_TERMS = ("transaction processing", "payments technology company", "payment network")
+BALANCE_SHEET_TERMS = ("loan", "lending", "savings account", "checking account", "bank holding", "national association")
+
+
+def is_payment_network(info: dict) -> bool:
+    industry = str(_pick(info, "industry", default="")).lower()
+    summary = str(_pick(info, "longBusinessSummary", default="")).lower()
+    return (industry == "credit services" and any(term in summary for term in PAYMENT_NETWORK_TERMS)
+            and not any(term in summary for term in BALANCE_SHEET_TERMS))
+
+
 def classify_security(ticker: str, info: dict, has_financials: bool) -> str:
     quote_type = str(_pick(info, "quoteType", default="")).upper()
     name = str(_pick(info, "longName", "shortName", default="")).lower()
@@ -316,9 +365,10 @@ def classify_security(ticker: str, info: dict, has_financials: bool) -> str:
         return "INSUFFICIENT_DATA"
     if "reit" in industry or "real estate investment trust" in name:
         return "REIT"
-    if sector == "financial services" or any(term in industry for term in ("bank", "insurance", "capital markets")):
+    if (sector == "financial services" or any(term in industry for term in ("bank", "insurance", "capital markets"))) and not is_payment_network(info):
         return "FINANCIAL_INSTITUTION"
-    cyclical_terms = ("memory", "steel", "copper", "aluminum", "oil & gas", "commodity", "mining")
+    # Checklist 9.3: semiconductor equipment follows the chipmaker capex cycle.
+    cyclical_terms = ("memory", "steel", "copper", "aluminum", "oil & gas", "commodity", "mining", "semiconductor equipment")
     if ticker == "MU" or any(term in industry for term in cyclical_terms):
         return "CYCLICAL_COMPANY"
     op_margin = _pick(info, "operatingMargins")
@@ -371,6 +421,64 @@ def routing_evidence(ticker: str, info: dict, kind: str, has_financials: bool) -
     return evidence
 
 
+def _growth_inputs(symbol, info, revenue):
+    """Checklist 9.2: trailing-12-month growth from SEC filings, with the basis stated."""
+    try:
+        from growth_inputs import revenue_growth_inputs
+        return revenue_growth_inputs(symbol, info, revenue)
+    except Exception as exc:  # noqa: BLE001
+        return {"selected_growth": None, "basis": f"growth inputs failed: {type(exc).__name__}: {exc}"}
+
+
+# Checklist 11.2: Yahoo's free statements omit some rows (share-based pay at CAT and WMT, interest
+# expense at CRM). The filed 10-K value for the same fiscal year is read from SEC company facts
+# (already fetched for growth inputs). A field that is not filed stays missing; it never becomes zero.
+SEC_FALLBACK_CONCEPTS = {
+    "sbc": ("ShareBasedCompensation", "AllocatedShareBasedCompensationExpense"),
+    "interest_expense": ("InterestExpense", "InterestExpenseNonoperating", "InterestExpenseDebt", "InterestAndDebtExpense"),
+}
+
+
+def _period_end(frame) -> str | None:
+    try:
+        return str(frame.columns[0].date())
+    except (AttributeError, IndexError, TypeError):
+        return None
+
+
+def sec_annual_value(facts: dict, concepts: tuple[str, ...], period_end: str | None) -> tuple[str | None, float | None]:
+    """The 10-K value of the first concept with a full-year row ending on ``period_end``."""
+    if not period_end:
+        return None, None
+    taxonomy = (facts or {}).get("facts", {}).get("us-gaap", {})
+    end = dt.date.fromisoformat(period_end)
+    for concept in concepts:
+        rows = [row for row in taxonomy.get(concept, {}).get("units", {}).get("USD", [])
+                if str(row.get("form", "")).startswith("10-K") and row.get("end") == period_end and row.get("start")
+                and 350 <= (end - dt.date.fromisoformat(row["start"])).days <= 380 and _number(row.get("val"))]
+        if rows:
+            return concept, float(rows[-1]["val"])
+    return None, None
+
+
+def _sec_fallback(symbol: str, needed: dict[str, str | None], facts_loader=None) -> dict[str, tuple[str, float]]:
+    """``needed`` maps field -> fiscal period end. Returns field -> (concept, value) for what was filed."""
+    if not needed:
+        return {}
+    try:
+        if facts_loader is None:
+            from growth_inputs import sec_facts as facts_loader
+        facts = facts_loader(symbol)
+    except Exception:  # noqa: BLE001 - no SEC facts means the field stays missing
+        return {}
+    found = {}
+    for field_name, period_end in needed.items():
+        concept, value = sec_annual_value(facts, SEC_FALLBACK_CONCEPTS[field_name], period_end)
+        if concept is not None:
+            found[field_name] = (concept, value)
+    return found
+
+
 def collect_valuation_data(ticker: str) -> dict:
     symbol = ticker.strip().upper()
     ticker_obj = yf.Ticker(symbol)
@@ -378,6 +486,7 @@ def collect_valuation_data(ticker: str) -> dict:
     income = _statement(ticker_obj, "income_stmt", "financials")
     cashflow = _statement(ticker_obj, "cashflow")
     balance = _statement(ticker_obj, "balance_sheet")
+    income, cashflow, balance, unfiled_periods = drop_unfiled_periods(income, cashflow, balance)
 
     revenue = _row(income, "Total Revenue", "Operating Revenue")
     operating_income = _row(income, "Operating Income")
@@ -389,7 +498,7 @@ def collect_valuation_data(ticker: str) -> dict:
     ocf = _row(cashflow, "Operating Cash Flow", "Total Cash From Operating Activities")
     capex = _row(cashflow, "Capital Expenditure", "Capital Expenditures")
     sbc = _row(cashflow, "Stock Based Compensation")
-    depreciation = _row(cashflow, "Depreciation And Amortization", "Depreciation")
+    depreciation = _row(cashflow, "Depreciation And Amortization", "Depreciation", "Depreciation Amortization Depletion")
     working_capital = _row(cashflow, "Change In Working Capital", "Change To Working Capital")
     deferred_tax = _row(cashflow, "Deferred Tax", "Deferred Income Tax")
     other_non_cash = _row(cashflow, "Other Non Cash Items")
@@ -411,7 +520,7 @@ def collect_valuation_data(ticker: str) -> dict:
         else _pick(info, "freeCashflow")
     )
     latest_cash = cash[0] if cash else _pick(info, "totalCash", default=0)
-    latest_debt = debt[0] if debt else _pick(info, "totalDebt", default=0)
+    latest_debt = debt[0] if debt else _pick(info, "totalDebt")
     diluted_shares = shares[0] if shares else _pick(info, "sharesOutstanding")
     market_cap = _pick(info, "marketCap")
     price = _latest_price(ticker_obj, info)
@@ -427,6 +536,20 @@ def collect_valuation_data(ticker: str) -> dict:
     latest_interest_expense = abs(interest_expense[0]) if interest_expense else None
     if not _number(latest_interest_expense) and _number(latest_debt) and latest_debt == 0:
         latest_interest_expense = 0.0
+    latest_sbc = sbc[0] if sbc else None
+    needed = {}
+    if not _number(latest_sbc):
+        needed["sbc"] = _period_end(cashflow)
+    if not _number(latest_interest_expense):
+        needed["interest_expense"] = _period_end(income)
+    filed = _sec_fallback(symbol, needed)
+    input_sources = {}
+    if "sbc" in filed:
+        latest_sbc = filed["sbc"][1]
+        input_sources["sbc"] = f"SEC 10-K {filed['sbc'][0]} (fiscal year ending {needed['sbc']})"
+    if "interest_expense" in filed:
+        latest_interest_expense = abs(filed["interest_expense"][1])
+        input_sources["interest_expense"] = f"SEC 10-K {filed['interest_expense'][0]} (fiscal year ending {needed['interest_expense']})"
     after_tax_interest = (
         latest_interest_expense * (1 - tax_rate)
         if _number(latest_interest_expense)
@@ -462,6 +585,8 @@ def collect_valuation_data(ticker: str) -> dict:
         "routing_evidence": routing_evidence(symbol, info, security_type, has_financials),
         "price": price,
         "revenue_history": revenue,
+        "unfiled_periods_skipped": unfiled_periods,
+        "growth_inputs": _growth_inputs(symbol, info, revenue),
         "operating_income_history": operating_income,
         "gross_profit_history": gross_profit,
         "latest_revenue": latest_revenue,
@@ -471,7 +596,8 @@ def collect_valuation_data(ticker: str) -> dict:
         "latest_capex": latest_capex,
         "latest_fcf": latest_fcf,
         "latest_fcff": latest_fcff,
-        "sbc": sbc[0] if sbc else None,
+        "sbc": latest_sbc,
+        "input_sources": input_sources,
         "depreciation_amortization": depreciation[0] if depreciation else None,
         "working_capital_change": working_capital[0] if working_capital else None,
         "other_non_cash_adjustments": (
@@ -482,7 +608,7 @@ def collect_valuation_data(ticker: str) -> dict:
         "interest_expense": latest_interest_expense,
         "after_tax_interest": after_tax_interest,
         "cash": latest_cash if _number(latest_cash) else 0,
-        "debt": latest_debt if _number(latest_debt) else 0,
+        "debt": latest_debt if _number(latest_debt) else None,
         "shares": diluted_shares,
         "market_cap": market_cap,
         "tax_rate": tax_rate,
@@ -503,6 +629,8 @@ def collect_valuation_data(ticker: str) -> dict:
 
 def _required_data_missing(data: dict) -> list[str]:
     missing = []
+    if not _number(data.get("debt")):
+        missing.append("verified total debt (missing is not zero)")
     if not _number(data["latest_revenue"]) or data["latest_revenue"] <= 0:
         missing.append("latest annual revenue")
     if not _number(data["latest_fcff"]):
@@ -512,7 +640,7 @@ def _required_data_missing(data: dict) -> list[str]:
     return missing
 
 
-def _market_rates(data: dict) -> dict:
+def _risk_free() -> tuple[float, str]:
     risk_free = None
     try:
         hist = yf.Ticker("^TNX").history(period="5d")
@@ -520,14 +648,26 @@ def _market_rates(data: dict) -> dict:
             risk_free = float(hist["Close"].dropna().iloc[-1]) / 100
     except Exception:
         pass
-    rf_source = "Yahoo Finance US 10Y Treasury (^TNX), latest close"
     if not _number(risk_free):
-        risk_free = 0.043
-        rf_source = "transparent fallback: 4.3% US 10Y proxy"
-    beta = data["beta"] if _number(data["beta"]) and 0.25 <= data["beta"] <= 3 else 1.0
-    beta_source = "Yahoo Finance beta" if beta == data["beta"] else "fallback beta of 1.0"
+        return 0.043, "transparent fallback: 4.3% US 10Y proxy"
+    return risk_free, "Yahoo Finance US 10Y Treasury (^TNX), latest close"
+
+
+def _cost_of_equity(data: dict) -> dict:
+    risk_free, rf_source = _risk_free()
+    beta = data["beta"] if _number(data.get("beta")) and 0.25 <= data["beta"] <= 3 else 1.0
+    beta_source = "Yahoo Finance beta" if beta == data.get("beta") else "fallback beta of 1.0"
     erp = 0.045
-    cost_equity = risk_free + beta * erp
+    return {"risk_free_rate": risk_free, "risk_free_source": rf_source, "beta": beta, "beta_source": beta_source,
+            "equity_risk_premium": erp, "cost_of_equity": risk_free + beta * erp}
+
+
+def _market_rates(data: dict) -> dict:
+    equity_inputs = _cost_of_equity(data)
+    risk_free, rf_source = equity_inputs["risk_free_rate"], equity_inputs["risk_free_source"]
+    beta, beta_source = equity_inputs["beta"], equity_inputs["beta_source"]
+    erp = equity_inputs["equity_risk_premium"]
+    cost_equity = equity_inputs["cost_of_equity"]
     interest = _row(data["income"], "Interest Expense", "Interest Expense Non Operating")
     pretax_cost_debt = 0.055
     if interest and data["debt"] > 0:
@@ -618,14 +758,17 @@ def _base_parameters(data: dict, rates: dict) -> dict:
     }
 
 
-def _scenario_assumptions(data, rates, overrides) -> dict[str, list[Assumption]]:
+DEFAULT_SCENARIO_SPREADS = {
+    "bear": {"growth": -0.04, "margin": -0.04, "wacc": 0.01, "terminal": -0.005, "dilution": 0.005, "multiple": -2.0},
+    "base": {"growth": 0, "margin": 0, "wacc": 0, "terminal": 0, "dilution": 0, "multiple": 0},
+    "bull": {"growth": 0.04, "margin": 0.04, "wacc": -0.01, "terminal": 0.005, "dilution": -0.001, "multiple": 2.0},
+}
+
+
+def _scenario_assumptions(data, rates, overrides, spreads=None) -> dict[str, list[Assumption]]:
     base = _base_parameters(data, rates)
     sbc_policy = data.get("sbc_policy", SBC_ACCOUNTING_POLICY)
-    spreads = {
-        "bear": {"growth": -0.04, "margin": -0.04, "wacc": 0.01, "terminal": -0.005, "dilution": 0.005, "multiple": -2.0},
-        "base": {"growth": 0, "margin": 0, "wacc": 0, "terminal": 0, "dilution": 0, "multiple": 0},
-        "bull": {"growth": 0.04, "margin": 0.04, "wacc": -0.01, "terminal": 0.005, "dilution": -0.001, "multiple": 2.0},
-    }
+    spreads = spreads or DEFAULT_SCENARIO_SPREADS
     result = {}
     override_map = {
         "revenue_growth": "growth",
@@ -752,6 +895,283 @@ def _dcf(data, assumptions, forced_growth=None, forced_margin=None):
         "current_price": data["price"],
         "upside_downside": fair_value / data["price"] - 1 if _number(data["price"]) and data["price"] > 0 else None,
     }
+
+
+# ---- Checklist 7.5: scenario spreads from the company's own history (default since owner approval 2026-11-22) ----
+SPREAD_BOUNDS = {"growth": (0.02, 0.10), "margin": (0.02, 0.08)}
+
+
+def _stdev(values):
+    if len(values) < 2:
+        return None
+    mean = sum(values) / len(values)
+    return math.sqrt(sum((value - mean) ** 2 for value in values) / (len(values) - 1))
+
+
+def company_scenario_spreads(data):
+    """Growth and margin spreads from the standard deviation of the company's annual history.
+
+    Revenue growth: standard deviation of year-on-year growth across the available fiscal
+    years, bounded to 2-10 points. Margin: standard deviation of free-cash-flow margin (a
+    stated proxy for FCFF margin, whose history is not reconstructed), bounded to 2-8 points.
+    Fewer than four fiscal years keeps the default +/-4 points for that input. WACC, terminal
+    growth, dilution and exit-multiple spreads are unchanged.
+    """
+    revenues = [value for value in (data.get("revenue_history") or []) if _number(value)]
+    if len(revenues) < 4:
+        return None, {"reason": f"{len(revenues)} fiscal years of revenue; at least four are needed. Default spreads kept."}
+    growth = [revenues[index] / revenues[index + 1] - 1 for index in range(len(revenues) - 1) if revenues[index + 1] > 0]
+    fcf = _row(data.get("cashflow"), "Free Cash Flow")
+    margins = [value / revenue for value, revenue in zip(fcf, revenues) if _number(value) and revenue > 0]
+    growth_spread = _clamp(_stdev(growth), *SPREAD_BOUNDS["growth"]) if _stdev(growth) is not None else 0.04
+    margin_spread = _clamp(_stdev(margins), *SPREAD_BOUNDS["margin"]) if len(margins) >= 4 and _stdev(margins) is not None else 0.04
+    spreads = {name: dict(values) for name, values in DEFAULT_SCENARIO_SPREADS.items()}
+    spreads["bear"].update(growth=-growth_spread, margin=-margin_spread)
+    spreads["bull"].update(growth=growth_spread, margin=margin_spread)
+    return spreads, {
+        "fiscal_years": len(revenues), "growth_history": growth, "fcf_margin_history": margins,
+        "growth_spread": growth_spread, "margin_spread": margin_spread,
+        "margin_basis": "free-cash-flow margin history" if len(margins) >= 4 else "default 4 points (fewer than four FCF margins)",
+    }
+
+
+def scenario_spread_record(data, rates, overrides, spreads, basis):
+    """What the scenarios used: company-history spreads when available, otherwise the +/-4-point defaults.
+
+    The +/-4-point values are computed beside them so the change stays visible (checklist 7.5).
+    """
+    record = {"source": "COMPANY_HISTORY" if spreads is not None else "DEFAULT", "basis": basis,
+              "spreads": {name: {key: (spreads or DEFAULT_SCENARIO_SPREADS)[name][key] for key in ("growth", "margin")} for name in ("bear", "bull")}}
+    if spreads is None:
+        return record
+    try:
+        legacy = {name: _dcf(data, items)["fair_value_per_share"] for name, items in _scenario_assumptions(data, rates, overrides).items()}
+    except ValueError as exc:
+        return {**record, "default_spread_fair_value": None, "default_spread_reason": str(exc)}
+    return {**record, "default_spread_fair_value": legacy,
+            "note": "Bear/bull growth and margin spreads come from the company's own history; the +/-4-point values are shown for comparison."}
+
+
+# ---- Checklist 7.6: longer explicit period for fast growers, phased in above the cap ----
+GROWTH_CAPS = {"MATURE_OPERATING_COMPANY": 0.18, "GROWTH_SOFTWARE_COMPANY": 0.35, "CYCLICAL_COMPANY": 0.08}
+EXTENDED_POLICY = {"years": 10, "first_year_growth_cap": 0.50, "decay": "linear"}
+# Owner decision (2026-11-21): the ten-year model is phased in by how far observed growth exceeds
+# the type cap, so there is no jump at the cap. Weight 0 at the cap, 1 at cap + PHASE_IN_BAND.
+PHASE_IN_BAND = 0.10
+
+
+def extended_weight(observed_growth, cap):
+    """Share of the ten-year model in the headline value: 0 at or below the cap, linear to 1 at cap + band."""
+    if not _number(observed_growth) or cap is None:
+        return 0.0
+    return _clamp((observed_growth - cap) / PHASE_IN_BAND, 0.0, 1.0)
+
+
+def _dcf_extended(data, assumptions, first_growth, years=10, decay="linear"):
+    """Like _dcf, but with `years` explicit years; growth decays from first_growth to terminal growth.
+
+    decay="linear" reaches terminal growth in the final year; decay="front_loaded" halves the
+    gap to terminal growth each year. FCFF margin moves linearly from today's margin to the same
+    target margin as the five-year model. Terminal value, the enterprise-to-equity bridge and
+    dilution follow _dcf exactly, compounded over `years`.
+    """
+    target_margin = _assumption_value(assumptions, "year_5_fcff_margin")
+    wacc = _assumption_value(assumptions, "wacc")
+    terminal_growth = _assumption_value(assumptions, "terminal_growth")
+    dilution = _assumption_value(assumptions, "annual_dilution")
+    if wacc - terminal_growth <= 0:
+        raise ValueError("WACC must exceed terminal growth.")
+    revenue = data["latest_revenue"]
+    current_margin = data["latest_fcff"] / revenue
+    forecast, pv_fcff = [], 0.0
+    for year in range(1, years + 1):
+        if decay == "front_loaded":
+            growth = terminal_growth + (first_growth - terminal_growth) * (0.5 ** (year - 1))
+        else:
+            growth = first_growth + (terminal_growth - first_growth) * ((year - 1) / (years - 1))
+        margin = current_margin + (target_margin - current_margin) * (year / years)
+        revenue *= 1 + growth
+        fcff = revenue * margin
+        present = fcff / ((1 + wacc) ** year)
+        pv_fcff += present
+        forecast.append({"year": year, "revenue_growth": growth, "revenue": revenue, "fcff_margin": margin, "fcff": fcff, "present_value": present})
+    terminal_value = forecast[-1]["fcff"] * (1 + terminal_growth) / (wacc - terminal_growth)
+    pv_terminal = terminal_value / ((1 + wacc) ** years)
+    enterprise_value = pv_fcff + pv_terminal
+    net_cash = data["cash"] - data["debt"]
+    other_senior_claims = data.get("other_senior_claims", 0)
+    equity_value = enterprise_value + net_cash - other_senior_claims
+    diluted_shares = data["shares"] * ((1 + dilution) ** years)
+    return {"forecast": forecast, "pv_forecast_fcff": pv_fcff, "terminal_value": terminal_value, "pv_terminal_value": pv_terminal,
+            "enterprise_value": enterprise_value, "net_cash_debt_adjustment": net_cash, "other_senior_claims": other_senior_claims,
+            "equity_value": equity_value, "diluted_shares": diluted_shares, "fair_value_per_share": equity_value / diluted_shares}
+
+
+def _extended_checks(data, result, assumptions):
+    wacc = _assumption_value(assumptions, "wacc")
+    years = len(result["forecast"])
+    arithmetic = abs(sum(row["present_value"] for row in result["forecast"]) - result["pv_forecast_fcff"]) < 1e-6 * max(1.0, abs(result["pv_forecast_fcff"]))
+    terminal = abs(result["pv_terminal_value"] - result["terminal_value"] / ((1 + wacc) ** years)) < 1e-6 * max(1.0, abs(result["terminal_value"]))
+    ev = abs(result["enterprise_value"] - result["pv_forecast_fcff"] - result["pv_terminal_value"]) < 1e-6 * max(1.0, abs(result["enterprise_value"]))
+    bridge = abs(result["equity_value"] - (result["enterprise_value"] + result["net_cash_debt_adjustment"] - result["other_senior_claims"])) < 1e-6 * max(1.0, abs(result["equity_value"]))
+    shares = abs(result["fair_value_per_share"] * result["diluted_shares"] - result["equity_value"]) < 1e-6 * max(1.0, abs(result["equity_value"]))
+    return {"forecast_arithmetic": arithmetic, "terminal_value": terminal, "enterprise_value": ev, "ev_to_equity_bridge": bridge, "share_conversion": shares,
+            "wacc_above_terminal": wacc > _assumption_value(assumptions, "terminal_growth")}
+
+
+def _extended_reverse(data, base_items, years, decay):
+    """Solve first-year growth on the extended model; same bounds and boundary rule as _reverse_dcf."""
+    if not _number(data.get("price")) or data["price"] <= 0 or not _number(data.get("latest_fcff")) or data["latest_fcff"] <= 0:
+        return {"converged": False, "status": "NOT_RUN"}
+    low, high = REVERSE_GROWTH_BOUNDS
+    value = lambda growth: _dcf_extended(data, base_items, growth, years, decay)["fair_value_per_share"] - data["price"]
+    low_value, high_value = value(low), value(high)
+    if low_value * high_value > 0:
+        return {"converged": False, "status": "NO_ECONOMIC_SOLUTION", "low_case_value": low_value + data["price"], "high_case_value": high_value + data["price"]}
+    for _ in range(80):
+        mid = (low + high) / 2
+        difference = value(mid)
+        if abs(difference) <= REVERSE_TOLERANCE_PER_SHARE:
+            break
+        if difference * low_value <= 0:
+            high = mid
+        else:
+            low, low_value = mid, difference
+    if min(abs(mid - bound) for bound in REVERSE_GROWTH_BOUNDS) < 1e-6:
+        return {"converged": False, "status": "BOUNDARY_SOLUTION"}
+    return {"converged": True, "status": "CONVERGED", "required_year_1_revenue_growth": mid}
+
+
+def extended_horizon(data, assumptions, kind, spreads=None, observed_override=None):
+    """Checklist 7.6: run only when observed growth exceeds the company type's first-year cap.
+
+    observed_override (checklist 9.2): trailing-12-month growth, replacing Yahoo's one-quarter revenueGrowth.
+    """
+    observed = _pick(data["info"], "revenueGrowth") if observed_override is None else observed_override
+    cap = GROWTH_CAPS.get(kind)
+    if not _number(observed) or cap is None or observed <= cap:
+        return {"state": "NOT_TRIGGERED", "observed_growth": observed, "type_cap": cap,
+                "reason": "Observed growth is within the five-year model's cap; the existing valuation applies unchanged."}
+    years, decay = EXTENDED_POLICY["years"], EXTENDED_POLICY["decay"]
+    first = min(observed, EXTENDED_POLICY["first_year_growth_cap"])
+    # Same growth spreads as the five-year scenarios (company history when available, checklist 7.5).
+    deltas = {name: (spreads or DEFAULT_SCENARIO_SPREADS)[name]["growth"] for name in ("bear", "base", "bull")}
+    scenarios, checks = {}, {}
+    try:
+        for name, items in assumptions.items():
+            result = _dcf_extended(data, items, first + deltas[name], years, decay)
+            scenarios[name] = result["fair_value_per_share"]
+            checks[name] = _extended_checks(data, result, items)
+        base = assumptions["base"]
+        wacc_item = next(item for item in base if item.name == "wacc")
+        bumped = []
+        for shift in (-0.01, 0.0, 0.01):
+            cloned = [Assumption(**asdict(item)) for item in base]
+            next(item for item in cloned if item.name == "wacc").value = wacc_item.value + shift
+            bumped.append(_dcf_extended(data, cloned, first, years, decay)["fair_value_per_share"])
+        sensitivity = {
+            "first_year_growth_cap": {str(level): _dcf_extended(data, base, min(observed, level), years, decay)["fair_value_per_share"] for level in (0.40, 0.50, 0.60)},
+            "explicit_years": {str(length): _dcf_extended(data, base, first, length, decay)["fair_value_per_share"] for length in (8, 10, 12)},
+            "decay": {shape: _dcf_extended(data, base, first, years, shape)["fair_value_per_share"] for shape in ("linear", "front_loaded")},
+            "wacc_minus_1pp_base_plus_1pp": bumped,
+        }
+    except ValueError as exc:
+        return {"state": "INVALID", "reason": str(exc)}
+    passed = all(all(item.values()) for item in checks.values()) and scenarios["bear"] <= scenarios["base"] <= scenarios["bull"] and bumped[0] > bumped[1] > bumped[2]
+    return {
+        "state": "COMPUTED", "default": False, "observed_growth": observed, "type_cap": cap, "first_year_growth": first,
+        "weight": extended_weight(observed, cap),
+        "policy": dict(EXTENDED_POLICY), "fair_value": scenarios, "checks": checks, "checks_passed": passed,
+        "reverse_dcf": _extended_reverse(data, assumptions["base"], years, decay), "sensitivity": sensitivity,
+        "assumptions_to_state": "First-year growth cap (50%), linear decay to terminal growth and a 10-year explicit period are model policy without calibration; see sensitivity.",
+        "note": "Ten-year values at full weight; the headline fair value blends them with the five-year values by `weight` (see report['fair_value']).",
+    }
+
+
+def _blended_reverse(data, base_items, weight, years, decay):
+    """Solve year-1 growth so that (1 - weight) x five-year value + weight x ten-year value equals the price.
+
+    Same bounds, tolerance and boundary rule as _reverse_dcf. Both models take year-1 revenue growth
+    as the solved variable; the reported five-year CAGR is the weighted CAGR of the two paths.
+    """
+    if not _number(data.get("price")) or data["price"] <= 0 or not _number(data.get("latest_fcff")) or data["latest_fcff"] <= 0:
+        return {"converged": False, "status": "NOT_RUN", "weight": weight}
+
+    def blended(growth):
+        five = _dcf(data, base_items, forced_growth=growth)
+        ten = _dcf_extended(data, base_items, growth, years, decay)
+        return five, ten, (1 - weight) * five["fair_value_per_share"] + weight * ten["fair_value_per_share"]
+
+    low, high = REVERSE_GROWTH_BOUNDS
+    low_value, high_value = blended(low)[2] - data["price"], blended(high)[2] - data["price"]
+    base = {"solved_variable": "Year-1 revenue growth on the phased model", "weight": weight}
+    if low_value * high_value > 0:
+        return {**base, "converged": False, "status": "NO_ECONOMIC_SOLUTION", "low_case_value": low_value + data["price"], "high_case_value": high_value + data["price"]}
+    difference = None
+    for _ in range(80):
+        mid = (low + high) / 2
+        difference = blended(mid)[2] - data["price"]
+        if abs(difference) <= REVERSE_TOLERANCE_PER_SHARE:
+            break
+        if difference * low_value <= 0:
+            high = mid
+        else:
+            low, low_value = mid, difference
+    if difference is None or abs(difference) > REVERSE_TOLERANCE_PER_SHARE:
+        return {**base, "converged": False, "status": "NON_CONVERGENT", "residual_per_share": difference}
+    if min(abs(mid - bound) for bound in REVERSE_GROWTH_BOUNDS) < 1e-6:
+        return {**base, "converged": False, "status": "BOUNDARY_SOLUTION", "residual_per_share": difference}
+    five, ten, _ = blended(mid)
+    five_cagr = (five["forecast"][-1]["revenue"] / data["latest_revenue"]) ** (1 / 5) - 1
+    ten_cagr = (ten["forecast"][4]["revenue"] / data["latest_revenue"]) ** (1 / 5) - 1
+    return {**base, "converged": True, "status": "CONVERGED", "required_year_1_revenue_growth": mid,
+            "required_5y_revenue_cagr": (1 - weight) * five_cagr + weight * ten_cagr,
+            "five_year_model_5y_cagr": five_cagr, "ten_year_model_first_5y_cagr": ten_cagr, "residual_per_share": difference}
+
+
+def headline_growth(data):
+    """Checklist 9.2 (owner decision 2026-11-22): the phase-in reads trailing-12-month growth.
+
+    Falls back to Yahoo's one-quarter revenueGrowth only when growth inputs were not collected
+    (offline data); the basis is always returned.
+    """
+    growth = data.get("growth_inputs") or {}
+    if growth.get("selected_growth") is not None:
+        return growth["selected_growth"], growth.get("basis")
+    return None, "Yahoo one-quarter revenue growth (twelve-month growth not collected)"
+
+
+def one_quarter_legacy(data, assumptions, kind, spreads, scenarios, reverse):
+    """The pre-9.2 headline (one-quarter growth, no cyclical rule), kept for comparison only."""
+    extended = extended_horizon(data, assumptions, kind, spreads)
+    return {"default": False, **phased_fair_value(data, assumptions, scenarios, extended, reverse),
+            "note": "Previous headline: Yahoo one-quarter revenue growth, cyclical companies not excluded. Comparison only."}
+
+
+def phased_fair_value(data, assumptions, scenarios, extended, reverse, kind=None):
+    """Headline fair value (checklist 7.6, owner decision): five-year values, blended with the ten-year values above the cap.
+
+    kind="CYCLICAL_COMPANY" (owner decision 2026-11-22): no blending; high growth in a cyclical is
+    cycle position, and extending it for ten years would value the peak.
+    """
+    five = {name: scenarios[name]["fair_value_per_share"] for name in ("bear", "base", "bull")}
+    output = {"five_year": five, "phase_in_band": PHASE_IN_BAND, "type_cap": extended.get("type_cap"), "observed_growth": extended.get("observed_growth")}
+    if extended.get("state") != "COMPUTED":
+        return {**output, "method": "FIVE_YEAR", "extended_weight": 0.0, "fair_value": dict(five), "reverse_dcf": reverse,
+                "reason": extended.get("reason") or "Ten-year model not computed; five-year values apply."}
+    if not extended.get("checks_passed"):
+        return {**output, "method": "FIVE_YEAR", "extended_weight": 0.0, "fair_value": dict(five), "reverse_dcf": reverse, "ten_year": extended["fair_value"],
+                "reason": "Ten-year model failed its arithmetic, ordering or WACC checks; five-year values apply."}
+    if kind == "CYCLICAL_COMPANY":
+        return {**output, "method": "FIVE_YEAR", "extended_weight": 0.0, "fair_value": dict(five), "reverse_dcf": reverse, "ten_year": extended["fair_value"],
+                "reason": "Cyclical company: the ten-year model is not blended in, so cycle-high growth is not extended (owner decision 2026-11-22)."}
+    weight = extended["weight"]
+    ten = extended["fair_value"]
+    blended = {name: (1 - weight) * five[name] + weight * ten[name] for name in five}
+    blended_reverse = _blended_reverse(data, assumptions["base"], weight, EXTENDED_POLICY["years"], EXTENDED_POLICY["decay"]) if weight > 0 else reverse
+    return {**output, "method": "PHASED" if weight > 0 else "FIVE_YEAR", "extended_weight": weight, "fair_value": blended, "ten_year": ten,
+            "reverse_dcf": blended_reverse,
+            "reason": f"Observed growth {extended['observed_growth']:.1%} vs cap {extended['type_cap']:.0%}: ten-year model weighted {weight:.0%}, five-year {1 - weight:.0%}."}
 
 
 def _sensitivity(data, base_items):
@@ -1007,6 +1427,122 @@ def _cross_checks(data, scenarios):
     return {"metrics": metrics, "notes": notes, "historical_peer_ranges": "Unavailable from the current verified data feed; no range was invented."}
 
 
+# Checklist 12.2 (owner approval 2026-11-23): banks are read by what the price assumes about return on equity.
+# Single-stage justified price-to-book: P/B = (ROE - g) / (COE - g), so the sustained ROE the price implies is
+# g + P/B x (COE - g). COE = 10Y Treasury + beta x 4.5% and g = 2.5%, the same conventions as the company DCF.
+# Book value and ROE come from the annual statements; anything missing leaves the reading unavailable.
+BANK_LONG_RUN_GROWTH = 0.025
+
+
+def bank_implied_roe(data: dict, cost_of_equity: dict | None = None) -> dict:
+    equity = _row(data.get("balance"), "Common Stock Equity", "Stockholders Equity")
+    income = _row(data.get("income"), "Net Income Common Stockholders", "Net Income")
+    market_cap = data.get("market_cap")
+    missing = [name for name, ok in (("common equity (two years)", len(equity) >= 2 and equity[0] > 0 and equity[1] > 0),
+                                     ("net income to common", bool(income)), ("market capitalisation", _number(market_cap) and market_cap > 0)) if not ok]
+    if missing:
+        return {"status": "UNAVAILABLE", "missing": missing}
+    rates = cost_of_equity or _cost_of_equity(data)
+    coe, g = rates["cost_of_equity"], BANK_LONG_RUN_GROWTH
+    roe = income[0] / ((equity[0] + equity[1]) / 2)
+    price_to_book = market_cap / equity[0]
+    implied = g + price_to_book * (coe - g)
+    return {"status": "AVAILABLE", "price_to_book": price_to_book, "latest_roe": roe, "implied_roe": implied,
+            "cost_of_equity": coe, "beta": rates["beta"], "risk_free_rate": rates["risk_free_rate"], "long_run_growth": g,
+            "method": "Justified P/B = (ROE - g) / (COE - g); implied ROE = g + P/B x (COE - g)",
+            "basis": "Latest annual net income to common over average common equity; P/B from current market cap over latest common equity."}
+
+
+# Checklist 12.3 (owner approval 2026-11-23): an ADR whose accounts are in another currency is valued at company
+# level. The market value is the provider's quote-currency market cap converted at the latest FX rate, divided by
+# the same share count the statements use, so no ADR ratio is needed; per-share results convert back to the quote
+# by one factor (quote price / price per model share).
+def _fx_rate(base: str, quote: str) -> tuple[float | None, str | None]:
+    try:
+        hist = yf.Ticker(f"{base}{quote}=X").history(period="5d")
+        if hist is not None and not hist.empty:
+            close = hist["Close"].dropna()
+            return float(close.iloc[-1]), str(close.index[-1].date())
+    except Exception:
+        pass
+    return None, None
+
+
+def _company_level_bridge(data: dict, fx_loader=None) -> dict | None:
+    info = data.get("info") or {}
+    financial = info.get("financialCurrency")
+    quote = info.get("currency") or data.get("currency")
+    market_cap, shares, quote_price = data.get("market_cap"), data.get("shares"), data.get("price")
+    if not (financial and quote and financial != quote and _number(market_cap) and market_cap > 0
+            and _number(shares) and shares > 0 and _number(quote_price) and quote_price > 0):
+        return None
+    fx, fx_date = (fx_loader or _fx_rate)(financial, quote)
+    if not _number(fx) or fx <= 0:
+        return None
+    market_cap_financial = market_cap / fx
+    price_financial = market_cap_financial / shares
+    bridge = {"method": "COMPANY_LEVEL", "financial_currency": financial, "quote_currency": quote,
+              "fx_pair": f"{financial}{quote}", "fx": fx, "fx_date": fx_date, "market_cap_quote": market_cap,
+              "market_cap_financial": market_cap_financial, "shares": shares, "quote_price": quote_price,
+              "price_per_model_share": price_financial, "quote_per_model_share": quote_price / price_financial,
+              "note": (f"Valued at company level in {financial}: market cap {quote} {market_cap / 1e9:,.0f}B at {fx:.5f} {quote}/{financial}. "
+                       f"Per-share figures are per statement share ({financial} {price_financial:,.2f} at today's price) and convert to the quoted price by one factor.")}
+    return {**data, "price": price_financial, "market_cap": market_cap_financial, "currency": financial, "_unit_bridge": bridge}
+
+
+# Checklist 12.1 (owner approval 2026-11-23): when the two measures of last year's FCFF disagree by more than
+# the tolerance, the question is whether the answer depends on which one is used. Both are run; the report keeps
+# the operating-profit base (unchanged method) and carries the cash-flow-statement run alongside, and the
+# judgment card publishes only a conclusion that holds on both. Formulas and the tolerance are unchanged;
+# missing inputs or a non-positive measure still withhold.
+def _two_bases_eligible(reconciliation: dict) -> bool:
+    return (not reconciliation.get("missing") and _number(reconciliation.get("nopat_based_fcff"))
+            and _number(reconciliation.get("cfo_based_fcff"))
+            and reconciliation["nopat_based_fcff"] > 0 and reconciliation["cfo_based_fcff"] > 0)
+
+
+def _scenario_values(report: dict) -> dict:
+    return {name: (report.get("scenarios", {}).get(name) or {}).get("fair_value_per_share") for name in ("bear", "base", "bull")}
+
+
+def _two_base_report(ticker: str, overrides: dict, data: dict, reconciliation: dict) -> dict:
+    primary = build_valuation_report(ticker, overrides, {**data, "_fcff_base": "nopat"})
+    alternate = build_valuation_report(ticker, overrides, {**data, "_fcff_base": "cfo"})
+    nopat, cfo = reconciliation["nopat_based_fcff"], reconciliation["cfo_based_fcff"]
+    gap = abs(nopat - cfo) / max(abs(nopat), abs(cfo))
+    primary["cash_flow_bases"] = {
+        "status": "MEASURES_DIFFER",
+        "operating_profit_base": nopat,
+        "cash_flow_statement_base": cfo,
+        "gap_pct": gap,
+        "tolerance": reconciliation.get("tolerance"),
+        "shown_base": "operating_profit",
+        "alternate": {
+            "base": "cash_flow_statement",
+            "reverse_dcf": alternate.get("reverse_dcf") or {},
+            "fair_value": alternate.get("fair_value") or {},
+            "scenarios": _scenario_values(alternate),
+            "validation_status": (alternate.get("validation") or {}).get("status"),
+        },
+    }
+    if (primary.get("validation") or {}).get("status") == "FAILED":
+        return primary
+    currency = data.get("currency")
+    note = (
+        f"Two measures of last year's free cash flow differ by {gap:.0%} (operating profit {_large(nopat, currency)}, "
+        f"cash-flow statement {_large(cfo, currency)}; allowed gap {_large(reconciliation.get('tolerance'), currency)}). "
+        "Both were run: this report uses the operating-profit base and carries the cash-flow-statement result alongside. "
+    )
+    quality = primary.get("data_quality") or {}
+    primary["data_quality"] = {**quality, "status": "CASH_FLOW_MEASURES_DIFFER", "reason": note + str(quality.get("reason") or "")}
+    validation = primary.get("validation") or {}
+    if validation.get("status") == "PASSED":
+        validation["status"] = "PROVISIONAL"
+    validation.setdefault("reasons", []).append(note.strip())
+    primary["validation"] = primary["internal_validation"] = validation
+    return primary
+
+
 def build_valuation_report(ticker: str, overrides: dict | None = None, data: dict | None = None) -> dict:
     overrides = overrides or {}
     # A pre-collected normalized source object may be shared by Company
@@ -1031,6 +1567,7 @@ def build_valuation_report(ticker: str, overrides: dict | None = None, data: dic
             "valuation_method": selected_method,
             "as_of": data["as_of"],
             "current_market_price": data["price"],
+            "currency": data.get("currency"),
         },
         "valuation_method_selection": {
             "company_type": company_type,
@@ -1043,6 +1580,8 @@ def build_valuation_report(ticker: str, overrides: dict | None = None, data: dic
         "assumptions": {},
         "discount_rate": {},
         "scenarios": {},
+        # Headline fair value (checklist 7.6); replaced once the scenarios are computed and validated.
+        "fair_value": {"method": "WITHHELD", "fair_value": {}, "reason": "Fair value not calculated."},
         "sensitivity": {},
         "reverse_dcf": {},
         "cross_checks": {},
@@ -1095,6 +1634,13 @@ def build_valuation_report(ticker: str, overrides: dict | None = None, data: dic
             "next_implementation_stage": f"Implement {framework} only after the required verified data is available.",
         }
         report["data_quality"] = {"status": "INSUFFICIENT_FOR_FAIR_VALUE", "missing": missing, "reason": reason}
+        if kind == "FINANCIAL_INSTITUTION":
+            bank = bank_implied_roe(data)
+            report["bank_implied_roe"] = bank
+            if bank["status"] == "AVAILABLE":
+                report["data_quality"] = {"status": "BANK_IMPLIED_ROE", "missing": ["regulatory capital and payout history", "ROE history (one year used)"],
+                                          "reason": (f"No cash-flow DCF for a bank. Price-to-book {bank['price_to_book']:.2f} with a {bank['cost_of_equity']:.1%} cost of equity "
+                                                     f"implies a sustained ROE of {bank['implied_roe']:.1%}; the latest annual ROE is {bank['latest_roe']:.1%}.")}
         validation = {
             "status": "PROVISIONAL",
             "checks": {
@@ -1110,6 +1656,24 @@ def build_valuation_report(ticker: str, overrides: dict | None = None, data: dic
         report["_data"] = data
         return report
 
+    from security_units import valuation_unit_gate
+    unit_gate = valuation_unit_gate(data) if not data.get("_unit_bridge") else {"status": "COMPANY_LEVEL", "passed": True, "reasons": [], "bridge": data["_unit_bridge"]}
+    report["security_unit_validation"] = unit_gate
+    if not unit_gate["passed"]:
+        bridged = _company_level_bridge(data)
+        if bridged is not None:
+            result = build_valuation_report(ticker, overrides, bridged)
+            result["unit_bridge"] = bridged["_unit_bridge"]
+            quality = result.get("data_quality") or {}
+            result["data_quality"] = {**quality, "reason": bridged["_unit_bridge"]["note"] + " " + str(quality.get("reason") or "")}
+            return result
+        reason = " ".join(unit_gate["reasons"])
+        report["data_quality"] = {"status": "SECURITY_UNIT_AMBIGUITY", "reason": reason, "missing": ["validated security-unit bridge"]}
+        report["validation"] = {"status": "FAILED", "checks": {"security_units": unit_gate}, "reasons": [reason]}
+        report["internal_validation"] = report["validation"]
+        report["final_interpretation"] = {"text": "Fair value withheld: " + reason}
+        report["_data"] = data
+        return report
     debt_coverage = data.get("debt_coverage")
     if debt_coverage is not None and debt_coverage != "COMPLETE":
         provenance = data.get("debt_provenance") or {}
@@ -1139,7 +1703,10 @@ def build_valuation_report(ticker: str, overrides: dict | None = None, data: dic
 
     reconciliation = _historical_fcff_reconciliation(data, sbc_policy)
     report["historical_fcff_reconciliation"] = reconciliation
-    if reconciliation["status"] != "PASSED":
+    forced_base = data.get("_fcff_base")
+    if reconciliation["status"] != "PASSED" and not forced_base and _two_bases_eligible(reconciliation):
+        return _two_base_report(ticker, overrides, data, reconciliation)
+    if reconciliation["status"] != "PASSED" and not forced_base:
         report["data_quality"] = {
             "status": "FAILED_FCFF_RECONCILIATION",
             "missing": reconciliation.get("missing", []),
@@ -1160,8 +1727,9 @@ def build_valuation_report(ticker: str, overrides: dict | None = None, data: dic
         report["_data"] = data
         return report
 
-    # The reconciled NOPAT construction is the historical FCFF forecast base.
-    data["latest_fcff"] = reconciliation["calculated_fcff"]
+    # The reconciled NOPAT construction is the historical FCFF forecast base (checklist 12.1: or the
+    # cash-flow-statement measure when the two-base run asks for it).
+    data["latest_fcff"] = reconciliation["cfo_based_fcff"] if forced_base == "cfo" else reconciliation["calculated_fcff"]
 
     missing = _required_data_missing(data)
     if missing:
@@ -1209,13 +1777,14 @@ def build_valuation_report(ticker: str, overrides: dict | None = None, data: dic
         "diluted_share_history": _row(data["income"], "Diluted Average Shares", "Basic Average Shares"),
     }
     rates = _market_rates(data)
-    assumptions = _scenario_assumptions(data, rates, overrides)
+    spreads, spread_basis = company_scenario_spreads(data)
+    assumptions = _scenario_assumptions(data, rates, overrides, spreads=spreads)
     scenarios = {name: _dcf(data, items) for name, items in assumptions.items()}
     sensitivity = _sensitivity(data, assumptions["base"])
     reverse = _reverse_dcf(data, assumptions["base"])
     validation = _validate(data, assumptions, scenarios, reverse, sensitivity, rates)
     validation["checks"]["historical_fcff_reconciliation"] = {
-        "passed": True,
+        "passed": reconciliation["status"] == "PASSED",
         "detail": reconciliation["reason"],
     }
     base_dilution = _assumption_value(assumptions["base"], "annual_dilution")
@@ -1266,7 +1835,19 @@ def build_valuation_report(ticker: str, overrides: dict | None = None, data: dic
                 if _number(data.get("working_capital_change"))
                 else "A separate historical working-capital cash-flow impact was unavailable, so no value was invented."
             )
+            + (
+                f" Fiscal year(s) ending {', '.join(data['unfiled_periods_skipped'])} listed by the provider without filed figures; the latest filed year is used."
+                if data.get("unfiled_periods_skipped")
+                else ""
+            )
+            + (
+                " Not in the Yahoo statements, read from the filing instead: "
+                + "; ".join(f"{name.replace('_', ' ')} from {source}" for name, source in data["input_sources"].items()) + "."
+                if data.get("input_sources")
+                else ""
+            )
         ),
+        "input_sources": data.get("input_sources") or {},
     }
     report["assumptions"] = {name: [asdict(item) for item in items] for name, items in assumptions.items()}
     report["assumptions"]["policies"] = {
@@ -1294,6 +1875,14 @@ def build_valuation_report(ticker: str, overrides: dict | None = None, data: dic
     }
     report["discount_rate"] = rates
     report["scenarios"] = scenarios
+    # Checklist 7.5: bear/bull spreads from the company's history. Checklist 7.6: the headline value phases in the ten-year model (report["fair_value"]).
+    report["scenario_spreads"] = scenario_spread_record(data, rates, overrides, spreads, spread_basis)
+    # Checklist 9.2 (owner decision 2026-11-22): twelve-month growth drives the phase-in; cyclicals are not blended.
+    growth, growth_basis = headline_growth(data)
+    report["extended_horizon"] = extended_horizon(data, assumptions, kind, spreads, observed_override=growth)
+    report["fair_value"] = {**phased_fair_value(data, assumptions, scenarios, report["extended_horizon"], reverse, kind),
+                            "growth_basis": growth_basis, "growth_inputs": data.get("growth_inputs")}
+    report["fair_value_one_quarter_legacy"] = one_quarter_legacy(data, assumptions, kind, spreads, scenarios, reverse)
     report["sensitivity"] = sensitivity
     report["reverse_dcf"] = reverse
     report["cross_checks"] = cross_checks
@@ -1309,15 +1898,17 @@ def build_valuation_report(ticker: str, overrides: dict | None = None, data: dic
         "lower": ["lower growth", "weaker margins", "higher dilution", "higher WACC", "lower terminal growth"],
         "highest_sensitivity": "WACC and terminal growth dominate the sensitivity grid; revenue growth and Year-5 FCFF margin dominate operating value.",
     }
-    base_value = scenarios["base"]["fair_value_per_share"]
+    headline = report["fair_value"]["fair_value"]
+    base_value = headline["base"]
     report["final_interpretation"] = {
-        "bear_to_bull_range": [scenarios["bear"]["fair_value_per_share"], scenarios["bull"]["fair_value_per_share"]],
+        "bear_to_bull_range": [headline["bear"], headline["bull"]],
         "base_fair_value": base_value,
         "text": (
             f"The explicit scenarios produce a fair-value range of "
-            f"${scenarios['bear']['fair_value_per_share']:,.2f}–${scenarios['bull']['fair_value_per_share']:,.2f} per share, "
-            f"with a ${base_value:,.2f} base-case estimate. "
-            "This is a research estimate, not a recommendation, and is highly sensitive to discount rate, durable cash-flow margin, growth, and dilution."
+            f"{_money_prefix(data.get('currency'))}{headline['bear']:,.2f}–{_money_prefix(data.get('currency'))}{headline['bull']:,.2f} per share, "
+            f"with a {_money_prefix(data.get('currency'))}{base_value:,.2f} base-case estimate. "
+            + (f"{report['fair_value']['reason']} " if report["fair_value"]["method"] == "PHASED" else "")
+            + "This is a research estimate, not a recommendation, and is highly sensitive to discount rate, durable cash-flow margin, growth, and dilution."
         ),
     }
     report["validation"] = validation
@@ -1327,6 +1918,8 @@ def build_valuation_report(ticker: str, overrides: dict | None = None, data: dic
         report["scenarios"] = {}
         report["sensitivity"] = {}
         report["reverse_dcf"] = {"status": "VALIDATION_FAILED", "reason": "Critical valuation checks failed."}
+        report["fair_value"] = {"method": "WITHHELD", "fair_value": {}, "reason": "Critical valuation checks failed."}
+        report["fair_value_one_quarter_legacy"] = {"method": "WITHHELD", "default": False, "fair_value": {}, "reason": "Critical valuation checks failed."}
         report["cross_checks"] = {"notes": ["Authoritative values withheld after critical validation failure."]}
         report["final_interpretation"] = {"text": "Fair value withheld: " + "; ".join(validation["reasons"])}
     report["_data"] = data

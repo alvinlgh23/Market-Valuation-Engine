@@ -1,0 +1,112 @@
+// Checklist 14.2: alert rules for the Today page.
+import assert from "node:assert/strict";
+import { attentionItems, buildAlerts, dataAge, marketRead } from "../lib/alerts.mjs";
+
+const weak = { predictive: false, verdict: "WEAK", text: "Has not reliably predicted next-month S&P 500 returns (r = -0.17, t = -1.0, 35 months)." };
+const environment = {
+  as_of: "2026-11-04",
+  risk_regime: { regime: "Narrow Leadership Unwind" },
+  factors: {
+    credit: { state: "Risk appetite fading", direction: -1, readings: { percentile_in_own_history: 0.15 }, notes: [], as_of: "2026-11-04", track_record: weak },
+    volatility: { state: "Normal", direction: 0, readings: { percentile_in_own_history: 0.59 }, notes: [], track_record: weak },
+    usd: { state: "Strengthening", direction: 1, readings: { percentile_in_own_history: 0.78 }, notes: [], track_record: weak },
+    oil: { state: "Rising", direction: 1, readings: { change_3m_pct: 21.6 }, notes: [] },
+    liquidity: { state: "Policy: Liquidity Contracting · Market: Tight", direction: -1, notes: [], track_record: weak,
+                 readings: { relation: "AGREE", policy_liquidity: { label: "Liquidity Contracting" }, market_liquidity: { label: "Tight" } } },
+    yen_carry: { state: "Stable", direction: 0, notes: [], readings: { warning: { level: "ELEVATED", fuel: ["gap wide", "funds short yen"], trigger: [], next_boj_meeting: "2026-12-18", days_to_meeting: 24, rule: "HIGH: ... ELEVATED: ..." } } }
+  }
+};
+const drivers = [
+  { ticker: "PLTR", attribution: { windows: { "3M": { macro_by_factor: { credit: -0.124, usd: 0.02, volatility: -0.05 } } }, betas: { yen_carry: 0.1 } } },
+  { ticker: "AMD", attribution: { windows: { "3M": { macro_by_factor: { credit: -0.004, usd: -0.061 } } }, betas: { yen_carry: 1.6 } } },
+  { ticker: "V", attribution: { windows: { "3M": { macro_by_factor: { oil: 0.016 } } } } }
+];
+const summary = [{ ticker: "MSFT", changed: [{ axis: "expectations", from: "Estimates rising", to: "Estimates stable or mixed", on: "2026-11-24", origin: "COMPANY" }] },
+  { ticker: "V", changed: [{ axis: "valuation", from: "Fair value withheld", to: "Price implies more growth than observed/consensus", on: "2026-11-24", origin: "UNKNOWN" },
+                           { axis: "flow", from: "Neutral", to: "Money flowing in", on: "2026-11-24", origin: "RULES" }] }];
+
+const alerts = buildAlerts({ environment, drivers, summary });
+const ids = alerts.map((item) => item.id);
+// Credit is outside its middle band and cost PLTR 12.4 points: the top alert.
+assert.equal(ids[0], "factor-credit");
+assert.deepEqual(alerts[0].holdings, [{ ticker: "PLTR", value: -0.124 }]);
+assert.equal(alerts[0].metric, "Unusual");
+assert.equal(alerts[0].title, "Investors are selling risky company bonds");
+assert.equal(alerts.find((item) => item.id === "liquidity").title, "Money is tight by both measures");
+assert.match(alerts[0].criteria.now, /^Risk appetite fading\. Lower than 85 of every 100 readings in the past three years\.$/);
+assert.ok(!JSON.stringify(alerts).match(/\d+(st|nd|rd|th) (pct|percentile)/), "no percentile jargon in alerts");
+assert.equal(alerts[0].criteria.track.predictive, false);
+// The dollar only lists the holding it hurt; AMD's -0.4 point credit effect is below the 1-point floor.
+assert.deepEqual(alerts.find((item) => item.id === "factor-usd").holdings, [{ ticker: "AMD", value: -0.061 }]);
+// Volatility is in its middle band, so no alert even though it moved PLTR; oil only helped, so no alert.
+assert.ok(!ids.includes("factor-volatility") && !ids.includes("factor-oil"));
+// Yen carry: elevated warning, sized by each holding's yen sensitivity times an 8% fall.
+const carry = alerts.find((item) => item.id === "yen-carry");
+assert.equal(carry.tone, "warning");
+assert.equal(carry.holdings[0].ticker, "AMD");
+assert.ok(Math.abs(carry.holdings[0].value - -0.128) < 1e-9);
+assert.equal(carry.metric, "BOJ 2026-12-18 · 24d");
+// Liquidity: both measures tight, with no measured holding link.
+const liquidity = alerts.find((item) => item.id === "liquidity");
+assert.equal(liquidity.holdings.length, 0);
+assert.match(liquidity.holdingsNote, /No measured link/);
+// Card changes are not part of why holdings moved; they belong to "Needs your attention" (18.14).
+assert.ok(!ids.some((id) => id.startsWith("card-")));
+
+// Liquidity that disagrees between policy and market raises no alert.
+const split = structuredClone(environment);
+split.factors.liquidity.readings.relation = "DIFFERENT";
+assert.ok(!buildAlerts({ environment: split, drivers, summary: [] }).some((item) => item.id === "liquidity"));
+
+// Market read: built from the alerts, and honest that none of them forecasts.
+const read = marketRead(alerts, environment);
+assert.equal(read.chip, "Regime: narrow leadership unwind");
+assert.equal(read.headline, "Four conditions have weighed on your holdings over three months, led by falling risky bonds, the stronger dollar and the yen.");
+assert.equal(marketRead(alerts.slice(0, 2), environment).headline, "Two conditions have weighed on your holdings over three months: falling risky bonds and the stronger dollar.");
+// Factors without a percentile show their own figure, not the state again.
+const growth = buildAlerts({ environment: { factors: { growth: { state: "Weakening", direction: -1, readings: { ism_pmi: 47.9 }, notes: [] } } },
+  drivers: [{ ticker: "CAT", attribution: { windows: { "3M": { macro_by_factor: { growth: -0.025 } } } } }] });
+assert.equal(growth[0].metric, "Factory index 47.9");
+assert.match(read.note, /^None of these has predicted/);
+const calm = marketRead(buildAlerts({ environment: { factors: {} }, drivers: [], summary }), {});
+assert.equal(calm.headline, "No macro condition has weighed on your holdings over three months.");
+assert.equal(calm.chip, null);
+
+// Data age in business days: 4 Nov to 24 Nov 2026 is 14 business days; Friday to Monday is one.
+assert.deepEqual(dataAge("2026-11-04", "2026-11-24"), { days: 14, stale: true });
+assert.deepEqual(dataAge("2026-11-20", "2026-11-23"), { days: 1, stale: false });
+assert.deepEqual(dataAge(null, "2026-11-24"), { days: null, stale: true });
+console.log("Alert rules passed.");
+
+// Plain words for a reading's place in its own history.
+const { unusualness, versusHistory, historyLabel } = await import("../lib/plain-words.mjs");
+assert.equal(unusualness(0.5), "Typical");
+assert.equal(unusualness(0.69), "Slightly unusual");
+assert.equal(unusualness(0.15), "Unusual");
+assert.equal(unusualness(0.97), "Extreme");
+assert.equal(unusualness(null), null);
+assert.equal(versusHistory(0.69), "Higher than 69 of every 100 readings in the past three years.");
+assert.equal(versusHistory(0.15, "the past year"), "Lower than 85 of every 100 readings in the past year.");
+assert.equal(historyLabel(0.9, "price"), "Expensive for its history");
+assert.equal(historyLabel(0.25, "strength"), "Weaker than usual");
+assert.equal(historyLabel(0.5), "About usual");
+console.log("Plain-word rules passed.");
+
+// Checklist 18.14: forward-looking items only.
+const events = { date: "2026-11-24", fomc: { date: "2026-12-09" },
+  earnings: [{ ticker: "CRM", date: "2026-12-03" }, { ticker: "COST", date: "2026-12-11" }, { ticker: "NVDA", date: "2026-11-18" },
+             { ticker: "MSFT", date: "2027-01-28" }, { ticker: "OLD", date: "2026-11-01" }, { ticker: "NONE", date: null }] };
+const fearful = { factors: { volatility: { state: "Elevated", direction: 1, readings: { percentile_in_own_history: 0.97 }, notes: [],
+  track_record: { predictive: true, verdict: "INFORMATIVE", text: "Tested over 35 months: higher readings were followed by a better next month for the S&P 500." } } } };
+const attention = attentionItems({ events, summary, environment: fearful, today: "2026-11-24" });
+assert.deepEqual(attention.map((item) => item.id), ["card-MSFT-expectations", "reported-NVDA", "earnings-CRM", "fomc", "earnings-COST", "pattern-fear"]);
+assert.equal(attention[0].title, "Analysts turned on MSFT: estimates stable or mixed");
+assert.equal(attention.find((item) => item.id === "earnings-CRM").metric, "in 9 days");
+assert.equal(attention.find((item) => item.id === "reported-NVDA").metric, "6 days ago");
+assert.equal(attention.find((item) => item.id === "fomc").title, "Fed rate decision on Dec 9");
+assert.equal(attention.find((item) => item.id === "pattern-fear").metric, "Extreme");
+// Changes under different or unknown rules, and patterns without a passing record, never appear.
+assert.ok(!attention.some((item) => item.id.startsWith("card-V-")));
+const untested = attentionItems({ events: { earnings: [] }, summary: [], environment: { factors: { volatility: { ...fearful.factors.volatility, track_record: { predictive: false } } } }, today: "2026-11-24" });
+assert.equal(untested.length, 0);
+console.log("Attention rules passed.");

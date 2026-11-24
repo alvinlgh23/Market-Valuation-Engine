@@ -1,13 +1,14 @@
 "use client";
+import { StatusBadge } from "../research/StatusBadge";
 
 import { useState } from "react";
 import { DivergingBarChart, RankedBarChart, TimeSeriesChart } from "../charts/AnalyticalCharts";
-import { normalizeKospiFactors, normalizeKospiHistory, normalizeKospiVolatility, normalizeNeerContributions, normalizeNeerHistory } from "../../lib/research-visualization-adapter";
+import { normalizeKospiFactors, normalizeKospiHistory, normalizeKospiVolatility } from "../../lib/research-visualization-adapter";
 import type { QuantitativeDatum, RankedResearchItem } from "../../lib/visualization-types";
 
 type Json = Record<string, unknown>;
 
-function Status({ value }: { value: unknown }) { const state = String(value ?? "UNAVAILABLE"); return <span className={`macro-status macro-status-${state.toLowerCase().replaceAll(" ", "-")}`}>{state}</span>; }
+function Status({ value }: { value: unknown }) { return <StatusBadge value={value ?? "UNAVAILABLE"} variant="macro" />; }
 function show(value: unknown) { return value === null || value === undefined ? "Unavailable" : typeof value === "number" ? value.toFixed(3) : String(value); }
 
 function SpecialModel({ payload }: { payload: Json }) {
@@ -33,23 +34,6 @@ function Compass({ payload }: { payload: Json }) {
   </div></details>;
 }
 
-function Neer({ payload }: { payload: Json }) {
-  const current = (payload.current || {}) as Json;
-  const assumptions = (payload.policy_assumptions || {}) as Json;
-  const history = normalizeNeerHistory(payload);
-  const contributions = normalizeNeerContributions(payload);
-  const components = (payload.fx_components || []) as Json[];
-  const coverage = (payload.coverage || {}) as Json;
-  const [currency, setCurrency] = useState(String(components[0]?.currency || ""));
-  const selected = components.find((item) => item.currency === currency);
-  return <details className="macro-engine-detail" id="neer-workspace"><summary><span>SHADOW S$NEER</span><strong>{show(current.band_state)}</strong><i>+</i></summary><div className="macro-engine-body">
-    <section className="macro-engine-kpis"><article><span>Index</span><strong>{show(current.index)}</strong></article><article><span>Est. centre</span><strong>{show(current.estimated_center)}</strong></article><article><span>Deviation</span><strong>{show(current.deviation_pct)}%</strong></article><article><span>21D volatility</span><strong>{show(current.volatility_21d_ann_pct)}%</strong></article></section>
-    <section className="macro-engine-visual"><header><span>Time / shadow proxy history</span><small>Observed proxy vs estimated centre</small></header><TimeSeriesChart series={history} /></section>
-    <section className="macro-engine-visual"><header><span>Comparison / 63D basket contributions</span><small>Which FX components contribute most to current basket movement?</small></header><DivergingBarChart data={contributions} onSelect={(item) => setCurrency(item.id)} />{selected ? <aside className="neer-currency-inspector"><header><div><span>CURRENCY COMPONENT</span><h4>{show(selected.currency)}</h4></div><Status value={Number(selected.contribution_63d_pct || 0) >= 0 ? "POSITIVE" : "NEGATIVE"} /></header><dl><div><dt>Weight</dt><dd>{(Number(selected.weight || 0) * 100).toFixed(1)}%</dd></div><div><dt>Latest cross</dt><dd>{show(selected.latest_cross)}</dd></div><div><dt>21D move</dt><dd>{show(selected.change_21d_pct)}%</dd></div><div><dt>63D move</dt><dd>{show(selected.change_63d_pct)}%</dd></div><div><dt>63D contribution</dt><dd>{show(selected.contribution_63d_pct)}%</dd></div><div><dt>Filled gap</dt><dd>{show(selected.forward_filled_gap_pct)}%</dd></div></dl><p>Component-level historical arrays are not exposed by the normalized engine; the verified current windows and contribution are shown without synthesizing a line series.</p><small>{show(payload.source)} · {show(payload.as_of)}</small></aside> : null}<div className="neer-component-table-scroll"><div className="neer-component-table"><header><span>Currency</span><span>Weight</span><span>21D move</span><span>63D move</span><span>Contribution</span></header>{components.map((item) => <button type="button" key={String(item.currency)} onClick={() => setCurrency(String(item.currency))} className={currency === item.currency ? "selected" : ""}><strong>{show(item.currency)}</strong><span>{(Number(item.weight || 0) * 100).toFixed(1)}%</span><span>{show(item.change_21d_pct)}%</span><span>{show(item.change_63d_pct)}%</span><span>{show(item.contribution_63d_pct)}%</span></button>)}</div></div></section>
-    <section className="macro-engine-rules"><span>Transparent proxy assumptions</span><p>Estimated band ±{show(assumptions.estimated_band_half_width_pct)}%; slope {show(assumptions.slope_before_pct_pa)}% before and {show(assumptions.slope_after_pct_pa)}% after {show(assumptions.policy_change)}. This is not the official MAS basket or band.</p>{Object.entries(coverage).map(([key, value]) => <p key={key}>— {key.replaceAll("_", " ")}: {show(value)}</p>)}{((payload.warnings || []) as unknown[]).map((warning, index) => <p key={index}>— {show(warning)}</p>)}<p>Source: {show(payload.source)} · As of {show(payload.as_of)}</p></section>
-  </div></details>;
-}
-
 function Kospi({ payload }: { payload: Json }) {
   const sweep = (payload.sweep || {}) as Json;
   const interpretation = (sweep.interpretation || {}) as Json;
@@ -72,8 +56,7 @@ function Kospi({ payload }: { payload: Json }) {
 
 export function MacroEngineDetails({ engineSpecific }: { engineSpecific: Record<string, unknown> }) {
   const compass = engineSpecific.central_bank_compass as Json | undefined;
-  const neer = engineSpecific.shadow_neer_live as Json | undefined;
   const kospi = engineSpecific.kospi_live as Json | undefined;
-  if (!compass && !neer && !kospi) return null;
-  return <section className="macro-specialist-engines"><header><span>Specialist engine output</span><small>Open verified detail</small></header>{compass ? <Compass payload={compass} /> : null}{neer ? <Neer payload={neer} /> : null}{kospi ? <Kospi payload={kospi} /> : null}</section>;
+  if (!compass && !kospi) return null;
+  return <section className="macro-specialist-engines"><header><span>Specialist engine output</span><small>Open verified detail</small></header>{compass ? <Compass payload={compass} /> : null}{kospi ? <Kospi payload={kospi} /> : null}</section>;
 }

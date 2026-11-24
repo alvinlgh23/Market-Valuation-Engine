@@ -23,6 +23,12 @@ const run = createPythonRuntime(async (file, a, options) => { seen.push({ file, 
 for (const a of [args, ["-B", "company_research.py", "resolve", "MSFT"], ["-B", "research_system.py", "full", "--json"]]) assert.equal((await run(a)).ok, true);
 assert(seen.every(x => x.file === "/configured/python" && x.options.timeout <= 180000 && x.options.maxBuffer > 0));
 await assert.rejects(() => run(["-B", "bad.py", "full"]), e => e.code === "UNSUPPORTED_ACTION");
+// Checklist 8.1: the judgment card bridge accepts only --summary or one ticker with --json.
+assert.equal((await run(["-B", "company_verdict.py", "NVDA", "--json"])).ok, true);
+assert.equal((await run(["-B", "company_verdict.py", "--summary"])).ok, true);
+for (const bad of [["-B", "company_verdict.py", "--watchlist"], ["-B", "company_verdict.py", "NVDA", "--home-currency"], ["-B", "company_verdict.py", "nvda;rm", "--json"], ["-B", "company_verdict.py", "NVDA", "MSFT", "--json"]]) {
+  await assert.rejects(() => run(bad), e => e.code === "UNSUPPORTED_ACTION");
+}
 delete process.env.CHAINSTOX_PYTHON_EXECUTABLE;
 const get = (rows, state) => integrateSectorEngineRows(rows, state).find(s => s.ticker === "SMH");
 assert.equal(get([]).rel6m, null);

@@ -61,7 +61,10 @@ export type ValuationReport = {
     valuation_method: string;
     as_of: string;
     current_market_price: number | null;
+    currency?: string;
   };
+  unit_bridge?: { method?: string; note?: string; fx?: number; fx_pair?: string; quote_price?: number; quote_per_model_share?: number };
+  cash_flow_bases?: { gap_pct?: number; operating_profit_base?: number; cash_flow_statement_base?: number };
   valuation_method_selection: { company_type: string; selected_framework: string; routing_evidence: string[] };
   data_quality: { status?: string; missing?: string[]; reason?: string };
   historical_base: Record<string, unknown>;
@@ -75,6 +78,16 @@ export type ValuationReport = {
   risks: string[];
   fair_value_drivers: { raise?: string[]; lower?: string[]; highest_sensitivity?: string };
   final_interpretation: { bear_to_bull_range?: number[]; base_fair_value?: number; text?: string };
+  // Checklist 7.6: headline fair value; the ten-year model is phased in above the type's growth cap.
+  fair_value?: {
+    method?: "FIVE_YEAR" | "PHASED" | "WITHHELD";
+    extended_weight?: number;
+    fair_value?: Partial<Record<"bear" | "base" | "bull", number>>;
+    five_year?: Partial<Record<"bear" | "base" | "bull", number>>;
+    ten_year?: Partial<Record<"bear" | "base" | "bull", number>>;
+    reverse_dcf?: Record<string, unknown>;
+    reason?: string;
+  };
   validation: { status?: string; checks?: Record<string, { passed?: boolean; detail?: string }>; reasons?: string[] };
   fallback?: {
     detected_security_type: string;
@@ -111,17 +124,23 @@ export function hasScenarios(report: ValuationReport): boolean {
   return report.validation.status !== "FAILED" && Boolean((report.scenarios as Record<string, unknown>).base);
 }
 
+/** Headline bear/base/bull: the phased values when the engine supplies them, otherwise the five-year scenarios. */
+export function headlineFairValues(report: ValuationReport): Record<"bear" | "base" | "bull", number> {
+  const phased = report.fair_value?.fair_value;
+  if (phased && phased.bear != null && phased.base != null && phased.bull != null) return { bear: phased.bear, base: phased.base, bull: phased.bull };
+  const scenarios = report.scenarios as Record<"bear" | "base" | "bull", ScenarioResult>;
+  return { bear: scenarios.bear.fair_value_per_share, base: scenarios.base.fair_value_per_share, bull: scenarios.bull.fair_value_per_share };
+}
+
 export function valuationState(report: ValuationReport) {
+  if (report.data_quality?.status === "BANK_IMPLIED_ROE") return "Bank: Price-Implied ROE";   // checklist 12.2
   if (report.fallback?.required_specialized_framework) return "Framework Required";
   if (report.validation.status === "FAILED") return "Failed Validation";
   if (report.data_quality?.status === "FAILED_FCFF_RECONCILIATION") return "Fair Value Not Calculated";
   if (!hasScenarios(report)) return "Insufficient Data";
   const price = report.company.current_market_price;
   if (price == null) return "Market Price Unavailable";
-  const scenarios = report.scenarios as Record<"bear" | "base" | "bull", ScenarioResult>;
-  const bear = scenarios.bear.fair_value_per_share;
-  const base = scenarios.base.fair_value_per_share;
-  const bull = scenarios.bull.fair_value_per_share;
+  const { bear, base, bull } = headlineFairValues(report);
   if (price < bear) return "Market Below Bear";
   if (price <= base) return "Within Bear/Base";
   if (Math.abs(price / base - 1) <= 0.05) return "Near Base";
@@ -131,9 +150,7 @@ export function valuationState(report: ValuationReport) {
 
 export function currentPricePosition(report: ValuationReport) {
   if (!hasScenarios(report) || report.company.current_market_price == null) return 0;
-  const scenarios = report.scenarios as Record<"bear" | "base" | "bull", ScenarioResult>;
-  const bear = scenarios.bear.fair_value_per_share;
-  const bull = scenarios.bull.fair_value_per_share;
+  const { bear, bull } = headlineFairValues(report);
   const span = Math.max(Math.abs(bull - bear), 1);
   return Math.max(-12, Math.min(112, ((report.company.current_market_price - bear) / span) * 100));
 }

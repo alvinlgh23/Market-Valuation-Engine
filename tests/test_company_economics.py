@@ -61,7 +61,7 @@ def valuation_fixture(growth=.28, margin=.30, implied_growth=.25):
 
 class CompanyEconomicsTests(unittest.TestCase):
     def test_all_required_archetypes_exist(self):
-        self.assertEqual(len(ARCHETYPE_REGISTRY), 15)
+        self.assertEqual(len(ARCHETYPE_REGISTRY), 16)
         self.assertIn(Archetype.GENERIC_OPERATING_COMPANY, ARCHETYPE_REGISTRY)
 
     def test_constraint_registry_covers_enum(self):
@@ -72,7 +72,8 @@ class CompanyEconomicsTests(unittest.TestCase):
             with self.subTest(ticker=ticker):
                 profile = build_company_economics(benchmark_snapshot(ticker))
                 self.assertEqual(profile.classification.primary_archetype, archetype)
-                self.assertEqual(profile.constraints.primary_constraint.constraint, constraint)
+                self.assertEqual(profile.constraints.primary_constraint.constraint, ConstraintType.UNKNOWN)
+                self.assertIn(constraint, profile.constraints.candidate_constraints)
 
     def test_hybrid_classification(self):
         result = build_company_economics(benchmark_snapshot("MSFT"))
@@ -83,6 +84,30 @@ class CompanyEconomicsTests(unittest.TestCase):
         classification = BusinessModelClassifier().classify(snapshot)
         self.assertEqual(classification.primary_archetype, Archetype.GENERIC_OPERATING_COMPANY)
         self.assertEqual(classification.classification_confidence, Confidence.LOW)
+
+    def test_consumer_sector_alone_does_not_route_to_retail(self):
+        """Checklist 11.1: Tesla was routed to warehouse retail on the Consumer Cyclical sector alone."""
+        restaurant = CompanySnapshot("TEST", "Burger Co", "2026-01-01", sector="Consumer Cyclical", industry="Restaurants", business_description="operates quick-service restaurants")
+        self.assertEqual(BusinessModelClassifier().classify(restaurant).primary_archetype, Archetype.GENERIC_OPERATING_COMPANY)
+        carmaker = CompanySnapshot("TEST", "Car Co", "2026-01-01", sector="Consumer Cyclical", industry="Auto Manufacturers", business_description="designs, manufactures and sells electric vehicles")
+        self.assertEqual(BusinessModelClassifier().classify(carmaker).primary_archetype, Archetype.INDUSTRIAL)
+        retailer = CompanySnapshot("TEST", "Shop Co", "2026-01-01", sector="Consumer Defensive", industry="Discount Stores", business_description="operates retail stores")
+        self.assertEqual(BusinessModelClassifier().classify(retailer).primary_archetype, Archetype.RETAIL_PHYSICAL_NETWORK)
+
+    def test_declared_preference_wins_a_tie(self):
+        """Checklist 11.7: with Yahoo's 'Software - Infrastructure' industry, MSFT tied enterprise AI with its hyperscaler preference."""
+        snapshot = CompanySnapshot("MSFT", "Microsoft", "2026-01-01", sector="Technology", industry="Software - Infrastructure",
+                                   business_description="develops software and services", metrics={"gross_margin": 0.69})
+        self.assertEqual(BusinessModelClassifier().classify(snapshot).primary_archetype, Archetype.HYPERSCALER_CLOUD_PLATFORM)
+
+    def test_consumer_lender_routes_to_bank_not_payment_network(self):
+        """Checklist 11.1: a 'Credit Services' lender with deposit accounts is a bank; card networks keep their route."""
+        lender = CompanySnapshot("TEST", "Lend Co", "2026-01-01", sector="Financial Services", industry="Credit Services",
+                                 business_description="offers personal loans, student loans, home loans and checking and savings accounts", metrics={"gross_margin": 0.8})
+        self.assertEqual(BusinessModelClassifier().classify(lender).primary_archetype, Archetype.BANK)
+        network = CompanySnapshot("TEST", "Card Co", "2026-01-01", sector="Financial Services", industry="Credit Services",
+                                  business_description="a payments technology company operating a payment network", metrics={"gross_margin": 0.8})
+        self.assertEqual(BusinessModelClassifier().classify(network).primary_archetype, Archetype.PAYMENT_NETWORK)
 
     def test_growth_equation_and_driver_evidence(self):
         profile = build_company_economics(benchmark_snapshot("PLTR"))
@@ -145,12 +170,12 @@ class CompanyEconomicsTests(unittest.TestCase):
         snapshot = benchmark_snapshot("PLTR")
         snapshot.operational_metrics["deployment_capacity_growth"] = -.10
         profile = build_company_economics(snapshot)
-        self.assertIn(profile.constraints.primary_constraint.direction, {ConstraintDirection.MIXED, ConstraintDirection.TIGHTENING})
-        self.assertTrue(profile.constraints.primary_constraint.contrary_evidence_ids)
+        self.assertEqual(profile.constraints.primary_constraint.direction, ConstraintDirection.UNKNOWN)
+        self.assertEqual(profile.constraints.primary_constraint.direction_status, "DIRECTION_UNKNOWN")
 
     def test_confidence_is_rule_based(self):
         profile = build_company_economics(benchmark_snapshot("PLTR"))
-        self.assertEqual(profile.constraints.primary_constraint.confidence, Confidence.HIGH)
+        self.assertEqual(profile.constraints.primary_constraint.confidence, Confidence.INSUFFICIENT)
         empty = build_company_economics(CompanySnapshot("T", "Test", "2026-01-01"))
         self.assertEqual(empty.constraints.primary_constraint.confidence, Confidence.INSUFFICIENT)
 
@@ -170,11 +195,11 @@ class CompanyEconomicsTests(unittest.TestCase):
     def test_valuation_assumption_review(self):
         profile = build_company_economics(benchmark_snapshot("PLTR"), valuation_fixture(.30, .30))
         reviews = {item.assumption: item for item in profile.valuation_assumption_review.reviews}
-        self.assertEqual(reviews["revenue_growth"].state, ValuationReviewState.SUPPORTED)
+        self.assertEqual(reviews["revenue_growth"].state, ValuationReviewState.INSUFFICIENT_EVIDENCE)
 
     def test_market_expectations_comparison(self):
         profile = build_company_economics(benchmark_snapshot("PLTR"), valuation_fixture(implied_growth=.45))
-        self.assertEqual(profile.market_expectations_comparison.state, MarketExpectationState.ABOVE_SUPPORTED_ECONOMICS)
+        self.assertEqual(profile.market_expectations_comparison.state, MarketExpectationState.INSUFFICIENT_EVIDENCE)
 
     def test_json_schema_and_serialization(self):
         payload = build_company_economics(benchmark_snapshot("V")).to_dict()

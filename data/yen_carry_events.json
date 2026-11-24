@@ -1,0 +1,50 @@
+{
+  "schema_version": "1.0",
+  "rule": "Sharp drop: SPY 10-day return <= -5%; events separated by 20 trading days. Lookback 10 days before the event start.",
+  "period": {
+    "first": "2023-11-20",
+    "last": "2026-11-19",
+    "trading_days": 753
+  },
+  "base_rate_unwind": 0.250996015936255,
+  "events": [
+    {
+      "start": "2024-07-22",
+      "trigger": "2024-08-05",
+      "spy_return_10d": -0.06719561507233629,
+      "unwind_in_prior_10d": false,
+      "unwind_on_start_day": false,
+      "unwind_during_event": true,
+      "state_on_start_day": "STABLE"
+    },
+    {
+      "start": "2025-02-18",
+      "trigger": "2025-03-04",
+      "spy_return_10d": -0.05663223594066247,
+      "unwind_in_prior_10d": false,
+      "unwind_on_start_day": false,
+      "unwind_during_event": true,
+      "state_on_start_day": "STABLE"
+    },
+    {
+      "start": "2026-03-16",
+      "trigger": "2026-03-30",
+      "spy_return_10d": -0.05281399164211509,
+      "unwind_in_prior_10d": true,
+      "unwind_on_start_day": false,
+      "unwind_during_event": true,
+      "state_on_start_day": "STABLE"
+    }
+  ],
+  "summary": {
+    "events": 3,
+    "unwind_before": 1,
+    "unwind_on_start": 0,
+    "unwind_during": 3
+  },
+  "limitations": [
+    "USD/JPY and VIX only; the rate spread, BOJ probabilities and CFTC positioning have no stored history yet.",
+    "VIX above 24 also triggers UNWIND_RISK, so the switch partly restates equity stress itself.",
+    "Three years of history; a handful of events."
+  ]
+}

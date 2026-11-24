@@ -20,10 +20,12 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parent
 COMPASS_DIR = ROOT / "Centralbank-Compass" / "central-bank-compass"
-NEER_FILE = ROOT / "NEER" / "SGD.py"
+# FRED observations live in this repo, not in the nested Compass repo (refresh approved 2026-11-22).
+# scripts/refresh_compass_data.py seeds it from the Compass cache once and refreshes it online.
+COMPASS_CACHE_DIR = ROOT / ".cache" / "compass_fred"
 KOSPI_FILE = ROOT / "KOSPI" / "KOSPI_Backend_v2.py"
-SUPPORTED_REGIONS = ("US", "JP", "KR", "SG", "EURO_AREA")
-ALIASES = {"USA": "US", "JAPAN": "JP", "KOREA": "KR", "SINGAPORE": "SG", "EU": "EURO_AREA", "EZ": "EURO_AREA", "EUROZONE": "EURO_AREA"}
+SUPPORTED_REGIONS = ("US", "JP", "KR", "EURO_AREA")   # Singapore removed 2026-11-22 (global audience)
+ALIASES = {"USA": "US", "JAPAN": "JP", "KOREA": "KR", "EU": "EURO_AREA", "EZ": "EURO_AREA", "EUROZONE": "EURO_AREA"}
 
 
 @dataclass
@@ -68,6 +70,7 @@ class MacroRegionProfile:
     gaps: list[str] = field(default_factory=list)
     watch_conditions: list[dict[str, str]] = field(default_factory=list)
     engine_specific: dict[str, Any] = field(default_factory=dict)
+    coverage: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -86,11 +89,10 @@ class TransmissionEdge:
 
 
 COVERAGE_REGISTRY: dict[str, dict[str, Any]] = {
-    "US": {"name": "United States", "availability": "AVAILABLE", "engines": ["Central Bank Compass", "US Inflation Pressure"]},
-    "JP": {"name": "Japan", "availability": "PARTIAL", "engines": ["Central Bank Compass"]},
-    "KR": {"name": "South Korea", "availability": "PARTIAL", "engines": ["KOSPI Multi-Factor Signal Monitor"]},
-    "SG": {"name": "Singapore", "availability": "PARTIAL", "engines": ["Central Bank Compass", "Shadow S$NEER Proxy"]},
-    "EURO_AREA": {"name": "Euro Area", "availability": "PARTIAL", "engines": ["Central Bank Compass"]},
+    "US": {"name": "United States", "engines": ["Central Bank Compass", "US Inflation Pressure"]},
+    "JP": {"name": "Japan", "engines": ["Central Bank Compass"]},
+    "KR": {"name": "South Korea", "engines": ["KOSPI Multi-Factor Signal Monitor"]},
+    "EURO_AREA": {"name": "Euro Area", "engines": ["Central Bank Compass"]},
 }
 
 
@@ -141,20 +143,55 @@ def confidence_label(score: int | float | None) -> str:
     return "LOW"
 
 
+# Which research area each Compass data input feeds. The Compass config does not record this.
+INPUT_AREA = {
+    "core_pce": "inflation", "cpi": "inflation", "cpi_ex_fresh_food": "inflation", "hicp": "inflation", "core_hicp": "inflation",
+    "mas_core_inflation": "inflation", "import_inflation_pressure": "inflation", "inflation_expectations": "inflation",
+    "unemployment": "labor", "payrolls": "labor", "initial_claims": "labor", "wage_growth": "labor",
+    "real_gdp": "growth", "pmi": "growth", "external_demand": "growth",
+    "ten_year_yield": "markets", "two_year_yield": "markets", "credit_spread": "markets", "vix": "markets", "sovereign_spreads": "markets",
+    "usd_jpy": "fx", "eur_usd": "fx", "broad_dollar": "fx",
+}
+# Days after which an input counts as out of date, by publication frequency (allows normal release lags).
+STALE_AFTER = {"daily/weekly": 45, "monthly": 150, "quarterly": 270, "annual": 550}
+
+
+def input_record(key: str, series_id: str | None, series: Any, today: date | None = None) -> dict[str, Any] | None:
+    """Latest date, inferred frequency and staleness of one model input (None when it has no data)."""
+    try:
+        index = series.dropna().index
+    except AttributeError:
+        return None
+    if len(index) == 0:
+        return None
+    last = index[-1].date()
+    gaps = sorted((index[i] - index[i - 1]).days for i in range(max(1, len(index) - 6), len(index)))
+    median_gap = gaps[len(gaps) // 2] if gaps else 365
+    frequency = "daily/weekly" if median_gap <= 10 else "monthly" if median_gap <= 40 else "quarterly" if median_gap <= 100 else "annual"
+    age = ((today or date.today()) - last).days
+    return {"key": key, "series_id": series_id, "area": INPUT_AREA.get(key), "last": last.isoformat(),
+            "frequency": frequency, "age_days": age, "stale": age > STALE_AFTER[frequency]}
+
+
 class CentralBankCompassAdapter:
     """Calls the copied Central Bank Compass modules in offline/cache mode."""
 
-    CODE_MAP = {"US": "US", "JP": "JP", "SG": "SG", "EURO_AREA": "EZ"}
+    CODE_MAP = {"US": "US", "JP": "JP", "EURO_AREA": "EZ"}
 
-    def __init__(self, project_dir: Path = COMPASS_DIR):
+    def __init__(self, project_dir: Path = COMPASS_DIR, cache_dir: Path = COMPASS_CACHE_DIR):
         self.project_dir = project_dir
+        self.cache_dir = cache_dir
 
     def _modules(self) -> dict[str, Any]:
         path = str(self.project_dir)
         if path not in sys.path:
             sys.path.insert(0, path)
         os.environ.setdefault("CBC_FRED_OFFLINE", "1")
+        fred = importlib.import_module("src.data_sources.fred")
+        if self.cache_dir.is_dir() and any(self.cache_dir.glob("*.csv")):
+            fred.CACHE_DIR = self.cache_dir    # read and write here; the nested repo's cache stays untouched
         return {
+            "fred": fred,
             "config": importlib.import_module("app"),
             "profiles": importlib.import_module("src.country_profiles"),
             "data": importlib.import_module("src.data_sources"),
@@ -177,6 +214,10 @@ class CentralBankCompassAdapter:
         placeholders = modules["data"].configured_placeholders(config, code)
         signal = modules["policy"].build_policy_signal(indicators, profile, config, warnings, placeholders)
         latest = indicators.latest_observation.date().isoformat() if indicators.latest_observation is not None else None
+        economy = config.get("economies", {}).get(code, {})
+        input_map = economy.get("indicator_map", economy.get("fred_series", {}))
+        inputs = [record for key, series in data.items()
+                  if (record := input_record(key, input_map.get(key) if isinstance(input_map.get(key), str) else (input_map.get(key) or {}).get("series_id"), series))]
         blocks = {}
         evidence = []
         for block_id in ("inflation", "labor", "growth", "financial", "currency"):
@@ -225,6 +266,7 @@ class CentralBankCompassAdapter:
             "evidence": evidence,
             "warnings": signal.warnings,
             "placeholders": placeholders,
+            "inputs": inputs,
             "policy_score": round(float(signal.policy_score), 2),
             "block_scores": {key: round(float(value), 2) for key, value in signal.block_scores.items()},
             "decision_rules": list(signal.decision_rules),
@@ -315,40 +357,40 @@ class CentralBankCompassAdapter:
         return result
 
 
-class NeerAdapter:
-    """Exposes only explicit assumptions from the copied S$NEER proxy."""
-
-    def load(self) -> dict[str, Any]:
-        return {
-            "available": True,
-            "current_snapshot": False,
-            "basket_count": 12,
-            "largest_weights": {"CNY": 0.205, "USD": 0.170, "MYR": 0.125, "EUR": 0.105},
-            "slope_before": 0.005,
-            "slope_after": 0.010,
-            "policy_change": "2026-04-14",
-            "assumed_band": 0.02,
-            "warning": "Proxy basket, centre, slope and band are modelling assumptions; MAS does not disclose the official basket or band parameters.",
-        }
-
-
 class KospiAdapter:
-    """Exposes persisted KOSPI model structure and its mixed-period export snapshot."""
+    """Reads the KOSPI engine's last output; export figures are never hard-coded (checklist 3.7)."""
+
+    def __init__(self, cache_path: Path | None = None):
+        self.cache_path = cache_path or ROOT / ".cache" / "research" / "kospi.json"
 
     def load(self) -> dict[str, Any]:
-        return {
-            "available": True,
-            "current_sweep": False,
+        base = {
             "benchmark": "^KS11 KOSPI Composite",
             "market_factors": ["Semiconductor leaders", "USD/KRW", "Cultural exports", "Consumption", "Foreign flows"],
             "methods": ["Granger tests", "OLS", "Wavelet", "GARCH"],
+            "warning": "The econometric outputs are descriptive candidates, not causal proof.",
+        }
+        try:
+            payload = json.loads(self.cache_path.read_text())
+        except (OSError, json.JSONDecodeError):
+            return {**base, "available": False, "current_sweep": False, "export_snapshot": None}
+        exports = payload.get("exports") or {}
+        items = {item.get("key"): item for item in exports.get("items") or []}
+        semis = items.get("semiconductors") or {}
+        return {
+            **base,
+            "available": True,
+            "current_sweep": bool((payload.get("sweep") or {}).get("results")),
+            "sweep_timestamp": (payload.get("sweep") or {}).get("timestamp"),
+            "has_fx_factor": any(item.get("key") == "macro" for item in (payload.get("sweep") or {}).get("results") or []),
+            "has_volatility": bool((payload.get("sweep") or {}).get("volatility")),
             "export_snapshot": {
-                "total_exports_usd_b": 709.7,
-                "semiconductors_usd_b": 173.4,
-                "period": "2025",
-                "detail_periods": ["2024", "2025", "2025 estimate"],
-            },
-            "warning": "The econometric outputs are descriptive candidates, not causal proof. No current sweep is persisted for the world map.",
+                "total_exports_usd_b": exports.get("total_exports_b"),
+                "semiconductors_usd_b": semis.get("value_b"),
+                "period": str(exports.get("year")) if exports.get("year") else None,
+                "semiconductor_source": semis.get("source"),
+                "note": exports.get("as_of"),
+            } if exports else None,
         }
 
 
@@ -365,7 +407,6 @@ def format_value(value: Any, kind: str) -> str:
 class MacroRegionEngine:
     def __init__(self, compass: CentralBankCompassAdapter | None = None):
         self.compass = compass or CentralBankCompassAdapter()
-        self.neer = NeerAdapter()
         self.kospi = KospiAdapter()
 
     def unsupported(self, region: str) -> MacroRegionProfile:
@@ -386,10 +427,8 @@ class MacroRegionEngine:
         region = canonical_region(requested)
         if region not in COVERAGE_REGISTRY:
             return self.unsupported(region)
-        if region == "KR":
-            return self._build_korea()
-        raw = self.compass.load(region)
-        return self._build_compass_region(region, raw)
+        profile = self._build_korea() if region == "KR" else self._build_compass_region(region, self.compass.load(region))
+        return attach_coverage(profile)
 
     def _build_compass_region(self, region: str, raw: dict[str, Any]) -> MacroRegionProfile:
         coverage = COVERAGE_REGISTRY[region]
@@ -445,52 +484,42 @@ class MacroRegionEngine:
         gaps = list(raw["placeholders"])
         brief = f"{raw['policy_tool']}: {policy_state}. {raw.get('special', {}).get('bias', raw['bias'])} bias with {confidence_label(policy_confidence).lower()} model confidence."
         engines = [{"name": "Central Bank Compass", "role": "Policy, inflation, growth, financial and FX blocks", "status": "CACHED"}]
-        if region == "SG":
-            neer = self.neer.load()
-            evidence.append(MacroEvidence(
-                id="sg-neer-framework", label="Shadow S$NEER basket", value=f"{neer['basket_count']} currency proxy",
-                classification="STRUCTURAL PROXY", evidence_type="PROXY", source="Shadow S$NEER Proxy", source_path=str(NEER_FILE.relative_to(ROOT)),
-                period=neer["policy_change"], freshness="STRUCTURAL", note=neer["warning"],
-            ))
-            fx = next(item for item in components if item.id == "currency")
-            fx.evidence_ids.append("sg-neer-framework")
-            fx.gaps.append("No persisted current shadow-NEER snapshot; official band position is unavailable.")
-            gaps.extend(["MAS core inflation source", "Official SGD NEER band position", "Current shadow-NEER snapshot"])
-            engines.append({"name": "Shadow S$NEER Proxy", "role": "Transparent currency-policy mechanism", "status": "STRUCTURAL_ONLY"})
-        if region == "JP":
-            gaps.extend(["Wage growth", "Inflation expectations", "BOJ balance-sheet trend"])
-        if region == "EURO_AREA":
-            gaps.extend(["Services inflation", "Wage growth", "Bank lending stress"])
         return MacroRegionProfile(
-            id=region, name=coverage["name"], available=True, availability=coverage["availability"],
+            id=region, name=coverage["name"], available=True, availability="PENDING",
             framework=raw["policy_tool"], brief=brief, as_of=raw["latest"], freshness=freshness_for(raw["latest"]),
             confidence=confidence_label(policy_confidence), components=components, evidence=evidence, engines=engines,
             gaps=dedupe(gaps),
             watch_conditions=build_region_watches(region, raw),
-            engine_specific={"central_bank_compass": raw, **({"shadow_neer": self.neer.load()} if region == "SG" else {})},
+            engine_specific={"central_bank_compass": raw},
         )
 
     def _build_korea(self) -> MacroRegionProfile:
         raw = self.kospi.load()
-        evidence = [
-            MacroEvidence("kr-export-total", "Total exports", "$709.7B", "2025 ANNUAL", "FACT", "MOTIR annual exports via KOSPI monitor", str(KOSPI_FILE.relative_to(ROOT)), "2025-12-31", "STRUCTURAL", "Annual snapshot; not a current market sweep."),
-            MacroEvidence("kr-semi-export", "Semiconductor exports", "$173.4B", "2025 ANNUAL", "FACT", "MOTIR/MSIT ICT exports via KOSPI monitor", str(KOSPI_FILE.relative_to(ROOT)), "2025-12-31", "STRUCTURAL", "The dashboard's detailed export categories mix 2024 and 2025 periods."),
-        ]
+        swept = bool(raw.get("current_sweep"))
+        snapshot = raw.get("export_snapshot") or {}
+        period = snapshot.get("period")
+        evidence = []
+        if snapshot.get("total_exports_usd_b") is not None:
+            evidence.append(MacroEvidence("kr-export-total", "Total exports", f"${snapshot['total_exports_usd_b']:,.1f}B", f"{period} ANNUAL", "FACT", "Annual exports via KOSPI monitor", str(KOSPI_FILE.relative_to(ROOT)), f"{period}-12-31" if period else None, "STRUCTURAL", "Annual snapshot from the KOSPI engine; not a current market sweep."))
+        if snapshot.get("semiconductors_usd_b") is not None:
+            evidence.append(MacroEvidence("kr-semi-export", "Semiconductor exports", f"${snapshot['semiconductors_usd_b']:,.1f}B", f"{period} ANNUAL", "FACT", snapshot.get("semiconductor_source") or "KOSPI monitor", str(KOSPI_FILE.relative_to(ROOT)), f"{period}-12-31" if period else None, "STRUCTURAL", "Annual figure; monthly customs data needs a data.go.kr service key that is not configured."))
         return MacroRegionProfile(
-            id="KR", name="South Korea", available=True, availability="PARTIAL",
+            id="KR", name="South Korea", available=True, availability="PENDING",
             framework="KOSPI market, export and USD/KRW factor monitor",
-            brief="Export and market transmission structure is mapped, but no current KOSPI sweep is persisted. Active pressure is therefore not classified.",
-            as_of="2025-12-31", freshness="STRUCTURAL", confidence="LOW",
+            brief=("A cached KOSPI factor sweep and annual exports are available; Bank of Korea policy and Korean inflation are not modelled." if swept
+                   else "Export and market transmission structure is mapped, but no current KOSPI sweep is persisted. Active pressure is therefore not classified."),
+            as_of=f"{period}-12-31" if period else None, freshness="STRUCTURAL", confidence="LOW",
             components=[
                 MacroComponent("policy", "Policy", "NOT AVAILABLE", "No Bank of Korea policy model is integrated.", "INSUFFICIENT", gaps=["BOK policy model"]),
                 MacroComponent("inflation", "Inflation", "NOT AVAILABLE", "No Korean inflation engine is integrated.", "INSUFFICIENT", gaps=["Korean CPI and inflation framework"]),
-                MacroComponent("fx", "FX", "FRAMEWORK ONLY", "USD/KRW is a configured KOSPI factor; no current sweep is persisted.", "LOW", gaps=["Current USD/KRW factor result"]),
+                MacroComponent("fx", "FX", "FRAMEWORK ONLY", "USD/KRW is a configured KOSPI factor; no current sweep is persisted.", "LOW", gaps=["Current USD/KRW factor result"]) if not raw.get("has_fx_factor")
+                else MacroComponent("fx", "FX", "SWEEP CACHED", "USD/KRW factor result is in the cached KOSPI sweep.", "LOW"),
                 MacroComponent("markets", "Markets", "STRUCTURAL", "KOSPI, semiconductor leaders, cultural exports, consumption and foreign flows are modeled.", "LOW", ["kr-export-total", "kr-semi-export"], ["Current econometric sweep", "Current foreign-flow series"]),
                 MacroComponent("transmission", "Transmission", "INSUFFICIENT", "US rate and USD channels are structurally plausible but not classified as active.", "INSUFFICIENT", gaps=["Aligned current US/KR market observations"]),
             ],
             evidence=evidence,
             engines=[{"name": "KOSPI Multi-Factor Signal Monitor", "role": "Market, export, FX and flow relationships", "status": "STRUCTURAL_ONLY"}],
-            gaps=["Bank of Korea policy", "Korean inflation", "Current KOSPI sweep", "Current foreign flows"],
+            gaps=["Bank of Korea policy", "Korean inflation"] + ([] if swept else ["Current KOSPI sweep"]),
             watch_conditions=[
                 {"label": "Current KOSPI factor sweep", "threshold": "Current benchmark and factor history available", "current": "Unavailable", "state": "INSUFFICIENT"},
                 {"label": "Foreign-flow confirmation", "threshold": "Current pykrx series available", "current": "Unavailable", "state": "INSUFFICIENT"},
@@ -501,6 +530,127 @@ class MacroRegionEngine:
 
 def dedupe(values: list[str]) -> list[str]:
     return list(dict.fromkeys(value for value in values if value))
+
+
+# --- Coverage is calculated from the data, not typed in (fix 2026-11-22) -----------------------
+COVERAGE_AREAS = (("policy", "Policy"), ("inflation", "Inflation"), ("labor", "Labor"), ("growth", "Growth"),
+                  ("markets", "Markets"), ("fx", "FX"), ("liquidity", "Liquidity"))
+COMPASS_BLOCK_AREA = {"inflation": "inflation", "labor": "labor", "growth": "growth", "financial": "markets", "currency": "fx"}
+# Topics the engines do not try to measure at all. They are listed separately so that they are not
+# confused with configured indicators whose data is missing.
+NOT_MODELLED = {"JP": ["BOJ balance-sheet trend"], "EURO_AREA": ["Services inflation", "Wage growth"],
+                "KR": ["Bank of Korea policy", "Korean inflation", "Labour market", "Liquidity"]}
+
+
+def dedupe_ci(values: list[str]) -> list[str]:
+    seen, out = set(), []
+    for value in values:
+        key = (value or "").strip().lower()
+        if key and key not in seen:
+            seen.add(key)
+            out.append(value)
+    return out
+
+
+def _area(area_id: str, label: str, items: list[tuple[str, bool, str | None]]) -> dict[str, Any]:
+    """items: (indicator name, has data, observation date)."""
+    available = sum(1 for _, ok, _ in items if ok)
+    expected = len(items)
+    dates = sorted(d[:10] for _, ok, d in items if ok and d)
+    state = "NOT_COVERED" if expected == 0 else "FULL" if available == expected else "MISSING" if available == 0 else "PARTIAL"
+    return {"id": area_id, "label": label, "state": state, "available": available, "expected": expected,
+            "missing": [name for name, ok, _ in items if not ok], "as_of": dates[0] if dates else None,
+            "newest": dates[-1] if dates else None}
+
+
+def region_coverage(region: dict[str, Any], today: date | None = None) -> dict[str, Any]:
+    """Count configured indicators per research area from the engine outputs themselves."""
+    specific = region.get("engine_specific") or {}
+    items: dict[str, list[tuple[str, bool, str | None]]] = {area_id: [] for area_id, _ in COVERAGE_AREAS}
+    compass = specific.get("central_bank_compass") or {}
+    if compass.get("available"):
+        latest = compass.get("latest")
+        items["policy"].append(("Policy signal", bool(compass.get("signal")), latest))
+        placeholders = set(compass.get("placeholders") or [])
+        for block_id, block in (compass.get("blocks") or {}).items():
+            area = COMPASS_BLOCK_AREA.get(block_id)
+            if area:
+                items[area].extend((ev["name"], ev.get("value") is not None, latest) for ev in block.get("evidence") or [])
+        for missing in compass.get("missing_indicators") or []:
+            area = COMPASS_BLOCK_AREA.get(missing.get("block"))
+            if area and missing.get("indicator") in placeholders:
+                items[area].append((missing["indicator"], False, None))
+        items["liquidity"].extend((d["name"], d.get("value") is not None, latest) for d in (compass.get("liquidity") or {}).get("drivers") or [])
+    kospi = specific.get("kospi") or {}
+    live = specific.get("kospi_live") or {}
+    if live.get("sweep"):
+        sweep = live["sweep"]
+        kospi = {**kospi, "current_sweep": bool(sweep.get("results")), "sweep_timestamp": sweep.get("timestamp"),
+                 "has_fx_factor": any(item.get("key") == "macro" for item in sweep.get("results") or []),
+                 "has_volatility": bool(sweep.get("volatility"))}
+    if kospi:
+        swept = kospi.get("sweep_timestamp")
+        snapshot = kospi.get("export_snapshot") or {}
+        export_date = f"{snapshot['period']}-12-31" if snapshot.get("period") else None
+        items["growth"].extend([("Total exports (annual)", snapshot.get("total_exports_usd_b") is not None, export_date),
+                                ("Semiconductor exports (annual)", snapshot.get("semiconductors_usd_b") is not None, export_date)])
+        items["markets"].extend([("KOSPI factor sweep", bool(kospi.get("current_sweep")), swept),
+                                 ("KOSPI volatility (GARCH)", bool(kospi.get("has_volatility")), swept),
+                                 ("Foreign investor flows", False, None)])
+        items["fx"].append(("USD/KRW factor", bool(kospi.get("has_fx_factor")), swept))
+    areas = [_area(area_id, label, items[area_id]) for area_id, label in COVERAGE_AREAS]
+    stale_inputs = [item for item in (compass.get("inputs") or []) if item.get("stale")] if compass.get("available") else []
+    for area in areas:
+        area["stale"] = [f"{item['key']} ({item['series_id']}, last {item['last']})" for item in stale_inputs if item.get("area") == area["id"]]
+        if area["stale"] and area["state"] in {"FULL", "PARTIAL"}:
+            area["state"] = "STALE"
+    available = sum(a["available"] for a in areas)
+    expected = sum(a["expected"] for a in areas)
+    oldest = min((a["as_of"] for a in areas if a["as_of"]), default=None)
+    newest = max((a["newest"] for a in areas if a["newest"]), default=None)
+    if available == 0:
+        availability = "NOT_AVAILABLE"
+    elif all(a["state"] == "FULL" for a in areas):   # STALE areas also keep a region PARTIAL
+        availability = "AVAILABLE"
+    else:
+        availability = "PARTIAL"
+    return {
+        "availability": availability,
+        "available": available,
+        "expected": expected,
+        "areas_full": sum(1 for a in areas if a["state"] == "FULL"),
+        "areas_covered": sum(1 for a in areas if a["state"] != "NOT_COVERED"),
+        "areas": areas,
+        "as_of": oldest,
+        "newest": newest,
+        "freshness": freshness_for(oldest, today),
+        "missing": dedupe_ci([name for a in areas for name in a["missing"]]),
+        "stale_inputs": [{"key": item["key"], "series_id": item["series_id"], "area": item.get("area"), "last": item["last"],
+                          "frequency": item["frequency"], "age_days": item["age_days"]} for item in stale_inputs],
+        "not_modelled": NOT_MODELLED.get(region.get("id", ""), []),
+        "rule": "AVAILABLE only when every research area has all of its configured indicators and none is out of date; the date is the earliest of each source's latest observation.",
+    }
+
+
+def apply_coverage(region: dict[str, Any], today: date | None = None) -> dict[str, Any]:
+    """Recalculate a serialised region in place (run again after live engine payloads are merged)."""
+    if not region.get("available"):
+        return region
+    coverage = region_coverage(region, today)
+    region["coverage"] = coverage
+    region["availability"] = coverage["availability"]
+    region["gaps"] = dedupe_ci(coverage["missing"] + [gap for gap in region.get("gaps") or [] if gap not in coverage["not_modelled"]])
+    return region
+
+
+def attach_coverage(profile: MacroRegionProfile) -> MacroRegionProfile:
+    if not profile.available:
+        return profile
+    serialised = apply_coverage(asdict(profile))
+    profile.coverage = serialised["coverage"]
+    profile.availability = serialised["availability"]
+    profile.gaps = serialised["gaps"]
+    return profile
 
 
 def build_region_watches(region: str, raw: dict[str, Any]) -> list[dict[str, str]]:
@@ -521,8 +671,6 @@ def build_region_watches(region: str, raw: dict[str, Any]) -> list[dict[str, str
                 "current": driver["classification"],
                 "state": "INSUFFICIENT" if driver["classification"] == "MISSING DATA" else "WATCH",
             })
-    if region == "SG":
-        watches.append({"label": "Official SGD NEER band position", "threshold": "Stable official source integrated", "current": "Unavailable", "state": "INSUFFICIENT"})
     return watches
 
 
@@ -533,14 +681,12 @@ class MacroTransmissionEngine:
         us = profiles["US"]
         jp = profiles["JP"]
         eu = profiles["EURO_AREA"]
-        sg = profiles["SG"]
         kr = profiles["KR"]
         return [
-            TransmissionEdge("jp-us-yen-carry", "JP", "US", "Yen carry → US risk assets", "JPY funding conditions and Japanese yields can alter leveraged global risk appetite.", "ESTABLISHED", self.yen_carry_state(jp, us), "Current classification uses only cached JPY/JGB and US financial-condition evidence.", "LOW" if jp.confidence == "LOW" else "MODERATE", self._ids(jp, ["currency", "financial"]) + self._ids(us, ["financial"]), "A transmission channel is not proof that it caused an observed market move."),
+            TransmissionEdge("jp-us-yen-carry", "JP", "US", "Yen carry → US risk assets", "JPY funding conditions and Japanese yields can alter leveraged global risk appetite.", "ESTABLISHED", "INSUFFICIENT", "Current state comes from the environment layer's single yen-carry definition when USD/JPY and VIX observations are available.", "LOW" if jp.confidence == "LOW" else "MODERATE", self._ids(jp, ["currency", "financial"]) + self._ids(us, ["financial"]), "A transmission channel is not proof that it caused an observed market move."),
             TransmissionEdge("us-jp-rate-fx", "US", "JP", "US rates → USD/JPY → BOJ pressure", "US/Japan rate conditions transmit through USD/JPY and imported inflation pressure.", "ESTABLISHED", self._paired_state(us, jp), "The Compass explicitly models US rates, USD/JPY and BOJ normalization pressure.", "MODERATE", self._ids(us, ["policy", "financial"]) + self._ids(jp, ["currency", "policy"]), "Direction is model context, not a forecast of the exchange rate."),
             TransmissionEdge("us-eu-rate-fx", "US", "EURO_AREA", "Fed/ECB divergence → EUR/USD", "Relative policy and growth conditions can transmit through EUR/USD and regional financial conditions.", "ESTABLISHED", self._paired_state(us, eu), "Both policy frameworks are integrated; several Euro Area financial subcomponents remain missing.", "MODERATE", self._ids(us, ["policy"]) + self._ids(eu, ["policy", "currency"]), "The Euro Area is a monetary union; this does not represent every EU member's fiscal conditions."),
             TransmissionEdge("us-kr-dollar-kospi", "US", "KR", "US rates/USD → KRW and KOSPI", "Dollar and funding conditions can affect USD/KRW, foreign flows and export-sensitive Korean equities.", "ESTABLISHED", "INSUFFICIENT", "The KOSPI monitor defines the channel, but its current sweep and foreign-flow data are not persisted.", "LOW", self._ids(us, ["policy", "financial"]) + ["kr-export-total", "kr-semi-export"], "Structural plausibility is not an active-signal claim and Granger tests are not causal proof."),
-            TransmissionEdge("us-sg-dollar-neer", "US", "SG", "USD conditions → SGD policy pressure", "Global dollar conditions and trade-weighted FX pressure interact with Singapore's exchange-rate policy framework.", "ESTABLISHED", "INSUFFICIENT", "A current official or shadow-NEER band position is unavailable.", "LOW", self._ids(us, ["policy", "currency"]) + ["sg-neer-framework"], "The S$NEER basket, centre, slope and width are explicit proxy assumptions."),
         ]
 
     @staticmethod
@@ -554,22 +700,6 @@ class MacroTransmissionEngine:
         if first.freshness == "STALE" or second.freshness == "STALE":
             return "WATCH"
         return "WATCH" if first.confidence == "LOW" or second.confidence == "LOW" else "ACTIVE"
-
-    @staticmethod
-    def yen_carry_state(jp: MacroRegionProfile, us: MacroRegionProfile) -> str:
-        if not jp.evidence or not us.evidence:
-            return "INSUFFICIENT"
-        jp_fx = next((item for item in jp.components if item.id == "currency"), None)
-        jp_fin = next((item for item in jp.components if item.id == "financial"), None)
-        us_fin = next((item for item in us.components if item.id == "financial"), None)
-        if not jp_fx or not jp_fin or not us_fin:
-            return "INSUFFICIENT"
-        pressure = sum(state.state not in {"LOW", "NEUTRAL"} for state in (jp_fx, jp_fin, us_fin))
-        if pressure >= 2:
-            return "ACTIVE"
-        if pressure == 1:
-            return "WATCH"
-        return "DORMANT"
 
 
 def build_world(regions: list[str] | None = None) -> dict[str, Any]:

@@ -1,0 +1,957 @@
+[
+  {
+    "ticker": "NVDA",
+    "price": 125.53,
+    "default_fair_value": {
+      "bear": 26.9489585117916,
+      "base": 43.37772754551974,
+      "bull": 65.10066942291648
+    },
+    "withheld_reason": null,
+    "default_reverse_dcf": "NO_ECONOMIC_SOLUTION",
+    "scenario_spreads": {
+      "source": "COMPANY_HISTORY",
+      "basis": {
+        "fiscal_years": 4,
+        "growth_history": [
+          0.6547353579009478,
+          1.1420340763599355,
+          1.2585452658115224
+        ],
+        "fcf_margin_history": [
+          0.44770258129648327,
+          0.46631723334636044,
+          0.4435343554052723,
+          0.14117298138948617
+        ],
+        "growth_spread": 0.1,
+        "margin_spread": 0.08,
+        "margin_basis": "free-cash-flow margin history"
+      },
+      "spreads": {
+        "bear": {
+          "growth": -0.1,
+          "margin": -0.08
+        },
+        "bull": {
+          "growth": 0.1,
+          "margin": 0.08
+        }
+      },
+      "default_spread_fair_value": {
+        "bear": 32.76404325891229,
+        "base": 43.37772754551974,
+        "bull": 57.15382059253251
+      },
+      "note": "Bear/bull growth and margin spreads come from the company's own history; the +/-4-point values are shown for comparison."
+    },
+    "extended_horizon": {
+      "state": "COMPUTED",
+      "default": false,
+      "observed_growth": 0.8337529809100703,
+      "type_cap": 0.18,
+      "first_year_growth": 0.5,
+      "weight": 1.0,
+      "policy": {
+        "years": 10,
+        "first_year_growth_cap": 0.5,
+        "decay": "linear"
+      },
+      "fair_value": {
+        "bear": 81.60311173569714,
+        "base": 155.36133488607368,
+        "bull": 273.62580701972985
+      },
+      "checks": {
+        "bear": {
+          "forecast_arithmetic": true,
+          "terminal_value": true,
+          "enterprise_value": true,
+          "ev_to_equity_bridge": true,
+          "share_conversion": true,
+          "wacc_above_terminal": true
+        },
+        "base": {
+          "forecast_arithmetic": true,
+          "terminal_value": true,
+          "enterprise_value": true,
+          "ev_to_equity_bridge": true,
+          "share_conversion": true,
+          "wacc_above_terminal": true
+        },
+        "bull": {
+          "forecast_arithmetic": true,
+          "terminal_value": true,
+          "enterprise_value": true,
+          "ev_to_equity_bridge": true,
+          "share_conversion": true,
+          "wacc_above_terminal": true
+        }
+      },
+      "checks_passed": true,
+      "reverse_dcf": {
+        "converged": true,
+        "status": "CONVERGED",
+        "required_year_1_revenue_growth": 0.4333709716796875
+      },
+      "sensitivity": {
+        "first_year_growth_cap": {
+          "0.4": 112.6684916568649,
+          "0.5": 155.36133488607368,
+          "0.6": 212.4513634047206
+        },
+        "explicit_years": {
+          "8": 117.3308361244358,
+          "10": 155.36133488607368,
+          "12": 203.40611565200726
+        },
+        "decay": {
+          "linear": 155.36133488607368,
+          "front_loaded": 64.11618529288071
+        },
+        "wacc_minus_1pp_base_plus_1pp": [
+          172.561218236893,
+          155.36133488607368,
+          140.87209185602646
+        ]
+      },
+      "assumptions_to_state": "First-year growth cap (50%), linear decay to terminal growth and a 10-year explicit period are model policy without calibration; see sensitivity.",
+      "note": "Ten-year values at full weight; the headline fair value blends them with the five-year values by `weight` (see report['fair_value'])."
+    },
+    "headline": {
+      "method": "PHASED",
+      "extended_weight": 1.0,
+      "fair_value": {
+        "bear": 81.60311173569714,
+        "base": 155.36133488607368,
+        "bull": 273.62580701972985
+      },
+      "reason": "Observed growth 83.4% vs cap 18%: ten-year model weighted 100%, five-year 0%.",
+      "reverse_dcf": "CONVERGED"
+    },
+    "one_quarter_legacy": {
+      "method": "PHASED",
+      "extended_weight": 1.0,
+      "fair_value": {
+        "bear": 81.60311173569714,
+        "base": 155.36133488607368,
+        "bull": 273.62580701972985
+      },
+      "observed_growth": 1.032
+    },
+    "headline_growth": {
+      "observed_growth": 0.8337529809100703,
+      "growth_basis": "trailing twelve months to 2026-07-26 vs the twelve months before (SEC filings)"
+    }
+  },
+  {
+    "ticker": "MSFT",
+    "price": 484.52,
+    "default_fair_value": {
+      "bear": 137.29906736315792,
+      "base": 212.1175970046067,
+      "bull": 330.10408362624804
+    },
+    "withheld_reason": null,
+    "default_reverse_dcf": "NO_ECONOMIC_SOLUTION",
+    "scenario_spreads": {
+      "source": "COMPANY_HISTORY",
+      "basis": {
+        "fiscal_years": 4,
+        "growth_history": [
+          0.17788686799846665,
+          0.14932156232406713,
+          0.1566996201307127
+        ],
+        "fcf_margin_history": [
+          0.20186596512164032,
+          0.2541884965427156,
+          0.3021801388696241,
+          0.2806549795908737
+        ],
+        "growth_spread": 0.02,
+        "margin_spread": 0.043277490771985117,
+        "margin_basis": "free-cash-flow margin history"
+      },
+      "spreads": {
+        "bear": {
+          "growth": -0.02,
+          "margin": -0.043277490771985117
+        },
+        "bull": {
+          "growth": 0.02,
+          "margin": 0.043277490771985117
+        }
+      },
+      "default_spread_fair_value": {
+        "bear": 133.7741791694376,
+        "base": 212.1175970046067,
+        "bull": 340.08075309374897
+      },
+      "note": "Bear/bull growth and margin spreads come from the company's own history; the +/-4-point values are shown for comparison."
+    },
+    "extended_horizon": {
+      "state": "NOT_TRIGGERED",
+      "observed_growth": 0.1791383605843193,
+      "type_cap": 0.18,
+      "reason": "Observed growth is within the five-year model's cap; the existing valuation applies unchanged."
+    },
+    "headline": {
+      "method": "FIVE_YEAR",
+      "extended_weight": 0.0,
+      "fair_value": {
+        "bear": 137.29906736315792,
+        "base": 212.1175970046067,
+        "bull": 330.10408362624804
+      },
+      "reason": "Observed growth is within the five-year model's cap; the existing valuation applies unchanged.",
+      "reverse_dcf": "NO_ECONOMIC_SOLUTION"
+    },
+    "one_quarter_legacy": {
+      "method": "PHASED",
+      "extended_weight": 0.08000000000000007,
+      "fair_value": {
+        "bear": 140.22400999466424,
+        "base": 217.61332113349252,
+        "bull": 340.02718524171746
+      },
+      "observed_growth": 0.188
+    },
+    "headline_growth": {
+      "observed_growth": 0.1791383605843193,
+      "growth_basis": "trailing twelve months to 2026-09-30 vs the twelve months before (SEC filings)"
+    }
+  },
+  {
+    "ticker": "PLTR",
+    "price": 143.49,
+    "default_fair_value": null,
+    "withheld_reason": "Historical FCFF cannot be reconciled because required statement fields are missing.",
+    "default_reverse_dcf": null,
+    "scenario_spreads": null,
+    "extended_horizon": null,
+    "headline": {
+      "method": "WITHHELD",
+      "extended_weight": null,
+      "fair_value": {},
+      "reason": "Fair value not calculated.",
+      "reverse_dcf": null
+    },
+    "one_quarter_legacy": {
+      "method": null,
+      "extended_weight": null,
+      "fair_value": null,
+      "observed_growth": null
+    },
+    "headline_growth": {
+      "observed_growth": null,
+      "growth_basis": null
+    }
+  },
+  {
+    "ticker": "TSM",
+    "price": 318.71,
+    "default_fair_value": null,
+    "withheld_reason": "Financial currency TWD does not match quotation currency USD. ADR/ordinary share ratio, dated FX and denominator are not integrated into this valuation execution path.",
+    "default_reverse_dcf": null,
+    "scenario_spreads": null,
+    "extended_horizon": null,
+    "headline": {
+      "method": "WITHHELD",
+      "extended_weight": null,
+      "fair_value": {},
+      "reason": "Fair value not calculated.",
+      "reverse_dcf": null
+    },
+    "one_quarter_legacy": {
+      "method": null,
+      "extended_weight": null,
+      "fair_value": null,
+      "observed_growth": null
+    },
+    "headline_growth": {
+      "observed_growth": null,
+      "growth_basis": null
+    }
+  },
+  {
+    "ticker": "AMD",
+    "price": 424.39,
+    "default_fair_value": null,
+    "withheld_reason": "The remaining discrepancy is material after explicitly testing stock-based compensation. Review non-operating income, unusual taxes, minority interests, and statement-period or classification differences.",
+    "default_reverse_dcf": null,
+    "scenario_spreads": null,
+    "extended_horizon": null,
+    "headline": {
+      "method": "WITHHELD",
+      "extended_weight": null,
+      "fair_value": {},
+      "reason": "Fair value not calculated.",
+      "reverse_dcf": null
+    },
+    "one_quarter_legacy": {
+      "method": null,
+      "extended_weight": null,
+      "fair_value": null,
+      "observed_growth": null
+    },
+    "headline_growth": {
+      "observed_growth": null,
+      "growth_basis": null
+    }
+  },
+  {
+    "ticker": "COST",
+    "price": 1102.15,
+    "default_fair_value": {
+      "bear": 341.5572523402267,
+      "base": 704.5972792638929,
+      "bull": 1352.1166264902024
+    },
+    "withheld_reason": null,
+    "default_reverse_dcf": "CONVERGED",
+    "scenario_spreads": {
+      "source": "COMPANY_HISTORY",
+      "basis": {
+        "fiscal_years": 4,
+        "growth_history": [
+          0.10143695387577889,
+          0.08167323631476142,
+          0.05020017334599025
+        ],
+        "fcf_margin_history": [
+          0.03094796703985433,
+          0.028473849619416135,
+          0.026051962444930892,
+          0.02783854059185274
+        ],
+        "growth_spread": 0.025840426671934147,
+        "margin_spread": 0.02,
+        "margin_basis": "free-cash-flow margin history"
+      },
+      "spreads": {
+        "bear": {
+          "growth": -0.025840426671934147,
+          "margin": -0.02
+        },
+        "bull": {
+          "growth": 0.025840426671934147,
+          "margin": 0.02
+        }
+      },
+      "default_spread_fair_value": {
+        "bear": 153.84958366608782,
+        "base": 704.5972792638929,
+        "bull": 1770.957760963405
+      },
+      "note": "Bear/bull growth and margin spreads come from the company's own history; the +/-4-point values are shown for comparison."
+    },
+    "extended_horizon": {
+      "state": "NOT_TRIGGERED",
+      "observed_growth": 0.10143695387577889,
+      "type_cap": 0.18,
+      "reason": "Observed growth is within the five-year model's cap; the existing valuation applies unchanged."
+    },
+    "headline": {
+      "method": "FIVE_YEAR",
+      "extended_weight": 0.0,
+      "fair_value": {
+        "bear": 341.5572523402267,
+        "base": 704.5972792638929,
+        "bull": 1352.1166264902024
+      },
+      "reason": "Observed growth is within the five-year model's cap; the existing valuation applies unchanged.",
+      "reverse_dcf": "CONVERGED"
+    },
+    "one_quarter_legacy": {
+      "method": "FIVE_YEAR",
+      "extended_weight": 0.0,
+      "fair_value": {
+        "bear": 341.5572523402267,
+        "base": 704.5972792638929,
+        "bull": 1352.1166264902024
+      },
+      "observed_growth": 0.111
+    },
+    "headline_growth": {
+      "observed_growth": 0.10143695387577889,
+      "growth_basis": "trailing twelve months to 2026-08-30 vs the twelve months before (SEC filings)"
+    }
+  },
+  {
+    "ticker": "LLY",
+    "price": 1347.11,
+    "default_fair_value": null,
+    "withheld_reason": "Historical FCFF cannot be reconciled because required statement fields are missing.",
+    "default_reverse_dcf": null,
+    "scenario_spreads": null,
+    "extended_horizon": null,
+    "headline": {
+      "method": "WITHHELD",
+      "extended_weight": null,
+      "fair_value": {},
+      "reason": "Fair value not calculated.",
+      "reverse_dcf": null
+    },
+    "one_quarter_legacy": {
+      "method": null,
+      "extended_weight": null,
+      "fair_value": null,
+      "observed_growth": null
+    },
+    "headline_growth": {
+      "observed_growth": null,
+      "growth_basis": null
+    }
+  },
+  {
+    "ticker": "XOM",
+    "price": 159.99,
+    "default_fair_value": null,
+    "withheld_reason": "Historical FCFF cannot be reconciled because required statement fields are missing.",
+    "default_reverse_dcf": null,
+    "scenario_spreads": null,
+    "extended_horizon": null,
+    "headline": {
+      "method": "WITHHELD",
+      "extended_weight": null,
+      "fair_value": {},
+      "reason": "Fair value not calculated.",
+      "reverse_dcf": null
+    },
+    "one_quarter_legacy": {
+      "method": null,
+      "extended_weight": null,
+      "fair_value": null,
+      "observed_growth": null
+    },
+    "headline_growth": {
+      "observed_growth": null,
+      "growth_basis": null
+    }
+  },
+  {
+    "ticker": "JPM",
+    "price": 310.53,
+    "default_fair_value": null,
+    "withheld_reason": "Debt and interest are operating inputs for financial institutions; an industrial-company FCFF DCF would be misleading.",
+    "default_reverse_dcf": null,
+    "scenario_spreads": null,
+    "extended_horizon": null,
+    "headline": {
+      "method": "WITHHELD",
+      "extended_weight": null,
+      "fair_value": {},
+      "reason": "Fair value not calculated.",
+      "reverse_dcf": null
+    },
+    "one_quarter_legacy": {
+      "method": null,
+      "extended_weight": null,
+      "fair_value": null,
+      "observed_growth": null
+    },
+    "headline_growth": {
+      "observed_growth": null,
+      "growth_basis": null
+    }
+  },
+  {
+    "ticker": "UBER",
+    "price": 63.47,
+    "default_fair_value": null,
+    "withheld_reason": "The remaining discrepancy is material after explicitly testing stock-based compensation. Review non-operating income, unusual taxes, minority interests, and statement-period or classification differences.",
+    "default_reverse_dcf": null,
+    "scenario_spreads": null,
+    "extended_horizon": null,
+    "headline": {
+      "method": "WITHHELD",
+      "extended_weight": null,
+      "fair_value": {},
+      "reason": "Fair value not calculated.",
+      "reverse_dcf": null
+    },
+    "one_quarter_legacy": {
+      "method": null,
+      "extended_weight": null,
+      "fair_value": null,
+      "observed_growth": null
+    },
+    "headline_growth": {
+      "observed_growth": null,
+      "growth_basis": null
+    }
+  },
+  {
+    "ticker": "V",
+    "price": 401.87,
+    "default_fair_value": null,
+    "withheld_reason": "Debt and interest are operating inputs for financial institutions; an industrial-company FCFF DCF would be misleading.",
+    "default_reverse_dcf": null,
+    "scenario_spreads": null,
+    "extended_horizon": null,
+    "headline": {
+      "method": "WITHHELD",
+      "extended_weight": null,
+      "fair_value": {},
+      "reason": "Fair value not calculated.",
+      "reverse_dcf": null
+    },
+    "one_quarter_legacy": {
+      "method": null,
+      "extended_weight": null,
+      "fair_value": null,
+      "observed_growth": null
+    },
+    "headline_growth": {
+      "observed_growth": null,
+      "growth_basis": null
+    }
+  },
+  {
+    "ticker": "WMT",
+    "price": 127.95,
+    "default_fair_value": null,
+    "withheld_reason": "Historical FCFF cannot be reconciled because required statement fields are missing.",
+    "default_reverse_dcf": null,
+    "scenario_spreads": null,
+    "extended_horizon": null,
+    "headline": {
+      "method": "WITHHELD",
+      "extended_weight": null,
+      "fair_value": {},
+      "reason": "Fair value not calculated.",
+      "reverse_dcf": null
+    },
+    "one_quarter_legacy": {
+      "method": null,
+      "extended_weight": null,
+      "fair_value": null,
+      "observed_growth": null
+    },
+    "headline_growth": {
+      "observed_growth": null,
+      "growth_basis": null
+    }
+  },
+  {
+    "ticker": "META",
+    "price": 560.84,
+    "default_fair_value": {
+      "bear": 194.67285707566538,
+      "base": 359.3223198984252,
+      "bull": 627.9609732270917
+    },
+    "withheld_reason": null,
+    "default_reverse_dcf": "CONVERGED",
+    "scenario_spreads": {
+      "source": "COMPANY_HISTORY",
+      "basis": {
+        "fiscal_years": 4,
+        "growth_history": [
+          0.22167038498246217,
+          0.21941112807816054,
+          0.15687468377226454
+        ],
+        "fcf_margin_history": [
+          0.2294368201586338,
+          0.3287031689776962,
+          0.3266667655038472,
+          0.16541604850397482
+        ],
+        "growth_spread": 0.036774977914122695,
+        "margin_spread": 0.07962137164294092,
+        "margin_basis": "free-cash-flow margin history"
+      },
+      "spreads": {
+        "bear": {
+          "growth": -0.036774977914122695,
+          "margin": -0.07962137164294092
+        },
+        "bull": {
+          "growth": 0.036774977914122695,
+          "margin": 0.07962137164294092
+        }
+      },
+      "default_spread_fair_value": {
+        "bear": 231.42569473198552,
+        "base": 359.3223198984252,
+        "bull": 560.1297806545487
+      },
+      "note": "Bear/bull growth and margin spreads come from the company's own history; the +/-4-point values are shown for comparison."
+    },
+    "extended_horizon": {
+      "state": "COMPUTED",
+      "default": false,
+      "observed_growth": 0.27525361821617467,
+      "type_cap": 0.18,
+      "first_year_growth": 0.27525361821617467,
+      "weight": 0.9525361821617467,
+      "policy": {
+        "years": 10,
+        "first_year_growth_cap": 0.5,
+        "decay": "linear"
+      },
+      "fair_value": {
+        "bear": 338.19739173856715,
+        "base": 661.7440352627112,
+        "bull": 1236.1151559048628
+      },
+      "checks": {
+        "bear": {
+          "forecast_arithmetic": true,
+          "terminal_value": true,
+          "enterprise_value": true,
+          "ev_to_equity_bridge": true,
+          "share_conversion": true,
+          "wacc_above_terminal": true
+        },
+        "base": {
+          "forecast_arithmetic": true,
+          "terminal_value": true,
+          "enterprise_value": true,
+          "ev_to_equity_bridge": true,
+          "share_conversion": true,
+          "wacc_above_terminal": true
+        },
+        "bull": {
+          "forecast_arithmetic": true,
+          "terminal_value": true,
+          "enterprise_value": true,
+          "ev_to_equity_bridge": true,
+          "share_conversion": true,
+          "wacc_above_terminal": true
+        }
+      },
+      "checks_passed": true,
+      "reverse_dcf": {
+        "converged": true,
+        "status": "CONVERGED",
+        "required_year_1_revenue_growth": 0.2314277648925781
+      },
+      "sensitivity": {
+        "first_year_growth_cap": {
+          "0.4": 661.7440352627112,
+          "0.5": 661.7440352627112,
+          "0.6": 661.7440352627112
+        },
+        "explicit_years": {
+          "8": 559.128911949664,
+          "10": 661.7440352627112,
+          "12": 777.6674182812645
+        },
+        "decay": {
+          "linear": 661.7440352627112,
+          "front_loaded": 379.13391705338995
+        },
+        "wacc_minus_1pp_base_plus_1pp": [
+          775.9251452024847,
+          661.7440352627112,
+          574.4869168343963
+        ]
+      },
+      "assumptions_to_state": "First-year growth cap (50%), linear decay to terminal growth and a 10-year explicit period are model policy without calibration; see sensitivity.",
+      "note": "Ten-year values at full weight; the headline fair value blends them with the five-year values by `weight` (see report['fair_value'])."
+    },
+    "headline": {
+      "method": "PHASED",
+      "extended_weight": 0.9525361821617467,
+      "fair_value": {
+        "bear": 331.38516937000713,
+        "base": 647.3899460543287,
+        "bull": 1207.2498365606734
+      },
+      "reason": "Observed growth 27.5% vs cap 18%: ten-year model weighted 95%, five-year 5%.",
+      "reverse_dcf": "CONVERGED"
+    },
+    "one_quarter_legacy": {
+      "method": "PHASED",
+      "extended_weight": 0.8100000000000002,
+      "fair_value": {
+        "bear": 297.1626503605022,
+        "base": 576.3629107820011,
+        "bull": 1067.6078166567984
+      },
+      "observed_growth": 0.261
+    },
+    "headline_growth": {
+      "observed_growth": 0.27525361821617467,
+      "growth_basis": "trailing twelve months to 2026-09-30 vs the twelve months before (SEC filings)"
+    }
+  },
+  {
+    "ticker": "CRM",
+    "price": 180.62,
+    "default_fair_value": null,
+    "withheld_reason": "Historical FCFF cannot be reconciled because required statement fields are missing.",
+    "default_reverse_dcf": null,
+    "scenario_spreads": null,
+    "extended_horizon": null,
+    "headline": {
+      "method": "WITHHELD",
+      "extended_weight": null,
+      "fair_value": {},
+      "reason": "Fair value not calculated.",
+      "reverse_dcf": null
+    },
+    "one_quarter_legacy": {
+      "method": null,
+      "extended_weight": null,
+      "fair_value": null,
+      "observed_growth": null
+    },
+    "headline_growth": {
+      "observed_growth": null,
+      "growth_basis": null
+    }
+  },
+  {
+    "ticker": "CAT",
+    "price": 510.45,
+    "default_fair_value": null,
+    "withheld_reason": "Historical FCFF cannot be reconciled because required statement fields are missing.",
+    "default_reverse_dcf": null,
+    "scenario_spreads": null,
+    "extended_horizon": null,
+    "headline": {
+      "method": "WITHHELD",
+      "extended_weight": null,
+      "fair_value": {},
+      "reason": "Fair value not calculated.",
+      "reverse_dcf": null
+    },
+    "one_quarter_legacy": {
+      "method": null,
+      "extended_weight": null,
+      "fair_value": null,
+      "observed_growth": null
+    },
+    "headline_growth": {
+      "observed_growth": null,
+      "growth_basis": null
+    }
+  },
+  {
+    "ticker": "AMAT",
+    "price": 302.63,
+    "default_fair_value": {
+      "bear": 55.03124909783925,
+      "base": 84.35671858926437,
+      "bull": 126.05481434666318
+    },
+    "withheld_reason": null,
+    "default_reverse_dcf": "NO_ECONOMIC_SOLUTION",
+    "scenario_spreads": {
+      "source": "COMPANY_HISTORY",
+      "basis": {
+        "fiscal_years": 4,
+        "growth_history": [
+          0.04386223138063006,
+          0.024851981747558094,
+          0.028388598022105915
+        ],
+        "fcf_margin_history": [
+          0.20086012408347434,
+          0.2755004415660877,
+          0.28638232077535164,
+          0.17886368043436107
+        ],
+        "growth_spread": 0.02,
+        "margin_spread": 0.05353067934375637,
+        "margin_basis": "free-cash-flow margin history"
+      },
+      "spreads": {
+        "bear": {
+          "growth": -0.02,
+          "margin": -0.05353067934375637
+        },
+        "bull": {
+          "growth": 0.02,
+          "margin": 0.05353067934375637
+        }
+      },
+      "default_spread_fair_value": {
+        "bear": 56.032834579186,
+        "base": 84.35671858926437,
+        "bull": 125.87668170653026
+      },
+      "note": "Bear/bull growth and margin spreads come from the company's own history; the +/-4-point values are shown for comparison."
+    },
+    "extended_horizon": {
+      "state": "NOT_TRIGGERED",
+      "observed_growth": 0.07772690734980614,
+      "type_cap": 0.08,
+      "reason": "Observed growth is within the five-year model's cap; the existing valuation applies unchanged."
+    },
+    "headline": {
+      "method": "FIVE_YEAR",
+      "extended_weight": 0.0,
+      "fair_value": {
+        "bear": 55.03124909783925,
+        "base": 84.35671858926437,
+        "bull": 126.05481434666318
+      },
+      "reason": "Observed growth is within the five-year model's cap; the existing valuation applies unchanged.",
+      "reverse_dcf": "NO_ECONOMIC_SOLUTION"
+    },
+    "one_quarter_legacy": {
+      "method": "PHASED",
+      "extended_weight": 1.0,
+      "fair_value": {
+        "bear": 269.7641085064058,
+        "base": 445.1929551113345,
+        "bull": 704.456775998368
+      },
+      "observed_growth": 0.531
+    },
+    "headline_growth": {
+      "observed_growth": 0.07772690734980614,
+      "growth_basis": "trailing twelve months to 2026-07-26 vs the twelve months before (SEC filings)"
+    }
+  },
+  {
+    "ticker": "LRCX",
+    "price": 183.27,
+    "default_fair_value": {
+      "bear": 28.955986267428514,
+      "base": 46.98382924428986,
+      "bull": 75.20840664235054
+    },
+    "withheld_reason": null,
+    "default_reverse_dcf": "NO_ECONOMIC_SOLUTION",
+    "scenario_spreads": {
+      "source": "COMPANY_HISTORY",
+      "basis": {
+        "fiscal_years": 4,
+        "growth_history": [
+          0.26020858240997,
+          0.23684089764599192,
+          -0.1447702145151084
+        ],
+        "fcf_margin_history": [
+          0.21053317545234754,
+          0.29367531531807145,
+          0.2855074668982071,
+          0.26837454204362554
+        ],
+        "growth_spread": 0.1,
+        "margin_spread": 0.03750529238051437,
+        "margin_basis": "free-cash-flow margin history"
+      },
+      "spreads": {
+        "bear": {
+          "growth": -0.1,
+          "margin": -0.03750529238051437
+        },
+        "bull": {
+          "growth": 0.1,
+          "margin": 0.03750529238051437
+        }
+      },
+      "default_spread_fair_value": {
+        "bear": 32.549037453092964,
+        "base": 46.98382924428986,
+        "bull": 67.03913544284312
+      },
+      "note": "Bear/bull growth and margin spreads come from the company's own history; the +/-4-point values are shown for comparison."
+    },
+    "extended_horizon": {
+      "state": "COMPUTED",
+      "default": false,
+      "observed_growth": 0.3336166663297908,
+      "type_cap": 0.08,
+      "first_year_growth": 0.3336166663297908,
+      "weight": 1.0,
+      "policy": {
+        "years": 10,
+        "first_year_growth_cap": 0.5,
+        "decay": "linear"
+      },
+      "fair_value": {
+        "bear": 63.36368253996979,
+        "base": 121.23259568809772,
+        "bull": 228.0522474817891
+      },
+      "checks": {
+        "bear": {
+          "forecast_arithmetic": true,
+          "terminal_value": true,
+          "enterprise_value": true,
+          "ev_to_equity_bridge": true,
+          "share_conversion": true,
+          "wacc_above_terminal": true
+        },
+        "base": {
+          "forecast_arithmetic": true,
+          "terminal_value": true,
+          "enterprise_value": true,
+          "ev_to_equity_bridge": true,
+          "share_conversion": true,
+          "wacc_above_terminal": true
+        },
+        "bull": {
+          "forecast_arithmetic": true,
+          "terminal_value": true,
+          "enterprise_value": true,
+          "ev_to_equity_bridge": true,
+          "share_conversion": true,
+          "wacc_above_terminal": true
+        }
+      },
+      "checks_passed": true,
+      "reverse_dcf": {
+        "converged": true,
+        "status": "CONVERGED",
+        "required_year_1_revenue_growth": 0.4551605224609375
+      },
+      "sensitivity": {
+        "first_year_growth_cap": {
+          "0.4": 121.23259568809772,
+          "0.5": 121.23259568809772,
+          "0.6": 121.23259568809772
+        },
+        "explicit_years": {
+          "8": 101.24749492485005,
+          "10": 121.23259568809772,
+          "12": 143.86949855328916
+        },
+        "decay": {
+          "linear": 121.23259568809772,
+          "front_loaded": 65.12158348748079
+        },
+        "wacc_minus_1pp_base_plus_1pp": [
+          135.68171934427286,
+          121.23259568809772,
+          109.25514530030333
+        ]
+      },
+      "assumptions_to_state": "First-year growth cap (50%), linear decay to terminal growth and a 10-year explicit period are model policy without calibration; see sensitivity.",
+      "note": "Ten-year values at full weight; the headline fair value blends them with the five-year values by `weight` (see report['fair_value'])."
+    },
+    "headline": {
+      "method": "FIVE_YEAR",
+      "extended_weight": 0.0,
+      "fair_value": {
+        "bear": 28.955986267428514,
+        "base": 46.98382924428986,
+        "bull": 75.20840664235054
+      },
+      "reason": "Cyclical company: the ten-year model is not blended in, so cycle-high growth is not extended (owner decision 2026-11-22).",
+      "reverse_dcf": "NO_ECONOMIC_SOLUTION"
+    },
+    "one_quarter_legacy": {
+      "method": "PHASED",
+      "extended_weight": 1.0,
+      "fair_value": {
+        "bear": 110.84879725605501,
+        "base": 212.6197997747465,
+        "bull": 397.69578983192696
+      },
+      "observed_growth": 0.544
+    },
+    "headline_growth": {
+      "observed_growth": 0.3336166663297908,
+      "growth_basis": "trailing twelve months to 2026-09-27 vs the twelve months before (SEC filings)"
+    }
+  }
+]

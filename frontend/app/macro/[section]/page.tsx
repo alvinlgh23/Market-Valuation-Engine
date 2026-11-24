@@ -1,16 +1,19 @@
+import { PageDataStatus } from "../../../components/research/DataStatus";
 import { notFound } from "next/navigation";
 import { ResearchShell } from "../../../components/research/ResearchShell";
 import { MacroResearch } from "../../../components/research/ObjectResearchSurfaces";
-import fixture from "../../../lib/fixtures/research-system.json";
 import type { ResearchSystem } from "../../../lib/research-system-types";
 import { MacroRatesRuntime } from "../../../components/macro/MacroRatesRuntime";
+import { loadResearchSystem, researchShellState } from "../../../lib/research-server";
 
 const SECTIONS = ["central-banks", "inflation", "rates", "liquidity", "fx", "risk"];
+export const dynamic = "force-dynamic";
 export function generateStaticParams() { return SECTIONS.map((section) => ({ section })); }
 export default async function MacroSectionPage({ params }: { params: Promise<{ section: string }> }) {
   const { section } = await params;
   if (!SECTIONS.includes(section)) notFound();
-  const system = fixture as unknown as ResearchSystem;
-  const state = section === "inflation" ? system.modules.inflation.state : system.modules.core_market.state;
-  return <ResearchShell active="macro" dataState={state as never}>{section === "rates" ? <MacroRatesRuntime initial={system} /> : <MacroResearch section={section} system={system} />}</ResearchShell>;
+  const response = await loadResearchSystem();
+  const system = response.data as unknown as ResearchSystem;
+  const state = researchShellState(response, section === "inflation" ? "inflation" : "core_market");
+  return <ResearchShell active="macro" dataState={state}><PageDataStatus system={system} meta={response.meta} />{section === "rates" ? <MacroRatesRuntime initial={system} /> : <MacroResearch section={section} system={system} />}</ResearchShell>;
 }

@@ -117,18 +117,6 @@ ENGINE_INVENTORY = [
         ["Backtest charts/CSV remain report-only", "Educational allocation remains report-only", "Motive checks stay report-only because hidden intent is not observable"],
     ),
     engine(
-        "neer", "Shadow S$NEER Proxy", "ACTIVE / INTEGRATED",
-        "How are observable SGD crosses moving relative to a transparent estimated MAS-style policy path?",
-        "NEER/SGD.py",
-        ["python3 NEER/SGD.py", "python3 NEER/SGD.py --json"],
-        ["12 observable SGD crosses", "explicit approximate weights", "estimated slope and band assumptions"],
-        ["Yahoo Finance"],
-        ["shadow index", "estimated centre/bands", "deviation", "21D volatility", "basket weights", "63D contributions", "component FX changes", "history", "USD/SGD comparison", "watch conditions", "gap ratios"],
-        ["daily from 2022", "21D", "63D"], "Live; no official MAS band claim; last-valid research cache in orchestrator", "Native full JSON added using unchanged calculations",
-        "STRUCTURAL SUMMARY", "FULL when live; explicit fallback", ["Singapore brief", "NEER workspace", "FX monitor", "Historical chart", "Evidence"],
-        ["Reserves, rates, bonds, equities, and asset flows are not modeled by this engine and remain unavailable"],
-    ),
-    engine(
         "kospi", "KOSPI Multi-Factor Signal Monitor", "ACTIVE / INTEGRATED",
         "Which market proxies have descriptive candidate relationships with KOSPI returns, and what is the current volatility regime?",
         "KOSPI/KOSPI_Backend_v2.py",
@@ -145,7 +133,7 @@ ENGINE_INVENTORY = [
         "What does CHAINSTOX currently know about each supported economy and cross-border mechanism?",
         "macro_world.py",
         ["python model.py macro-world --json", "python model.py macro-world SG --json"],
-        ["Compass", "NEER", "KOSPI", "coverage registry"],
+        ["Compass", "KOSPI", "coverage registry"],
         ["Audited child-engine outputs"],
         ["normalized region profiles", "coverage", "components", "evidence", "watch conditions", "engine-specific payloads", "transmission graph"],
         ["current/cached/structural"], "Cache-first orchestration; per-engine failure isolation", "Native JSON",
@@ -170,10 +158,6 @@ INFORMATION_SURFACE_REGISTRY = [
     {"output": "inflation.validation", "surface": "Inflation / Data Coverage", "status": "interactive"},
     {"output": "central_bank.blocks.*", "surface": "Macro / Country / Central Bank", "status": "interactive"},
     {"output": "central_bank.liquidity.drivers", "surface": "Macro / Country / Liquidity", "status": "interactive"},
-    {"output": "neer.current", "surface": "Singapore / NEER", "status": "interactive when live"},
-    {"output": "neer.fx_components", "surface": "Singapore / FX Basket", "status": "interactive when live"},
-    {"output": "neer.history", "surface": "Singapore / NEER History", "status": "interactive chart when live"},
-    {"output": "neer.policy_assumptions", "surface": "Singapore / NEER / Method", "status": "interactive"},
     {"output": "kospi.results", "surface": "Korea / KOSPI Factors", "status": "interactive when live"},
     {"output": "kospi.volatility", "surface": "Korea / KOSPI Market", "status": "interactive when live"},
     {"output": "kospi.exports", "surface": "Korea / Export Structure", "status": "interactive"},
@@ -191,7 +175,6 @@ COUNTRY_COVERAGE = {
     "US": {"policy": "AVAILABLE", "inflation": "AVAILABLE", "fx": "AVAILABLE", "liquidity": "AVAILABLE", "equity": "PARTIAL", "rates": "AVAILABLE"},
     "JP": {"policy": "PARTIAL", "inflation": "PARTIAL", "fx": "AVAILABLE", "liquidity": "PARTIAL", "equity": "UNAVAILABLE", "rates": "AVAILABLE"},
     "KR": {"policy": "UNAVAILABLE", "inflation": "UNAVAILABLE", "fx": "PARTIAL", "liquidity": "UNAVAILABLE", "equity": "PARTIAL", "rates": "UNAVAILABLE"},
-    "SG": {"policy": "PARTIAL", "inflation": "PARTIAL", "fx": "PARTIAL", "liquidity": "PARTIAL", "equity": "UNAVAILABLE", "rates": "UNAVAILABLE"},
     "EURO_AREA": {"policy": "AVAILABLE", "inflation": "AVAILABLE", "fx": "AVAILABLE", "liquidity": "PARTIAL", "equity": "UNAVAILABLE", "rates": "PARTIAL"},
 }
 
@@ -201,7 +184,6 @@ TRANSMISSION_COVERAGE = [
     {"id": "us-jp-rate-fx", "required": ["Fed stance", "US yields", "USD/JPY", "BOJ pressure", "Japan inflation"], "available": ["Fed stance", "US yields", "USD/JPY", "BOJ pressure", "partial Japan inflation"], "missing": ["wages", "inflation expectations"], "status": "SUPPORTED_WITH_GAPS"},
     {"id": "us-eu-rate-fx", "required": ["Fed", "ECB", "US rates", "Euro rates", "EUR/USD", "regional stress"], "available": ["Fed", "ECB", "US rates", "EUR/USD", "sovereign spread proxy"], "missing": ["full euro credit/bank-lending stress"], "status": "SUPPORTED_WITH_GAPS"},
     {"id": "us-kr-dollar-kospi", "required": ["US rates", "USD", "USD/KRW", "KOSPI", "foreign flows", "exports"], "available": ["US rates", "USD context", "annual exports", "live-capable KOSPI/USD-KRW model"], "missing": ["persisted current sweep", "reliable current foreign flows"], "status": "PARTIAL"},
-    {"id": "us-sg-dollar-neer", "required": ["USD", "USD/SGD", "trade-weighted SGD", "import inflation", "MAS policy"], "available": ["USD context", "USD/SGD", "live-capable shadow NEER", "import-price proxy", "MAS framework"], "missing": ["official NEER position", "official basket"], "status": "PARTIAL_PROXY"},
 ]
 
 

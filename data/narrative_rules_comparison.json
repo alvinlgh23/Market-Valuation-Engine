@@ -1,0 +1,962 @@
+[
+  {
+    "list": "AI_LEADERS",
+    "ticker": "AMD",
+    "before": "Institutional AI Leader",
+    "after": "Institutional AI Leader",
+    "same": true,
+    "inputs": {
+      "industry": "Semiconductors",
+      "sector": "Technology",
+      "beta": 2.542,
+      "market_cap": 702393286656,
+      "score": 90.94722888523802,
+      "rev_growth": 0.447,
+      "op_margin": 0.17820999,
+      "fcf": 7357125120,
+      "forward_pe": 24.060778,
+      "ev_sales": 15.175,
+      "rel_strength_3m": -0.0172187138556954
+    }
+  },
+  {
+    "list": "AI_LEADERS",
+    "ticker": "ASML",
+    "before": "Institutional AI Leader",
+    "after": "Institutional AI Leader",
+    "same": true,
+    "inputs": {
+      "industry": "Semiconductor Equipment & Materials",
+      "sector": "Technology",
+      "beta": 1.333,
+      "market_cap": 488023621632,
+      "score": 96.19726136363636,
+      "rev_growth": 0.552,
+      "op_margin": 0.38551998,
+      "fcf": 10374124544,
+      "forward_pe": 19.972149,
+      "ev_sales": 682.448,
+      "rel_strength_3m": -0.17594289394058638
+    }
+  },
+  {
+    "list": "AI_LEADERS",
+    "ticker": "AVGO",
+    "before": "Institutional AI Leader",
+    "after": "Institutional AI Leader",
+    "same": true,
+    "inputs": {
+      "industry": "Semiconductors",
+      "sector": "Technology",
+      "beta": 1.508,
+      "market_cap": 1453140738048,
+      "score": 90.0,
+      "rev_growth": 0.855,
+      "op_margin": 0.48815,
+      "fcf": 30596499456,
+      "forward_pe": 15.702569,
+      "ev_sales": 16.706,
+      "rel_strength_3m": -0.04801315785536309
+    }
+  },
+  {
+    "list": "AI_LEADERS",
+    "ticker": "MRVL",
+    "before": "Institutional AI Leader",
+    "after": "Institutional AI Leader",
+    "same": true,
+    "inputs": {
+      "industry": "Semiconductors",
+      "sector": "Technology",
+      "beta": 2.327,
+      "market_cap": 110023368704,
+      "score": 83.08126077795369,
+      "rev_growth": 0.365,
+      "op_margin": 0.16812,
+      "fcf": 2408049920,
+      "forward_pe": 16.589134,
+      "ev_sales": 11.49,
+      "rel_strength_3m": -0.3940719033585113
+    }
+  },
+  {
+    "list": "AI_LEADERS",
+    "ticker": "NVDA",
+    "before": "Institutional AI Leader",
+    "after": "Institutional AI Leader",
+    "same": true,
+    "inputs": {
+      "industry": "Semiconductors",
+      "sector": "Technology",
+      "beta": 2.247,
+      "market_cap": 3031172907008,
+      "score": 95.39482919918537,
+      "rev_growth": 1.032,
+      "op_margin": 0.66082,
+      "fcf": 99241377792,
+      "forward_pe": 7.5596437,
+      "ev_sales": 8.199,
+      "rel_strength_3m": -0.31301389580793326
+    }
+  },
+  {
+    "list": "AI_LEADERS",
+    "ticker": "TSM",
+    "before": "Institutional AI Leader",
+    "after": "Institutional AI Leader",
+    "same": true,
+    "inputs": {
+      "industry": "Semiconductors",
+      "sector": "Technology",
+      "beta": 1.233,
+      "market_cap": 1652980711424,
+      "score": 96.25,
+      "rev_growth": 0.509,
+      "op_margin": 0.57961,
+      "fcf": 1042594725888,
+      "forward_pe": 13.628653,
+      "ev_sales": 2.087,
+      "rel_strength_3m": -0.13728742221630397
+    }
+  },
+  {
+    "list": "MATURE_QUALITY",
+    "ticker": "AAPL",
+    "before": "Mature Institutional Quality / Momentum Repair",
+    "after": "Mature Institutional Quality / Momentum Repair",
+    "same": true,
+    "inputs": {
+      "industry": "Consumer Electronics",
+      "sector": "Technology",
+      "beta": 1.089,
+      "market_cap": 4978144444416,
+      "score": 77.74156587030097,
+      "rev_growth": 0.117,
+      "op_margin": 0.33009997,
+      "fcf": 105658376192,
+      "forward_pe": 32.400333,
+      "ev_sales": 10.475,
+      "rel_strength_3m": 0.2033511576517819
+    }
+  },
+  {
+    "list": "MATURE_QUALITY",
+    "ticker": "BRK-B",
+    "before": "Mature Institutional Quality / Momentum Repair",
+    "after": "Mature Institutional Quality / Momentum Repair",
+    "same": true,
+    "inputs": {
+      "industry": "Insurance - Diversified",
+      "sector": "Financial Services",
+      "beta": 0.571,
+      "market_cap": 1210976043008,
+      "score": 72.97635151515152,
+      "rev_growth": 0.112,
+      "op_margin": 0.26602,
+      "fcf": 52474249216,
+      "forward_pe": 24.98179,
+      "ev_sales": -0.616,
+      "rel_strength_3m": 0.22735716335540057
+    }
+  },
+  {
+    "list": "MATURE_QUALITY",
+    "ticker": "COST",
+    "before": "Mature Institutional Quality / Momentum Repair",
+    "after": "Mature Institutional Quality / Momentum Repair",
+    "same": true,
+    "inputs": {
+      "industry": "Discount Stores",
+      "sector": "Consumer Defensive",
+      "beta": 0.852,
+      "market_cap": 488395014144,
+      "score": 75.70916641458531,
+      "rev_growth": 0.111,
+      "op_margin": 0.03797,
+      "fcf": 6752750080,
+      "forward_pe": 44.009495,
+      "ev_sales": 1.574,
+      "rel_strength_3m": 0.2468802237409451
+    }
+  },
+  {
+    "list": "MATURE_QUALITY",
+    "ticker": "GOOGL",
+    "before": "Developing / Neutral",
+    "after": "Developing / Neutral",
+    "same": true,
+    "inputs": {
+      "industry": "Internet Content & Information",
+      "sector": "Communication Services",
+      "beta": 1.226,
+      "market_cap": 3261475323904,
+      "score": 71.88123995788372,
+      "rev_growth": 0.247,
+      "op_margin": 0.33321,
+      "fcf": -1162499968,
+      "forward_pe": 17.342186,
+      "ev_sales": 6.718,
+      "rel_strength_3m": -0.137773447965708
+    }
+  },
+  {
+    "list": "MATURE_QUALITY",
+    "ticker": "MA",
+    "before": "Mature Institutional Quality / Momentum Repair",
+    "after": "Mature Institutional Quality / Momentum Repair",
+    "same": true,
+    "inputs": {
+      "industry": "Credit Services",
+      "sector": "Financial Services",
+      "beta": 0.77,
+      "market_cap": 544999112704,
+      "score": 81.0352705548284,
+      "rev_growth": 0.14,
+      "op_margin": 0.60069,
+      "fcf": 16629250048,
+      "forward_pe": 27.010551,
+      "ev_sales": 15.39,
+      "rel_strength_3m": 0.14245063866618324
+    }
+  },
+  {
+    "list": "MATURE_QUALITY",
+    "ticker": "META",
+    "before": "Mature Institutional Quality / Momentum Repair",
+    "after": "Mature Institutional Quality / Momentum Repair",
+    "same": true,
+    "inputs": {
+      "industry": "Internet Content & Information",
+      "sector": "Communication Services",
+      "beta": 1.279,
+      "market_cap": 1433642336256,
+      "score": 84.75,
+      "rev_growth": 0.261,
+      "op_margin": 0.37777,
+      "fcf": 16848499712,
+      "forward_pe": 15.720743,
+      "ev_sales": 6.068,
+      "rel_strength_3m": 0.08174244001241349
+    }
+  },
+  {
+    "list": "MATURE_QUALITY",
+    "ticker": "MSFT",
+    "before": "Mature Institutional Quality / Momentum Repair",
+    "after": "Mature Institutional Quality / Momentum Repair",
+    "same": true,
+    "inputs": {
+      "industry": "Software - Infrastructure",
+      "sector": "Technology",
+      "beta": 1.045,
+      "market_cap": 3598139523072,
+      "score": 84.8930222555827,
+      "rev_growth": 0.188,
+      "op_margin": 0.47104,
+      "fcf": 2994125056,
+      "forward_pe": 20.020792,
+      "ev_sales": 10.586,
+      "rel_strength_3m": 0.08440346429066148
+    }
+  },
+  {
+    "list": "MATURE_QUALITY",
+    "ticker": "V",
+    "before": "Mature Institutional Quality / Momentum Repair",
+    "after": "Mature Institutional Quality / Momentum Repair",
+    "same": true,
+    "inputs": {
+      "industry": "Credit Services",
+      "sector": "Financial Services",
+      "beta": 0.786,
+      "market_cap": 749809041408,
+      "score": 79.84378003576178,
+      "rev_growth": 0.132,
+      "op_margin": 0.66306996,
+      "fcf": 20983375872,
+      "forward_pe": 23.445778,
+      "ev_sales": 16.239,
+      "rel_strength_3m": 0.1452138849369291
+    }
+  },
+  {
+    "list": "LIQUIDITY_SENSITIVE",
+    "ticker": "CLSK",
+    "before": "Liquidity-Sensitive Narrative Asset",
+    "after": "Liquidity-Sensitive Narrative Asset",
+    "same": true,
+    "inputs": {
+      "industry": "Capital Markets",
+      "sector": "Financial Services",
+      "beta": 3.647,
+      "market_cap": 1255835392,
+      "score": 30.113079545454546,
+      "rev_growth": -0.305,
+      "op_margin": -1.89519,
+      "fcf": 48898124,
+      "forward_pe": -2.7942855,
+      "ev_sales": 4.181,
+      "rel_strength_3m": -0.5193481905108623
+    }
+  },
+  {
+    "list": "LIQUIDITY_SENSITIVE",
+    "ticker": "COIN",
+    "before": "Liquidity-Sensitive Narrative Asset",
+    "after": "Liquidity-Sensitive Narrative Asset",
+    "same": true,
+    "inputs": {
+      "industry": "Financial Data & Stock Exchanges",
+      "sector": "Financial Services",
+      "beta": 3.353,
+      "market_cap": 26997925888,
+      "score": 53.8423791375,
+      "rev_growth": -0.342,
+      "op_margin": 0.00124,
+      "fcf": 3681990144,
+      "forward_pe": 42.497772,
+      "ev_sales": 4.606,
+      "rel_strength_3m": -0.3580496412509353
+    }
+  },
+  {
+    "list": "LIQUIDITY_SENSITIVE",
+    "ticker": "HOOD",
+    "before": "Liquidity-Sensitive Narrative Asset",
+    "after": "Liquidity-Sensitive Narrative Asset",
+    "same": true,
+    "inputs": {
+      "industry": "Capital Markets",
+      "sector": "Financial Services",
+      "beta": 2.528,
+      "market_cap": 55983542272,
+      "score": 76.77592622239113,
+      "rev_growth": 0.118,
+      "op_margin": 0.45651,
+      "fcf": 2970000000.0,
+      "forward_pe": 18.229052,
+      "ev_sales": 10.583,
+      "rel_strength_3m": -0.3482340000462376
+    }
+  },
+  {
+    "list": "LIQUIDITY_SENSITIVE",
+    "ticker": "IBIT",
+    "before": "Liquidity-Sensitive Narrative Asset",
+    "after": "Liquidity-Sensitive Narrative Asset",
+    "same": true,
+    "inputs": {
+      "industry": null,
+      "sector": null,
+      "beta": null,
+      "market_cap": null,
+      "score": 47.5,
+      "rev_growth": null,
+      "op_margin": null,
+      "fcf": null,
+      "forward_pe": null,
+      "ev_sales": null,
+      "rel_strength_3m": -0.16450550869941016
+    }
+  },
+  {
+    "list": "LIQUIDITY_SENSITIVE",
+    "ticker": "IREN",
+    "before": "Liquidity-Sensitive Narrative Asset",
+    "after": "Liquidity-Sensitive Narrative Asset",
+    "same": true,
+    "inputs": {
+      "industry": "Capital Markets",
+      "sector": "Financial Services",
+      "beta": 4.335,
+      "market_cap": 5015904256,
+      "score": 29.95,
+      "rev_growth": -0.05,
+      "op_margin": -0.72913,
+      "fcf": -8780918784,
+      "forward_pe": 43.777775,
+      "ev_sales": 16.847,
+      "rel_strength_3m": -0.6228491636778635
+    }
+  },
+  {
+    "list": "LIQUIDITY_SENSITIVE",
+    "ticker": "MARA",
+    "before": "Liquidity-Sensitive Narrative Asset",
+    "after": "Liquidity-Sensitive Narrative Asset",
+    "same": true,
+    "inputs": {
+      "industry": "Capital Markets",
+      "sector": "Financial Services",
+      "beta": 5.253,
+      "market_cap": 1969961600,
+      "score": 25.970090909090906,
+      "rev_growth": -0.349,
+      "op_margin": -3.3550298,
+      "fcf": -1039569472,
+      "forward_pe": -8.428224,
+      "ev_sales": 5.865,
+      "rel_strength_3m": -0.4726155304839619
+    }
+  },
+  {
+    "list": "LIQUIDITY_SENSITIVE",
+    "ticker": "MSTR",
+    "before": "Liquidity-Sensitive Narrative Asset",
+    "after": "Liquidity-Sensitive Narrative Asset",
+    "same": true,
+    "inputs": {
+      "industry": "Software - Application",
+      "sector": "Technology",
+      "beta": 3.611,
+      "market_cap": 32931311616,
+      "score": 42.00847101223826,
+      "rev_growth": -0.025,
+      "op_margin": -11.00134,
+      "fcf": -3240532992,
+      "forward_pe": 4.512761,
+      "ev_sales": 94.501,
+      "rel_strength_3m": -0.2894580386338348
+    }
+  },
+  {
+    "list": "LIQUIDITY_SENSITIVE",
+    "ticker": "RIOT",
+    "before": "Liquidity-Sensitive Narrative Asset",
+    "after": "Liquidity-Sensitive Narrative Asset",
+    "same": true,
+    "inputs": {
+      "industry": "Capital Markets",
+      "sector": "Financial Services",
+      "beta": 3.978,
+      "market_cap": 6089235456,
+      "score": 24.790218757512353,
+      "rev_growth": 0.007,
+      "op_margin": -1.9386301,
+      "fcf": -754805248,
+      "forward_pe": -17.968447,
+      "ev_sales": 9.042,
+      "rel_strength_3m": -0.14090575501630553
+    }
+  },
+  {
+    "list": "NARRATIVE_DECAY",
+    "ticker": "PYPL",
+    "before": "Narrative Decay / Weakening Mature Platform",
+    "after": "Weakening Mature Platform \u26a0",
+    "same": false,
+    "inputs": {
+      "industry": "Credit Services",
+      "sector": "Financial Services",
+      "beta": 1.316,
+      "market_cap": 44265783296,
+      "score": 63.70587193499519,
+      "rev_growth": 0.02,
+      "op_margin": 0.17695999,
+      "fcf": 4487374848,
+      "forward_pe": 9.026726,
+      "ev_sales": 1.407,
+      "rel_strength_3m": -0.0449744376512321
+    }
+  },
+  {
+    "list": "IDENTITY_UNCERTAINTY",
+    "ticker": "RBLX",
+    "before": "Identity Uncertainty",
+    "after": "Fundamentally Supported, Market Momentum Weakening",
+    "same": false,
+    "inputs": {
+      "industry": "Electronic Gaming & Multimedia",
+      "sector": "Communication Services",
+      "beta": 1.534,
+      "market_cap": 33438128128,
+      "score": 63.84828343640718,
+      "rev_growth": 0.156,
+      "op_margin": -0.17386,
+      "fcf": 1713751680,
+      "forward_pe": -36.67651,
+      "ev_sales": 5.447,
+      "rel_strength_3m": 0.2913965006380075
+    }
+  },
+  {
+    "list": "SPECULATIVE_TURNAROUND",
+    "ticker": "INTC",
+    "before": "Speculative Turnaround",
+    "after": "Institutional AI Leader",
+    "same": false,
+    "inputs": {
+      "industry": "Semiconductors",
+      "sector": "Technology",
+      "beta": 2.426,
+      "market_cap": 272553181184,
+      "score": 70.25638012840909,
+      "rev_growth": 0.209,
+      "op_margin": 0.10317001,
+      "fcf": 806499968,
+      "forward_pe": 28.640684,
+      "ev_sales": 4.764,
+      "rel_strength_3m": -0.31668649885126343
+    }
+  },
+  {
+    "list": "EXPENSIVE_CONVICTION_GROWTH",
+    "ticker": "PLTR",
+    "before": "Expensive Conviction Growth",
+    "after": "Expensive Conviction Growth",
+    "same": true,
+    "inputs": {
+      "industry": "Software - Infrastructure",
+      "sector": "Technology",
+      "beta": 1.61,
+      "market_cap": 345738838016,
+      "score": 96.25,
+      "rev_growth": 0.959,
+      "op_margin": 0.45638,
+      "fcf": 2652487680,
+      "forward_pe": 56.519497,
+      "ev_sales": 46.036,
+      "rel_strength_3m": -0.07215907711400793
+    }
+  },
+  {
+    "list": "HARD_ASSET_ROTATION",
+    "ticker": "AA",
+    "before": "Defensive Hard-Asset Rotation",
+    "after": "Defensive Hard-Asset Rotation",
+    "same": true,
+    "inputs": {
+      "industry": "Aluminum",
+      "sector": "Basic Materials",
+      "beta": 1.839,
+      "market_cap": 8821872640,
+      "score": 82.58661561742426,
+      "rev_growth": 0.237,
+      "op_margin": 0.15274,
+      "fcf": 918625024,
+      "forward_pe": 6.4156218,
+      "ev_sales": 0.645,
+      "rel_strength_3m": -0.2494731487277424
+    }
+  },
+  {
+    "list": "HARD_ASSET_ROTATION",
+    "ticker": "AEM",
+    "before": "Defensive Hard-Asset Rotation",
+    "after": "Defensive Hard-Asset Rotation",
+    "same": true,
+    "inputs": {
+      "industry": "Gold",
+      "sector": "Basic Materials",
+      "beta": 0.668,
+      "market_cap": 76489187328,
+      "score": 88.84019565421227,
+      "rev_growth": 0.171,
+      "op_margin": 0.60318,
+      "fcf": 3746950144,
+      "forward_pe": 13.018089,
+      "ev_sales": 4.863,
+      "rel_strength_3m": -0.22626358071173347
+    }
+  },
+  {
+    "list": "HARD_ASSET_ROTATION",
+    "ticker": "AGI",
+    "before": "Defensive Hard-Asset Rotation",
+    "after": "Defensive Hard-Asset Rotation",
+    "same": true,
+    "inputs": {
+      "industry": "Gold",
+      "sector": "Basic Materials",
+      "beta": 1.46,
+      "market_cap": 10409617408,
+      "score": 73.91429847137574,
+      "rev_growth": 0.104,
+      "op_margin": 0.54074,
+      "fcf": 221837504,
+      "forward_pe": 9.33839,
+      "ev_sales": 4.39,
+      "rel_strength_3m": -0.2648210374446842
+    }
+  },
+  {
+    "list": "HARD_ASSET_ROTATION",
+    "ticker": "BHP",
+    "before": "Defensive Hard-Asset Rotation",
+    "after": "Defensive Hard-Asset Rotation",
+    "same": true,
+    "inputs": {
+      "industry": "Other Industrial Metals & Mining",
+      "sector": "Basic Materials",
+      "beta": 0.886,
+      "market_cap": 170736418816,
+      "score": 71.28829166666667,
+      "rev_growth": 0.183,
+      "op_margin": 0.42099997,
+      "fcf": 9592375296,
+      "forward_pe": 13.151223,
+      "ev_sales": 3.164,
+      "rel_strength_3m": -0.20730488214600606
+    }
+  },
+  {
+    "list": "HARD_ASSET_ROTATION",
+    "ticker": "CF",
+    "before": "Defensive Hard-Asset Rotation",
+    "after": "Defensive Hard-Asset Rotation",
+    "same": true,
+    "inputs": {
+      "industry": "Agricultural Inputs",
+      "sector": "Basic Materials",
+      "beta": 0.541,
+      "market_cap": 16900295680,
+      "score": 80.80746201603623,
+      "rev_growth": 0.121,
+      "op_margin": 0.38489,
+      "fcf": 1589750016,
+      "forward_pe": 9.764983,
+      "ev_sales": 2.633,
+      "rel_strength_3m": 0.009324328472483434
+    }
+  },
+  {
+    "list": "HARD_ASSET_ROTATION",
+    "ticker": "COP",
+    "before": "Defensive Hard-Asset Rotation",
+    "after": "Defensive Hard-Asset Rotation",
+    "same": true,
+    "inputs": {
+      "industry": "Oil & Gas E&P",
+      "sector": "Energy",
+      "beta": 0.162,
+      "market_cap": 160939442176,
+      "score": 86.88141821136364,
+      "rev_growth": 0.293,
+      "op_margin": 0.25877002,
+      "fcf": 11464625152,
+      "forward_pe": 11.843319,
+      "ev_sales": 2.527,
+      "rel_strength_3m": 0.1363789603718204
+    }
+  },
+  {
+    "list": "HARD_ASSET_ROTATION",
+    "ticker": "CVX",
+    "before": "Defensive Hard-Asset Rotation",
+    "after": "Defensive Hard-Asset Rotation",
+    "same": true,
+    "inputs": {
+      "industry": "Oil & Gas Integrated",
+      "sector": "Energy",
+      "beta": 0.453,
+      "market_cap": 406582722560,
+      "score": 83.75979150757576,
+      "rev_growth": 0.348,
+      "op_margin": 0.15105,
+      "fcf": 26048374784,
+      "forward_pe": 12.612837,
+      "ev_sales": 1.914,
+      "rel_strength_3m": 0.14820221037134806
+    }
+  },
+  {
+    "list": "HARD_ASSET_ROTATION",
+    "ticker": "FCX",
+    "before": "Defensive Hard-Asset Rotation",
+    "after": "Defensive Hard-Asset Rotation",
+    "same": true,
+    "inputs": {
+      "industry": "Copper",
+      "sector": "Basic Materials",
+      "beta": 1.373,
+      "market_cap": 65992712192,
+      "score": 77.99307243639305,
+      "rev_growth": 0.082,
+      "op_margin": 0.28598,
+      "fcf": 1867000064,
+      "forward_pe": 10.898466,
+      "ev_sales": 3.201,
+      "rel_strength_3m": -0.32611250257846625
+    }
+  },
+  {
+    "list": "HARD_ASSET_ROTATION",
+    "ticker": "FNV",
+    "before": "Defensive Hard-Asset Rotation",
+    "after": "Defensive Hard-Asset Rotation",
+    "same": true,
+    "inputs": {
+      "industry": "Gold",
+      "sector": "Basic Materials",
+      "beta": 0.931,
+      "market_cap": 43060662272,
+      "score": 90.122752155948,
+      "rev_growth": 0.134,
+      "op_margin": 0.77796996,
+      "fcf": 690062528,
+      "forward_pe": 25.851006,
+      "ev_sales": 17.683,
+      "rel_strength_3m": -0.08019431192961912
+    }
+  },
+  {
+    "list": "HARD_ASSET_ROTATION",
+    "ticker": "GFI",
+    "before": "Defensive Hard-Asset Rotation",
+    "after": "Defensive Hard-Asset Rotation",
+    "same": true,
+    "inputs": {
+      "industry": "Gold",
+      "sector": "Basic Materials",
+      "beta": 0.748,
+      "market_cap": 27929538560,
+      "score": 83.375,
+      "rev_growth": 0.789,
+      "op_margin": 0.53094,
+      "fcf": 4175875072,
+      "forward_pe": 6.548311,
+      "ev_sales": 5.007,
+      "rel_strength_3m": -0.2422126068917433
+    }
+  },
+  {
+    "list": "HARD_ASSET_ROTATION",
+    "ticker": "GOLD",
+    "before": "Inflation-Hedge Rotation",
+    "after": "Developing / Neutral",
+    "same": false,
+    "inputs": {
+      "industry": "Capital Markets",
+      "sector": "Financial Services",
+      "beta": 0.663,
+      "market_cap": 1053746560,
+      "score": 36.412983610337925,
+      "rev_growth": -0.113,
+      "op_margin": 0.00588,
+      "fcf": -416415264,
+      "forward_pe": 9.689008,
+      "ev_sales": 0.085,
+      "rel_strength_3m": -0.10733343260036488
+    }
+  },
+  {
+    "list": "HARD_ASSET_ROTATION",
+    "ticker": "HMY",
+    "before": "Defensive Hard-Asset Rotation",
+    "after": "Defensive Hard-Asset Rotation",
+    "same": true,
+    "inputs": {
+      "industry": "Gold",
+      "sector": "Basic Materials",
+      "beta": 0.913,
+      "market_cap": 8038569984,
+      "score": 82.94720470454544,
+      "rev_growth": 0.492,
+      "op_margin": 0.40985,
+      "fcf": 9850250240,
+      "forward_pe": 3.8812022,
+      "ev_sales": 0.092,
+      "rel_strength_3m": -0.3285495487578636
+    }
+  },
+  {
+    "list": "HARD_ASSET_ROTATION",
+    "ticker": "KGC",
+    "before": "Defensive Hard-Asset Rotation",
+    "after": "Defensive Hard-Asset Rotation",
+    "same": true,
+    "inputs": {
+      "industry": "Gold",
+      "sector": "Basic Materials",
+      "beta": 1.528,
+      "market_cap": 20403619840,
+      "score": 73.33363487761896,
+      "rev_growth": -0.015,
+      "op_margin": 0.50979,
+      "fcf": 2464037376,
+      "forward_pe": 6.6869745,
+      "ev_sales": 2.199,
+      "rel_strength_3m": -0.38446070224764073
+    }
+  },
+  {
+    "list": "HARD_ASSET_ROTATION",
+    "ticker": "MOS",
+    "before": "Inflation-Hedge Rotation",
+    "after": "Inflation-Hedge Rotation",
+    "same": true,
+    "inputs": {
+      "industry": "Agricultural Inputs",
+      "sector": "Basic Materials",
+      "beta": 0.858,
+      "market_cap": 5932082176,
+      "score": 31.449895454545455,
+      "rev_growth": -0.102,
+      "op_margin": -0.00204,
+      "fcf": -512462496,
+      "forward_pe": 14.922747,
+      "ev_sales": 1.006,
+      "rel_strength_3m": -0.12751901512911878
+    }
+  },
+  {
+    "list": "HARD_ASSET_ROTATION",
+    "ticker": "NEM",
+    "before": "Defensive Hard-Asset Rotation",
+    "after": "Defensive Hard-Asset Rotation",
+    "same": true,
+    "inputs": {
+      "industry": "Gold",
+      "sector": "Basic Materials",
+      "beta": 0.573,
+      "market_cap": 98390810624,
+      "score": 90.56193086468767,
+      "rev_growth": 0.152,
+      "op_margin": 0.55562997,
+      "fcf": 9154124800,
+      "forward_pe": 9.527231,
+      "ev_sales": 3.583,
+      "rel_strength_3m": -0.20081238281240787
+    }
+  },
+  {
+    "list": "HARD_ASSET_ROTATION",
+    "ticker": "PAAS",
+    "before": "Defensive Hard-Asset Rotation",
+    "after": "Defensive Hard-Asset Rotation",
+    "same": true,
+    "inputs": {
+      "industry": "Gold",
+      "sector": "Basic Materials",
+      "beta": 1.607,
+      "market_cap": 12617053184,
+      "score": 91.26539884159953,
+      "rev_growth": 0.177,
+      "op_margin": 0.39032,
+      "fcf": 1359325056,
+      "forward_pe": 7.800511,
+      "ev_sales": 2.636,
+      "rel_strength_3m": -0.3356075329051479
+    }
+  },
+  {
+    "list": "HARD_ASSET_ROTATION",
+    "ticker": "RIO",
+    "before": "Defensive Hard-Asset Rotation",
+    "after": "Defensive Hard-Asset Rotation",
+    "same": true,
+    "inputs": {
+      "industry": "Other Industrial Metals & Mining",
+      "sector": "Basic Materials",
+      "beta": 0.709,
+      "market_cap": 118295150592,
+      "score": 75.71189431818182,
+      "rev_growth": 0.155,
+      "op_margin": 0.26689,
+      "fcf": 3595500032,
+      "forward_pe": 8.653925,
+      "ev_sales": 2.23,
+      "rel_strength_3m": -0.22194879282100766
+    }
+  },
+  {
+    "list": "HARD_ASSET_ROTATION",
+    "ticker": "SCCO",
+    "before": "Defensive Hard-Asset Rotation",
+    "after": "Defensive Hard-Asset Rotation",
+    "same": true,
+    "inputs": {
+      "industry": "Copper",
+      "sector": "Basic Materials",
+      "beta": 1.155,
+      "market_cap": 114358370304,
+      "score": 90.0,
+      "rev_growth": 0.391,
+      "op_margin": 0.58626,
+      "fcf": 5579449856,
+      "forward_pe": 17.736782,
+      "ev_sales": 6.721,
+      "rel_strength_3m": -0.28676377292632327
+    }
+  },
+  {
+    "list": "HARD_ASSET_ROTATION",
+    "ticker": "TECK",
+    "before": "Defensive Hard-Asset Rotation",
+    "after": "Defensive Hard-Asset Rotation",
+    "same": true,
+    "inputs": {
+      "industry": "Copper",
+      "sector": "Basic Materials",
+      "beta": 1.648,
+      "market_cap": 23803656192,
+      "score": 86.41903598484848,
+      "rev_growth": 0.334,
+      "op_margin": 0.37069,
+      "fcf": 2320375040,
+      "forward_pe": 11.845148,
+      "ev_sales": 1.842,
+      "rel_strength_3m": -0.2250508864341203
+    }
+  },
+  {
+    "list": "HARD_ASSET_ROTATION",
+    "ticker": "VALE",
+    "before": "Inflation-Hedge Rotation",
+    "after": "Inflation-Hedge Rotation",
+    "same": true,
+    "inputs": {
+      "industry": "Other Industrial Metals & Mining",
+      "sector": "Basic Materials",
+      "beta": 0.73,
+      "market_cap": 40387194880,
+      "score": 53.89301927309884,
+      "rev_growth": -0.039,
+      "op_margin": 0.24377,
+      "fcf": 8636250112,
+      "forward_pe": 5.245992,
+      "ev_sales": 0.599,
+      "rel_strength_3m": -0.2838299846056932
+    }
+  },
+  {
+    "list": "HARD_ASSET_ROTATION",
+    "ticker": "WPM",
+    "before": "Inflation-Hedge Rotation",
+    "after": "Inflation-Hedge Rotation",
+    "same": true,
+    "inputs": {
+      "industry": "Gold",
+      "sector": "Basic Materials",
+      "beta": 1.283,
+      "market_cap": 49919909888,
+      "score": 71.71914333335455,
+      "rev_growth": 0.62,
+      "op_margin": 0.72475,
+      "fcf": -3149322752,
+      "forward_pe": 22.4763,
+      "ev_sales": 14.819,
+      "rel_strength_3m": -0.23045820885417923
+    }
+  },
+  {
+    "list": "HARD_ASSET_ROTATION",
+    "ticker": "XOM",
+    "before": "Defensive Hard-Asset Rotation",
+    "after": "Defensive Hard-Asset Rotation",
+    "same": true,
+    "inputs": {
+      "industry": "Oil & Gas Integrated",
+      "sector": "Energy",
+      "beta": 0.141,
+      "market_cap": 652634816512,
+      "score": 81.71431554487867,
+      "rev_growth": 0.326,
+      "op_margin": 0.12875,
+      "fcf": 28318750720,
+      "forward_pe": 12.814332,
+      "ev_sales": 1.755,
+      "rel_strength_3m": 0.09936258612569415
+    }
+  }
+]

@@ -39,6 +39,7 @@ function relationshipSummary(node: GraphNode, edges: GraphEdge[]) {
 }
 
 export function evidenceForEconomicNode(node: GraphNode, company: CompanyResearchViewModel): EvidenceViewModel[] {
+  if (company.raw.operational_research?.series.some((series) => series.definition.id === node.id)) return company.evidence.filter((item) => item.metric === node.id);
   if (node.type === "constraint") return company.primaryConstraint.evidence;
   if (node.type === "growth_driver") {
     const driver = company.growthDrivers.find((item) => item.primitive.toLowerCase() === node.id || item.label.toLowerCase() === node.label.toLowerCase());
@@ -75,7 +76,7 @@ function EconomicNodeDrawer({ node, company, onClose }: { node: GraphNode; compa
         ) : null}
         <div className="drawer-copy">
           <ResearchLabel>Why it matters</ResearchLabel>
-          <p>{isConstraint ? company.primaryConstraint.economic_mechanism : `This node sits in the causal path from ${company.growthEquation.toLowerCase()} to valuation assumptions.`}</p>
+          <p>{isConstraint ? company.primaryConstraint.economic_mechanism : `This node sits in a structural pathway from ${company.growthEquation.toLowerCase()} to valuation assumptions; the map does not establish causality.`}</p>
         </div>
         <div className="drawer-evidence">
           <ResearchLabel>Connected evidence</ResearchLabel>

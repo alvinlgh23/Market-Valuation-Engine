@@ -12,7 +12,6 @@ export function normalizeObservedMoves(system: ResearchSystem): QuantitativeDatu
   const configs = [
     ["JP", "usd_jpy_change_yoy", "USD/JPY", "% YoY", "fx-yoy"],
     ["EURO_AREA", "currency_change_yoy", "EUR/USD", "% YoY", "fx-yoy"],
-    ["SG", "usd_sgd_change_yoy", "USD/SGD", "% YoY", "fx-yoy"],
     ["US", "credit_spread_change", "US credit spread", "pp / 6M", "credit-pp"],
   ] as const;
   return configs.flatMap(([regionId, key, label, unit, scaleGroup]) => {
@@ -53,7 +52,7 @@ function findComponent(region: MacroRegion, candidates: string[]): MacroComponen
 }
 
 export function normalizeRegimeMatrix(world: MacroWorld): { rows: string[]; columns: string[]; cells: HeatmapCell[] } {
-  const order = ["US", "JP", "KR", "SG", "EURO_AREA"];
+  const order = ["US", "JP", "KR", "EURO_AREA"];
   const cells = order.flatMap((regionId) => DIMENSIONS.map(([column, detail, candidates]) => {
     const region = world.regions[regionId];
     const component = findComponent(region, candidates);
@@ -75,7 +74,6 @@ export function normalizeCoverage(system: ResearchSystem): CoverageItem[] {
   const inflation = system.modules.inflation.payload;
   const core = json(system.modules.core_market.payload);
   const quality = json(core.data_quality);
-  const neer = json(system.modules.neer.payload);
   const kospi = json(system.modules.kospi.payload);
   const kospiResults = (json(kospi.sweep).results || []) as Json[];
   const validKospi = kospiResults.filter((result) => Number(json(result.detail).obs || 0) > 0).length;
@@ -84,7 +82,6 @@ export function normalizeCoverage(system: ResearchSystem): CoverageItem[] {
     { id: "compass", label: "Macro World / Compass", state: system.world.data_state, asOf: system.dashboard.freshness[0]?.as_of, detail: "Four policy models across five country profiles; unsupported dimensions remain explicit." },
     { id: "inflation", label: "US Inflation", state: system.modules.inflation.state, asOf: inflation?.latest_source, available: inflation?.available, total: inflation?.total, detail: `${inflation?.available || 0}/${inflation?.total || 0} registered indicators available.` },
     { id: "core", label: "Market / Risk / Rotation", state: system.modules.core_market.state, asOf: system.dashboard.freshness[2]?.as_of, available: Number(quality.available_macro_inputs || 0), total: Number(quality.total_macro_inputs || 0), detail: `${Number(quality.risk_coverage || 0) * 100}% risk coverage; ${Number(quality.sector_rows || 0)} sector rows.` },
-    { id: "neer", label: "Singapore Shadow S$NEER", state: system.modules.neer.state, asOf: String(neer.as_of || ""), available: Array.isArray(neer.fx_components) ? neer.fx_components.length : 0, total: 12, detail: "Observable FX basket only; official MAS band inputs remain undisclosed." },
     { id: "kospi", label: "South Korea KOSPI", state: system.modules.kospi.state, asOf: String(json(kospi.sweep).timestamp || ""), available: validKospi, total: kospiResults.length || 5, detail: `${validKospi}/${kospiResults.length || 5} factor studies have observations; foreign-flow availability is isolated.` },
     { id: "companies", label: "Company Economics", state: analyzedCompanies.length ? system.modules.companies.state : "NOT_ANALYZED", asOf: analyzedCompanies.length ? system.dashboard.freshness[5]?.as_of : null, detail: `${analyzedCompanies.length} previously analyzed company profiles. This is recent research, not a supported-universe count.` },
   ];
@@ -104,18 +101,6 @@ export function normalizeCompanies(system: ResearchSystem): CompanyMatrixRow[] {
     confidence: String(company.validation || company.research_state || "PARTIAL"),
     href: `/company/${company.ticker}`,
   }));
-}
-
-export function normalizeNeerHistory(payload: Json): TimeSeriesDefinition {
-  const history = (payload.history || []) as Json[];
-  return { id: "neer-history", label: "Shadow S$NEER vs estimated centre", unit: "index", comparisonLabel: "Estimated centre", source: String(payload.source || ""), points: history.map((point) => ({ date: String(point.date), value: number(point.index), comparison: number(point.center) })) };
-}
-
-export function normalizeNeerContributions(payload: Json): QuantitativeDatum[] {
-  return ((payload.fx_components || []) as Json[]).flatMap((component) => {
-    const value = number(component.contribution_63d_pct);
-    return value === null ? [] : [{ id: String(component.currency), label: String(component.currency), value, unit: "% contribution / 63D", status: value >= 0 ? "POSITIVE" : "NEGATIVE", context: `Weight ${Number(component.weight || 0) * 100}%; 63D move ${component.change_63d_pct}%; latest cross ${component.latest_cross}.`, scaleGroup: "neer-contribution" }];
-  });
 }
 
 export function normalizeKospiFactors(payload: Json): QuantitativeDatum[] {

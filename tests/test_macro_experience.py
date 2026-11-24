@@ -1,5 +1,8 @@
 from pathlib import Path
+from unittest.mock import patch
+import json
 
+import research_system
 from research_system import build_research_system, coverage_state, yield_return_to_bps
 
 
@@ -10,7 +13,11 @@ class TestMacroExperience:
 
     @classmethod
     def setup_class(cls):
-        cls.system = build_research_system(refresh=False)
+        load_cache = research_system.load_cache
+        fixture = json.loads((Path(__file__).resolve().parents[1] / "frontend/lib/fixtures/research-system.json").read_text())
+        insufficient_core = fixture["modules"]["core_market"]["payload"]
+        with patch("research_system.load_cache", side_effect=lambda name: insufficient_core if name == "core-market" else load_cache(name)):
+            cls.system = build_research_system(refresh=False)
 
     def test_market_transmission_has_explicit_coverage_state(self):
         transmission = self.system["market_transmission"]
@@ -27,8 +34,13 @@ class TestMacroExperience:
 
     def test_compass_rates_are_not_lost_when_core_feed_is_missing(self):
         rates = {item["key"]: item for item in self.system["market_transmission"]["rates"]["metrics"]}
-        assert rates["us_2y"]["raw_value"] == 4.26
-        assert rates["us_10y"]["raw_value"] == 4.63
+        # Values come from the Compass FRED cache, which is refreshed over time (2026-11-22), so compare
+        # with the cache instead of pinning numbers.
+        from macro_world import COMPASS_CACHE_DIR, COMPASS_DIR
+        cache = COMPASS_CACHE_DIR if any(COMPASS_CACHE_DIR.glob("*.csv")) else COMPASS_DIR / "data" / "cache" / "fred"
+        last = lambda series: round(float([line for line in (cache / f"{series}.csv").read_text().splitlines() if line.split(",")[1:2] != [""]][-1].split(",")[1]), 2)
+        assert rates["us_2y"]["raw_value"] == last("DGS2")
+        assert rates["us_10y"]["raw_value"] == last("DGS10")
         assert rates["us_2y"]["source_state"] == "CACHED"
         assert "US 30Y current yield" in self.system["market_transmission"]["rates"]["missing_fields"]
 
@@ -41,18 +53,12 @@ class TestMacroExperience:
 
     def test_country_briefs_have_distinct_coverage(self):
         regions = self.system["world"]["regions"]
-        assert regions["US"]["availability"] == "AVAILABLE"
-        for region_id in ("JP", "KR", "SG", "EURO_AREA"):
-            assert regions[region_id]["availability"] == "PARTIAL"
-        assert regions["US"]["confidence"] != regions["SG"]["confidence"]
-
-    def test_neer_cache_maps_history_and_all_components(self):
-        neer = self.system["modules"]["neer"]["payload"]
-        assert self.system["modules"]["neer"]["state"] == "CACHED"
-        assert len(neer["history"]) == 299
-        assert len(neer["fx_components"]) == 12
-        assert all(isinstance(item["weight"], (int, float)) for item in neer["fx_components"])
-        assert all(isinstance(item["contribution_63d_pct"], (int, float)) for item in neer["fx_components"])
+        # Availability is calculated from indicator coverage (2026-11-22); every region misses something.
+        for region_id in ("US", "JP", "KR", "EURO_AREA"):
+            coverage = regions[region_id]["coverage"]
+            assert regions[region_id]["availability"] == coverage["availability"] == "PARTIAL"
+            assert 0 < coverage["available"] < coverage["expected"]
+        assert regions["US"]["confidence"] != regions["KR"]["confidence"]
 
     def test_kospi_cache_maps_factors_and_garch(self):
         kospi = self.system["modules"]["kospi"]["payload"]["sweep"]
@@ -65,9 +71,10 @@ class TestMacroExperience:
     def test_transmission_states_separate_structure_from_current_state(self):
         edges = {item["id"]: item for item in self.system["world"]["transmissions"]}
         assert edges["jp-us-yen-carry"]["structural_state"]
-        assert edges["jp-us-yen-carry"]["current_state"] == "WATCH"
+        # The fixture's core feed has no USD/JPY or VIX, so the single carry definition is INSUFFICIENT.
+        assert edges["jp-us-yen-carry"]["current_state"] == "INSUFFICIENT"
         assert edges["us-kr-dollar-kospi"]["current_state"] == "WATCH"
-        assert edges["us-sg-dollar-neer"]["current_state"] == "WATCH"
+        assert "us-sg-dollar-neer" not in edges   # Singapore removed 2026-11-22
 
     def test_overview_no_longer_renders_generic_unavailable_grid(self):
         root = Path(__file__).resolve().parents[1]

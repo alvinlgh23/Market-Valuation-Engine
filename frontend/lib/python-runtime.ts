@@ -30,7 +30,11 @@ export function createPythonRuntime(run: Executor = execute as Executor) {
   return async function runPythonJson<T>(args: string[], timeout = 180_000): Promise<T> {
     const script = args[1], action = args[2];
     const allowed = script === "model.py" ? ["valuation"] : script === "company_research.py" ? ["resolve", "analyze", "open", "index"] : script === "research_system.py" ? ["full"] : [];
-    if (args[0] !== "-B" || !allowed.includes(action)) throw new PythonRuntimeError("UNSUPPORTED_ACTION", "Unsupported research action.");
+    // Checklist 8.1: the judgment card runs only as `--summary` or as one validated ticker with `--json`.
+    const verdictCall = script === "company_verdict.py" && (((action === "--summary" || action === "--drivers" || action === "--fx" || action === "--events") && args.length === 3) || (/^[A-Z0-9.^=-]{1,12}$/.test(action ?? "") && args.length === 4 && args[3] === "--json"));
+    // Checklists 15-17: the market story runs only as `market_story.py --json`.
+    const storyCall = script === "market_story.py" && action === "--json" && args.length === 3;
+    if (args[0] !== "-B" || !(allowed.includes(action) || verdictCall || storyCall)) throw new PythonRuntimeError("UNSUPPORTED_ACTION", "Unsupported research action.");
     const executable = process.env.CHAINSTOX_PYTHON_EXECUTABLE?.trim() || "python3";
     if (!checked.has(executable)) checked.set(executable, call(executable, ["--version"], 10_000).then(({ stdout, stderr }) => {
       const version = /^Python (\d+)\.(\d+)/.exec(`${stdout}${stderr}`.trim());

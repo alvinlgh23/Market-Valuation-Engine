@@ -69,6 +69,10 @@ export async function analyzeValuation(tickerInput: string, options: { refresh?:
       const report = await runPythonJson<ValuationReport>(args);
       if (report?.report_type !== "intrinsic_valuation" || report.company?.ticker !== ticker || !report.validation || !report.scenarios || !report.assumptions || !report.historical_base || !report.reverse_dcf || !report.data_quality) throw new PythonRuntimeError("INVALID_JSON", "Valuation engine returned malformed or mismatched JSON.");
       const status = availability(report);
+      if (report.validation.status === "FAILED") {
+        cache.delete(cacheKey);
+        return { status: "INSUFFICIENT_DATA", report, meta: { data_state: "INSUFFICIENT_DATA", source: "PYTHON_INTRINSIC_VALUATION", as_of: report.company.as_of } };
+      }
       if (status === "SUPPORTED_VALUATION" || status === "FRAMEWORK_REQUIRED") cache.set(cacheKey, { at: Date.now(), report });
       else if (cached) return { status: availability(cached.report), report: cached.report, meta: { data_state: "STALE", source: "VALUATION_MEMORY_CACHE", as_of: cached.report.company.as_of, response_cached_at: new Date(cached.at).toISOString(), error_code: "DATA_COVERAGE", error: "Refresh returned insufficient financial coverage; showing prior report." } };
       return { status, report, meta: { data_state: availableDataState(status, true), source: "PYTHON_INTRINSIC_VALUATION", as_of: report.company.as_of } };

@@ -31,7 +31,6 @@ def test_integrated_fixture_retains_engine_specific_payloads():
     system = json.loads(FIXTURE.read_text())
     assert system["world"]["regions"]["US"]["engine_specific"]["us_inflation"]["metrics"]
     assert system["world"]["regions"]["US"]["engine_specific"]["central_bank_compass"]["blocks"]
-    assert len(system["world"]["regions"]["SG"]["engine_specific"]["shadow_neer_live"]["fx_components"]) == 12
     kospi = system["world"]["regions"]["KR"]["engine_specific"]["kospi_live"]
     assert len(kospi["sweep"]["results"]) == 5
     assert len(kospi["exports"]["items"]) >= 6
@@ -46,17 +45,16 @@ def test_insufficient_core_market_does_not_publish_fallback_regime():
     assert breadth["value"] == "Insufficient evidence"
 
 
-def test_specialist_coverage_gaps_are_not_silently_filled():
+def test_singapore_is_removed_from_the_fixture():
+    """Owner decision 2026-11-22: the audience is global, so the Singapore region and S$NEER engine were removed."""
     system = json.loads(FIXTURE.read_text())
-    coverage = system["modules"]["neer"]["payload"]["coverage"]
-    for key in ("foreign_reserves", "rates", "bond_flows", "equity_flows", "imported_inflation"):
-        assert coverage[key] == "NOT_MODELED"
+    assert "SG" not in system["world"]["regions"] and "neer" not in system["modules"]
 
 
 def test_fixture_inventory_and_surface_registry_are_embedded():
     system = json.loads(FIXTURE.read_text())
     capabilities = system["capabilities"]
-    assert len(capabilities["engines"]) >= 12
+    assert len(capabilities["engines"]) >= 11   # S$NEER removed 2026-11-22
     assert capabilities["information_surfaces"] == capability_payload()["information_surfaces"]
 
 

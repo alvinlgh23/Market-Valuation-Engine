@@ -42,15 +42,15 @@ class CompanyEconomicsReportTests(unittest.TestCase):
         section = report.split("4. CONSTRAINT EVIDENCE", 1)[1].split("5. IS THE BOTTLENECK", 1)[0]
         self.assertIn("Direct Evidence:", section)
         self.assertIn("Indirect Evidence:", section)
-        self.assertLess(section.index("Deployment Capacity Growth"), section.index("Indirect Evidence:"))
-        self.assertGreater(section.index("Revenue / Employee"), section.index("Indirect Evidence:"))
+        self.assertNotIn("Deployment Capacity Growth", section)
+        self.assertIn("not directly verified", section)
 
     def test_data_gaps_are_not_tightening_evidence(self):
         report = self.render("PLTR")
         section = report.split("Evidence of Tightening:\n", 1)[1].split("\n\nEvidence Limitations:", 1)[0]
         limitations = report.split("Evidence Limitations:\n", 1)[1].split("\n\nConclusion:", 1)[0]
         self.assertNotIn("Unavailable", section)
-        self.assertIn("Deployment Time unavailable", limitations)
+        self.assertIn("bottleneck evidence is unavailable", limitations)
 
     def test_single_period_productivity_does_not_claim_improvement(self):
         snapshot = CompanySnapshot(
@@ -73,7 +73,7 @@ class CompanyEconomicsReportTests(unittest.TestCase):
 
     def test_overall_confidence_is_not_classification_confidence(self):
         report = self.render("PLTR")
-        self.assertIn("Analysis Confidence: Moderate", report)
+        self.assertIn("Analysis Confidence: Insufficient", report)
         self.assertIn("Classification Confidence: High", report)
 
     def test_raw_evidence_ids_remain_traceable_for_humans(self):
@@ -116,13 +116,13 @@ class CompanyEconomicsReportTests(unittest.TestCase):
         report = self.render("JPM")
         self.assertIn("Deposits / Funding", report)
         self.assertIn("Earning Assets × Net Interest Spread", report)
-        self.assertIn("Primary Constraint:\nDeposit Funding", report)
+        self.assertIn("Structural candidate: Deposit Funding", report)
 
     def test_cost_uses_physical_network_language(self):
         report = self.render("COST")
         self.assertIn("Warehouse Expansion", report)
         self.assertIn("Membership Economics", report)
-        self.assertIn("Primary Constraint:\nProductive Warehouse Expansion", report)
+        self.assertIn("Structural candidate: Productive Warehouse Expansion", report)
 
     def test_proxy_only_direction_is_calibrated(self):
         snapshot = benchmark_snapshot("PLTR")

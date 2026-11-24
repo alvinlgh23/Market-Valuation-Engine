@@ -153,6 +153,17 @@ class IntrinsicValuationTests(unittest.TestCase):
         result = classify_security("JPM", {"sector": "Financial Services", "industry": "Banks - Diversified"}, True)
         self.assertEqual(result, "FINANCIAL_INSTITUTION")
 
+    def test_card_network_leaves_bank_framework_but_card_lenders_stay(self):
+        """Checklist 11.5: Visa runs a processing network with no loan book; AmEx and SoFi lend and take deposits."""
+        visa = {"sector": "Financial Services", "industry": "Credit Services", "operatingMargins": 0.67, "freeCashflow": 2e10,
+                "longBusinessSummary": "Visa Inc. operates as a payments technology company. It operates VisaNet, a transaction processing network."}
+        self.assertEqual(classify_security("V", visa, True), "MATURE_OPERATING_COMPANY")
+        amex = {"sector": "Financial Services", "industry": "Credit Services",
+                "longBusinessSummary": "An integrated payments company with a payment network, offering deposits and non-card lending."}
+        self.assertEqual(classify_security("AXP", amex, True), "FINANCIAL_INSTITUTION")
+        lender = {"sector": "Financial Services", "industry": "Credit Services", "longBusinessSummary": "Offers personal loans and savings accounts."}
+        self.assertEqual(classify_security("SOFI", lender, True), "FINANCIAL_INSTITUTION")
+
     def test_growth_software_requires_operating_evidence(self):
         result = classify_security(
             "CRWD",
@@ -322,14 +333,29 @@ class IntrinsicValuationTests(unittest.TestCase):
         self.assertEqual(result["likely_cause"], "Stock-based compensation treatment mismatch")
         self.assertEqual(result["status"], "PASSED")
 
-    def test_material_fcff_difference_blocks_valuation(self):
+    def test_material_fcff_difference_runs_both_bases(self):
+        """Checklist 12.1: a material gap no longer blocks; both measures are run and the report says so."""
         data = fixture_data()
         data["latest_operating_income"] = 400.0
         with patch("intrinsic_valuation.collect_valuation_data", return_value=data):
             report = build_valuation_report("TEST")
-        self.assertEqual(report["validation"]["status"], "FAILED")
         self.assertEqual(report["historical_fcff_reconciliation"]["status"], "FAILED")
-        self.assertFalse(report["scenarios"])
+        self.assertEqual(report["data_quality"]["status"], "CASH_FLOW_MEASURES_DIFFER")
+        self.assertNotEqual(report["validation"]["status"], "PASSED")
+        self.assertFalse(report["validation"]["checks"]["historical_fcff_reconciliation"]["passed"])
+        bases = report["cash_flow_bases"]
+        self.assertGreater(bases["gap_pct"], 0.05)
+        self.assertTrue(report["scenarios"])
+        self.assertEqual(set(bases["alternate"]["scenarios"]), {"bear", "base", "bull"})
+        self.assertNotEqual(bases["alternate"]["scenarios"]["base"], report["scenarios"]["base"]["fair_value_per_share"])
+
+    def test_non_positive_cash_flow_measure_still_withholds(self):
+        data = fixture_data()
+        data["latest_operating_income"] = -400.0
+        with patch("intrinsic_valuation.collect_valuation_data", return_value=data):
+            report = build_valuation_report("TEST")
+        self.assertEqual(report["data_quality"]["status"], "FAILED_FCFF_RECONCILIATION")
+        self.assertNotIn("cash_flow_bases", report)
 
     def test_missing_fcff_bridge_input_blocks_valuation(self):
         data = fixture_data()
@@ -527,3 +553,66 @@ class IntrinsicValuationTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SecFallbackTests(unittest.TestCase):
+    """Checklist 11.2: rows missing from the Yahoo statements are read from the 10-K, never set to zero."""
+
+    FACTS = {"facts": {"us-gaap": {
+        "AllocatedShareBasedCompensationExpense": {"units": {"USD": [
+            {"start": "2024-01-01", "end": "2024-12-31", "val": 223e6, "form": "10-K"},
+            {"start": "2025-01-01", "end": "2025-12-31", "val": 242e6, "form": "10-K"},
+            {"start": "2025-10-01", "end": "2025-12-31", "val": 60e6, "form": "10-K"},
+        ]}},
+        "InterestExpenseDebt": {"units": {"USD": [{"start": "2025-01-01", "end": "2025-12-31", "val": 324e6, "form": "10-Q"}]}},
+    }}}
+
+    def test_full_year_10k_value_for_the_matching_year(self):
+        from intrinsic_valuation import SEC_FALLBACK_CONCEPTS, sec_annual_value
+        self.assertEqual(sec_annual_value(self.FACTS, SEC_FALLBACK_CONCEPTS["sbc"], "2025-12-31"), ("AllocatedShareBasedCompensationExpense", 242e6))
+
+    def test_missing_or_non_annual_filing_stays_missing(self):
+        from intrinsic_valuation import SEC_FALLBACK_CONCEPTS, sec_annual_value
+        self.assertEqual(sec_annual_value(self.FACTS, SEC_FALLBACK_CONCEPTS["interest_expense"], "2025-12-31"), (None, None))
+        self.assertEqual(sec_annual_value(self.FACTS, SEC_FALLBACK_CONCEPTS["sbc"], "2023-12-31"), (None, None))
+        self.assertEqual(sec_annual_value(self.FACTS, SEC_FALLBACK_CONCEPTS["sbc"], None), (None, None))
+
+    def test_loader_failure_leaves_fields_missing(self):
+        from intrinsic_valuation import _sec_fallback
+        def broken(symbol):
+            raise LookupError("not in SEC ticker file")
+        self.assertEqual(_sec_fallback("TEST", {"sbc": "2025-12-31"}, facts_loader=broken), {})
+        self.assertEqual(_sec_fallback("TEST", {"sbc": "2025-12-31"}, facts_loader=lambda symbol: self.FACTS), {"sbc": ("AllocatedShareBasedCompensationExpense", 242e6)})
+
+
+class BankAndAdrTests(unittest.TestCase):
+    """Checklist 12.2 (bank price-implied ROE) and 12.3 (company-level ADR valuation)."""
+
+    def test_bank_implied_roe_from_statements(self):
+        from intrinsic_valuation import bank_implied_roe
+        columns = pd.to_datetime(["2025-12-31", "2024-12-31"])
+        data = {"balance": pd.DataFrame([[100.0, 90.0]], index=["Common Stock Equity"], columns=columns),
+                "income": pd.DataFrame([[9.5, 8.0]], index=["Net Income Common Stockholders"], columns=columns),
+                "market_cap": 150.0, "beta": 1.0}
+        result = bank_implied_roe(data, cost_of_equity={"cost_of_equity": 0.10, "beta": 1.0, "risk_free_rate": 0.055})
+        self.assertEqual(result["status"], "AVAILABLE")
+        self.assertAlmostEqual(result["latest_roe"], 0.1)
+        self.assertAlmostEqual(result["price_to_book"], 1.5)
+        self.assertAlmostEqual(result["implied_roe"], 0.025 + 1.5 * (0.10 - 0.025))
+
+    def test_bank_reading_unavailable_when_book_value_missing(self):
+        from intrinsic_valuation import bank_implied_roe
+        result = bank_implied_roe({"balance": None, "income": None, "market_cap": 150.0}, cost_of_equity={"cost_of_equity": 0.1, "beta": 1.0, "risk_free_rate": 0.05})
+        self.assertEqual(result["status"], "UNAVAILABLE")
+        self.assertIn("common equity (two years)", result["missing"])
+
+    def test_company_level_bridge_converts_market_value_not_shares(self):
+        from intrinsic_valuation import _company_level_bridge
+        data = {"info": {"financialCurrency": "TWD", "currency": "USD"}, "currency": "USD", "market_cap": 1_600e9, "shares": 5.2e9, "price": 307.7}
+        bridged = _company_level_bridge(data, fx_loader=lambda base, quote: (0.032, "2026-11-23"))
+        self.assertAlmostEqual(bridged["market_cap"], 50_000e9)
+        self.assertAlmostEqual(bridged["price"], 50_000e9 / 5.2e9)
+        self.assertEqual(bridged["currency"], "TWD")
+        self.assertAlmostEqual(bridged["_unit_bridge"]["quote_per_model_share"], 307.7 / bridged["price"])
+        self.assertIsNone(_company_level_bridge(data, fx_loader=lambda base, quote: (None, None)))
+        self.assertIsNone(_company_level_bridge({**data, "info": {"financialCurrency": "USD", "currency": "USD"}}))

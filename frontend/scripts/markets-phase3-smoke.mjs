@@ -24,7 +24,8 @@ try {
   await page.screenshot({ path: path.join(output, "01-sector-rotation.png") });
 
   await page.screenshot({ path: path.join(output, "02-full-sector-leaderboard.png") });
-  await page.getByRole("link", { name: /Semiconductors/i }).first().click();
+  // The rotation map now has points (checklist 5.5) whose labels can overlap; open the sector from the table.
+  await page.getByRole("region", { name: "Sector rotation table" }).getByRole("link", { name: /Semiconductors/i }).first().click();
   await page.getByRole("heading", { name: "Semiconductors" }).waitFor();
   await page.screenshot({ path: path.join(output, "03-semiconductors-snapshot.png") });
 
@@ -48,12 +49,13 @@ try {
   await page.getByRole("heading", { name: /Companies expressing/i }).waitFor();
   await page.screenshot({ path: path.join(output, "06-semiconductor-leadership.png") });
 
+  // Since checklist P5 breadth and crowding are measured; either a measured state or Unavailable is valid.
   await page.goto(`${baseUrl}/markets?sector=semiconductors&view=breadth`, { waitUntil: "networkidle" });
-  await page.getByRole("heading", { name: "Unavailable", exact: true }).waitFor();
+  await page.getByRole("heading", { name: /^(Unavailable|Broad|Selective|Narrow)$/ }).first().waitFor();
   await page.screenshot({ path: path.join(output, "07-semiconductor-breadth.png") });
 
   await page.goto(`${baseUrl}/markets?sector=semiconductors&view=positioning`, { waitUntil: "networkidle" });
-  await page.getByRole("heading", { name: "Unavailable", exact: true }).waitFor();
+  await page.getByRole("heading", { name: /^(Unavailable|Crowded|Extended|Neutral|Unloved)$/ }).first().waitFor();
   await page.screenshot({ path: path.join(output, "08-semiconductor-crowding-positioning.png") });
 
   for (const [sector, prefix] of [["energy", "10-energy"], ["financials", "12-financials"]]) {

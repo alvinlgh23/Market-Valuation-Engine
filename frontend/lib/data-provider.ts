@@ -1,7 +1,3 @@
-import { overview } from "./mock-data/overview";
-import { companyPltr } from "./mock-data/company-pltr";
-import { fragility } from "./mock-data/fragility";
-import { watchlist } from "./mock-data/watchlist";
 import type { CompanyEconomicsPayload } from "./company-economics-types";
 import cost from "./fixtures/company-economics/COST.json";
 import jpm from "./fixtures/company-economics/JPM.json";
@@ -60,27 +56,3 @@ export const fixtureCompanyResearchProvider: CompanyResearchProvider = {
 export function getCompanyResearchFixture(ticker: string): CompanyEconomicsPayload | null {
   return companyEconomicsFixtures[ticker.toUpperCase()] ?? null;
 }
-
-export const dataProvider = {
-  async getOverview() {
-    return overview;
-  },
-  async getCompany(ticker: string) {
-    return ticker.toUpperCase() === "PLTR" ? companyPltr : companyPltr;
-  },
-  getCompanyResearch: fixtureCompanyResearchProvider.getCompanyResearch,
-  getCompanyEconomics: fixtureCompanyResearchProvider.getCompanyEconomics,
-  getValuation: fixtureCompanyResearchProvider.getValuation,
-  async getFragility() {
-    return fragility;
-  },
-  async getWatchlist() {
-    return watchlist;
-  }
-};
-
-// Later backend mapping:
-// getOverview -> GET /api/market/full
-// getCompany -> GET /api/company/{ticker}
-// getFragility -> GET /api/fragility
-// getWatchlist -> GET /api/watchlist

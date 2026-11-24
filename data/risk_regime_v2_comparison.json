@@ -1,0 +1,22 @@
+{
+  "first": "2023-11-21",
+  "last": "2026-11-20",
+  "days": 753,
+  "legacy_counts": {
+    "Healthy Rotation": 665,
+    "Narrow Leadership Unwind": 50,
+    "Liquidity / Inflation Stress": 29,
+    "Broad Risk-Off": 9
+  },
+  "v2_counts": {
+    "No Dominant Stress": 601,
+    "Narrow Leadership Unwind": 50,
+    "Healthy Rotation": 64,
+    "Liquidity / Inflation Stress": 29,
+    "Broad Risk-Off": 9
+  },
+  "relabelled": {
+    "Healthy Rotation -> No Dominant Stress": 601
+  },
+  "unavailable_tickers": {}
+}

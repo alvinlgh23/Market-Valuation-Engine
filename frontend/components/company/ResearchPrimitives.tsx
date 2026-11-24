@@ -10,8 +10,8 @@ export function SectionHeading({ number, title, eyebrow, id }: { number: string;
   );
 }
 
-export function EvidenceTypeBadge({ type }: { type: "Direct" | "Proxy" | "Inference" }) {
-  return <span className={`evidence-badge evidence-${type.toLowerCase()}`}>{type === "Direct" ? "Fact · Direct" : type === "Proxy" ? "Proxy · Calculated" : "Inference · Model"}</span>;
+export function EvidenceTypeBadge({ type }: { type: "Direct" | "Proxy" | "Inference" | "Fixture" }) {
+  return <span className={`evidence-badge evidence-${type.toLowerCase()}`}>{type === "Fixture" ? "Fixture · Synthetic" : type === "Direct" ? "Fact · Direct" : type === "Proxy" ? "Proxy · Calculated" : "Inference · Model"}</span>;
 }
 
 export function ConfidenceLabel({ value }: { value: string }) {

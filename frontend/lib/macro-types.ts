@@ -37,6 +37,25 @@ export type MacroRegion = {
   watch_conditions: { label: string; threshold: string; current: string; state: string }[];
   engine_specific: Record<string, unknown>;
   gaps: string[];
+  coverage?: MacroCoverage;
+};
+
+export type MacroCoverageArea = { id: string; label: string; state: "FULL" | "PARTIAL" | "STALE" | "MISSING" | "NOT_COVERED" | string; available: number; expected: number; missing: string[]; stale?: string[]; as_of: string | null; newest: string | null };
+
+export type MacroCoverage = {
+  availability: string;
+  available: number;
+  expected: number;
+  areas_full: number;
+  areas_covered: number;
+  areas: MacroCoverageArea[];
+  as_of: string | null;
+  newest: string | null;
+  freshness: string;
+  missing: string[];
+  stale_inputs?: { key: string; series_id: string | null; area: string | null; last: string; frequency: string; age_days: number }[];
+  not_modelled: string[];
+  rule: string;
 };
 
 export type MacroTransmission = {

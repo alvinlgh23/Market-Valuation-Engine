@@ -1,0 +1,35 @@
+[
+  {
+    "route": "/markets",
+    "request": "http://localhost:3000/api/research?scope=full",
+    "status": 200,
+    "meta": {
+      "source": "PYTHON_CACHE",
+      "core_snapshot_id": "ea1f3660b07fe36c",
+      "fallback": false,
+      "generated_at": "2026-11-05T19:12:46+08:00"
+    }
+  },
+  {
+    "route": "/labs/fragility",
+    "request": "http://localhost:3000/api/research?scope=full",
+    "status": 200,
+    "meta": {
+      "source": "MEMORY_CACHE",
+      "core_snapshot_id": "ea1f3660b07fe36c",
+      "fallback": false,
+      "generated_at": "2026-11-05T19:12:46+08:00"
+    }
+  },
+  {
+    "route": "/",
+    "request": "http://localhost:3000/api/research?scope=full",
+    "status": 200,
+    "meta": {
+      "source": "MEMORY_CACHE",
+      "core_snapshot_id": "ea1f3660b07fe36c",
+      "fallback": false,
+      "generated_at": "2026-11-05T19:12:46+08:00"
+    }
+  }
+]

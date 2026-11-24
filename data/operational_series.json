@@ -1,0 +1,262 @@
+{
+  "schema_version": "1.0",
+  "sources": {
+    "PLTR24": {
+      "title": "Palantir FY2024 Form 10-K",
+      "url": "https://www.sec.gov/Archives/edgar/data/1321655/000132165525000022/pltr-20241231.htm",
+      "published": "2025-02-18",
+      "retrieved_at": "2026-11-04",
+      "type": "regulatory_filing"
+    },
+    "NVDA25": {
+      "title": "NVIDIA FY2025 earnings release",
+      "url": "https://investor.nvidia.com/news/press-release-details/2025/NVIDIA-Announces-Financial-Results-for-Fourth-Quarter-and-Fiscal-2025/",
+      "published": "2025-02-26",
+      "retrieved_at": "2026-11-03",
+      "type": "issuer_earnings_release"
+    },
+    "PLTR25": {
+      "title": "Palantir FY2025 Form 10-K",
+      "url": "https://www.sec.gov/Archives/edgar/data/1321655/000132165526000011/pltr-20251231.htm",
+      "published": "2026-02-17",
+      "retrieved_at": "2026-11-03",
+      "type": "regulatory_filing"
+    },
+    "TSM25": {
+      "title": "TSMC 2025 Annual Report",
+      "url": "https://investor.tsmc.com/static/annualReports/2025/english/index.html",
+      "published": "2026-03-12",
+      "date_basis": "Printed date on issuer PDF cover, not web-upload timestamp",
+      "date_source": "https://investor.tsmc.com/sites/ir/annual-report/2025/2025%20Annual%20Report.E.pdf",
+      "retrieved_at": "2026-11-03",
+      "type": "issuer_annual_report"
+    },
+    "NVDA26": {
+      "title": "NVIDIA FY2026 earnings release",
+      "url": "https://investor.nvidia.com/news/press-release-details/2026/NVIDIA-Announces-Financial-Results-for-Fourth-Quarter-and-Fiscal-2026/",
+      "published": "2026-02-25",
+      "retrieved_at": "2026-11-03",
+      "type": "issuer_earnings_release"
+    }
+  },
+  "metrics": [
+    {
+      "definition": {
+        "id": "pltr_customers",
+        "issuer": "PLTR",
+        "name": "Customers",
+        "definition": "Organizations generating trailing-twelve-month revenue; separately invoiced government divisions can count separately.",
+        "category": "ISSUER_DEFINED",
+        "scope": "consolidated",
+        "measurement": "PERIOD_POPULATION",
+        "unit": "customers",
+        "currency": null,
+        "version": "1",
+        "effective_from": "2024-01-01",
+        "limitation": "Not seats or deployment throughput.",
+        "mechanism": "Customer base → revenue opportunity; expansion and pricing remain separate."
+      },
+      "observations": [
+        {
+          "period": "FY2024",
+          "basis": "FISCAL_ANNUAL",
+          "end": "2024-12-31",
+          "start": "2024-01-01",
+          "value": 711,
+          "source": "PLTR25",
+          "locator": "MD&A / Our Customers"
+        },
+        {
+          "period": "FY2025",
+          "basis": "FISCAL_ANNUAL",
+          "end": "2025-12-31",
+          "start": "2025-01-01",
+          "value": 954,
+          "source": "PLTR25",
+          "locator": "MD&A / Our Customers"
+        }
+      ]
+    },
+    {
+      "definition": {
+        "id": "pltr_rdv",
+        "issuer": "PLTR",
+        "name": "Total remaining deal value",
+        "definition": "Remaining awarded contract value assuming options exercised and no termination; excludes unfunded IDIQ and specified credit-risk exclusions.",
+        "category": "ISSUER_DEFINED",
+        "scope": "consolidated",
+        "measurement": "STOCK",
+        "unit": "billion USD",
+        "currency": "USD",
+        "version": "1",
+        "effective_from": "2024-01-01",
+        "limitation": "Not RPO, realized revenue, or guaranteed future revenue; rounded figures.",
+        "mechanism": "Contracting → potential recognition subject to options, delivery and cancellation."
+      },
+      "observations": [
+        {
+          "period": "FY2024",
+          "basis": "FISCAL_ANNUAL",
+          "end": "2024-12-31",
+          "value": 5.4,
+          "source": "PLTR25",
+          "locator": "MD&A / Total Remaining Deal Value"
+        },
+        {
+          "period": "FY2025",
+          "basis": "FISCAL_ANNUAL",
+          "end": "2025-12-31",
+          "value": 11.2,
+          "source": "PLTR25",
+          "locator": "MD&A / Total Remaining Deal Value"
+        }
+      ]
+    },
+    {
+      "definition": {
+        "id": "pltr_rpo",
+        "issuer": "PLTR",
+        "name": "Remaining performance obligations",
+        "definition": "Noncancelable unrecognized contracted revenue; short-duration practical expedient applies.",
+        "category": "ISSUER_DEFINED",
+        "scope": "consolidated",
+        "measurement": "STOCK",
+        "unit": "billion USD",
+        "currency": "USD",
+        "version": "1",
+        "effective_from": "2024-01-01",
+        "limitation": "Excludes cancelable amounts; not equivalent to RDV or TCV.",
+        "mechanism": "Accounting obligations → potential timing of revenue recognition."
+      },
+      "observations": [
+        {
+          "period": "FY2024",
+          "basis": "FISCAL_ANNUAL",
+          "end": "2024-12-31",
+          "value": 1.7,
+          "source": "PLTR24",
+          "locator": "Note 3 / Remaining Performance Obligations"
+        },
+        {
+          "period": "FY2025",
+          "basis": "FISCAL_ANNUAL",
+          "end": "2025-12-31",
+          "value": 4.1,
+          "source": "PLTR25",
+          "locator": "Note 3 / Remaining Performance Obligations"
+        }
+      ]
+    },
+    {
+      "definition": {
+        "id": "tsm_shipments",
+        "issuer": "TSM",
+        "name": "Wafer shipments",
+        "definition": "Total shipments on a 12-inch-equivalent basis.",
+        "category": "ISSUER_DEFINED",
+        "scope": "consolidated",
+        "measurement": "FLOW",
+        "unit": "million 12-inch-equivalent wafers",
+        "currency": null,
+        "version": "1",
+        "effective_from": "2024-01-01",
+        "limitation": "Output is not installed capacity or utilization.",
+        "mechanism": "Shipment output → revenue, conditional on pricing and technology mix."
+      },
+      "observations": [
+        {
+          "period": "FY2024",
+          "basis": "FISCAL_ANNUAL",
+          "end": "2024-12-31",
+          "start": "2024-01-01",
+          "value": 12.9,
+          "source": "TSM25",
+          "locator": "2025 accomplishments / wafer shipments"
+        },
+        {
+          "period": "FY2025",
+          "basis": "FISCAL_ANNUAL",
+          "end": "2025-12-31",
+          "start": "2025-01-01",
+          "value": 15,
+          "source": "TSM25",
+          "locator": "2025 accomplishments / wafer shipments"
+        }
+      ]
+    },
+    {
+      "definition": {
+        "id": "tsm_node_mix",
+        "issuer": "TSM",
+        "name": "Advanced technology revenue mix",
+        "definition": "Wafer revenue share from 7nm and more advanced nodes.",
+        "category": "ISSUER_DEFINED",
+        "scope": "wafer revenue",
+        "measurement": "FLOW",
+        "unit": "percentage points",
+        "currency": null,
+        "version": "1",
+        "effective_from": "2024-01-01",
+        "limitation": "Revenue share is not physical utilization or packaging capacity.",
+        "mechanism": "Technology mix → revenue and margin exposure; no causal coefficient estimated."
+      },
+      "observations": [
+        {
+          "period": "FY2024",
+          "basis": "FISCAL_ANNUAL",
+          "end": "2024-12-31",
+          "start": "2024-01-01",
+          "value": 69,
+          "source": "TSM25",
+          "locator": "2025 accomplishments / advanced technologies"
+        },
+        {
+          "period": "FY2025",
+          "basis": "FISCAL_ANNUAL",
+          "end": "2025-12-31",
+          "start": "2025-01-01",
+          "value": 74,
+          "source": "TSM25",
+          "locator": "2025 accomplishments / advanced technologies"
+        }
+      ]
+    },
+    {
+      "definition": {
+        "id": "nvda_data_center",
+        "issuer": "NVDA",
+        "name": "Data Center revenue",
+        "definition": "Issuer-reported Data Center end-market revenue.",
+        "category": "ISSUER_DEFINED",
+        "scope": "Data Center end market",
+        "measurement": "FLOW",
+        "unit": "billion USD",
+        "currency": "USD",
+        "version": "1",
+        "effective_from": "2024-01-01",
+        "limitation": "Not GPU units, architecture shipments, or packaging capacity; not a reportable segment.",
+        "mechanism": "End-market demand and mix → revenue and margin; price-volume split unavailable."
+      },
+      "observations": [
+        {
+          "period": "FY2025",
+          "basis": "FISCAL_ANNUAL",
+          "end": "2025-01-26",
+          "start": "2024-01-29",
+          "value": 115.2,
+          "source": "NVDA25",
+          "locator": "Highlights / Data Center"
+        },
+        {
+          "period": "FY2026",
+          "basis": "FISCAL_ANNUAL",
+          "end": "2026-01-25",
+          "start": "2025-01-27",
+          "value": 193.7,
+          "source": "NVDA26",
+          "locator": "Highlights / Data Center"
+        }
+      ]
+    }
+  ]
+}

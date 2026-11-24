@@ -34,7 +34,11 @@ export function directionLabel(value: ConstraintDirection): string {
     TIGHTENING: "Tightening",
     MIXED: "Mixed",
     UNKNOWN: "No Direction Confirmed",
-    POSSIBLY_EASING: "Possibly Easing"
+    POSSIBLY_EASING: "Possibly Easing",
+    POSSIBLY_TIGHTENING: "Possibly Tightening",
+    OBSERVED_EASING: "Observed Easing",
+    OBSERVED_TIGHTENING: "Observed Tightening",
+    DIRECTION_UNKNOWN: "No Direction Confirmed"
   };
   return labels[value] ?? humanize(value);
 }
@@ -45,7 +49,7 @@ export function formatValue(value: unknown, unit = ""): string {
   if (typeof value !== "number") return "—";
   if (unit === "decimal") return `${(value * 100).toFixed(1)}%`;
   if (unit === "multiple") return `${value.toFixed(2)}×`;
-  if (unit === "currency/employee") return `$${value.toFixed(2)}M`;
+  if (unit === "currency/employee") return `${value.toLocaleString("en-US", { maximumFractionDigits: 2 })} currency units/employee`;
   if (unit === "currency") return `$${value.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
   return value.toLocaleString("en-US", { maximumFractionDigits: 2 });
 }
@@ -67,6 +71,7 @@ function usedInMap(raw: RawCompanyEconomics): Record<string, string[]> {
 }
 
 function evidenceType(item: RawEvidenceItem): EvidenceViewModel["typeLabel"] {
+  if (item.source_status === "FIXTURE" || item.type === "FIXTURE") return "Fixture";
   if (item.type === "INFERENCE") return "Inference";
   if (item.type === "PROXY" || item.tier !== "DIRECT") return "Proxy";
   return "Direct";
@@ -103,6 +108,11 @@ export function adaptCompanyEconomics(payload: CompanyEconomicsPayload): Company
   });
   const graphDrivers = raw.economic_graph.nodes.filter((node) => node.type === "growth_driver").map((node) => node.label);
   const growthPath = archetypeMetadata?.economic_structure_steps ?? [...graphDrivers, "Revenue"];
+  const contraryIds = new Set([
+    ...raw.constraints.primary_constraint.contrary_evidence_ids,
+    ...raw.constraints.secondary_constraints.flatMap((item) => item.contrary_evidence_ids),
+    ...(raw.constraints.candidate_assessments ?? []).flatMap((item) => item.contrary_evidence_ids)
+  ]);
   return {
     raw,
     ticker: raw.company.ticker,
@@ -124,6 +134,10 @@ export function adaptCompanyEconomics(payload: CompanyEconomicsPayload): Company
       direct: evidence.filter((item) => item.typeLabel === "Direct").length,
       proxy: evidence.filter((item) => item.typeLabel === "Proxy").length,
       inference: evidence.filter((item) => item.typeLabel === "Inference").length,
+      observed: evidence.filter((item) => item.typeLabel === "Direct").length,
+      unverified: evidence.filter((item) => item.validation_status && item.validation_status !== "VALID").length,
+      counter: evidence.filter((item) => contraryIds.has(item.id)).length,
+      stale: evidence.filter((item) => item.staleness_status === "STALE").length,
       gaps: raw.data_gaps.length
     },
     dataGaps: raw.data_gaps.map((gap) => ({ ...gap, label: humanize(gap.missing_field) })),

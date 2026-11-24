@@ -8,13 +8,6 @@ const output = ts.transpileModule(stripped, { compilerOptions: { module: ts.Modu
 const adapter = await import(`data:text/javascript;base64,${Buffer.from(output).toString("base64")}`);
 const system = JSON.parse(await fs.readFile(new URL("../lib/fixtures/research-system.json", import.meta.url), "utf8"));
 
-const neer = system.modules.neer.payload;
-const contributions = adapter.normalizeNeerContributions(neer);
-assert.equal(contributions.length, 12, "all twelve NEER currencies map into the contribution chart");
-assert.ok(contributions.every((item) => Number.isFinite(item.value)), "NEER contributions remain typed numeric values");
-assert.ok(contributions.every((item) => item.scaleGroup === "neer-contribution"), "NEER contributions share only their defensible unit scale");
-assert.equal(adapter.normalizeNeerHistory(neer).points.length, 299, "real cached NEER history remains available");
-
 const kospi = system.modules.kospi.payload;
 const factors = adapter.normalizeKospiFactors(kospi);
 assert.equal(factors.length, 5, "all KOSPI studies map into the factor visual");
