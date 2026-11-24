@@ -155,3 +155,20 @@ def test_equal_weight_benchmark_and_no_vix_cause():
     assert "XSD" in asked and "SMH" not in asked and "^VIX" not in asked
     assert result["sector_etf"] == "SMH" and result["sector_benchmark"] == "XSD"
     assert "volatility" not in result["factors"] and result["method_version"] == 2
+
+
+def test_post_friday_daily_bridge_captures_intraweek_move():
+    import pandas as pd
+    from price_attribution import _recent_daily_move
+    days = pd.bdate_range("2026-10-01", "2026-11-24")  # ends Tuesday after 2026-11-20 Friday
+    prices = [100.0] * (len(days) - 2) + [112.0, 130.0]
+    spy_prices = [500.0] * (len(days) - 2) + [505.0, 510.0]
+    daily = pd.DataFrame({"Close": prices}, index=days)
+    spy = pd.DataFrame({"Close": spy_prices}, index=days)
+    bridge = _recent_daily_move(daily, spy, "2026-11-20")
+    assert bridge is not None
+    assert bridge["latest_date"] == "2026-11-24"
+    assert bridge["since_window_end"] is not None
+    assert bridge["since_window_end"]["trading_days"] == 2
+    assert abs(bridge["since_window_end"]["stock_change"] - 0.30) < 1e-6
+    assert abs(bridge["since_window_end"]["spy_change"] - 0.02) < 1e-6

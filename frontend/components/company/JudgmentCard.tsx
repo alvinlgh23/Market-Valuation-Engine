@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { loadCompanyCard } from "../../lib/company-card";
+import { loadCachedCompanyCard, loadCompanyCard } from "../../lib/company-card";
 import { fairValueCoordinates } from "../../lib/fair-value-scale.mjs";
 import { historyLabel, versusHistory } from "../../lib/plain-words.mjs";
 import { OperatingSignals, type Operating } from "./StoredProfileReads";
@@ -12,7 +12,7 @@ type Card = {
   ticker: string; name: string; archetype: string; sector_etf: string | null; generated_on: string;
   axes: Record<string, Axis>;
   horizons: Record<string, { window: string; context?: string; axes: string[] }>;
-  contradictions: string[]; changes: Array<{ axis: string; from: string; to: string; since: string }>; falsification: string[]; operating?: unknown;
+  contradictions: string[]; changes: Array<{ axis: string; from: string; to: string; since: string; origin?: string }>; falsification: string[]; operating?: unknown;
   next_catalysts: { earnings: string | null; last_earnings?: string | null; fomc: string | null };
   disclaimer: string;
   attribution?: Attribution; price_reading?: PriceReading;
@@ -20,22 +20,46 @@ type Card = {
 
 const AXIS_LABEL: Record<string, string> = { macro: "Macro", flow: "Money flow", valuation: "Valuation", crowding: "Crowding", expectations: "Expectations", fundamentals: "Fundamentals" };
 const HORIZON_LABEL: Record<string, string> = { tactical: "1–3 months", cyclical: "6–12 months", structural: "3–5 years" };
+const ETF_NAME: Record<string, string> = {
+  XLK: "Technology (XLK)", XLC: "Communication (XLC)", XLY: "Discretionary (XLY)", XLP: "Staples (XLP)",
+  XLV: "Health care (XLV)", XLF: "Financials (XLF)", XLE: "Energy (XLE)", XLI: "Industrials (XLI)",
+  XLB: "Materials (XLB)", XLU: "Utilities (XLU)", XLRE: "Real estate (XLRE)", SMH: "Semis (SMH)",
+  IGV: "Software (IGV)", XBI: "Biotech (XBI)", KBE: "Banks (KBE)", XRT: "Retail (XRT)"
+};
 
 function num(value: unknown) { return typeof value === "number" && Number.isFinite(value) ? value : null; }
-function money(value: unknown) { const n = num(value); return n == null ? "—" : n.toLocaleString("en-US", { maximumFractionDigits: n >= 100 ? 0 : 2 }); }
-function pct(value: unknown, digits = 1) { const n = num(value); return n == null ? "—" : `${n >= 0 ? "+" : ""}${(n * 100).toFixed(digits)}%`; }
-// Checklist 18.13: only readings that changed under the same rules are flagged as changes.
+function money(value: unknown) {
+  const n = num(value);
+  if (n == null) return "—";
+  const sign = n < 0 ? "−" : "";
+  const abs = Math.abs(n);
+  return `${sign}$${abs.toLocaleString("en-US", { maximumFractionDigits: abs >= 100 ? 0 : 2 })}`;
+}
+function pct(value: unknown, digits = 1) {
+  const n = num(value);
+  if (n == null) return "—";
+  const rounded = Number((n * 100).toFixed(digits));
+  if (rounded === 0) return digits > 0 ? `0.${"0".repeat(digits)}%` : "0%";
+  return `${rounded > 0 ? "+" : "−"}${Math.abs(rounded).toFixed(digits)}%`;
+}
 function companyChanges(card: { changes: Array<{ axis: string; from: string; to: string; origin?: string }> }) { return card.changes.filter((item) => item.origin === "COMPANY"); }
-
-function words(value: unknown) { return String(value ?? "").toLowerCase().replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase()); }
+function words(value: unknown) {
+  return String(value ?? "")
+    .toLowerCase()
+    .replace(/_/g, " ")
+    .replace(/\bai\b/g, "AI")
+    .replace(/\bsaas\b/g, "SaaS")
+    .replace(/^\w/, (c) => c.toUpperCase());
+}
 function obj(value: unknown) { return (value && typeof value === "object" ? value : {}) as Record<string, unknown>; }
+function sectorDisplay(etf: unknown) {
+  const code = String(etf ?? "");
+  return ETF_NAME[code] ?? (code || "Sector");
+}
 
-/** A horizontal 0-100 bar with a marker; label on the left, value on the right. */
-/** `highIsAgainst`: for valuation-type readings a high percentile is expensive, so the colours run the other way. */
 function PercentileBar({ label, value, note, highIsAgainst = false, period }: { label: string; value: unknown; note?: string; highIsAgainst?: boolean; period: string }) {
   const width = percentileWidth(value);
   if (width == null) return null;
-  // Plain words instead of a percentile (owner request 2026-11-24); the exact place is in the tooltip.
   return <div className="jc-bar" title={[note, versusHistory(value, period)].filter(Boolean).join(" ")}>
     <span>{label}</span>
     <div className={`jc-bar-track${highIsAgainst ? " reverse" : ""}`}><i style={{ left: `${width}%` }} /></div>
@@ -47,10 +71,9 @@ function Chip({ tone, children }: { tone: Tone; children: React.ReactNode }) {
   return <span className={`jc-chip tone-${tone}`}><em aria-hidden>{TONE_GLYPH[tone]}</em>{children}</span>;
 }
 
-/** Small visual per axis, drawn from the card's detail fields only. */
 function AxisVisual({ name, axis }: { name: string; axis: Axis }) {
   const detail = axis.detail;
-  if (name === "flow") return <PercentileBar label={`${String(detail.sector_etf ?? "Sector")} vs SPY`} value={detail.percentile} note="How the sector did against the S&P 500 over one month, compared with its own record." period="its stored record" />;
+  if (name === "flow") return <PercentileBar label={`${sectorDisplay(detail.sector_etf)} vs S&P 500`} value={detail.percentile} note="How the sector did against the S&P 500 over one month, compared with its own record." period="its stored record" />;
   if (name === "crowding") {
     const own = obj(detail.valuation_in_own_history);
     return <PercentileBar label="P/S vs own history" value={own.state === "AVAILABLE" ? own.percentile : null} highIsAgainst note="Price-to-sales compared with the company's own history; higher is more expensive." period="its own history" />;
@@ -59,9 +82,18 @@ function AxisVisual({ name, axis }: { name: string; axis: Axis }) {
     const rows = Array.isArray(detail.exposures) ? (detail.exposures as Array<Record<string, unknown>>) : [];
     const shown = rows.filter((row) => row.factor_state && row.effect !== 0);
     if (!shown.length) return null;
-    // Checklist 10.5: "context" factors (reversed in the scorecard) are shown neutral, not as a headwind or tailwind.
-    return <div className="jc-chips">{shown.map((row) => <span key={String(row.factor)} title={row.weight === "context" ? "Moved prices, but not counted as a forecast: high readings preceded better returns in the scorecard." : undefined}>
-      <Chip tone={row.weight === "context" ? "unknown" : Number(row.effect) > 0 ? "supportive" : "against"}>{String(row.label)}: {String(row.factor_state).toLowerCase()}{row.weight === "context" ? " · context" : ""}</Chip></span>)}</div>;
+    return <div className="jc-chips">{shown.map((row) => {
+      const isContext = row.weight === "context";
+      const isUnconfirmed = row.weight === "unconfirmed";
+      const chipTone: Tone = isContext || isUnconfirmed ? "unknown" : Number(row.effect) > 0 ? "supportive" : "against";
+      const suffix = isContext ? " · context" : isUnconfirmed ? " · unconfirmed" : "";
+      const tip = isContext
+        ? "Moved prices, but not counted as a forecast: high readings preceded better returns in the scorecard."
+        : isUnconfirmed
+          ? "Tracked in historical price attribution above, but did not hold consistently enough over five years to count as a forward tailwind or headwind."
+          : undefined;
+      return <span key={String(row.factor)} title={tip}><Chip tone={chipTone}>{String(row.label)}: {String(row.factor_state).toLowerCase()}{suffix}</Chip></span>;
+    })}</div>;
   }
   if (name === "expectations") {
     const up = num(detail.revisions_up_30d), down = num(detail.revisions_down_30d);
@@ -73,11 +105,16 @@ function AxisVisual({ name, axis }: { name: string; axis: Axis }) {
     </div>;
   }
   if (name === "fundamentals") {
-    // Checklist 15.5: the latest quarter's numbers, and the finances verdict, as chips.
     const quarter = obj(detail.quarterly);
     if (quarter.status === "AVAILABLE") {
       const health = obj(quarter.health);
-      const signed = (value: unknown, scale = 100, unit = "%") => typeof value === "number" ? `${value >= 0 ? "+" : "−"}${Math.abs(value * scale).toFixed(unit === "%" ? 0 : 1)}${unit}` : null;
+      const signed = (value: unknown, scale = 100, unit = "%") => {
+        if (typeof value !== "number" || !Number.isFinite(value)) return null;
+        const digits = unit === "%" ? 0 : 1;
+        const rounded = Number((value * scale).toFixed(digits));
+        if (rounded === 0) return `0${unit}`;
+        return `${rounded > 0 ? "+" : "−"}${Math.abs(rounded).toFixed(digits)}${unit}`;
+      };
       const chips: Array<[string, Tone, string]> = [];
       const growth = signed(quarter.revenue_yoy);
       if (growth) chips.push([`Sales ${growth}`, Number(quarter.revenue_yoy) >= 0 ? "supportive" : "against", "Sales against the same quarter a year earlier"]);
@@ -96,14 +133,17 @@ function AxisVisual({ name, axis }: { name: string; axis: Axis }) {
   }
   if (name === "valuation") {
     const implied = num(detail.implied_5y_revenue_cagr);
-    // Checklist 18.16: above the model's ceiling, show how far above, so companies stay comparable.
     const stretch = num(detail.price_to_max_case);
+    const fair = obj(detail.fair_value);
+    const price = num(detail.price);
+    const bull = num(fair.bull);
     if (implied == null && stretch != null) {
-      return <div className="jc-compare" title="Share price divided by the value even 50% first-year sales growth would justify. 1x would be just reachable; higher means further beyond.">
-        <div><span>Price vs best case</span><i style={{ width: `${Math.min(100, (stretch / 4) * 100)}%` }} /><b>{stretch.toFixed(1)}x</b></div>
+      const withinBull = price != null && bull != null && price <= bull;
+      return <div className="jc-compare" title="Share price divided by the value 50% first-year sales growth justifies when base margin and WACC stay fixed. The Bull scenario in the range bar above also widens margins and lowers WACC.">
+        <div><span>Price vs 50%-growth cap</span><i style={{ width: `${Math.min(100, (stretch / 4) * 100)}%` }} /><b>{stretch.toFixed(1)}x</b></div>
+        {withinBull ? <small className="jc-val-clarify">At fixed base margin &amp; WACC, 50% Y1 growth reaches {money(price / stretch)}; reaching {money(price)} requires bull-case margins or lower WACC (up to {money(bull)}).</small> : null}
       </div>;
     }
-    // Checklist 15.6: five-year growth the price assumes against two references of similar length.
     const band = obj(detail.growth_band);
     const rows: Array<[string, number | null]> = band.consensus_2y != null || band.history_3y != null
       ? [["Priced in, 5 yrs", implied], ["Analysts, 2 yrs", num(band.consensus_2y)], ["Last 3 yrs", num(band.history_3y)]]
@@ -131,18 +171,31 @@ function AxisTile({ name, axis }: { name: string; axis: Axis }) {
   </div>;
 }
 
-/** Bear / base / bull with today's price, or why it is withheld. */
+/** Bear / base / bull with today's price, clamping extreme outliers (e.g. TSLA) so labels never collide. */
 function ValueRange({ card }: { card: Card }) {
   const detail = card.axes.valuation?.detail ?? {};
   const fair = obj(detail.fair_value);
   const price = num(detail.price);
   const values = { bear: num(fair.bear), base: num(fair.base), bull: num(fair.bull), market: price };
   const scale = fairValueCoordinates(values);
-  // Checklist 12.2: a bank shows the ROE its price implies against the ROE it earns.
   const bank = obj(detail.bank_implied_roe);
   if (num(bank.implied_roe) != null && num(bank.latest_roe) != null) return <div className="jc-range jc-range-empty"><span>Price-implied ROE</span><b>{((num(bank.implied_roe) ?? 0) * 100).toFixed(1)}%</b><small>Earns {((num(bank.latest_roe) ?? 0) * 100).toFixed(1)}% · price-to-book {(num(bank.price_to_book) ?? 0).toFixed(2)}</small></div>;
   if (!scale.valid) return <div className="jc-range jc-range-empty"><span>Model value</span><b>Withheld</b><small>{card.axes.valuation?.missing?.[0] ?? card.axes.valuation?.state}</small></div>;
   const weight = num(detail.ten_year_weight);
+  const compressed = price != null && values.bull != null && values.bear != null && (scale.positions.bull - scale.positions.bear < 24);
+  if (compressed && values.bear != null && values.base != null && values.bull != null && price != null) {
+    const modelSpan = Math.max(values.bull - values.bear, 1e-6);
+    const pos = (v: number) => 8 + ((v - values.bear!) / modelSpan) * 52;
+    const mult = values.bull > 0 ? (price / values.bull).toFixed(1) : null;
+    return <div className="jc-range jc-range-outlier" aria-label="Model value range against price">
+      <span>Model value {weight ? <small>({Math.round(weight * 100)}% ten-year model)</small> : null}</span>
+      <div className="jc-range-track">
+        <div className="jc-range-band" style={{ left: "8%", width: "52%" }} />
+        {(["bear", "base", "bull"] as const).map((key) => <i key={key} className={`jc-range-tick ${key}`} style={{ left: `${pos(values[key]!)}%` }}><b>{money(values[key])}</b><small>{key}</small></i>)}
+        <i className="jc-range-price jc-price-offscale" style={{ left: "88%" }}><b>Price {money(price)}{mult ? ` (${mult}× bull)` : ""} →</b></i>
+      </div>
+    </div>;
+  }
   return <div className="jc-range" aria-label="Model value range against price">
     <span>Model value {weight ? <small>({Math.round(weight * 100)}% ten-year model)</small> : null}</span>
     <div className="jc-range-track">
@@ -153,7 +206,6 @@ function ValueRange({ card }: { card: Card }) {
   </div>;
 }
 
-// Owner decision 2026-11-24: "next year" is the fiscal year still mostly ahead, which for a June-to-October year end is the current one.
 function fiscalYearTitle(value: unknown): string | undefined {
   if (typeof value !== "string" || !value) return undefined;
   const date = new Date(`${value}T00:00:00Z`);
@@ -179,26 +231,51 @@ function Legend() {
 }
 
 export function JudgmentCard({ ticker }: { ticker: string }) {
+  return <JudgmentCardBody key={ticker} ticker={ticker} />;
+}
+
+function JudgmentCardBody({ ticker }: { ticker: string }) {
   const [card, setCard] = useState<Card | null>(null);
+  const [refreshing, setRefreshing] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
     let active = true;
-    loadCompanyCard(ticker).then((result) => { if (!active) return; if (result.card) setCard(result.card as unknown as Card); else setError(result.error); });
+    // 1. Instant (<20ms) saved card preview so the user never stares at a blank 15-second skeleton.
+    loadCachedCompanyCard(ticker).then((cached) => {
+      if (!active || !cached.card) return;
+      setCard((prev) => prev ?? (cached.card as unknown as Card));
+    });
+    // 2. Live card verification / refresh in background.
+    loadCompanyCard(ticker).then((result) => {
+      if (!active) return;
+      setRefreshing(false);
+      if (result.card) setCard(result.card as unknown as Card);
+      else setCard((prev) => { if (!prev) setError(result.error); return prev; });
+    });
     return () => { active = false; };
   }, [ticker]);
-  if (error) return <section className="judgment-card judgment-card-empty" aria-label="Judgment card"><p>Judgment card unavailable: {error}</p></section>;
-  if (!card) return <section className="judgment-card judgment-card-empty" aria-label="Judgment card" aria-busy="true"><div className="jc-skeleton" /><p>Building the judgment card from live company data (about half a minute)…</p></section>;
+
+  if (error && !card) return <section className="judgment-card judgment-card-empty" aria-label="Judgment card"><p>Judgment card unavailable: {error}</p></section>;
+  if (!card) return <section className="judgment-card judgment-card-empty" aria-label="Judgment card" aria-busy="true"><div className="jc-skeleton" /><p>Building the judgment card from live company data…</p></section>;
   const earnings = card.next_catalysts.earnings ?? (card.next_catalysts.last_earnings ? `not yet set (last ${card.next_catalysts.last_earnings})` : "—");
+  const hasHeadlineNumbers = num(card.axes.valuation?.detail?.price) != null;
+
   return <section className="judgment-card" aria-label="Judgment card">
     <div className="jc-top">
-      <span className="jc-type">{words(card.archetype)}{card.sector_etf ? ` · ${card.sector_etf}` : ""}</span>
+      <span className="jc-type">
+        {words(card.archetype)}{card.sector_etf ? ` · ${sectorDisplay(card.sector_etf)}` : ""}
+        {refreshing ? <small className="jc-sync-pill"> · Updating live quotes &amp; filings…</small> : null}
+      </span>
       <Legend />
     </div>
-    <PriceDriversPanel attribution={card.attribution} reading={card.price_reading} />
-    <div className="jc-headline">
-      <NumberStrip card={card} />
-      <ValueRange card={card} />
-    </div>
+    <PriceDriversPanel attribution={card.attribution} reading={card.price_reading} lastEarnings={card.next_catalysts.last_earnings} />
+    {hasHeadlineNumbers || !refreshing ? (
+      <div className="jc-headline">
+        <NumberStrip card={card} />
+        <ValueRange card={card} />
+      </div>
+    ) : null}
     <div className="judgment-horizons">
       {Object.entries(card.horizons).map(([key, horizon]) => <article key={key}>
         <header><h3>{HORIZON_LABEL[key] ?? horizon.window}</h3>{horizon.context ? <small>{horizon.context}</small> : null}</header>

@@ -81,10 +81,13 @@ export type ValuationReport = {
   // Checklist 7.6: headline fair value; the ten-year model is phased in above the type's growth cap.
   fair_value?: {
     method?: "FIVE_YEAR" | "PHASED" | "WITHHELD";
+    observed_growth?: number | null;
+    cap?: number | null;
     extended_weight?: number;
     fair_value?: Partial<Record<"bear" | "base" | "bull", number>>;
     five_year?: Partial<Record<"bear" | "base" | "bull", number>>;
     ten_year?: Partial<Record<"bear" | "base" | "bull", number>>;
+    ten_year_forecast?: ForecastRow[];
     reverse_dcf?: Record<string, unknown>;
     reason?: string;
   };

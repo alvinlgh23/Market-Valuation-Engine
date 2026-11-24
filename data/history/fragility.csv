@@ -1,0 +1,5 @@
+signal_id,observation_date,value,label,source,source_state,recorded_at
+fragility.breadth_proxy,2026-11-23,0.01659558566977859,,Python core market engine,LIVE,2026-11-24T13:38:27+08:00
+fragility.consumer_sentiment,2026-11-23,48.0,,Python core market engine,LIVE,2026-11-24T13:38:27+08:00
+fragility.ism_pmi,2026-11-23,47.9,,Python core market engine,LIVE,2026-11-24T13:38:27+08:00
+fragility.label,2026-11-23,,Elevated,Python core market engine,LIVE,2026-11-24T13:38:27+08:00

@@ -1,0 +1,28 @@
+signal_id,observation_date,value,label,source,source_state,recorded_at
+inflation.available_metrics,2026-11-03,23.0,,US Inflation Pressure Engine,LIVE,2026-11-24T13:38:16+08:00
+inflation.fed_sensitivity,2026-11-03,,Moderate,US Inflation Pressure Engine,LIVE,2026-11-24T13:38:16+08:00
+inflation.medium_term,2026-11-03,,Mixed / Two-sided,US Inflation Pressure Engine,LIVE,2026-11-24T13:38:16+08:00
+inflation.metric.ahe,2026-11-03,3.0245231607629375,,US Inflation Pressure Engine,LIVE,2026-11-24T13:38:16+08:00
+inflation.metric.atlanta_wage,2026-11-03,3.9,,US Inflation Pressure Engine,LIVE,2026-11-24T13:38:16+08:00
+inflation.metric.core_cpi,2026-11-03,2.565840844021827,,US Inflation Pressure Engine,LIVE,2026-11-24T13:38:16+08:00
+inflation.metric.core_goods,2026-11-03,0.7124484058144365,,US Inflation Pressure Engine,LIVE,2026-11-24T13:38:16+08:00
+inflation.metric.core_pce,2026-11-03,3.1211596029620203,,US Inflation Pressure Engine,LIVE,2026-11-24T13:38:16+08:00
+inflation.metric.cpi,2026-11-03,3.7172508442689933,,US Inflation Pressure Engine,LIVE,2026-11-24T13:38:16+08:00
+inflation.metric.eci,2026-11-03,3.1174977707661533,,US Inflation Pressure Engine,LIVE,2026-11-24T13:38:16+08:00
+inflation.metric.energy_cpi,2026-11-03,20.35411471321695,,US Inflation Pressure Engine,LIVE,2026-11-24T13:38:16+08:00
+inflation.metric.gasoline,2026-11-03,4.153,,US Inflation Pressure Engine,LIVE,2026-11-24T13:38:16+08:00
+inflation.metric.import_prices,2026-11-03,8.096590909090896,,US Inflation Pressure Engine,LIVE,2026-11-24T13:38:16+08:00
+inflation.metric.medical_services,2026-11-03,2.527560373134685,,US Inflation Pressure Engine,LIVE,2026-11-24T13:38:16+08:00
+inflation.metric.oer,2026-11-03,3.2781143594073248,,US Inflation Pressure Engine,LIVE,2026-11-24T13:38:16+08:00
+inflation.metric.pce,2026-11-03,3.648874225123633,,US Inflation Pressure Engine,LIVE,2026-11-24T13:38:16+08:00
+inflation.metric.ppi,2026-11-03,6.346301041632008,,US Inflation Pressure Engine,LIVE,2026-11-24T13:38:16+08:00
+inflation.metric.recreation_services,2026-11-03,2.3435136613780383,,US Inflation Pressure Engine,LIVE,2026-11-24T13:38:16+08:00
+inflation.metric.rent,2026-11-03,2.782056284613099,,US Inflation Pressure Engine,LIVE,2026-11-24T13:38:16+08:00
+inflation.metric.services,2026-11-03,3.155661201482318,,US Inflation Pressure Engine,LIVE,2026-11-24T13:38:16+08:00
+inflation.metric.shelter,2026-11-03,3.2230618848913206,,US Inflation Pressure Engine,LIVE,2026-11-24T13:38:16+08:00
+inflation.metric.transport_services,2026-11-03,2.7743759040849136,,US Inflation Pressure Engine,LIVE,2026-11-24T13:38:16+08:00
+inflation.metric.ulc,2026-11-03,1.3977263433385234,,US Inflation Pressure Engine,LIVE,2026-11-24T13:38:16+08:00
+inflation.metric.used_cars,2026-11-03,-1.4567071818422872,,US Inflation Pressure Engine,LIVE,2026-11-24T13:38:16+08:00
+inflation.metric.wti,2026-11-03,99.64,,US Inflation Pressure Engine,LIVE,2026-11-24T13:38:16+08:00
+inflation.metric.zillow,2026-11-03,2.90961254025881,,US Inflation Pressure Engine,LIVE,2026-11-24T13:38:16+08:00
+inflation.near_term,2026-11-03,,Mixed / Two-sided,US Inflation Pressure Engine,LIVE,2026-11-24T13:38:16+08:00

@@ -46,6 +46,7 @@ from signal_history import SignalStore, observation
 ROOT = Path(__file__).resolve().parent
 WATCHLIST_PATH = ROOT / "data" / "watchlist.json"
 ATTRIBUTION_CACHE = ROOT / ".cache" / "attribution"   # one file per company, refreshed daily (checklist 10.3)
+VERDICT_CACHE = ROOT / ".cache" / "verdicts"          # latest full judgment card per company for instant UI preview
 FAMILIES = ("price", "fundamentals", "macro_data", "valuation")
 YAHOO_SECTOR_ETF = {
     "technology": "XLK", "healthcare": "XLV", "financial services": "XLF", "consumer cyclical": "XLY", "consumer defensive": "XLP",
@@ -137,6 +138,7 @@ def macro_axis(archetype: str, environment: dict[str, Any], sector_etf: str | No
             tail += effect > 0
             head += effect < 0
     confirmed = [row for row in rows if row["weight"] == "confirmed"]
+    unconfirmed = [row for row in rows if row["weight"] == "unconfirmed"]
     if not confirmed:
         state, confidence = "No confirmed exposure has a current reading", "LOW"
     elif tail > head:
@@ -155,6 +157,9 @@ def macro_axis(archetype: str, environment: dict[str, Any], sector_etf: str | No
         switch = "Yen-carry unwind risk is on and this business is liquidity-sensitive."
     evidence = [f"{row['label']}: {row['factor_state']} → {'tailwind' if row['effect'] > 0 else 'headwind' if row['effect'] < 0 else 'neutral'} ({row['validation'].lower()})"
                 for row in sorted(confirmed, key=lambda item: -abs(item["effect"]))]
+    if not confirmed and unconfirmed:
+        names = ", ".join(row["label"].lower() for row in unconfirmed)
+        evidence.append(f"Hypothesised links ({names}) are split out of historical price moves above, but did not hold consistently enough over five years to count as a forward tailwind or headwind.")
     context_note = [f"{row['label']}: {row['factor_state']}. Moves prices at the time, but high readings preceded better, not worse, returns in the scorecard, so it is not counted as a headwind."
                     for row in rows if row["weight"] == "context"]
     if switch:
@@ -858,6 +863,7 @@ def build_card(ticker: str, environment: dict[str, Any], core: dict[str, Any], s
         reading = card["price_reading"]
         card["recorded"] += store.append([observation(f"attribution.{ticker}.3m", today.isoformat(), reading.get("company_z"), reading["kind"],
                                                       source="price_attribution", source_state="LIVE")])
+        save_verdict_cache(ticker, card)
     return card
 
 
@@ -989,6 +995,17 @@ def watchlist_events(today: dt.date | None = None) -> dict[str, Any]:
             "fomc": fomc, "source": "Yahoo Finance earnings calendar; federalreserve.gov FOMC calendar"}
 
 
+def save_verdict_cache(ticker: str, card: dict[str, Any]) -> None:
+    try:
+        VERDICT_CACHE.mkdir(parents=True, exist_ok=True)
+        target = VERDICT_CACHE / f"{ticker.upper()}.json"
+        temporary = target.with_suffix(".json.tmp")
+        temporary.write_text(json.dumps(card, default=str))
+        temporary.replace(target)
+    except OSError:
+        pass
+
+
 def save_attribution(ticker: str, payload: dict[str, Any]) -> None:
     try:
         ATTRIBUTION_CACHE.mkdir(parents=True, exist_ok=True)
@@ -1058,7 +1075,7 @@ def watchlist_drivers(store: SignalStore | None = None, today: dt.date | None = 
         attribution = payload["attribution"] or {}
         output.append({"ticker": ticker, "archetype": payload.get("archetype"), "archetype_source": payload.get("archetype_source"),
                        "expectations": expectations, "reading": payload["reading"],
-                       "attribution": {key: attribution.get(key) for key in ("status", "reason", "as_of", "fit", "factor_labels", "windows", "betas")}})
+                       "attribution": {key: attribution.get(key) for key in ("status", "reason", "as_of", "fit", "factor_labels", "windows", "betas", "recent_move")}})
     return output
 
 

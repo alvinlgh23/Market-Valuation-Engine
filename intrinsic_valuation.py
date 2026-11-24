@@ -1056,11 +1056,12 @@ def extended_horizon(data, assumptions, kind, spreads=None, observed_override=No
     first = min(observed, EXTENDED_POLICY["first_year_growth_cap"])
     # Same growth spreads as the five-year scenarios (company history when available, checklist 7.5).
     deltas = {name: (spreads or DEFAULT_SCENARIO_SPREADS)[name]["growth"] for name in ("bear", "base", "bull")}
-    scenarios, checks = {}, {}
+    scenarios, checks, forecasts = {}, {}, {}
     try:
         for name, items in assumptions.items():
             result = _dcf_extended(data, items, first + deltas[name], years, decay)
             scenarios[name] = result["fair_value_per_share"]
+            forecasts[name] = result["forecast"]
             checks[name] = _extended_checks(data, result, items)
         base = assumptions["base"]
         wacc_item = next(item for item in base if item.name == "wacc")
@@ -1081,7 +1082,7 @@ def extended_horizon(data, assumptions, kind, spreads=None, observed_override=No
     return {
         "state": "COMPUTED", "default": False, "observed_growth": observed, "type_cap": cap, "first_year_growth": first,
         "weight": extended_weight(observed, cap),
-        "policy": dict(EXTENDED_POLICY), "fair_value": scenarios, "checks": checks, "checks_passed": passed,
+        "policy": dict(EXTENDED_POLICY), "fair_value": scenarios, "base_forecast": forecasts.get("base"), "checks": checks, "checks_passed": passed,
         "reverse_dcf": _extended_reverse(data, assumptions["base"], years, decay), "sensitivity": sensitivity,
         "assumptions_to_state": "First-year growth cap (50%), linear decay to terminal growth and a 10-year explicit period are model policy without calibration; see sensitivity.",
         "note": "Ten-year values at full weight; the headline fair value blends them with the five-year values by `weight` (see report['fair_value']).",
@@ -1170,6 +1171,7 @@ def phased_fair_value(data, assumptions, scenarios, extended, reverse, kind=None
     blended = {name: (1 - weight) * five[name] + weight * ten[name] for name in five}
     blended_reverse = _blended_reverse(data, assumptions["base"], weight, EXTENDED_POLICY["years"], EXTENDED_POLICY["decay"]) if weight > 0 else reverse
     return {**output, "method": "PHASED" if weight > 0 else "FIVE_YEAR", "extended_weight": weight, "fair_value": blended, "ten_year": ten,
+            "ten_year_forecast": extended.get("base_forecast"),
             "reverse_dcf": blended_reverse,
             "reason": f"Observed growth {extended['observed_growth']:.1%} vs cap {extended['type_cap']:.0%}: ten-year model weighted {weight:.0%}, five-year {1 - weight:.0%}."}
 

@@ -1,6 +1,6 @@
 import { runPythonJson, runtimeError, PythonRuntimeError } from "../../../lib/python-runtime";
 import { NextRequest, NextResponse } from "next/server";
-import { readFile, rename, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { analyzeValuation, type ValuationOverrides } from "../../../lib/valuation-service";
 import { loadResearchSystem } from "../../../lib/research-server";
@@ -28,7 +28,87 @@ async function runVerdict(ticker: string) {
   const cards = await runPythonJson<Array<Record<string, unknown>>>(["-B", "company_verdict.py", key, "--json"], 240_000);
   if (!Array.isArray(cards) || !cards[0]) throw new PythonRuntimeError("INVALID_JSON", "The judgment card returned no data.");
   verdictCache.set(key, { at: Date.now(), value: cards[0] });
+  try {
+    const dir = path.resolve(process.cwd(), "..", ".cache", "verdicts");
+    await mkdir(dir, { recursive: true });
+    const target = path.join(dir, `${key}.json`);
+    await writeFile(`${target}.tmp`, JSON.stringify(cards[0]));
+    await rename(`${target}.tmp`, target);
+  } catch { /* best-effort instant preview cache */ }
   return cards[0];
+}
+
+/** Instant (<10ms) saved card reader for Stale-While-Revalidate UI rendering before live Python finishes. */
+async function readCachedVerdict(ticker: string) {
+  if (!/^[A-Za-z0-9.^=-]{1,12}$/.test(ticker) || ticker.startsWith("-")) return { status: "EMPTY", card: null, source: null };
+  const key = ticker.toUpperCase();
+  const mem = verdictCache.get(key);
+  if (mem && Date.now() - mem.at < VERDICT_CACHE_MS) return { status: "OK", card: mem.value, source: "LIVE" };
+  const root = path.resolve(process.cwd(), "..");
+  try {
+    const saved = JSON.parse(await readFile(path.join(root, ".cache", "verdicts", `${key}.json`), "utf8"));
+    if (saved && typeof saved === "object" && saved.axes) return { status: "OK", card: saved, source: "SAVED_CARD" };
+  } catch { /* fall back to recorded summary + attribution */ }
+  try {
+    const csv = await readFile(path.join(root, "data", "history", "verdict.csv"), "utf8");
+    const axes: Record<string, { state: string; direction: null; confidence: string; evidence: string[]; missing: string[]; families: string[]; detail: Record<string, unknown> }> = {};
+    let lastDate: string | null = null;
+    for (const line of csv.split(/\r?\n/).slice(1)) {
+      if (!line.startsWith(`verdict.${key}.`)) continue;
+      const parts = line.split(",");
+      const axisName = parts[0]?.slice(`verdict.${key}.`.length);
+      const obsDate = parts[1] || null;
+      const valNum = parts[2] ? Number(parts[2]) : null;
+      const label = parts[3] || "";
+      if (!axisName || !label) continue;
+      axes[axisName] = {
+        state: label,
+        direction: null,
+        confidence: "MODERATE",
+        evidence: [],
+        missing: [],
+        families: [],
+        detail: axisName === "valuation" && valNum != null && Number.isFinite(valNum) ? { price_to_max_case: valNum } : {}
+      };
+      if (obsDate && (!lastDate || obsDate > lastDate)) lastDate = obsDate;
+    }
+    if (!Object.keys(axes).length) return { status: "EMPTY", card: null, source: null };
+    let attrFile: Record<string, unknown> | null = null;
+    try { attrFile = JSON.parse(await readFile(path.join(root, ".cache", "attribution", `${key}.json`), "utf8")); } catch { attrFile = null; }
+    let econName: string = key;
+    let archetype = String(attrFile?.archetype ?? "GENERIC_OPERATING_COMPANY");
+    try {
+      const econ = JSON.parse(await readFile(path.join(root, ".cache", "company_economics", `${key}.json`), "utf8"));
+      econName = econ?.company?.name || key;
+      archetype = econ?.company_economics?.classification?.primary_archetype || archetype;
+    } catch { /* optional */ }
+    return {
+      status: "OK",
+      source: "SAVED_SUMMARY",
+      card: {
+        ticker: key,
+        name: econName,
+        archetype,
+        sector_etf: attrFile?.sector_etf ?? null,
+        generated_on: lastDate ?? "saved",
+        axes,
+        horizons: {
+          tactical: { window: "1-3 months", axes: ["flow", "crowding"] },
+          cyclical: { window: "6-12 months", axes: ["macro", "expectations", "fundamentals"] },
+          structural: { window: "3-5 years", axes: ["valuation"] }
+        },
+        contradictions: [],
+        changes: [],
+        falsification: [],
+        next_catalysts: { earnings: null, fomc: null },
+        disclaimer: "Saved reading shown immediately while live company data refreshes.",
+        attribution: attrFile?.attribution ?? undefined,
+        price_reading: attrFile?.reading ?? undefined
+      }
+    };
+  } catch {
+    return { status: "EMPTY", card: null, source: null };
+  }
 }
 
 let storyCache: { at: number; value: unknown } | null = null;
@@ -69,6 +149,10 @@ export async function GET(request: NextRequest) {
     } catch (error) {
       return NextResponse.json({ status: "FAILED", runtime_error: runtimeError(error), error: runtimeError(error).message }, { status: 502 });
     }
+  }
+  if (action === "company-verdict-cached") {
+    const ticker = request.nextUrl.searchParams.get("ticker")?.trim() ?? "";
+    return NextResponse.json(await readCachedVerdict(ticker));
   }
   if (action === "company-verdict" || action === "watchlist-summary" || action === "watchlist-drivers" || action === "fx-moves" || action === "watchlist-events") {
     try {

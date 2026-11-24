@@ -65,6 +65,12 @@ export function factorFigure(id, factor) {
   return unusualness(factorPercentile(factor));
 }
 
+function cleanNotes(notes) {
+  return (Array.isArray(notes) ? notes : [])
+    .map((note) => /DATA_GO_KR_SERVICE_KEY|KOREA_CUSTOMS_SERVICE_KEY/i.test(String(note))
+      ? "Monthly Korean chip export figures are not connected in this workspace yet."
+      : String(note).replace(/\bpp\b/g, "percentage points"));
+}
 function track(factor) {
   const record = obj(factor.track_record);
   return { predictive: record.predictive === true, verdict: record.verdict ?? "NOT_TESTED", text: record.text ?? "Not tested against market returns yet." };
@@ -113,7 +119,7 @@ function factorAlert(id, factor, effects, asOf) {
     metric: factorFigure(id, factor) ?? factor.state,
     holdings: hurt.slice(0, 4), more: Math.max(0, hurt.length - 4), holdingsLabel: "3M effect",
     score: Math.abs(hurt[0].value),
-    criteria: { rule: FACTOR_RULES[id], now, exposure: EXPOSURE_RULE, asOf: factor.as_of ?? asOf, track: track(factor), notes: factor.notes ?? [] },
+    criteria: { rule: FACTOR_RULES[id], now, exposure: EXPOSURE_RULE, asOf: factor.as_of ?? asOf, track: track(factor), notes: cleanNotes(factor.notes) },
     href: "/macro"
   };
 }
@@ -144,8 +150,8 @@ export function buildAlerts({ environment, drivers } = {}) {
       metric: warning.next_boj_meeting ? `BOJ ${warning.next_boj_meeting} · ${warning.days_to_meeting}d` : `Fuel ${fuel.length}/3 · trigger ${trigger.length}/3`,
       holdings: hits.slice(0, 4), more: Math.max(0, hits.length - 4), holdingsLabel: "if USD/JPY fell 8%",
       score: hits.length ? Math.abs(hits[0].value) : 0.005,
-      criteria: { rule: warning.rule ?? FACTOR_RULES.yen_carry, now: `Fuel ${fuel.length}/3, trigger ${trigger.length}/3${fuel.length ? `: ${fuel.join("; ")}` : ""}`,
-                  exposure: CARRY_EXPOSURE_RULE, asOf: carry.as_of ?? asOf, track: track(carry), notes: [] },
+      criteria: { rule: (warning.rule ?? FACTOR_RULES.yen_carry).replace(/\bpp\b/g, "percentage points"), now: `Fuel ${fuel.length}/3, trigger ${trigger.length}/3${fuel.length ? `: ${fuel.map((line) => String(line).replace(/\bpp\b/g, "percentage points")).join("; ")}` : ""}`,
+                  exposure: CARRY_EXPOSURE_RULE, asOf: carry.as_of ?? asOf, track: track(carry), notes: cleanNotes(carry.notes) },
       href: "/macro"
     });
   }

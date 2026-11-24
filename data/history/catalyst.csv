@@ -1,0 +1,13 @@
+signal_id,observation_date,value,label,source,source_state,recorded_at
+catalyst.claims,2026-11-23,203000.0,,Python core market engine,LIVE,2026-11-24T13:38:27+08:00
+catalyst.core_cpi_yoy,2026-11-23,0.025658408440218272,,Python core market engine,LIVE,2026-11-24T13:38:27+08:00
+catalyst.cpi_yoy,2026-11-23,0.03717250844268993,,Python core market engine,LIVE,2026-11-24T13:38:27+08:00
+catalyst.fed_future_rate,2026-11-23,4.165000915527344,,Python core market engine,LIVE,2026-11-24T13:38:27+08:00
+catalyst.fed_future_trend,2026-11-23,0.285003662109375,,Python core market engine,LIVE,2026-11-24T13:38:27+08:00
+catalyst.fed_sensitivity,2026-11-23,,Moderate,Python core market engine,LIVE,2026-11-24T13:38:27+08:00
+catalyst.inflation_state,2026-11-23,,Hot / re-accelerating inflation ⚠,Python core market engine,LIVE,2026-11-24T13:38:27+08:00
+catalyst.labor_state,2026-11-23,,Still resilient,Python core market engine,LIVE,2026-11-24T13:38:27+08:00
+catalyst.nfp_change,2026-11-23,165.0,,Python core market engine,LIVE,2026-11-24T13:38:27+08:00
+catalyst.ppi_yoy,2026-11-23,0.06524239060350046,,Python core market engine,LIVE,2026-11-24T13:38:27+08:00
+catalyst.unemployment,2026-11-23,4.1,,Python core market engine,LIVE,2026-11-24T13:38:27+08:00
+catalyst.wages_yoy,2026-11-23,0.031207598371777445,,Python core market engine,LIVE,2026-11-24T13:38:27+08:00

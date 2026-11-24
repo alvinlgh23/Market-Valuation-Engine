@@ -230,8 +230,12 @@ def typed_metric(
     value = float(raw_value)
     if not math.isfinite(value):
         return None
-    if unit in {"%", "% YoY", "% 3M", "pp", "score / 100"}:
-        formatted = f"{value:+.2f}{'%' if unit.startswith('%') else ' pp' if unit == 'pp' else ''}"
+    if unit == "%":
+        formatted = f"{value:.2f}%"
+    elif unit in {"% YoY", "% 3M", "pp"}:
+        formatted = f"{value:+.2f}{'%' if unit.startswith('%') else ' pp'}"
+    elif unit == "score / 100":
+        formatted = f"{value:.1f}"
     elif unit == "bp 3M":
         formatted = f"{value:+.2f} bp"
     elif unit == "USD billions":

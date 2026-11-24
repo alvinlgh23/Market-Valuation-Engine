@@ -13,7 +13,7 @@ import type { CompanyEconomicsOntology } from "./company-economics-types";
 
 const ontology = ontologyFixture as CompanyEconomicsOntology;
 
-const ACRONYMS: Record<string, string> = { ai: "AI", asp: "ASP", dcf: "DCF", fcf: "FCFF", fcff: "FCFF", kpi: "KPI", saas: "SaaS" };
+const ACRONYMS: Record<string, string> = { adr: "ADR", ai: "AI", asp: "ASP", dcf: "DCF", eps: "EPS", erp: "ERP", etf: "ETF", ev: "EV", fcf: "FCFF", fcff: "FCFF", kpi: "KPI", ocf: "OCF", roe: "ROE", saas: "SaaS", sbc: "SBC", wacc: "WACC" };
 
 export function humanize(value?: string | null): string {
   if (!value) return "Unavailable";

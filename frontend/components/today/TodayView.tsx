@@ -12,9 +12,15 @@ import { Criteria } from "./Criteria";
 import { StoryDigest } from "../story/MarketStoryView";
 
 // Checklist 14.3 / 18.14: Today answers what needs attention next, then explains why holdings moved.
-// Every reading opens its criteria on hover; detail lives on the Macro, Markets and company pages.
-
 const WATCH_AXES = CARD_AXES;
+const COMPACT_AXIS_HEADER: Record<string, string> = {
+  flow: "Flow",
+  crowding: "Crowd",
+  macro: "Macro",
+  expectations: "Est.",
+  fundamentals: "Fund.",
+  valuation: "Value"
+};
 const VISIBLE_ALERTS = 5;
 
 function Card({ title, aside, children, className = "" }: { title?: string; aside?: ReactNode; children: ReactNode; className?: string }) {
@@ -42,16 +48,32 @@ function AlertRow({ alert }: { alert: Alert }) {
   </li>;
 }
 
+function compactCellText(label: string) {
+  return label.replace(/^Beyond model · /, ">").replace(/^Beyond model$/, "Beyond");
+}
+
 export function TodayView({ system, status }: { system: ResearchSystem; status?: ReactNode }) {
   const [drivers, setDrivers] = useState<DriverRow[] | null>(null);
   const [summary, setSummary] = useState<SummaryRow[] | null>(null);
   const [events, setEvents] = useState<WatchlistEvents | null>(null);
   const [showAll, setShowAll] = useState(false);
+  const [lastCheckDate, setLastCheckDate] = useState<string | null>(null);
+
   useEffect(() => {
     let active = true;
+    let prevCheck: string | null = null;
+    try {
+      prevCheck = window.localStorage.getItem("chainstox.lastTodayCheck");
+      window.localStorage.setItem("chainstox.lastTodayCheck", new Date().toLocaleDateString("en-CA"));
+    } catch { /* ignore */ }
     loadWatchlistEvents().then((value) => { if (active) setEvents(value); });
     loadWatchlistDrivers().then((rows) => { if (active) setDrivers(rows); });
-    loadWatchlistSummary().then((rows) => { if (active) setSummary(rows); });
+    loadWatchlistSummary().then((rows) => {
+      if (active) {
+        setLastCheckDate(prevCheck);
+        setSummary(rows);
+      }
+    });
     return () => { active = false; };
   }, []);
 
@@ -66,6 +88,21 @@ export function TodayView({ system, status }: { system: ResearchSystem; status?:
   const shown = showAll ? alerts : alerts.slice(0, VISIBLE_ALERTS);
   const sectors = sectorLeadershipBars(system, 4);
 
+  const calmSummary = useMemo(() => {
+    if (!summary || !summary.length) return null;
+    const changedCompanies = summary.filter((row) => row.changed.some((c) => c.origin === "COMPANY"));
+    if (!changedCompanies.length) {
+      return {
+        calm: true,
+        text: `All ${summary.length} watchlist holdings kept the same fundamental & analyst-estimate readings${lastCheckDate ? ` since ${lastCheckDate}` : ""}. Short-term price swings without estimate changes are market noise.`
+      };
+    }
+    return {
+      calm: false,
+      text: `${changedCompanies.length} of ${summary.length} holdings had a genuine reading shift (${changedCompanies.map((r) => r.ticker).join(", ")}); the other ${summary.length - changedCompanies.length} are unchanged.`
+    };
+  }, [summary, lastCheckDate]);
+
   return <div className="tdy">
     <header className="tdy-top">
       <div>
@@ -79,6 +116,13 @@ export function TodayView({ system, status }: { system: ResearchSystem; status?:
       <i aria-hidden="true" />Data is from {environment?.as_of ?? "an unknown date"}{age.days != null ? `, ${age.days} business days ago` : ""}. Alerts describe that date, not today.
     </div> : null}
 
+    {calmSummary ? (
+      <div className={`tdy-peace ${calmSummary.calm ? "is-calm" : "has-shift"}`} role="status">
+        <i aria-hidden="true" />
+        <span>{calmSummary.text}</span>
+      </div>
+    ) : null}
+
     <div className="tdy-grid tdy-grid-top">
       <Card className="tdy-read">
         {read.chip ? <span className="tdy-pill">{read.chip}</span> : null}
@@ -88,7 +132,6 @@ export function TodayView({ system, status }: { system: ResearchSystem; status?:
       <StoryDigest />
     </div>
 
-    {/* Checklist 18.14: what to look at next, apart from why holdings moved. */}
     <Card title="Needs your attention" aside={<small>Scheduled events, changed readings and tested patterns</small>} className="tdy-alerts tdy-attention">
       {events == null || summary == null ? <p className="tdy-empty">Checking your holdings&apos; calendar…</p> : null}
       {events != null && summary != null && !attention.length ? <p className="tdy-empty">Nothing needs your attention: no earnings or Fed decision in the next three weeks, and no reading changed.</p> : null}
@@ -103,15 +146,16 @@ export function TodayView({ system, status }: { system: ResearchSystem; status?:
     </Card>
 
     <div className="tdy-grid tdy-grid-bottom">
-      <Card title="Watchlist" aside={<Link href="/companies">Open</Link>} className="tdy-watch">
+      <Card title="Watchlist" aside={<Link href="/companies">Open &amp; edit</Link>} className="tdy-watch">
         {summary == null ? <p className="tdy-empty">Loading…</p> : <div role="table" aria-label="Watchlist readings">
-          <div className="tdy-watch-row tdy-watch-head" role="row"><span role="columnheader">Ticker</span>{WATCH_AXES.map(([, label]) => <span key={label} role="columnheader">{label}</span>)}</div>
+          <div className="tdy-watch-row tdy-watch-head" role="row"><span role="columnheader">Ticker</span>{WATCH_AXES.map(([key, label]) => <span key={key} role="columnheader" title={label}>{COMPACT_AXIS_HEADER[key] ?? label}</span>)}</div>
           {summary.map((row) => <Link key={row.ticker} href={`/company/${row.ticker}`} className="tdy-watch-row" role="row">
             <b role="rowheader">{row.ticker}</b>
-            {WATCH_AXES.map(([key]) => {
+            {WATCH_AXES.map(([key, fullLabel]) => {
               const state = row.axes[key];
               const change = row.changed.find((item) => item.axis === key && item.origin === "COMPANY");
-              return <span key={key} role="cell" className={`tone-${state ? axisTone(key, state) : "unknown"}${change ? " changed" : ""}`} title={`${state ?? "No card yet"}${change ? ` (was ${change.from}, changed ${change.on})` : ""}`}>{cellLabel(shortState(state), key, row)}</span>;
+              const rawText = cellLabel(shortState(state), key, row);
+              return <span key={key} role="cell" className={`tone-${state ? axisTone(key, state) : "unknown"}${change ? " changed" : ""}`} title={`${fullLabel}: ${state ?? "No card yet"}${change ? ` (was ${change.from}, changed ${change.on})` : ""}`}>{compactCellText(rawText)}</span>;
             })}
           </Link>)}
         </div>}

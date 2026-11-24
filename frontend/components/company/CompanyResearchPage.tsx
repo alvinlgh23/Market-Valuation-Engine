@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { CompanyResearchViewModel } from "../../lib/company-economics-types";
 import { humanize } from "../../lib/companyEconomicsAdapter";
@@ -113,10 +114,18 @@ export function CompanyResearchPage({ company, dataState = "FIXTURE", initialWor
     ? `The filings and market data we read have no direct operating numbers (${neededNumbers.join(", ")}), so no bottleneck is confirmed. Financial ratios alone are not used to name one.`
     : company.raw.qualitative_research_reason;
   const growthSummary = company.growthDrivers.map((driver) => driver.label).join(" × ");
+  const bottleneckDisplay = operating?.status === "AVAILABLE"
+    ? (operating.constraint ? operating.summary : `Filing check clear · ${candidates.length} structural candidates`)
+    : unconfirmed
+      ? `Not confirmed · ${candidates.length} candidates`
+      : company.primaryConstraint.label;
 
   return (
     <ResearchShell active="company" ticker={company.ticker} dataState={dataState}>
       <div className="company-control-surface">
+        <div className="company-crumb-row">
+          <Link className="markets-back-link" href="/companies">← Watchlist</Link>
+        </div>
         <header className="snapshot-identity">
           <div><span>{company.ticker}</span><h1>{company.name}</h1></div>
           <div className="snapshot-system-meta"><span>Data as of {String(company.asOf).slice(0, 10)}</span><span title={company.raw.validation.status}>Checks: {displayStatus(company.raw.validation.status)}</span></div>
@@ -125,7 +134,7 @@ export function CompanyResearchPage({ company, dataState = "FIXTURE", initialWor
         <JudgmentCard key={company.ticker} ticker={company.ticker} />
 
         <nav className="company-deeper" aria-label="Deeper research">
-          <button type="button" onClick={() => openValuationObject()}>Valuation</button>
+          <button type="button" className="company-deeper-primary" onClick={() => openValuationObject()}>Valuation &amp; sandbox →</button>
           <button type="button" onClick={() => openWorkspace("economics")}>Economic map</button>
           <button type="button" onClick={() => openWorkspace("financials")}>Financials</button>
           <button type="button" onClick={() => openWorkspace("evidence")}>Evidence <small>{company.evidenceCounts.all}</small></button>
@@ -142,7 +151,7 @@ export function CompanyResearchPage({ company, dataState = "FIXTURE", initialWor
 
         {company.raw.data_quality ? <section className="snapshot-quality-strip" aria-label="Company research quality">
           <div title="Business-model route and how sure the classifier is"><span>Business type</span><strong>{company.archetype} · {displayStatus(company.raw.data_quality.classification).toLowerCase()}</strong></div>
-          <div title={unconfirmed ? "No direct operating number confirms a bottleneck yet" : undefined}><span>Bottleneck</span><strong>{unconfirmed ? `Not confirmed · ${candidates.length} candidates` : company.primaryConstraint.label}</strong></div>
+          <div title={unconfirmed ? "Filing balance-sheet signals checked; direct operating metrics not in filings" : undefined}><span>Bottleneck</span><strong>{bottleneckDisplay}</strong></div>
           <div title="Live, the same read as the judgment card above"><span>Valuation (live)</span><strong>{liveValuation.axis?.state ?? (liveValuation.loading ? "Loading…" : displayStatus(company.raw.data_quality.valuation))}</strong></div>
           <div><span>Overall research</span><strong>{displayStatus(company.raw.data_quality.overall)}</strong></div>
         </section> : null}
