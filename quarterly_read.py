@@ -7,7 +7,7 @@ Rules (owner-approved 2026-11-24)
 - Latest quarter: sales against the same quarter a year earlier, operating margin against a year
   earlier, earnings per share against the analysts' forecast, free cash flow.
 - Did the business change: sales growth faster or slower than the previous quarter's by more than
-  3 points, or operating margin more than 1 point higher or lower than a year earlier. Both
+  3 points or a fifth of that growth rate, whichever is larger (18.21), or operating margin more than 1 point higher or lower than a year earlier. Both
   pointing the same way (or one with the other flat): improving / deteriorating; opposite: mixed;
   neither: no change.
 Missing data is never zero: a rule without its inputs says so.
@@ -22,6 +22,7 @@ import math
 from typing import Any
 
 ACCELERATION_PP, MARGIN_PP = 0.03, 0.01
+RELATIVE_SHIFT = 0.2
 STRONG_LEVERAGE, WEAK_LEVERAGE = 2.0, 4.0
 YEAR_TOLERANCE = 20
 
@@ -81,12 +82,19 @@ def health(fcf_ttm: float | None, net_debt: float | None, ebitda_ttm: float | No
     return {"state": "FAIR", "label": "Fair", "reason": f"positive free cash flow, net debt {leverage:.1f}x EBITDA", "leverage": leverage}
 
 
-def change(acceleration: float | None, margin_change: float | None) -> dict[str, Any]:
+def growth_threshold(prior_growth: float | None) -> float:
+    """Checklist 18.21: a shift in sales growth counts when it exceeds 3 points or a fifth of last quarter's
+    growth rate, whichever is larger, so a fast grower easing from 55% to 50% is not read as deteriorating."""
+    return max(ACCELERATION_PP, RELATIVE_SHIFT * abs(prior_growth)) if prior_growth is not None else ACCELERATION_PP
+
+
+def change(acceleration: float | None, margin_change: float | None, prior_growth: float | None = None) -> dict[str, Any]:
     signals, reasons = [], []
+    limit = growth_threshold(prior_growth)
     if acceleration is not None:
-        if acceleration > ACCELERATION_PP:
+        if acceleration > limit:
             signals.append(1); reasons.append(f"sales growth sped up by {acceleration * 100:.0f} points")
-        elif acceleration < -ACCELERATION_PP:
+        elif acceleration < -limit:
             signals.append(-1); reasons.append(f"sales growth slowed by {abs(acceleration) * 100:.0f} points")
     if margin_change is not None:
         if margin_change > MARGIN_PP:
@@ -96,7 +104,7 @@ def change(acceleration: float | None, margin_change: float | None) -> dict[str,
     if acceleration is None and margin_change is None:
         return {"state": "UNKNOWN", "label": "Not enough data", "reasons": []}
     if not signals:
-        return {"state": "NO_CHANGE", "label": "No change", "reasons": ["no shift beyond 3 points in sales growth or 1 point in margin"]}
+        return {"state": "NO_CHANGE", "label": "No change", "reasons": [f"no shift beyond {limit * 100:.0f} points in sales growth or 1 point in margin"]}
     if all(item > 0 for item in signals):
         return {"state": "IMPROVING", "label": "Improving", "reasons": reasons}
     if all(item < 0 for item in signals):
@@ -130,12 +138,13 @@ def read(income: dict[str, dict[str, Any]], cashflow: dict[str, dict[str, Any]],
     fcf_ttm, ebitda_ttm = last_four(fcf), last_four(ebitda)
     net_debt = debt[-1][1] - (cash[-1][1] if cash else 0.0) if debt else (-cash[-1][1] if cash else None)
     finances = health(fcf_ttm, net_debt, ebitda_ttm, is_bank)
-    shift = change(acceleration, margin_change)
+    shift = change(acceleration, margin_change, growth_before)
     eps = surprise or {}
     eps_surprise = _num(eps.get("surprisePercent"))
     parts = []
     if growth is not None:
-        pace = "" if growth_before is None else f", {'faster than' if acceleration > ACCELERATION_PP else 'slower than' if acceleration < -ACCELERATION_PP else 'about the same as'} last quarter's {growth_before * 100:+.0f}%"
+        limit = growth_threshold(growth_before)
+        pace = "" if growth_before is None else f", {'faster than' if acceleration > limit else 'slower than' if acceleration < -limit else 'about the same as'} last quarter's {growth_before * 100:+.0f}%"
         parts.append(f"sales {growth * 100:+.0f}% from a year earlier{pace}")
     if margin is not None:
         parts.append(f"operating margin {margin * 100:.0f}%" + (f", {'up' if margin_change >= 0 else 'down'} {abs(margin_change) * 100:.1f} points" if margin_change is not None else ""))
@@ -151,7 +160,7 @@ def read(income: dict[str, dict[str, Any]], cashflow: dict[str, dict[str, Any]],
             "fcf_quarter": fcf[-1][1] if fcf else None, "fcf_ttm": fcf_ttm, "net_debt": net_debt, "ebitda_ttm": ebitda_ttm,
             "health": finances, "change": shift, "summary": summary + money,
             "rules": {"health": "Strong: positive free cash flow over four quarters and net debt under 2x EBITDA or net cash. Weak: negative free cash flow or net debt over 4x EBITDA. Fair: in between. Banks: not applicable.",
-                      "change": "Improving or deteriorating: sales growth more than 3 points faster or slower than last quarter's, or operating margin more than 1 point higher or lower than a year earlier."}}
+                      "change": "Improving or deteriorating: sales growth faster or slower than last quarter's by more than 3 points or a fifth of that growth rate, whichever is larger, or operating margin more than 1 point higher or lower than a year earlier."}}
 
 
 def _frame_rows(frame) -> dict[str, dict[str, Any]]:

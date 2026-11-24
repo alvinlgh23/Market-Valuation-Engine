@@ -224,9 +224,10 @@ def exposures_for(archetype: str | Archetype, validation: dict[str, Any] | None 
     claim = "STRUCTURAL_HYPOTHESIS"
     if not entries and sector_etf in SECTOR_DEFAULTS:
         entries, claim = SECTOR_DEFAULTS[sector_etf], "SECTOR_DEFAULT_HYPOTHESIS"
+    result_key = sector_key(sector_etf) if claim == "SECTOR_DEFAULT_HYPOTHESIS" else key.value
     for item in entries:
         factor = FACTORS[item.factor]
-        tested = results.get(key.value, {}).get(item.factor)
+        tested = results.get(result_key, {}).get(item.factor)
         output.append({
             **asdict(item),
             "factor_label": factor.label,
@@ -288,18 +289,35 @@ def classify(direction: int, beta: float | None, t_stat: float | None, agreement
     return "WEAK"
 
 
+# Checklist 18.20: test against equal-weight baskets and the equal-weight S&P 500 (RSP). A cap-weighted
+# sector minus SPY cancels much of a heavy sector's own sensitivity, since the sector is a big part of SPY.
+EQUAL_WEIGHT_PROXY = {"XLK": "RSPT", "XLC": "RSPC", "XLY": "RSPD", "XLP": "RSPS", "XLV": "RSPH", "XLF": "RSPF", "XLE": "RSPG",
+                      "XLI": "RSPN", "XLB": "RSPM", "XLU": "RSPU", "XLRE": "RSPR", "SMH": "XSD", "IGV": "XSW"}
+BENCHMARK = "RSP"
+
+
+def sector_key(etf: str) -> str:
+    return f"SECTOR_{etf}"
+
+
+def validation_targets() -> list[tuple[str, str | None, tuple[Exposure, ...]]]:
+    """(results key, proxy ETF, exposures): every archetype, then every sector default (checklist 15.1)."""
+    targets = [(archetype.value, PROXY_ETF.get(archetype), entries) for archetype, entries in EXPOSURES.items()]
+    targets += [(sector_key(etf), etf, entries) for etf, entries in SECTOR_DEFAULTS.items()]
+    return [(key, EQUAL_WEIGHT_PROXY.get(proxy, proxy) if proxy else None, entries) for key, proxy, entries in targets]
+
+
 def validate(histories: dict[str, Any], window_weeks: int = 52, step_weeks: int = 4) -> dict[str, Any]:
     import pandas as pd
 
-    spy = _weekly(histories["SPY"]).pct_change()
+    spy = _weekly(histories[BENCHMARK if BENCHMARK in histories else "SPY"]).pct_change()
     results: dict[str, dict[str, Any]] = {}
-    for archetype, entries in EXPOSURES.items():
-        proxy = PROXY_ETF.get(archetype)
-        results[archetype.value] = {}
+    for key, proxy, entries in validation_targets():
+        results[key] = {}
         for item in entries:
             factor = factor_series(item.factor, histories)
             if not proxy or proxy not in histories or factor is None:
-                results[archetype.value][item.factor] = {"status": "UNTESTED", "reason": "no proxy ETF" if not proxy or proxy not in histories else "no market proxy for this factor", "direction": item.direction}
+                results[key][item.factor] = {"status": "UNTESTED", "reason": "no proxy ETF" if not proxy or proxy not in histories else "no market proxy for this factor", "direction": item.direction}
                 continue
             excess = _weekly(histories[proxy]).pct_change() - spy
             frame = pd.concat({"x": factor, "y": excess}, axis=1).dropna()
@@ -311,7 +329,7 @@ def validate(histories: dict[str, Any], window_weeks: int = 52, step_weeks: int 
                 if window_beta is not None:
                     signs.append((window_beta > 0) == (item.direction > 0))
             agreement = sum(signs) / len(signs) if signs else None
-            results[archetype.value][item.factor] = {
+            results[key][item.factor] = {
                 "status": classify(item.direction, beta, t_stat, agreement),
                 "direction": item.direction,
                 "proxy_etf": proxy,
@@ -325,7 +343,7 @@ def validate(histories: dict[str, Any], window_weeks: int = 52, step_weeks: int 
             }
     return {
         "schema_version": "1.0",
-        "method": f"Weekly (W-FRI) proxy ETF return minus SPY regressed on each factor's weekly change; OLS with intercept; rolling {window_weeks}-week windows every {step_weeks} weeks.",
+        "method": f"Weekly (W-FRI) equal-weight proxy ETF return minus the equal-weight S&P 500 (RSP) regressed on each factor's weekly change; OLS with intercept; rolling {window_weeks}-week windows every {step_weeks} weeks.",
         "thresholds": {"confirmed": "same sign, |t| >= 2, rolling agreement >= 0.6", "downgraded": "opposite sign, |t| >= 2"},
         "factor_proxies": {key: factor.proxy for key, factor in FACTORS.items()},
         "results": results,
@@ -350,7 +368,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     if args.command == "validate":
         from signal_history import fetch_long_histories
-        tickers = {"SPY", *(proxy for proxy in PROXY_ETF.values() if proxy), *(ticker for factor in FACTORS.values() for ticker in factor.tickers)}
+        tickers = {"SPY", BENCHMARK, *(proxy for _, proxy, _ in validation_targets() if proxy), *(ticker for factor in FACTORS.values() for ticker in factor.tickers)}
         histories, failures = fetch_long_histories(tickers, period=args.period)
         if "SPY" not in histories:
             print("SPY unavailable; cannot validate.")

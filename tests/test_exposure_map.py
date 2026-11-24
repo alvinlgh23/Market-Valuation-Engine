@@ -43,8 +43,11 @@ def test_validate_recovers_a_planted_exposure():
     oil = 70 * np.exp(np.cumsum(rng.normal(0, 0.02, days)))
     oil_returns = np.diff(np.log(oil), prepend=np.log(oil[0]))
     xle = 50 * np.exp(np.cumsum(np.log(spy / np.roll(spy, 1)).clip(-1, 1) * 0 + rng.normal(0.0003, 0.01, days) + 0.6 * oil_returns))
-    histories = {"SPY": _daily(spy), "CL=F": _daily(oil), "XLE": _daily(xle)}
-    result = em.validate(histories)["results"]["COMMODITY_PRODUCER"]
+    # 18.20: the equal-weight energy basket (RSPG) against the equal-weight S&P 500 (RSP).
+    histories = {"RSP": _daily(spy), "CL=F": _daily(oil), "RSPG": _daily(xle)}
+    validation = em.validate(histories)
+    result = validation["results"]["COMMODITY_PRODUCER"]
+    assert validation["results"]["SECTOR_XLE"]["oil"]["status"] == "CONFIRMED"     # sector defaults are tested too
     assert result["oil"]["status"] == "CONFIRMED" and result["oil"]["beta"] > 0
     assert result["usd"]["status"] == "UNTESTED"  # DX-Y.NYB not supplied
 

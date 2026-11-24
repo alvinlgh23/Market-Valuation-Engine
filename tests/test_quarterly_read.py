@@ -57,3 +57,13 @@ def test_four_quarters_must_be_consecutive():
     assert q.last_four(gap) is None
     points = q.series({"x": {"2024-03-31": 1, "2024-09-30": 1, "2025-03-31": 1, "2025-09-30": 1}}, "x")
     assert q.last_four(points) is None     # spread over 18 months
+
+
+
+def test_a_fast_grower_easing_is_not_deteriorating():
+    """18.21: 55% -> 50% is a 5-point slowdown but under a fifth of 55%; 10% -> 6% still counts."""
+    assert abs(q.growth_threshold(0.55) - 0.11) < 1e-12
+    assert q.change(-0.05, 0.0, prior_growth=0.55)["state"] == "NO_CHANGE"
+    assert q.change(-0.12, 0.0, prior_growth=0.55)["state"] == "DETERIORATING"
+    assert q.change(-0.04, 0.0, prior_growth=0.10)["state"] == "DETERIORATING"
+    assert q.change(-0.04, 0.0)["state"] == "DETERIORATING"     # no prior growth: the 3-point floor
