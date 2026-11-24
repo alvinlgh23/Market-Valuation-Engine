@@ -939,20 +939,37 @@ def latest_period_change(rows, periods=1):
     return latest, trend
 
 
+def _months_back(day, months):
+    import datetime as _dt
+    parsed = _dt.date.fromisoformat(str(day)[:10])
+    index = parsed.year * 12 + parsed.month - 1 - months
+    return f"{index // 12:04d}-{index % 12 + 1:02d}"
+
+
 def latest_yoy(rows, periods=12):
+    """Year-on-year change matched by month, not by row count, so a missing month (the October 2025
+    CPI was never published) cannot turn a 12-month change into a 13-month one. The change in the
+    year-on-year rate over three months is matched the same way."""
     if not rows or len(rows) <= periods:
         return None, None
-    latest = rows[-1][1]
-    prior = rows[-1 - periods][1]
-    if prior == 0:
+    try:
+        by_month = {str(day)[:7]: value for day, value in rows}
+        # The latest month whose year-ago month exists (October 2026 has none, so September is used).
+        latest_day, latest, prior = None, None, None
+        for day, value in reversed(rows[-6:]):
+            candidate = by_month.get(_months_back(day, periods))
+            if candidate:
+                latest_day, latest, prior = day, value, candidate
+                break
+        if prior is None:
+            return None, None
+        current_yoy = latest / prior - 1
+        three_ago = _months_back(latest_day, 3)
+        level, base = by_month.get(three_ago), by_month.get(_months_back(latest_day, periods + 3))
+        prior_yoy = level / base - 1 if level is not None and base else None
+        return current_yoy, (current_yoy - prior_yoy) if prior_yoy is not None else None
+    except (TypeError, ValueError):
         return None, None
-    current_yoy = latest / prior - 1
-    if len(rows) <= periods + 3:
-        return current_yoy, None
-    prior_yoy_base = rows[-1 - periods - 3][1]
-    prior_yoy_level = rows[-4][1]
-    prior_yoy = prior_yoy_level / prior_yoy_base - 1 if prior_yoy_base else None
-    return current_yoy, (current_yoy - prior_yoy) if prior_yoy is not None else None
 
 
 def compute_macro_fragility(macro=None):

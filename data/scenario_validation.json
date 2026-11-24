@@ -1,0 +1,525 @@
+{
+  "schema_version": "1.0",
+  "generated_on": "2026-11-24",
+  "method": "The scenario gate (checklist 17): a \"likely\" call reaches the page only if it beat chance out of sample.\n\nEach method is replayed month by month since 2005 using only what was known at the time\n(macro data lagged one month; analogs drawn from months whose 3-month outcome had already\nfinished). It passes only if it beats a simple baseline with t >= 2.\n\nMethods tested\n- analog_sectors: the 3 sectors that did best after past months with the same conditions\n  (Fed hiking, CPI above 3%, VIX in the top third of its history) against the average sector.\n- analog_market: S&P 500 up or down 3 months later by majority of analog months, against\n  always saying \"up\".\n- sector_strength_{1,3,6}m: the 3 sectors with the strongest recent move (where money has\n  been going) against the average sector, 1 and 3 months ahead.\n\nIt also stores what happened after each set of conditions (context, not a forecast) and the\nlink test \"tight liquidity -> bigger swings next month\" from the stored daily history.",
+  "pass_rule": "Beats the baseline with t >= 2.0 (market call: beats always-up by 5 points).",
+  "methods": {
+    "analog_sectors": {
+      "what": "Pick the 3 sectors that did best after similar past months",
+      "periods": 81,
+      "beat_share": 0.5041322314049587,
+      "edge_per_3m": 0.0005514083634227977,
+      "t_stat": 0.44606513535975334,
+      "verdict": "FAILED"
+    },
+    "analog_market": {
+      "what": "Call the S&P 500 up or down 3 months ahead from similar past months",
+      "periods": 242,
+      "beat_share": 0.7107438016528925,
+      "baseline_share": 0.735632183908046,
+      "baseline": "always saying up",
+      "t_stat": null,
+      "verdict": "FAILED"
+    },
+    "sector_strength_1m_1m": {
+      "what": "Back the 3 sectors money moved into most over 1 month, held 1 month",
+      "periods": 317,
+      "beat_share": 0.47634069400630913,
+      "edge": -0.0005184897201423879,
+      "t_stat": -0.4521454506543743,
+      "verdict": "FAILED"
+    },
+    "sector_strength_1m_3m": {
+      "what": "Back the 3 sectors money moved into most over 1 month, held 3 months",
+      "periods": 105,
+      "beat_share": 0.44761904761904764,
+      "edge": -0.0028510929873298303,
+      "t_stat": -2.462193861562084,
+      "verdict": "FAILED"
+    },
+    "sector_strength_3m_1m": {
+      "what": "Back the 3 sectors money moved into most over 3 months, held 1 month",
+      "periods": 317,
+      "beat_share": 0.5457413249211357,
+      "edge": -0.0001754501889026094,
+      "t_stat": -0.15191541051776122,
+      "verdict": "FAILED"
+    },
+    "sector_strength_3m_3m": {
+      "what": "Back the 3 sectors money moved into most over 3 months, held 3 months",
+      "periods": 105,
+      "beat_share": 0.4857142857142857,
+      "edge": -0.0016390872911257164,
+      "t_stat": -1.3780387790043638,
+      "verdict": "FAILED"
+    },
+    "sector_strength_6m_1m": {
+      "what": "Back the 3 sectors money moved into most over 6 months, held 1 month",
+      "periods": 317,
+      "beat_share": 0.5110410094637224,
+      "edge": -0.0007541037967516321,
+      "t_stat": -0.6428773565574549,
+      "verdict": "FAILED"
+    },
+    "sector_strength_6m_3m": {
+      "what": "Back the 3 sectors money moved into most over 6 months, held 3 months",
+      "periods": 105,
+      "beat_share": 0.546031746031746,
+      "edge": 2.2770967302429298e-05,
+      "t_stat": -0.16819541118064935,
+      "verdict": "FAILED"
+    }
+  },
+  "conditions": {
+    "hiking=yes,hot=yes,fear=yes": {
+      "months": 6,
+      "episodes": 2,
+      "spy_up_share": 0.6666666666666666,
+      "spy_median": 0.020082093095238118,
+      "all_months_up_share": 0.7124183006535948,
+      "sectors": {
+        "XLK": {
+          "beat_share": 0.5,
+          "median_excess": -0.004793705586192409
+        },
+        "XLF": {
+          "beat_share": 0.6666666666666666,
+          "median_excess": 0.022543825151239205
+        },
+        "XLV": {
+          "beat_share": 0.5,
+          "median_excess": 0.006833000111377718
+        },
+        "XLY": {
+          "beat_share": 0.3333333333333333,
+          "median_excess": -0.0121773692306677
+        },
+        "XLP": {
+          "beat_share": 0.5,
+          "median_excess": 0.0033127325444614053
+        },
+        "XLE": {
+          "beat_share": 0.6666666666666666,
+          "median_excess": 0.059171925302122896
+        },
+        "XLI": {
+          "beat_share": 1.0,
+          "median_excess": 0.02589770667559521
+        },
+        "XLB": {
+          "beat_share": 0.5,
+          "median_excess": 0.02312923985603277
+        },
+        "XLU": {
+          "beat_share": 0.5,
+          "median_excess": -0.0004358793414879769
+        }
+      },
+      "examples": [
+        "2022-04",
+        "2022-05",
+        "2022-06",
+        "2022-08",
+        "2022-09",
+        "2022-10"
+      ]
+    },
+    "hiking=yes,hot=yes,fear=no": {
+      "months": 34,
+      "episodes": 6,
+      "spy_up_share": 0.7352941176470589,
+      "spy_median": 0.029581124150411364,
+      "all_months_up_share": 0.7124183006535948,
+      "sectors": {
+        "XLK": {
+          "beat_share": 0.5882352941176471,
+          "median_excess": 0.0044017984177806
+        },
+        "XLF": {
+          "beat_share": 0.5882352941176471,
+          "median_excess": 0.003149740698493775
+        },
+        "XLV": {
+          "beat_share": 0.3235294117647059,
+          "median_excess": -0.027169130797043195
+        },
+        "XLY": {
+          "beat_share": 0.3235294117647059,
+          "median_excess": -0.013075481751070428
+        },
+        "XLP": {
+          "beat_share": 0.2647058823529412,
+          "median_excess": -0.027089083105964806
+        },
+        "XLE": {
+          "beat_share": 0.5294117647058824,
+          "median_excess": 0.017953267770248083
+        },
+        "XLI": {
+          "beat_share": 0.4411764705882353,
+          "median_excess": -0.0041646188354359515
+        },
+        "XLB": {
+          "beat_share": 0.47058823529411764,
+          "median_excess": -0.011767651958075998
+        },
+        "XLU": {
+          "beat_share": 0.35294117647058826,
+          "median_excess": -0.020475243403361265
+        }
+      },
+      "examples": [
+        "2004-11",
+        "2005-04",
+        "2005-10",
+        "2006-02",
+        "2006-06",
+        "2022-07",
+        "2023-02",
+        "2023-06"
+      ]
+    },
+    "hiking=yes,hot=no,fear=yes": {
+      "months": 1,
+      "episodes": 2,
+      "spy_up_share": 1.0,
+      "spy_median": 0.13526066193120068,
+      "all_months_up_share": 0.7124183006535948,
+      "sectors": {
+        "XLK": {
+          "beat_share": 1.0,
+          "median_excess": 0.06252989557782063
+        },
+        "XLF": {
+          "beat_share": 0.0,
+          "median_excess": -0.05040553193958375
+        },
+        "XLV": {
+          "beat_share": 0.0,
+          "median_excess": -0.07073992270520568
+        },
+        "XLY": {
+          "beat_share": 1.0,
+          "median_excess": 0.018546704030055983
+        },
+        "XLP": {
+          "beat_share": 0.0,
+          "median_excess": -0.024244326829388152
+        },
+        "XLE": {
+          "beat_share": 1.0,
+          "median_excess": 0.026702263954808236
+        },
+        "XLI": {
+          "beat_share": 1.0,
+          "median_excess": 0.03633514780060221
+        },
+        "XLB": {
+          "beat_share": 0.0,
+          "median_excess": -0.031940639364602674
+        },
+        "XLU": {
+          "beat_share": 0.0,
+          "median_excess": -0.027901957450479964
+        }
+      },
+      "examples": [
+        "2018-12"
+      ]
+    },
+    "hiking=yes,hot=no,fear=no": {
+      "months": 35,
+      "episodes": 9,
+      "spy_up_share": 0.8,
+      "spy_median": 0.04155486389150398,
+      "all_months_up_share": 0.7124183006535948,
+      "sectors": {
+        "XLK": {
+          "beat_share": 0.7142857142857143,
+          "median_excess": 0.014822443044421041
+        },
+        "XLF": {
+          "beat_share": 0.4,
+          "median_excess": -0.0031724955951506484
+        },
+        "XLV": {
+          "beat_share": 0.42857142857142855,
+          "median_excess": -0.0072459214563156404
+        },
+        "XLY": {
+          "beat_share": 0.5142857142857142,
+          "median_excess": 0.005670196625643831
+        },
+        "XLP": {
+          "beat_share": 0.4,
+          "median_excess": -0.007206899249438514
+        },
+        "XLE": {
+          "beat_share": 0.34285714285714286,
+          "median_excess": -0.04067991584153596
+        },
+        "XLI": {
+          "beat_share": 0.4857142857142857,
+          "median_excess": -0.0007088290011230125
+        },
+        "XLB": {
+          "beat_share": 0.42857142857142855,
+          "median_excess": -0.006377394058159069
+        },
+        "XLU": {
+          "beat_share": 0.5714285714285714,
+          "median_excess": 0.006978766321976693
+        }
+      },
+      "examples": [
+        "2004-08",
+        "2005-06",
+        "2016-03",
+        "2017-03",
+        "2017-07",
+        "2018-01",
+        "2018-05",
+        "2018-09"
+      ]
+    },
+    "hiking=no,hot=yes,fear=yes": {
+      "months": 17,
+      "episodes": 8,
+      "spy_up_share": 0.47058823529411764,
+      "spy_median": -0.024593325271639377,
+      "all_months_up_share": 0.7124183006535948,
+      "sectors": {
+        "XLK": {
+          "beat_share": 0.5882352941176471,
+          "median_excess": 0.02403853568623393
+        },
+        "XLF": {
+          "beat_share": 0.23529411764705882,
+          "median_excess": -0.05970111641899978
+        },
+        "XLV": {
+          "beat_share": 0.6470588235294118,
+          "median_excess": 0.013481868309947687
+        },
+        "XLY": {
+          "beat_share": 0.5294117647058824,
+          "median_excess": 0.006720439664157363
+        },
+        "XLP": {
+          "beat_share": 0.7058823529411765,
+          "median_excess": 0.01715234945590116
+        },
+        "XLE": {
+          "beat_share": 0.5294117647058824,
+          "median_excess": 0.008587359381707627
+        },
+        "XLI": {
+          "beat_share": 0.5882352941176471,
+          "median_excess": 0.002714972227672474
+        },
+        "XLB": {
+          "beat_share": 0.5882352941176471,
+          "median_excess": 0.028175178967961734
+        },
+        "XLU": {
+          "beat_share": 0.7647058823529411,
+          "median_excess": 0.052314674652793824
+        }
+      },
+      "examples": [
+        "2003-03",
+        "2008-02",
+        "2008-06",
+        "2008-10",
+        "2011-07",
+        "2011-09",
+        "2011-11",
+        "2021-11"
+      ]
+    },
+    "hiking=no,hot=yes,fear=no": {
+      "months": 38,
+      "episodes": 16,
+      "spy_up_share": 0.5789473684210527,
+      "spy_median": 0.015364761665334736,
+      "all_months_up_share": 0.7124183006535948,
+      "sectors": {
+        "XLK": {
+          "beat_share": 0.5,
+          "median_excess": -0.00943697487856221
+        },
+        "XLF": {
+          "beat_share": 0.5,
+          "median_excess": -0.001331597037409371
+        },
+        "XLV": {
+          "beat_share": 0.6052631578947368,
+          "median_excess": 0.014938571852981641
+        },
+        "XLY": {
+          "beat_share": 0.5,
+          "median_excess": -0.002335980543883842
+        },
+        "XLP": {
+          "beat_share": 0.631578947368421,
+          "median_excess": 0.02236881853330136
+        },
+        "XLE": {
+          "beat_share": 0.47368421052631576,
+          "median_excess": -0.005894879236119477
+        },
+        "XLI": {
+          "beat_share": 0.2894736842105263,
+          "median_excess": -0.014568184596783051
+        },
+        "XLB": {
+          "beat_share": 0.5263157894736842,
+          "median_excess": 0.00462231679509395
+        },
+        "XLU": {
+          "beat_share": 0.47368421052631576,
+          "median_excess": -0.0012573172658439935
+        }
+      },
+      "examples": [
+        "2001-02",
+        "2001-07",
+        "2007-12",
+        "2008-08",
+        "2012-01",
+        "2021-07",
+        "2022-03",
+        "2024-03"
+      ]
+    },
+    "hiking=no,hot=no,fear=yes": {
+      "months": 41,
+      "episodes": 10,
+      "spy_up_share": 0.8292682926829268,
+      "spy_median": 0.07811473496701549,
+      "all_months_up_share": 0.7124183006535948,
+      "sectors": {
+        "XLK": {
+          "beat_share": 0.6829268292682927,
+          "median_excess": 0.01954585308979273
+        },
+        "XLF": {
+          "beat_share": 0.4146341463414634,
+          "median_excess": -0.00788332247429624
+        },
+        "XLV": {
+          "beat_share": 0.3170731707317073,
+          "median_excess": -0.03085586275998331
+        },
+        "XLY": {
+          "beat_share": 0.6097560975609756,
+          "median_excess": 0.02017622770612637
+        },
+        "XLP": {
+          "beat_share": 0.21951219512195122,
+          "median_excess": -0.03521705927964314
+        },
+        "XLE": {
+          "beat_share": 0.4146341463414634,
+          "median_excess": -0.023301628343519898
+        },
+        "XLI": {
+          "beat_share": 0.5853658536585366,
+          "median_excess": 0.003829528146460648
+        },
+        "XLB": {
+          "beat_share": 0.6097560975609756,
+          "median_excess": 0.016651213219016192
+        },
+        "XLU": {
+          "beat_share": 0.3170731707317073,
+          "median_excess": -0.04977002796719909
+        }
+      },
+      "examples": [
+        "2002-06",
+        "2002-11",
+        "2009-01",
+        "2009-06",
+        "2010-05",
+        "2020-02",
+        "2020-07",
+        "2021-01"
+      ]
+    },
+    "hiking=no,hot=no,fear=no": {
+      "months": 134,
+      "episodes": 20,
+      "spy_up_share": 0.7164179104477612,
+      "spy_median": 0.02852307675608179,
+      "all_months_up_share": 0.7124183006535948,
+      "sectors": {
+        "XLK": {
+          "beat_share": 0.5373134328358209,
+          "median_excess": 0.004001055343561988
+        },
+        "XLF": {
+          "beat_share": 0.48507462686567165,
+          "median_excess": -0.0017247749451539396
+        },
+        "XLV": {
+          "beat_share": 0.5671641791044776,
+          "median_excess": 0.008421739982657717
+        },
+        "XLY": {
+          "beat_share": 0.5597014925373134,
+          "median_excess": 0.002860155158255606
+        },
+        "XLP": {
+          "beat_share": 0.44776119402985076,
+          "median_excess": -0.005076892497077656
+        },
+        "XLE": {
+          "beat_share": 0.44776119402985076,
+          "median_excess": -0.008391173524071815
+        },
+        "XLI": {
+          "beat_share": 0.5597014925373134,
+          "median_excess": 0.00498950962206679
+        },
+        "XLB": {
+          "beat_share": 0.47761194029850745,
+          "median_excess": -0.0014999690809679445
+        },
+        "XLU": {
+          "beat_share": 0.4701492537313433,
+          "median_excess": -0.005820268866144063
+        }
+      },
+      "examples": [
+        "2001-04",
+        "2003-10",
+        "2007-06",
+        "2011-01",
+        "2013-03",
+        "2014-07",
+        "2016-01",
+        "2019-10"
+      ]
+    }
+  },
+  "condition_rules": {
+    "hiking": "Fed funds rate up more than 0.1 points over 3 months",
+    "hot": "CPI above 3% a year earlier",
+    "fear": "VIX in the top third of its own history"
+  },
+  "links": {
+    "liquidity_to_volatility": {
+      "samples": 35,
+      "corr": 0.13263285320227214,
+      "t_stat": 0.7687090972040097,
+      "verdict": "NO_LINK",
+      "claim": "Tight market liquidity is followed by bigger S&P 500 swings the next month",
+      "tight_months": 10,
+      "tight_next_vol": 0.12487858439089179,
+      "other_next_vol": 0.13609207189104547,
+      "first": "2023-11-20",
+      "last": "2026-09-28"
+    }
+  }
+}
