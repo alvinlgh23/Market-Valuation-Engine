@@ -87,13 +87,29 @@ function carryHits(drivers) {
     .sort((a, b) => a.value - b.value);
 }
 
+// Factors stay internal (owner 2026-11-24): readers see what is happening, in plain words.
+const PLAIN = {
+  long_rates: { 1: "Long-term interest rates are rising", "-1": "Long-term interest rates are falling" },
+  usd: { 1: "The dollar is getting stronger", "-1": "The dollar is getting weaker" },
+  credit: { 1: "Investors are buying risky company bonds", "-1": "Investors are selling risky company bonds" },
+  volatility: { 1: "Investors expect big swings", "-1": "Investors expect small swings" },
+  growth: { 1: "Factories are picking up", "-1": "Factories are shrinking" },
+  inflation: { 1: "Inflation is picking up", "-1": "Inflation is easing" },
+  oil: { 1: "Oil prices are rising", "-1": "Oil prices are falling" },
+  semis_cycle: { 1: "Chip stocks are leading", "-1": "Chip stocks are lagging" },
+  fed_path: { 1: "The Fed is leaning toward higher rates", "-1": "The Fed is leaning toward lower rates" }
+};
+export function plainTitle(id, factor) {
+  return PLAIN[id]?.[String(factor.direction)] ?? `${FACTOR_NAMES[id]}: ${String(factor.state).toLowerCase()}`;
+}
+
 function factorAlert(id, factor, effects, asOf) {
   const hurt = effects.filter((item) => item.value < 0);
   if (!hurt.length) return null;
   const now = [`${factor.state}.`, historySentence(id, factor) ?? (factorFigure(id, factor) ? `${factorFigure(id, factor)}.` : null)].filter(Boolean).join(" ");
   return {
     id: `factor-${id}`, kind: "macro", tone: "against", factor: id,
-    title: `${FACTOR_NAMES[id]}: ${factor.state.toLowerCase()}`,
+    title: plainTitle(id, factor),
     metric: factorFigure(id, factor) ?? factor.state,
     holdings: hurt.slice(0, 4), more: Math.max(0, hurt.length - 4), holdingsLabel: "3M effect",
     score: Math.abs(hurt[0].value),
@@ -124,7 +140,7 @@ export function buildAlerts({ environment, drivers, summary } = {}) {
     const fuel = Array.isArray(warning.fuel) ? warning.fuel : [], trigger = Array.isArray(warning.trigger) ? warning.trigger : [];
     alerts.push({
       id: "yen-carry", kind: "carry", tone: warning.level === "HIGH" ? "against" : "warning", factor: "yen_carry",
-      title: `Yen carry unwind warning ${String(warning.level).toLowerCase()}`,
+      title: `Risk of a sudden yen rebound is ${String(warning.level).toLowerCase()}`,
       metric: warning.next_boj_meeting ? `BOJ ${warning.next_boj_meeting} · ${warning.days_to_meeting}d` : `Fuel ${fuel.length}/3 · trigger ${trigger.length}/3`,
       holdings: hits.slice(0, 4), more: Math.max(0, hits.length - 4), holdingsLabel: "if USD/JPY fell 8%",
       score: hits.length ? Math.abs(hits[0].value) : 0.005,
@@ -139,7 +155,7 @@ export function buildAlerts({ environment, drivers, summary } = {}) {
   if (liquidity && readings.relation === "AGREE" && liquidity.direction === -1) {
     alerts.push({
       id: "liquidity", kind: "liquidity", tone: "against", factor: "liquidity",
-      title: "Liquidity tight on both measures", metric: `Policy ${policy.toLowerCase()} · market ${market.toLowerCase()}`,
+      title: "Money is tight by both measures", metric: `Policy ${policy.toLowerCase()} · market ${market.toLowerCase()}`,
       holdings: [], more: 0, holdingsLabel: null, holdingsNote: "No measured link to your holdings: liquidity has no market proxy to split out of prices.",
       score: 0.004,
       criteria: { rule: FACTOR_RULES.liquidity, now: `Policy: ${policy || "unavailable"}. Market: ${market || "unavailable"}.`, exposure: null,
@@ -165,8 +181,8 @@ export function buildAlerts({ environment, drivers, summary } = {}) {
   return alerts.sort((a, b) => (TIER[b.kind] - TIER[a.kind]) || b.score - a.score);
 }
 
-const NOUNS = { fed_path: "the Fed path", long_rates: "the 10-year yield", usd: "the dollar", credit: "credit", volatility: "volatility", liquidity: "liquidity",
-  growth: "growth", inflation: "inflation", oil: "oil", semis_cycle: "the chip cycle", yen_carry: "the yen carry trade" };
+const NOUNS = { fed_path: "the Fed", long_rates: "rising long-term rates", usd: "the stronger dollar", credit: "falling risky bonds", volatility: "market fear", liquidity: "tight money",
+  growth: "shrinking factories", inflation: "inflation", oil: "oil prices", semis_cycle: "lagging chip stocks", yen_carry: "the yen" };
 const COUNT_WORDS = { 1: "One", 2: "Two", 3: "Three", 4: "Four", 5: "Five", 6: "Six", 7: "Seven" };
 
 /** One sentence for the top of the page, built from the alerts, never from a model. */

@@ -1,32 +1,20 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { buildAlerts, dataAge, factorFigure, FACTOR_NAMES, FACTOR_RULES, historySentence, marketRead, pct, type Alert } from "../../lib/alerts.mjs";
+import { buildAlerts, dataAge, marketRead, pct, type Alert } from "../../lib/alerts.mjs";
 import { axisTone, shortState } from "../../lib/judgment-tone.mjs";
 import { sectorLeadershipBars } from "../../lib/dashboard-orchestration";
-import type { EnvironmentFactor, ResearchSystem } from "../../lib/research-system-types";
+import type { ResearchSystem } from "../../lib/research-system-types";
 import { loadWatchlistDrivers, type DriverRow } from "../../lib/watchlist-drivers";
 import { loadWatchlistSummary, type SummaryRow } from "../../lib/watchlist-summary";
 import { Criteria } from "./Criteria";
+import { StoryDigest } from "../story/MarketStoryView";
 
 // Checklist 14.3: Today answers one question — what needs my attention — and nothing else.
 // Every reading opens its criteria on hover; detail lives on the Macro, Markets and company pages.
 
-const FACTOR_ORDER = ["fed_path", "long_rates", "usd", "credit", "volatility", "liquidity", "growth", "inflation", "oil", "semis_cycle", "yen_carry"];
 const WATCH_AXES: Array<[string, string]> = [["macro", "Macro"], ["flow", "Flow"], ["expectations", "Estimates"], ["valuation", "Valuation"]];
 const VISIBLE_ALERTS = 5;
-
-function obj(value: unknown) { return (value && typeof value === "object" ? value : {}) as Record<string, unknown>; }
-function factorState(id: string, factor: EnvironmentFactor) {
-  if (id === "liquidity") {
-    const r = factor.readings ?? {};
-    const policy = String(obj(r.policy_liquidity).label ?? ""), market = String(obj(r.market_liquidity).label ?? "");
-    if (r.relation === "AGREE" && factor.direction === -1) return "Tight on both";
-    return [policy && `Policy ${policy.replace("Liquidity ", "").toLowerCase()}`, market && `market ${market.toLowerCase()}`].filter(Boolean).join(" · ") || factor.state;
-  }
-  if (id === "fed_path") return factor.state.replace(/\s*\((.*)\)/, (_, bias: string) => `, ${bias.toLowerCase()}`).replace(/^HOLD/, "Hold").replace(/^CUT/, "Cut").replace(/^HIKE/, "Hike");
-  return factor.state;
-}
 
 function Card({ title, aside, children, className = "" }: { title?: string; aside?: ReactNode; children: ReactNode; className?: string }) {
   return <section className={`tdy-card ${className}`}>{title ? <header><h2>{title}</h2>{aside}</header> : null}{children}</section>;
@@ -73,7 +61,6 @@ export function TodayView({ system, status }: { system: ResearchSystem; status?:
   const loading = drivers == null || summary == null;
   const shown = showAll ? alerts : alerts.slice(0, VISIBLE_ALERTS);
   const sectors = sectorLeadershipBars(system, 4);
-  const factors = FACTOR_ORDER.filter((id) => environment?.factors?.[id]);
 
   return <div className="tdy">
     <header className="tdy-top">
@@ -94,20 +81,7 @@ export function TodayView({ system, status }: { system: ResearchSystem; status?:
         <p className="tdy-headline">{loading ? "Reading your holdings…" : read.headline}</p>
         {!loading ? <p className="tdy-sub">{read.note}</p> : null}
       </Card>
-      <Card title="Factors" aside={<small>Direction, not good or bad</small>} className="tdy-factors">
-        <ul>{factors.map((id) => {
-          const factor = environment!.factors[id];
-          const figure = factorFigure(id, factor);
-          const glyph = factor.direction === 1 ? "▲" : factor.direction === -1 ? "▼" : "•";
-          return <li key={id}>
-            <Criteria align={FACTOR_ORDER.indexOf(id) % 2 ? "right" : "left"} criteria={{ rule: FACTOR_RULES[id] ?? factor.source, now: [`${factor.state}.`, historySentence(id, factor) ?? (figure ? `${figure}.` : null)].filter(Boolean).join(" "), asOf: factor.as_of ?? environment?.as_of, track: factor.track_record ?? null, notes: factor.notes }}>
-              <span className="tdy-factor-name">{FACTOR_NAMES[id]}</span>
-            </Criteria>
-            <span className="tdy-factor-state"><em aria-hidden="true">{glyph}</em>{factorState(id, factor)}</span>
-            <span className="tdy-factor-figure">{figure ?? ""}</span>
-          </li>;
-        })}</ul>
-      </Card>
+      <StoryDigest />
     </div>
 
     <Card title="Needs your attention" aside={<small>Hover any line for its rule</small>} className="tdy-alerts">

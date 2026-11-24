@@ -21,10 +21,10 @@ async function shot(page, name, fullPage = false) {
 try {
   const page = await browser.newPage({ viewport: { width: 1600, height: 1100 } });
   observe(page);
-  let response = await page.goto(baseUrl, { waitUntil: "networkidle" });
+  let response = await page.goto(baseUrl, { waitUntil: "load" });
   if (!response?.ok()) throw new Error(`Dashboard returned ${response?.status()}`);
   await page.locator(".tdy-headline").waitFor();
-  if ((await page.locator(".tdy-factors li").count()) < 6) throw new Error("Today page does not show the macro factors");
+  await page.locator(".tdy-story li").first().waitFor({ timeout: 120000 });
   await page.locator(".tdy-alert, .tdy-alerts .tdy-empty").first().waitFor({ timeout: 120000 });
   await shot(page, "01-dashboard.png", true);
 
@@ -58,7 +58,8 @@ try {
   await page.getByRole("heading", { name: "Cross-border transmission" }).waitFor();
   await shot(page, "08-transmission-map.png", true);
 
-  await page.goto(`${baseUrl}/company/PLTR?fixture=1`, { waitUntil: "networkidle" });
+  // The company page keeps loading its judgment card (about half a minute when cold), so wait for the page, not for a quiet network.
+  await page.goto(`${baseUrl}/company/PLTR?fixture=1`, { waitUntil: "load", timeout: 60000 });
   await page.locator(".company-details > summary").click();   // checklist 9.4: the stored profile is folded
   await page.getByText("Current economic read").waitFor();
   await shot(page, "09-company-snapshot.png", true);
@@ -73,7 +74,7 @@ try {
 
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
   observe(mobile);
-  await mobile.goto(baseUrl, { waitUntil: "networkidle" });
+  await mobile.goto(baseUrl, { waitUntil: "load" });
   await mobile.locator(".tdy-headline").waitFor();
   const overflow = await mobile.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
   if (overflow) throw new Error("Mobile dashboard has horizontal overflow");

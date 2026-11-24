@@ -22,7 +22,8 @@ try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
   observe(page);
 
-  await open(page, "/macro");
+  // Checklist 16: the factor tiles and engine detail moved from /macro to the internal /labs/factors page.
+  await open(page, "/labs/factors");
   await page.locator(".env-factors").waitFor();
   if (await page.locator(".macro-overview-surface .object-metric-grid").count()) throw new Error("Macro Overview still contains the generic metric grid");
   await page.getByRole("heading", { name: "US Treasury structure" }).waitFor();
@@ -88,7 +89,7 @@ try {
 
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
   observe(mobile);
-  await open(mobile, "/macro");
+  await open(mobile, "/labs/factors");
   await mobile.locator(".env-factors").waitFor();
   const overflow = await mobile.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
   if (overflow) throw new Error("Mobile Macro Overview has horizontal overflow");

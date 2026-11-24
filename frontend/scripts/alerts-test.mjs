@@ -29,6 +29,8 @@ const ids = alerts.map((item) => item.id);
 assert.equal(ids[0], "factor-credit");
 assert.deepEqual(alerts[0].holdings, [{ ticker: "PLTR", value: -0.124 }]);
 assert.equal(alerts[0].metric, "Unusual");
+assert.equal(alerts[0].title, "Investors are selling risky company bonds");
+assert.equal(alerts.find((item) => item.id === "liquidity").title, "Money is tight by both measures");
 assert.match(alerts[0].criteria.now, /^Risk appetite fading\. Lower than 85 of every 100 readings in the past three years\.$/);
 assert.ok(!JSON.stringify(alerts).match(/\d+(st|nd|rd|th) (pct|percentile)/), "no percentile jargon in alerts");
 assert.equal(alerts[0].criteria.track.predictive, false);
@@ -58,8 +60,8 @@ assert.ok(!buildAlerts({ environment: split, drivers, summary: [] }).some((item)
 // Market read: built from the alerts, and honest that none of them forecasts.
 const read = marketRead(alerts, environment);
 assert.equal(read.chip, "Regime: narrow leadership unwind");
-assert.equal(read.headline, "Four conditions weigh on your holdings, led by credit, the dollar and the yen carry trade.");
-assert.equal(marketRead(alerts.slice(0, 2), environment).headline, "Two conditions weigh on your holdings: credit and the dollar.");
+assert.equal(read.headline, "Four conditions weigh on your holdings, led by falling risky bonds, the stronger dollar and the yen.");
+assert.equal(marketRead(alerts.slice(0, 2), environment).headline, "Two conditions weigh on your holdings: falling risky bonds and the stronger dollar.");
 // Factors without a percentile show their own figure, not the state again.
 const growth = buildAlerts({ environment: { factors: { growth: { state: "Weakening", direction: -1, readings: { ism_pmi: 47.9 }, notes: [] } } },
   drivers: [{ ticker: "CAT", attribution: { windows: { "3M": { macro_by_factor: { growth: -0.025 } } } } }] });

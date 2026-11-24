@@ -29,8 +29,27 @@ async function runVerdict(ticker: string) {
   return cards[0];
 }
 
+let storyCache: { at: number; value: unknown } | null = null;
+let storyInflight: Promise<unknown> | null = null;
+
+/** Checklists 15-17: the market story, S&P 500 profit breakdown and scenario gate (market_story.py). */
+async function runMarketStory() {
+  if (storyCache && Date.now() - storyCache.at < VERDICT_CACHE_MS) return storyCache.value;
+  storyInflight ??= runPythonJson<Record<string, unknown>>(["-B", "market_story.py", "--json"], 300_000)
+    .then((value) => { if (!value || typeof value !== "object" || !("story" in value)) throw new PythonRuntimeError("INVALID_JSON", "The market story returned no data."); storyCache = { at: Date.now(), value }; return value; })
+    .finally(() => { storyInflight = null; });
+  return storyInflight;
+}
+
 export async function GET(request: NextRequest) {
   const action = request.nextUrl.searchParams.get("action");
+  if (action === "market-story") {
+    try {
+      return NextResponse.json({ status: "OK", ...(await runMarketStory() as Record<string, unknown>) });
+    } catch (error) {
+      return NextResponse.json({ status: "FAILED", runtime_error: runtimeError(error), error: runtimeError(error).message }, { status: 502 });
+    }
+  }
   if (action === "company-verdict" || action === "watchlist-summary" || action === "watchlist-drivers" || action === "fx-moves") {
     try {
       if (action === "fx-moves") return NextResponse.json({ status: "OK", fx: await runPythonJson<unknown>(["-B", "company_verdict.py", "--fx"], 120_000) });

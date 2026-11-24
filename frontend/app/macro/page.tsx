@@ -1,12 +1,11 @@
-import { PageDataStatus } from "../../components/research/DataStatus";
 import { ResearchShell } from "../../components/research/ResearchShell";
-import { MacroOverview } from "../../components/research/ObjectResearchSurfaces";
-import type { ResearchSystem } from "../../lib/research-system-types";
+import { MacroStoryPage } from "../../components/story/MarketStoryView";
 import { loadResearchSystem, researchShellState } from "../../lib/research-server";
 
 export const dynamic = "force-dynamic";
 
+// Checklist 15.4 / 16: Macro is the market story. The factor tiles and engine detail moved to /labs/factors.
 export default async function MacroPage() {
   const response = await loadResearchSystem();
-  return <ResearchShell active="macro" dataState={researchShellState(response)}><PageDataStatus system={response.data as unknown as ResearchSystem} meta={response.meta} /><MacroOverview system={response.data as unknown as ResearchSystem} /></ResearchShell>;
+  return <ResearchShell active="macro" dataState={researchShellState(response)}><MacroStoryPage /></ResearchShell>;
 }
