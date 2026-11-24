@@ -1,15 +1,16 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { CARD_AXES } from "../../lib/watchlist-summary";
 import { axisTone, shortState, TONE_GLYPH, TONE_LABEL } from "../../lib/judgment-tone.mjs";
 import { DriverBar, factorBreakdown, PriceDriversLegend, ReadingTag, type Attribution, type PriceReading } from "./PriceDrivers";
 
-type Row = { ticker: string; last_card: string | null; axes: Record<string, string>; changed: Array<{ axis: string; from: string; to: string; on: string }> };
+type Row = { ticker: string; last_card: string | null; axes: Record<string, string>; changed: Array<{ axis: string; from: string; to: string; on: string; origin?: string }> };
 type Drivers = { ticker: string; reading: PriceReading; attribution: Attribution; archetype_source: string | null };
 const CURRENCIES = ["USD", "EUR", "GBP", "JPY", "CHF", "CNY", "HKD", "SGD", "AUD", "CAD", "KRW", "INR", "TWD"];
 function savedCurrency() { try { return window.localStorage.getItem("chainstox.homeCurrency") || "USD"; } catch { return "USD"; } }
 const KIND_ORDER = ["fundamentals", "company", "watch", "noise", "unknown"];
-const AXES = [["flow", "Money flow"], ["crowding", "Crowding"], ["macro", "Macro"], ["expectations", "Expectations"], ["fundamentals", "Fundamentals"], ["valuation", "Valuation"]] as const;
+const AXES = CARD_AXES;
 
 /** Checklists 8.2, 9.6: company x axis grid of the last recorded card (history only, no live request). */
 export function WatchlistTable() {
@@ -32,8 +33,10 @@ export function WatchlistTable() {
     if (usd == null) return "—";
     const usdText = `${usd >= 0 ? "+" : ""}${(usd * 100).toFixed(1)}%`;
     if (currency === "USD") return usdText;
-    const change = fx?.[currency];
-    if (change == null) return fx ? `${usdText} USD` : usdText;
+    // Checklist 18.9: never show a dollar move as if it were in the chosen currency.
+    if (!fx) return `Converting to ${currency}…`;
+    const change = fx[currency];
+    if (change == null) return `${usdText} USD (no ${currency} rate)`;
     const home = (1 + usd) * (1 + change) - 1;
     return `${home >= 0 ? "+" : ""}${(home * 100).toFixed(1)}% ${currency}`;
   };
@@ -54,7 +57,8 @@ export function WatchlistTable() {
   }, []);
   if (error) return <p className="watchlist-note">Watchlist unavailable: {error}</p>;
   if (!rows) return <p className="watchlist-note">Loading the watchlist…</p>;
-  const changedCount = rows.filter((row) => row.changed.length).length;
+  const companyChanges = (row: Row) => row.changed.filter((item) => item.origin === "COMPANY");
+  const changedCount = rows.filter((row) => companyChanges(row).length).length;
   const kinds = drivers ? Object.values(drivers).map((item) => item.reading.kind) : [];
   const count = (kind: string) => kinds.filter((item) => item === kind).length;
   return <section className="watchlist-grid" aria-label="Watchlist">
@@ -83,7 +87,7 @@ export function WatchlistTable() {
         {AXES.map(([key, label]) => {
           const state = row.axes[key];
           const tone = state ? axisTone(key, state) : "unknown";
-          const change = row.changed.find((item) => item.axis === key);
+          const change = companyChanges(row).find((item) => item.axis === key);
           return <span role="cell" key={key} className={`wl-cell tone-${tone}${change ? " changed" : ""}`} title={`${label}: ${state ?? "no card"}${change ? ` (was ${change.from})` : ""}`}>
             <em aria-hidden>{TONE_GLYPH[tone]}</em>{shortState(state)}
           </span>;

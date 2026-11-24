@@ -33,8 +33,10 @@ def test_parts_add_up_to_the_actual_log_return():
     result = attribute(stock, spy, sector, factors)
     assert result["status"] == "AVAILABLE"
     for window in result["windows"].values():
-        parts = window["parts"]
-        assert sum(parts.values()) == pytest.approx(window["total_log"], abs=1e-9)
+        # The split is done in log returns; the shown parts are scaled to add up to the % price change (18.2).
+        assert sum(window["log_parts"].values()) == pytest.approx(window["total_log"], abs=1e-9)
+        assert sum(window["parts"].values()) == pytest.approx(window["price_change"], abs=1e-9)
+        assert sum(window["macro_by_factor"].values()) == pytest.approx(window["parts"]["macro"], abs=1e-9)
         assert window["price_change"] == pytest.approx(math.exp(window["total_log"]) - 1)
 
 
@@ -124,3 +126,13 @@ def test_no_mapped_macro_factors_is_rough():
     attribution["factors"] = []
     reading = price_reading(attribution, "Estimates stable or mixed")
     assert reading["confidence"] == "LOW" and "No macro exposures" in reading["low_fit_note"]
+
+
+def test_unfinished_week_is_dropped_not_dated_in_the_future():
+    import pandas as pd
+    from price_attribution import _weekly_close
+    days = pd.bdate_range("2026-11-02", "2026-11-24")          # ends on a Tuesday
+    weekly = _weekly_close(pd.DataFrame({"Close": range(1, len(days) + 1)}, index=days))
+    assert weekly.index[-1] == pd.Timestamp("2026-11-20")      # last completed Friday, not 27 November
+    full = pd.bdate_range("2026-11-02", "2026-11-27")
+    assert _weekly_close(pd.DataFrame({"Close": range(1, len(full) + 1)}, index=full)).index[-1] == pd.Timestamp("2026-11-27")

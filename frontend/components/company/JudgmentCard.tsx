@@ -23,6 +23,9 @@ const HORIZON_LABEL: Record<string, string> = { tactical: "1–3 months", cyclic
 function num(value: unknown) { return typeof value === "number" && Number.isFinite(value) ? value : null; }
 function money(value: unknown) { const n = num(value); return n == null ? "—" : n.toLocaleString("en-US", { maximumFractionDigits: n >= 100 ? 0 : 2 }); }
 function pct(value: unknown, digits = 1) { const n = num(value); return n == null ? "—" : `${n >= 0 ? "+" : ""}${(n * 100).toFixed(digits)}%`; }
+// Checklist 18.13: only readings that changed under the same rules are flagged as changes.
+function companyChanges(card: { changes: Array<{ axis: string; from: string; to: string; origin?: string }> }) { return card.changes.filter((item) => item.origin === "COMPANY"); }
+
 function words(value: unknown) { return String(value ?? "").toLowerCase().replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase()); }
 function obj(value: unknown) { return (value && typeof value === "object" ? value : {}) as Record<string, unknown>; }
 
@@ -194,9 +197,9 @@ export function JudgmentCard({ ticker }: { ticker: string }) {
         {horizon.axes.map((name) => card.axes[name] ? <AxisTile key={name} name={name} axis={card.axes[name]} /> : null)}
       </article>)}
     </div>
-    {card.contradictions.length || card.changes.length ? <div className="jc-flags">
+    {card.contradictions.length || companyChanges(card).length ? <div className="jc-flags">
       {card.contradictions.map((item) => <span key={item} className="jc-flag tone-mixed"><em aria-hidden>!</em>{item}</span>)}
-      {card.changes.map((item) => <span key={item.axis} className="jc-flag"><em aria-hidden>↻</em>{AXIS_LABEL[item.axis] ?? item.axis}: {item.from} → {item.to}</span>)}
+      {companyChanges(card).map((item) => <span key={item.axis} className="jc-flag"><em aria-hidden>↻</em>{AXIS_LABEL[item.axis] ?? item.axis}: {item.from} → {item.to}</span>)}
     </div> : null}
     <footer className="judgment-footer">
       <div className="jc-dates"><span><small>Next earnings</small><b>{earnings}</b></span><span><small>Next FOMC</small><b>{card.next_catalysts.fomc ?? "—"}</b></span></div>

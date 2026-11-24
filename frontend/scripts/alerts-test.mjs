@@ -21,7 +21,9 @@ const drivers = [
   { ticker: "AMD", attribution: { windows: { "3M": { macro_by_factor: { credit: -0.004, usd: -0.061 } } }, betas: { yen_carry: 1.6 } } },
   { ticker: "V", attribution: { windows: { "3M": { macro_by_factor: { oil: 0.016 } } } } }
 ];
-const summary = [{ ticker: "MSFT", changed: [{ axis: "expectations", from: "Estimates rising", to: "Estimates stable or mixed", on: "2026-11-24" }] }];
+const summary = [{ ticker: "MSFT", changed: [{ axis: "expectations", from: "Estimates rising", to: "Estimates stable or mixed", on: "2026-11-24", origin: "COMPANY" }] },
+  { ticker: "V", changed: [{ axis: "valuation", from: "Fair value withheld", to: "Price implies more growth than observed/consensus", on: "2026-11-24", origin: "UNKNOWN" },
+                           { axis: "flow", from: "Neutral", to: "Money flowing in", on: "2026-11-24", origin: "RULES" }] }];
 
 const alerts = buildAlerts({ environment, drivers, summary });
 const ids = alerts.map((item) => item.id);
@@ -50,6 +52,8 @@ assert.equal(liquidity.holdings.length, 0);
 assert.match(liquidity.holdingsNote, /No measured link/);
 // Card changes come after the macro conditions.
 assert.equal(ids[ids.length - 1], "card-MSFT-expectations");
+// A reading that moved because the rules changed (or may have) is not an alert.
+assert.ok(!ids.some((id) => id.startsWith("card-V-")));
 assert.equal(alerts[alerts.length - 1].title, "MSFT estimates: estimates stable or mixed");
 
 // Liquidity that disagrees between policy and market raises no alert.

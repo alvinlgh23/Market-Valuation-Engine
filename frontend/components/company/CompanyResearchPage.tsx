@@ -35,6 +35,12 @@ export function CompanyResearchPage({ company, dataState = "FIXTURE", initialWor
     setSelectedNodeId(state.node);
   }, []);
 
+  // Checklist 18.5: one valuation view. The old drawer read a stored structure and showed "Unavailable"
+  // next to the live card's numbers; any link to it now opens the full valuation page.
+  useEffect(() => {
+    if (workspace === "valuation") router.replace(`/valuation/${company.ticker}?view=overview&from=company`);
+  }, [workspace, company.ticker, router]);
+
   useEffect(() => {
     const frame = window.requestAnimationFrame(syncFromUrl);
     window.addEventListener("popstate", syncFromUrl);

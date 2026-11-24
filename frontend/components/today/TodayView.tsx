@@ -6,14 +6,14 @@ import { axisTone, shortState } from "../../lib/judgment-tone.mjs";
 import { sectorLeadershipBars } from "../../lib/dashboard-orchestration";
 import type { ResearchSystem } from "../../lib/research-system-types";
 import { loadWatchlistDrivers, type DriverRow } from "../../lib/watchlist-drivers";
-import { loadWatchlistSummary, type SummaryRow } from "../../lib/watchlist-summary";
+import { CARD_AXES, loadWatchlistSummary, type SummaryRow } from "../../lib/watchlist-summary";
 import { Criteria } from "./Criteria";
 import { StoryDigest } from "../story/MarketStoryView";
 
 // Checklist 14.3: Today answers one question — what needs my attention — and nothing else.
 // Every reading opens its criteria on hover; detail lives on the Macro, Markets and company pages.
 
-const WATCH_AXES: Array<[string, string]> = [["macro", "Macro"], ["flow", "Flow"], ["expectations", "Estimates"], ["valuation", "Valuation"]];
+const WATCH_AXES = CARD_AXES;
 const VISIBLE_ALERTS = 5;
 
 function Card({ title, aside, children, className = "" }: { title?: string; aside?: ReactNode; children: ReactNode; className?: string }) {
@@ -99,7 +99,7 @@ export function TodayView({ system, status }: { system: ResearchSystem; status?:
             <b role="rowheader">{row.ticker}</b>
             {WATCH_AXES.map(([key]) => {
               const state = row.axes[key];
-              const change = row.changed.find((item) => item.axis === key);
+              const change = row.changed.find((item) => item.axis === key && item.origin === "COMPANY");
               return <span key={key} role="cell" className={`tone-${state ? axisTone(key, state) : "unknown"}${change ? " changed" : ""}`} title={`${state ?? "No card yet"}${change ? ` (was ${change.from}, changed ${change.on})` : ""}`}>{shortState(state)}</span>;
             })}
           </Link>)}

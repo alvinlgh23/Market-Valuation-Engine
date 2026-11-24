@@ -11,6 +11,9 @@ import { TransmissionGraph } from "../charts/AnalyticalCharts";
 import { normalizeTransmissions } from "../../lib/research-visualization-adapter";
 
 const REGION_ORDER = ["US", "JP", "KR", "EURO_AREA"];
+// Checklist 18.8: short codes for display; EURO_AREA is an internal key.
+const REGION_CODE: Record<string, string> = { EURO_AREA: "EA" };
+const code = (id: string) => REGION_CODE[id] ?? id;
 function timestamp(value: string) { return value.replace("T", " ").replace(/([+-]\d\d:\d\d|Z)$/, " UTC"); }
 
 function readQuery() {
@@ -50,7 +53,7 @@ function CountryMechanismCanvas({ region, onDetail }: { region: MacroRegion; onD
   const evidenceCount = components.reduce((count, component) => count + component.evidence_ids.length, 0);
   return <section className="country-mechanism-canvas" aria-label={`${region.name} macro mechanism map`}>
     <header>
-      <div><span>MECHANISM MAP / {region.id}</span><h3>{region.name} transmission structure</h3></div>
+      <div><span>MECHANISM MAP / {code(region.id)}</span><h3>{region.name} transmission structure</h3></div>
       <CoverageBar coverage={region.coverage} />
     </header>
     <p>{region.framework}</p>
@@ -75,7 +78,7 @@ function RegionInspector({ region, selectedDetail, onDetail, onClose }: { region
   const evidence = component ? region.evidence.filter((item) => component.evidence_ids.includes(item.id)) : [];
   const exploringMechanism = selectedDetail === "mechanism";
   return <aside className="macro-region-inspector" aria-label={`${region.name} macro profile`}>
-    <header><div><span>REGION / {region.id}</span><h2>{region.name}</h2></div><button type="button" onClick={onClose}>Close · ESC</button></header>
+    <header><div><span>REGION / {code(region.id)}</span><h2>{region.name}</h2></div><button type="button" onClick={onClose}>Close · ESC</button></header>
     <div className="macro-region-brief"><CoverageDetail coverage={region.coverage} /><p>{region.brief}</p><dl><div><dt>Framework</dt><dd>{region.framework}</dd></div><div><dt>Confidence</dt><dd>{region.confidence}</dd></div></dl></div>
     <div className="macro-region-actions"><button type="button" className="primary-action" onClick={() => onDetail("mechanism")}>Explore {region.name}</button>{region.id === "KR" ? <button type="button" onClick={() => onDetail("markets")}>Open KOSPI</button> : null}<button type="button" onClick={() => onDetail("policy")}>Open Policy</button>{region.components.some((item) => item.id === "liquidity") ? <button type="button" onClick={() => onDetail("liquidity")}>Open Liquidity</button> : null}<button type="button" onClick={() => onDetail(region.components.find((item) => item.id === "financial" || item.id === "markets")?.id || region.components[0]?.id)}>Open Assets</button>{region.id === "US" ? <><Link href="/macro/inflation">Open Inflation</Link><Link href="/macro/rates">Open Rates</Link><Link href="/macro/risk">Open Risk</Link><Link href="/macro/fx">Open FX</Link></> : null}<button type="button" onClick={() => onDetail(component?.id || region.components[0]?.id)}>Evidence</button></div>
     <nav className="macro-component-nav" aria-label={`${region.name} macro components`}>
@@ -154,7 +157,7 @@ export function MacroWorldSurface({ world }: { world: MacroWorld }) {
       {hoverRegion ? <aside className="macro-map-tooltip" aria-live="polite"><header><strong>{hoverRegion.name.toUpperCase()}</strong><CoverageBar coverage={hoverRegion.coverage} /></header><span>Research coverage</span>{hoverRegion.components.slice(0, 5).map((item) => <div key={item.id}><b>{item.label}</b><small>{item.confidence}</small></div>)}<p>{hoverRegion.brief}</p><small>Click marker to open {hoverRegion.name}.</small></aside> : null}
       {hoverUnavailable ? <aside className="macro-map-tooltip unavailable" aria-live="polite"><header><strong>{hoverUnavailable.toUpperCase()}</strong><Status value="NOT AVAILABLE" /></header><p>No verified CHAINSTOX macro engine currently covers this economy.</p></aside> : null}</div>
       {notice ? <div className="macro-unavailable-notice" role="status"><strong>NOT AVAILABLE</strong><span>{notice}</span><button onClick={() => setNotice("")} type="button">Dismiss</button></div> : null}
-      <section className="macro-region-index"><header><span>Supported economy index</span><small className="cov-legend"><i className="cov-seg cov-full" />all data <i className="cov-seg cov-partial" />some missing <i className="cov-seg cov-stale" />out of date <i className="cov-seg cov-missing" />none <i className="cov-seg cov-not_covered" />not modelled</small></header>{REGION_ORDER.map((id) => { const item = world.regions[id]; return <button type="button" key={id} onClick={() => selectRegion(id)}><b>{id}</b><span><strong>{item.name}</strong><small>{item.framework}</small></span><CoverageBar coverage={item.coverage} /><i>→</i></button>; })}</section>
+      <section className="macro-region-index"><header><span>Supported economy index</span><small className="cov-legend"><i className="cov-seg cov-full" />all data <i className="cov-seg cov-partial" />some missing <i className="cov-seg cov-stale" />out of date <i className="cov-seg cov-missing" />none <i className="cov-seg cov-not_covered" />not modelled</small></header>{REGION_ORDER.map((id) => { const item = world.regions[id]; return <button type="button" key={id} onClick={() => selectRegion(id)}><b>{code(id)}</b><span><strong>{item.name}</strong><small>{item.framework}</small></span><CoverageBar coverage={item.coverage} /><i>→</i></button>; })}</section>
     </main>{region ? <RegionInspector region={region} selectedDetail={detailId} onDetail={selectDetail} onClose={() => { setRegionId(""); setDetailId(""); push({ region: "", detail: "" }); }} /> : null}</div> : <div className={`macro-transmission-layout ${edge ? "has-inspector" : ""}`}><main><header className="transmission-header"><span>MECHANISM NETWORK</span><h2>Cross-border transmission</h2><p>Solid, dashed, and dotted edges distinguish fact, proxy, and inference. No coefficient or causal strength is invented.</p></header><TransmissionGraph nodes={transmission.nodes} edges={transmission.edges} selected={edgeId} onSelect={(item) => selectEdge(item.id)} /><div className="transmission-edge-list">{world.transmissions.map((item) => <button type="button" key={item.id} className={edgeId === item.id ? "active" : ""} onClick={() => selectEdge(item.id)}><span>{item.source} → {item.target}</span><strong>{item.label}</strong><Status value={item.current_state} /></button>)}</div></main>{edge ? <EdgeInspector edge={edge} evidence={evidence} onClose={() => { setEdgeId(""); push({ edge: "" }); }} /> : null}</div>}
     <footer className="macro-world-footer"><span>{world.disclaimer}</span><span>Generated {timestamp(world.generated_at)}</span></footer>
   </div>;

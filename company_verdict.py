@@ -575,17 +575,33 @@ def falsification(economics: dict[str, Any] | None) -> list[str]:
     return [item.get("condition") for item in (economics or {}).get("falsification_conditions") or [] if item.get("condition")][:4]
 
 
+# Checklist 18.13: every recorded card carries the version of the rules that produced it. Raise this
+# whenever a card rule changes, so a reading that moved because the rules moved is not shown as news.
+VERDICT_RULES_VERSION = "2026-11-24"
+VERDICT_SOURCE = f"company_verdict@{VERDICT_RULES_VERSION}"
+
+
+def change_origin(before_source: str | None, after_source: str | None) -> str:
+    """COMPANY: both readings came from the same rules, so the company or its data changed.
+    RULES: the rules changed between them. UNKNOWN: recorded before versions existed (21-24 Nov 2026,
+    while the rules were being revised), so a rule change cannot be ruled out."""
+    if not before_source or "@" not in before_source or not after_source or "@" not in after_source:
+        return "UNKNOWN"
+    return "COMPANY" if before_source == after_source else "RULES"
+
+
 def changes_since_last(ticker: str, axes: dict[str, dict[str, Any]], store: SignalStore, today: str) -> list[dict[str, str]]:
     output = []
     for key, value in axes.items():
         prior = [row for row in store.rows(f"verdict.{ticker}.{key}") if row["observation_date"] < today and row["label"]]
         if prior and prior[-1]["label"] != value["state"]:
-            output.append({"axis": key, "from": prior[-1]["label"], "to": value["state"], "since": prior[-1]["observation_date"]})
+            output.append({"axis": key, "from": prior[-1]["label"], "to": value["state"], "since": prior[-1]["observation_date"],
+                           "origin": change_origin(prior[-1].get("source"), VERDICT_SOURCE)})
     return output
 
 
 def record_verdict(ticker: str, axes: dict[str, dict[str, Any]], store: SignalStore, today: str) -> int:
-    return store.append([observation(f"verdict.{ticker}.{key}", today, label=value["state"], source="company_verdict", source_state="LIVE") for key, value in axes.items()])
+    return store.append([observation(f"verdict.{ticker}.{key}", today, label=value["state"], source=VERDICT_SOURCE, source_state="LIVE") for key, value in axes.items()])
 
 
 # ---- data collection (network) ---------------------------------------------------------------
@@ -883,7 +899,8 @@ def watchlist_summary(store: SignalStore | None = None) -> list[dict[str, Any]]:
             axes[key] = rows[-1]["label"]
             last_date = max(last_date or rows[-1]["observation_date"], rows[-1]["observation_date"])
             if len(rows) >= 2 and rows[-2]["label"] != rows[-1]["label"]:
-                changed.append({"axis": key, "from": rows[-2]["label"], "to": rows[-1]["label"], "on": rows[-1]["observation_date"]})
+                changed.append({"axis": key, "from": rows[-2]["label"], "to": rows[-1]["label"], "on": rows[-1]["observation_date"],
+                                "origin": change_origin(rows[-2].get("source"), rows[-1].get("source"))})
         output.append({"ticker": ticker, "last_card": last_date, "axes": axes, "changed": changed})
     output.sort(key=lambda item: (-len(item["changed"]), item["last_card"] is None, item["ticker"]))
     return output
@@ -939,7 +956,8 @@ def watchlist_drivers(store: SignalStore | None = None, today: dt.date | None = 
     for ticker in tickers:
         cached = load_attribution(ticker)
         expectations = next((row["label"] for row in reversed(store.rows(f"verdict.{ticker}.expectations")) if row["label"]), None)
-        if cached and cached.get("date") == today.isoformat() and cached.get("attribution"):
+        fresh_format = (((cached or {}).get("attribution") or {}).get("windows") or {}).get("3M", {}).get("parts_basis") == "simple"
+        if cached and cached.get("date") == today.isoformat() and cached.get("attribution") and fresh_format:
             payload = cached
         else:
             archetype, source = _stored_archetype(ticker)

@@ -3865,3 +3865,18 @@ html, body { background: var(--research-bg); font-family: var(--font-research); 
   .story-carriers li { grid-template-columns: 64px minmax(0, 1fr) 48px; }
   .story-carriers a small { display: none; }
 }
+
+/* Checklist 18.5: a clear way back from the valuation page to its company */
+.valuation-back { display: inline-block; margin-bottom: 10px; color: var(--research-muted); font-size: 13px; text-decoration: none; }
+.valuation-back:hover { color: var(--research-text); }
+
+/* Checklist 18.6: fit 1280-pixel screens without sideways scrolling */
+.wl-row { grid-template-columns: 64px minmax(220px, 2.4fr) repeat(6, minmax(76px, 1fr)) 84px; min-width: 920px; }
+.inflation-cell small { white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.35; }
+/* Checklist 18.10: the criteria panel stays on screen */
+.crit-pop { max-height: min(360px, 60vh); overflow-y: auto; }
+.crit.crit-up > .crit-pop { top: auto; bottom: calc(100% + 8px); }
+/* Checklist 18.11: Today's watchlist shows the same six axes as the watchlist page */
+.tdy-watch-row { grid-template-columns: 56px repeat(6, minmax(0, 1fr)); gap: 6px; }
+.tdy-watch-row span { min-width: 0; overflow-wrap: anywhere; }
+@media (max-width: 760px) { .tdy-watch-row { grid-template-columns: 48px repeat(6, minmax(0, 1fr)); font-size: 11.5px; } }

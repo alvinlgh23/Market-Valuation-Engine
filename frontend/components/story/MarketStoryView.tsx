@@ -124,7 +124,7 @@ export function ScenarioGate({ data }: { data: MarketStory | null }) {
 export function MacroStoryPage() {
   const data = useMarketStory();
   return <div className="story-page">
-    <header className="tdy-top"><div><h1>Macro</h1><p>From inflation and the Fed down to profits and your holdings</p></div><Link href="/labs/factors" className="story-internal">Factor readings (internal)</Link></header>
+    <header className="tdy-top"><div><h1>Macro</h1><p>From inflation and the Fed down to profits and your holdings</p></div></header>
     <StoryChain data={data} />
     <ProfitBreakdown data={data} />
     <ScenarioGate data={data} />

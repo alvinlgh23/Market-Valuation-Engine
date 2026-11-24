@@ -20,7 +20,15 @@ import { fairValueCoordinates } from "../../lib/fair-value-scale.mjs";
 // Checklist 12.3: an ADR valued at company level reports in its accounting currency (e.g. TWD), not dollars.
 function moneyFormatter(currency?: string) {
   const prefix = !currency || currency === "USD" ? "$" : `${currency} `;
-  return (value: unknown) => typeof value === "number" && Number.isFinite(value) ? `${prefix}${value.toLocaleString("en-US", { maximumFractionDigits: 2 })}` : "—";
+  // Checklist 18.12: company-level amounts in billions or millions, not twelve-digit figures.
+  return (value: unknown) => {
+    if (typeof value !== "number" || !Number.isFinite(value)) return "—";
+    const size = Math.abs(value), sign = value < 0 ? "−" : "";
+    if (size >= 1e12) return `${sign}${prefix}${(size / 1e12).toFixed(2)}T`;
+    if (size >= 1e9) return `${sign}${prefix}${(size / 1e9).toFixed(2)}B`;
+    if (size >= 1e6) return `${sign}${prefix}${(size / 1e6).toFixed(1)}M`;
+    return `${prefix}${value.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
+  };
 }
 function pct(value: unknown) { return typeof value === "number" && Number.isFinite(value) ? `${(value * 100).toFixed(1)}%` : "—"; }
 function number(value: unknown) { return typeof value === "number" && Number.isFinite(value) ? value.toLocaleString("en-US", { maximumFractionDigits: 1 }) : "—"; }
@@ -145,7 +153,7 @@ function ScenarioComparison({ report }: { report: ValuationReport }) {
 }
 
 function Assumptions({ report }: { report: ValuationReport }) {
-  return <section className="valuation-section"><header><span>ASSUMPTION INSPECTOR</span><h2>Why each base-case number is here</h2></header><div className="assumption-inspector-list">{baseAssumptions(report).map((item) => <article key={item.name}><span>{humanize(item.name)}</span><strong>{item.unit === "multiple" ? `${number(item.value)}x` : item.unit === "decimal" ? pct(item.value) : String(item.value)}</strong><dl><div><dt>Source</dt><dd>{item.source}</dd></div><div><dt>Basis</dt><dd>{item.basis}</dd></div><div><dt>Confidence</dt><dd>{humanize(item.confidence)}</dd></div><div><dt>Period</dt><dd>{item.period}</dd></div><div><dt>Override</dt><dd>{item.overridden ? "User override" : "None"}</dd></div></dl></article>)}</div></section>;
+  return <section className="valuation-section"><header><span>ASSUMPTION INSPECTOR</span><h2>Why each base-case number is here</h2></header><div className="assumption-inspector-list">{baseAssumptions(report).map((item) => <article key={item.name}><span>{humanize(item.name)}</span><strong>{item.unit === "multiple" ? `${number(item.value)}x` : item.unit === "decimal" ? pct(item.value) : String(item.value)}</strong><dl><div><dt>Source</dt><dd>{humanize(String(item.source))}</dd></div><div><dt>Basis</dt><dd>{item.basis}</dd></div><div><dt>Confidence</dt><dd>{humanize(item.confidence)}</dd></div><div><dt>Period</dt><dd>{item.period}</dd></div><div><dt>Override</dt><dd>{item.overridden ? "User override" : "None"}</dd></div></dl></article>)}</div></section>;
 }
 
 function ReverseDcf({ report, company }: { report: ValuationReport; company: CompanyEconomicsPayload | null }) {
@@ -183,7 +191,7 @@ export function ValuationResearchPage({ report, company, view = "overview", data
   if (report.validation.status === "FAILED") report = { ...report, scenarios: {}, sensitivity: {}, reverse_dcf: { status: "VALIDATION_FAILED" }, final_interpretation: { text: `Fair value withheld: ${report.validation.reasons?.join(" ") || report.data_quality.reason || "Critical validation failed."}` } };
   return <ResearchShell active="valuation" ticker={report.company.ticker} dataState={dataState}>
     <div className="valuation-research-surface">
-      <header className="valuation-object-header"><div><span>VALUATION / {report.company.ticker}{from ? ` / FROM ${from.toUpperCase()}` : ""}</span><h1>{report.company.name}</h1><p>{report.selected_method}</p></div><aside><ValueBadge value={valuationState(report)} /><strong>{money(report.company.current_market_price)}</strong><small>Current / latest available market price</small></aside></header>
+      <header className="valuation-object-header"><div><Link className="valuation-back" href={`/company/${report.company.ticker}`}>← {report.company.ticker} company page</Link><span>VALUATION / {report.company.ticker}{from ? ` / FROM ${from.toUpperCase()}` : ""}</span><h1>{report.company.name}</h1><p>{report.selected_method}</p></div><aside><ValueBadge value={valuationState(report)} /><strong>{money(report.company.current_market_price)}</strong><small>Current / latest available market price</small></aside></header>
       <ViewNav ticker={report.company.ticker} view={view} fixture={dataState === "FIXTURE"} />
       {report.unit_bridge?.note ? <p className="valuation-unit-note">{report.unit_bridge.note} Quoted price {report.unit_bridge.quote_price != null ? `$${report.unit_bridge.quote_price.toFixed(2)}` : "—"}.</p> : null}
       <p role="status"><ValueBadge value={report.validation.status} /> {report.validation.reasons?.join(" ")} · Source: {dataState} · Report as of: {report.company.as_of || "unavailable"}. Response freshness does not establish financial-observation freshness; inspect statement periods in Evidence. · <Link href={`/company/${report.company.ticker}?view=economics${dataState === "FIXTURE" ? "&fixture=1" : ""}`}>Company Economics →</Link></p>

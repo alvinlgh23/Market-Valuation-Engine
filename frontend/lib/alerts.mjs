@@ -164,7 +164,8 @@ export function buildAlerts({ environment, drivers, summary } = {}) {
     });
   }
   for (const row of summary ?? []) {
-    for (const change of row.changed ?? []) {
+    // Checklist 18.13: only a change made under the same rules is news; a rule revision is not.
+    for (const change of (row.changed ?? []).filter((item) => item.origin === "COMPANY")) {
       alerts.push({
         id: `card-${row.ticker}-${change.axis}`, kind: "company", tone: "info", ticker: row.ticker,
         title: `${row.ticker} ${(AXIS_NAMES[change.axis] ?? change.axis).toLowerCase()}: ${String(change.to).toLowerCase()}`,

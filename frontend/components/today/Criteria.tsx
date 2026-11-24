@@ -1,5 +1,5 @@
 "use client";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 export type CriteriaContent = {
   rule: string;
@@ -21,7 +21,13 @@ function trackBadge(track: NonNullable<CriteriaContent["track"]>) {
  * panel with the rule, what it reads now, how holdings are linked, the data date and the track record.
  */
 export function Criteria({ children, criteria, align = "left", block = false }: { children: ReactNode; criteria: CriteriaContent; align?: "left" | "right"; block?: boolean }) {
-  return <span className={`crit${block ? " crit-block" : ""}`} tabIndex={0}>
+  // Checklist 18.10: open upwards when the panel would run off the bottom of the screen.
+  const [up, setUp] = useState(false);
+  const place = (event: { currentTarget: HTMLElement }) => {
+    const box = event.currentTarget.getBoundingClientRect();
+    setUp(window.innerHeight - box.bottom < 340 && box.top > window.innerHeight - box.bottom);
+  };
+  return <span className={`crit${block ? " crit-block" : ""}${up ? " crit-up" : ""}`} tabIndex={0} onMouseEnter={place} onFocus={place}>
     <span className="crit-trigger">{children}</span>
     <span className={`crit-pop crit-${align}`} role="tooltip">
       <span className="crit-row"><small>Rule</small><span>{criteria.rule}</span></span>

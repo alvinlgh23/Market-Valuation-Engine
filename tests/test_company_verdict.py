@@ -169,7 +169,7 @@ def test_changes_are_measured_against_the_last_recorded_card(tmp_path):
     assert cv.record_verdict("NVDA", first, store, "2026-11-10") == 2
     second = {"flow": cv.axis("Money flowing out"), "macro": cv.axis("Headwind")}
     changes = cv.changes_since_last("NVDA", second, store, "2026-11-20")
-    assert changes == [{"axis": "flow", "from": "Neutral", "to": "Money flowing out", "since": "2026-11-10"}]
+    assert changes == [{"axis": "flow", "from": "Neutral", "to": "Money flowing out", "since": "2026-11-10", "origin": "COMPANY"}]
     assert cv.record_verdict("NVDA", second, store, "2026-11-10") == 0  # append-only
 
 
@@ -263,3 +263,15 @@ def test_two_year_consensus_and_three_year_history():
     annual = pd.DataFrame({"2025": [133.1], "2024": [121.0], "2023": [110.0], "2022": [100.0]}, index=["Total Revenue"])
     assert abs(cv.history_cagr(annual) - 0.10) < 1e-9
     assert cv.history_cagr(annual.iloc[:, :3]) is None
+
+
+def test_a_reading_that_moved_because_the_rules_moved_is_not_news(tmp_path):
+    assert cv.change_origin("company_verdict@2026-11-24", "company_verdict@2026-11-24") == "COMPANY"
+    assert cv.change_origin("company_verdict@2026-11-24", "company_verdict@2026-12-01") == "RULES"
+    assert cv.change_origin("company_verdict", "company_verdict@2026-11-24") == "UNKNOWN"
+    store = SignalStore(tmp_path)
+    store.append([observation("verdict.V.valuation", "2026-11-21", label="Fair value withheld", source="company_verdict", source_state="LIVE")])
+    change = cv.changes_since_last("V", {"valuation": {"state": "Price implies more growth than observed/consensus"}}, store, "2026-11-25")
+    assert change[0]["origin"] == "UNKNOWN"
+    cv.record_verdict("V", {"valuation": {"state": "Price implies more growth than observed/consensus"}}, store, "2026-11-25")
+    assert store.rows("verdict.V.valuation")[-1]["source"] == cv.VERDICT_SOURCE

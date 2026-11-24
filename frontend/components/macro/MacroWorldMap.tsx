@@ -39,6 +39,6 @@ export function MacroWorldMap({ regions, selected, onSelect, onUnavailable, onHo
         <circle cx="299" cy="333" r="6" /><text x="311" y="327">BR · NOT AVAILABLE</text>
       </g>
     </svg>
-    <div className="macro-map-legend"><span><i className="available" />Available</span><span><i className="partial" />Partial</span><span><i />Not available</span><small>EURO AREA = MONETARY UNION · SINGAPORE MARKER ENLARGED</small></div>
+    <div className="macro-map-legend"><span><i className="available" />Available</span><span><i className="partial" />Partial</span><span><i />Not available</span><small>EURO AREA = MONETARY UNION</small></div>
   </div>;
 }

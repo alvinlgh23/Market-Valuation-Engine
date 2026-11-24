@@ -28,7 +28,13 @@ HISTORY_PERIOD = "5y"
 
 
 def _weekly_close(frame):
-    return frame["Close"].resample("W-FRI").last().dropna()
+    """Friday closes of completed weeks only. Pandas labels an unfinished week with the coming Friday,
+    which showed as a date in the future; that partial week is dropped (checklist 18.1)."""
+    closes = frame["Close"].dropna()
+    weekly = closes.resample("W-FRI").last().dropna()
+    if len(weekly) and len(closes) and closes.index[-1].normalize() < weekly.index[-1].normalize():
+        weekly = weekly.iloc[:-1]
+    return weekly
 
 
 def _ols(y, X):
@@ -85,14 +91,21 @@ def attribute(stock, spy, sector, factors: dict[str, Any], fit_weeks: int = FIT_
         total = float(frame["stock"].iloc[-weeks:].sum())
         company = total - sum(macro_by.values()) - market_part - sector_sum
         top = max(macro_by.items(), key=lambda kv: abs(kv[1])) if macro_by else None
+        # Checklist 18.2: the split is done in log returns, which do not add up to the percentage price
+        # change. Shown parts are scaled by the same factor so they add up to it; rules use the log parts.
+        scale = (math.exp(total) - 1) / total if total else 1.0
+        log_parts = {"macro": sum(macro_by.values()), "market": market_part, "sector": sector_sum, "company": company}
         windows[label] = {
             "weeks": weeks,
             "start": frame.index[-weeks - 1].date().isoformat() if len(frame) > weeks else None,
             "price_change": math.exp(total) - 1,
             "total_log": total,
-            "parts": {"macro": sum(macro_by.values()), "market": market_part, "sector": sector_sum, "company": company},
-            "macro_by_factor": macro_by,
-            "top_macro": {"factor": top[0], "value": top[1]} if top else None,
+            "parts": {key: value * scale for key, value in log_parts.items()},
+            "log_parts": log_parts,
+            "parts_basis": "simple",
+            "macro_by_factor": {name: value * scale for name, value in macro_by.items()},
+            "macro_by_factor_log": macro_by,
+            "top_macro": {"factor": top[0], "value": top[1] * scale} if top else None,
             "company_z": company / (sd * math.sqrt(weeks)) if sd > 0 else None,
         }
     return {
@@ -165,7 +178,8 @@ def price_reading(attribution: dict[str, Any] | None, expectations_state: str | 
         return {"kind": "unknown", "label": "Price drivers unavailable", "detail": (attribution or {}).get("reason") or "No attribution.",
                 "confidence": "LOW", "window": window}
     w = attribution["windows"][window]
-    parts, z, change = w["parts"], w.get("company_z"), w["price_change"]
+    shown, z, change = w["parts"], w.get("company_z"), w["price_change"]
+    parts = w.get("log_parts") or shown        # the rules read log parts; the text shows parts that add up
     r2 = (attribution.get("fit") or {}).get("r2")
     outside = max(("macro", "market", "sector"), key=lambda key: abs(parts[key]))
     top = w.get("top_macro") or {}
@@ -190,8 +204,8 @@ def price_reading(attribution: dict[str, Any] | None, expectations_state: str | 
     short = {"noise": f"{PART_LABEL[outside]}-driven" if abs(parts[outside]) >= 0.05 else "Normal range",
              "watch": f"Some company {direction}", "fundamentals": "Fundamentals changing",
              "company": f"Company {direction}" + ("" if "unavailable" in label else ", estimates flat")}.get(kind, "Unscored")
-    detail = (f"{window} price {change:+.1%}: macro {parts['macro']:+.1%}, market {parts['market']:+.1%}, sector {parts['sector']:+.1%}, "
-              f"company {parts['company']:+.1%} ({'z unavailable' if z is None else f'{z:+.1f}x normal range'}).")
+    detail = (f"{window} price {change:+.1%}: macro {shown['macro']:+.1%}, market {shown['market']:+.1%}, sector {shown['sector']:+.1%}, "
+              f"company {shown['company']:+.1%} ({'z unavailable' if z is None else f'{z:+.1f}x normal range'}).")
     if fundamentals_change:
         detail += f" Fundamentals axis changed from {fundamentals_change.get('from')} to {fundamentals_change.get('to')}."
     confidence = "LOW" if r2 is None or r2 < LOW_FIT_R2 else "MODERATE"
@@ -199,7 +213,7 @@ def price_reading(attribution: dict[str, Any] | None, expectations_state: str | 
     if no_factors:
         confidence = "LOW"
     return {"kind": kind, "label": label, "short": short, "detail": detail, "confidence": confidence,
-            "fit_r2": r2, "window": window, "price_change": change, "parts": parts, "company_z": z,
+            "fit_r2": r2, "window": window, "price_change": change, "parts": shown, "company_z": z,
             "outside_driver": outside, "top_macro": top_label, "estimates_state": expectations_state,
             "low_fit_note": ("No macro exposures are mapped for this company's archetype, so macro moves sit inside market and company parts." if no_factors
                              else None if confidence != "LOW" else f"The model explains only {0 if r2 is None else r2:.0%} of weekly moves; treat the split as rough.")}
