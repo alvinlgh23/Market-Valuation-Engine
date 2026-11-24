@@ -122,6 +122,13 @@ function ValueRange({ card }: { card: Card }) {
   </div>;
 }
 
+// Owner decision 2026-11-24: "next year" is the fiscal year still mostly ahead, which for a June-to-October year end is the current one.
+function fiscalYearTitle(value: unknown): string | undefined {
+  if (typeof value !== "string" || !value) return undefined;
+  const date = new Date(`${value}T00:00:00Z`);
+  return Number.isNaN(date.getTime()) ? undefined : `Revenue growth for the fiscal year ending ${date.toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" })}`;
+}
+
 function NumberStrip({ card }: { card: Card }) {
   const valuation = card.axes.valuation?.detail ?? {};
   const expectations = card.axes.expectations?.detail ?? {};
@@ -131,7 +138,7 @@ function NumberStrip({ card }: { card: Card }) {
   const items: Array<[string, string, string?]> = [
     ["Price", money(valuation.price)],
     [twelveMonth ? "Revenue growth (12 mo)" : "Revenue growth", pct(valuation.observed_growth), [basis, quarter != null ? `Latest single quarter vs a year earlier: ${pct(quarter)}` : ""].filter(Boolean).join(" · ") || undefined],
-    ["Consensus next year", pct(expectations.revenue_growth_next_year ?? valuation.consensus_next_year_growth)],
+    ["Consensus next year", pct(expectations.revenue_growth_next_year ?? valuation.consensus_next_year_growth), fiscalYearTitle(expectations.forward_fiscal_year_end)],
   ];
   return <dl className="jc-numbers">{items.map(([label, value, title]) => <div key={label} title={title}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>;
 }

@@ -110,6 +110,22 @@ def test_two_cash_flow_bases_publish_only_a_reading_that_holds_on_both():
     assert "+1.3% to +14.7%" in split["evidence"][0]
 
 
+def test_next_year_is_the_fiscal_year_still_mostly_ahead():
+    today = dt.date(2026, 11, 24)
+    # AMAT: the year ending October 2027 has barely started, so it is next year ("0y"), not October 2028.
+    assert cv.forward_fiscal_year(dt.date(2027, 10, 25), today) == ("0y", dt.date(2027, 10, 25))
+    # AMD: one month of December 2026 is left, so next year is the one ending December 2027 ("+1y").
+    assert cv.forward_fiscal_year(dt.date(2026, 12, 27), today) == ("+1y", dt.date(2027, 12, 27))
+    # Exactly half a year ahead still counts as the current year; without the year end the old choice stays.
+    assert cv.forward_fiscal_year(today + dt.timedelta(days=183), today)[0] == "0y"
+    assert cv.forward_fiscal_year(today + dt.timedelta(days=182), today)[0] == "+1y"
+    assert cv.forward_fiscal_year(None, today) == ("+1y", None)
+    assert cv.forward_fiscal_year(dt.date(2028, 2, 29), dt.date(2028, 2, 1))[1] == dt.date(2029, 2, 28)
+    axis = cv.expectations_axis({"eps_trend_next_year": {"current": 1.1, "90daysAgo": 1.0}, "revisions_up_30d": 7, "revisions_down_30d": 0,
+                                 "revenue_growth_next_year": 0.393, "analysts_next_year": 30, "forward_fiscal_year_end": "2027-10-25"})
+    assert "next fiscal year (fiscal year ending Oct 2027) +39.3%" in axis["evidence"][1]
+
+
 def test_expectations_and_fundamentals_axes():
     rising = cv.expectations_axis({"eps_trend_next_year": {"current": 1.1, "90daysAgo": 1.0}, "revisions_up_30d": 7, "revisions_down_30d": 0, "revenue_growth_next_year": 0.2, "analysts_next_year": 30})
     assert rising["state"] == "Estimates rising"

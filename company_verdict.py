@@ -419,6 +419,13 @@ def crowding_axis(heat: dict[str, Any] | None, sector_flow: dict[str, Any] | Non
                         "valuation_in_own_history": valuation})
 
 
+def _fiscal_year_text(year_end: str | None) -> str:
+    try:
+        return f" (fiscal year ending {dt.date.fromisoformat(year_end):%b %Y})" if year_end else ""
+    except ValueError:
+        return ""
+
+
 def expectations_axis(expectations: dict[str, Any] | None) -> dict[str, Any]:
     if not expectations or expectations.get("error"):
         return axis("Consensus data unavailable", missing=[(expectations or {}).get("error") or "consensus estimates"], families=["fundamentals"])
@@ -434,9 +441,10 @@ def expectations_axis(expectations: dict[str, Any] | None) -> dict[str, Any]:
         state = "Estimates falling"
     else:
         state = "Estimates stable or mixed"
-    evidence = [f"Next-year EPS estimate {_pct(change)} over 90 days; last 30 days {up} up / {down} down revisions."]
+    year = _fiscal_year_text(expectations.get("forward_fiscal_year_end"))
+    evidence = [f"Next-year EPS estimate{year} {_pct(change)} over 90 days; last 30 days {up} up / {down} down revisions."]
     if expectations.get("revenue_growth_next_year") is not None:
-        evidence.append(f"Consensus revenue growth next fiscal year {_pct(expectations['revenue_growth_next_year'])} ({expectations.get('analysts_next_year')} analysts).")
+        evidence.append(f"Consensus revenue growth next fiscal year{year} {_pct(expectations['revenue_growth_next_year'])} ({expectations.get('analysts_next_year')} analysts).")
     return axis(state, direction=None if change is None else "up" if change > 0 else "down", confidence="MODERATE" if change is not None else "LOW",
                 evidence=evidence, families=["fundamentals"], detail=expectations)
 
@@ -523,12 +531,31 @@ def record_verdict(ticker: str, axes: dict[str, dict[str, Any]], store: SignalSt
 
 
 # ---- data collection (network) ---------------------------------------------------------------
-def collect_expectations(ticker: str) -> dict[str, Any]:
+def forward_fiscal_year(current_fiscal_year_end: dt.date | None, today: dt.date) -> tuple[str, dt.date | None]:
+    """The fiscal year the card calls "next year" (owner decision 2026-11-24).
+
+    Yahoo labels the fiscal year in progress "0y" and the one after it "+1y". While at least half of the
+    current fiscal year is still ahead, it is the next year to be reported ("0y"); in its second half the
+    following year ("+1y") is. Without the year-end date the old choice ("+1y") is kept.
+    """
+    if current_fiscal_year_end is None:
+        return "+1y", None
+    if (current_fiscal_year_end - today).days >= 365 / 2:
+        return "0y", current_fiscal_year_end
+    try:
+        following = current_fiscal_year_end.replace(year=current_fiscal_year_end.year + 1)
+    except ValueError:  # 29 February
+        following = current_fiscal_year_end + dt.timedelta(days=365)
+    return "+1y", following
+
+
+def collect_expectations(ticker: str, today: dt.date | None = None) -> dict[str, Any]:
     import yfinance as yf
     try:
         with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
             handle = yf.Ticker(ticker)
             trend, revisions, revenue, calendar = handle.eps_trend, handle.eps_revisions, handle.revenue_estimate, handle.calendar
+            year_end_stamp = (handle.info or {}).get("nextFiscalYearEnd")
     except Exception as exc:  # noqa: BLE001
         return {"error": f"{type(exc).__name__}: {exc}"}
     def row(frame, period):
@@ -536,13 +563,19 @@ def collect_expectations(ticker: str) -> dict[str, Any]:
             return {key: (value.item() if hasattr(value, "item") else value) for key, value in frame.loc[period].to_dict().items()}
         except Exception:  # noqa: BLE001
             return {}
-    next_year_revenue = row(revenue, "+1y")
-    rev = row(revisions, "+1y")
+    try:
+        current_year_end = dt.datetime.fromtimestamp(int(year_end_stamp), dt.timezone.utc).date() if year_end_stamp else None
+    except (TypeError, ValueError, OverflowError, OSError):
+        current_year_end = None
+    period, year_end = forward_fiscal_year(current_year_end, today or dt.date.today())
+    next_year_revenue = row(revenue, period)
+    rev = row(revisions, period)
     earnings_dates = (calendar or {}).get("Earnings Date") or []
     return {
-        "eps_trend_next_year": row(trend, "+1y"),
+        "eps_trend_next_year": row(trend, period),
         "revisions_up_30d": rev.get("upLast30days"), "revisions_down_30d": rev.get("downLast30days"),
         "revenue_growth_next_year": _num(next_year_revenue.get("growth")), "analysts_next_year": next_year_revenue.get("numberOfAnalysts"),
+        "forward_period": period, "forward_fiscal_year_end": year_end.isoformat() if year_end else None,
         "next_earnings_date": str(earnings_dates[0]) if earnings_dates else None,
         "source": "Yahoo Finance analyst estimates via yfinance",
     }
@@ -614,7 +647,7 @@ def build_card(ticker: str, environment: dict[str, Any], core: dict[str, Any], s
         company_vs_sector = vm.relative_change_from_histories(vm.fetch_history(ticker, "1y"), vm.fetch_history(etf, "1y"), 63)
     with contextlib.redirect_stdout(io.StringIO()):
         heat = (vm.heat_rows([ticker]) or [None])[0]
-    expectations = collect_expectations(ticker)
+    expectations = collect_expectations(ticker, today)
     # Checklist 10.1: what moved the price (macro / market / sector / company).
     from price_attribution import build_attribution, price_reading
     try:
