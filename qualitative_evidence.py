@@ -37,9 +37,18 @@ CANDIDATE_REGISTRY = ROOT / "data" / "operational_evidence_candidates.json"
 VERIFIED_REGISTRY = ROOT / "data" / "operational_evidence.json"
 GEMINI_CACHE_DIR = ROOT / ".cache" / "gemini_extractions"
 
-DEFAULT_MODEL = os.environ.get("CHAINSTOX_GEMINI_MODEL", "gemini-2.5-flash")
+DEFAULT_MODEL = os.environ.get("CHAINSTOX_GEMINI_MODEL", "gemini-4-hydrogen")
 PROMPT_VERSION = "prompt_v1"
-GEMINI_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+GEMINI_INTERACTIONS_URL = "https://generativelanguage.googleapis.com/v1/interactions"
+DEPRECATED_MODEL_PREFIXES = ("gemini-2.5-", "gemini-2.0-", "gemini-1.5-")
+
+
+def normalize_model_name(model: str | None) -> str:
+    """Substitute current ``gemini-4-hydrogen`` if a legacy/deprecated model string is passed."""
+    chosen = (model or DEFAULT_MODEL).strip()
+    if chosen.startswith(DEPRECATED_MODEL_PREFIXES):
+        return "gemini-4-hydrogen"
+    return chosen
 
 UNIVERSAL_OPERATIONAL_KPIS = (
     "customers",
@@ -296,22 +305,22 @@ def validate_kpi_candidate(
 
 
 EXTRACTION_RESPONSE_SCHEMA: dict[str, Any] = {
-    "type": "OBJECT",
+    "type": "object",
     "properties": {
         "kpis": {
-            "type": "ARRAY",
+            "type": "array",
             "items": {
-                "type": "OBJECT",
+                "type": "object",
                 "properties": {
-                    "metric": {"type": "STRING"},
-                    "value": {"type": "NUMBER"},
-                    "unit": {"type": "STRING"},
-                    "reporting_period": {"type": "STRING"},
-                    "observation_date": {"type": "STRING"},
-                    "metric_definition": {"type": "STRING"},
-                    "verbatim_quote": {"type": "STRING"},
-                    "locator": {"type": "STRING"},
-                    "limitation": {"type": "STRING"},
+                    "metric": {"type": "string"},
+                    "value": {"type": "number"},
+                    "unit": {"type": "string"},
+                    "reporting_period": {"type": "string"},
+                    "observation_date": {"type": "string"},
+                    "metric_definition": {"type": "string"},
+                    "verbatim_quote": {"type": "string"},
+                    "locator": {"type": "string"},
+                    "limitation": {"type": "string"},
                 },
                 "required": [
                     "metric",
@@ -326,17 +335,17 @@ EXTRACTION_RESPONSE_SCHEMA: dict[str, Any] = {
             },
         },
         "constraint_statements": {
-            "type": "ARRAY",
+            "type": "array",
             "items": {
-                "type": "OBJECT",
+                "type": "object",
                 "properties": {
-                    "constraint_category": {"type": "STRING"},
-                    "mechanism": {"type": "STRING"},
-                    "reporting_period": {"type": "STRING"},
-                    "observation_date": {"type": "STRING"},
-                    "explicitly_binding": {"type": "BOOLEAN"},
-                    "verbatim_quote": {"type": "STRING"},
-                    "locator": {"type": "STRING"},
+                    "constraint_category": {"type": "string"},
+                    "mechanism": {"type": "string"},
+                    "reporting_period": {"type": "string"},
+                    "observation_date": {"type": "string"},
+                    "explicitly_binding": {"type": "boolean"},
+                    "verbatim_quote": {"type": "string"},
+                    "locator": {"type": "string"},
                 },
                 "required": [
                     "constraint_category",
@@ -350,12 +359,12 @@ EXTRACTION_RESPONSE_SCHEMA: dict[str, Any] = {
             },
         },
         "archetype_second_opinion": {
-            "type": "OBJECT",
+            "type": "object",
             "properties": {
-                "suggested_archetype": {"type": "STRING"},
-                "confidence": {"type": "STRING"},
-                "rationale": {"type": "STRING"},
-                "verbatim_quote": {"type": "STRING"},
+                "suggested_archetype": {"type": "string"},
+                "confidence": {"type": "string"},
+                "rationale": {"type": "string"},
+                "verbatim_quote": {"type": "string"},
             },
             "required": ["suggested_archetype", "confidence", "rationale", "verbatim_quote"],
         },
@@ -405,6 +414,23 @@ def build_extraction_prompt(
     return system_instruction, user_prompt
 
 
+def _extract_interaction_output_text(interaction_payload: dict[str, Any]) -> str:
+    """Extract the trailing ``model_output`` text run from a v1 Interaction response."""
+    steps = interaction_payload.get("steps") or []
+    trailing_texts: list[str] = []
+    for step in reversed(steps):
+        if step.get("type") == "model_output":
+            parts = [
+                part.get("text", "")
+                for part in (step.get("content") or [])
+                if isinstance(part, dict) and part.get("type") == "text"
+            ]
+            trailing_texts.insert(0, "".join(parts))
+        elif trailing_texts:
+            break
+    return "".join(trailing_texts).strip()
+
+
 def call_gemini_structured(
     *,
     model: str,
@@ -412,26 +438,55 @@ def call_gemini_structured(
     user_prompt: str,
     response_schema: dict[str, Any],
     api_key: str | None = None,
-    timeout: int = 60,
+    timeout: int = 90,
 ) -> dict[str, Any]:
-    """Invoke the Gemini REST API with temperature=0 and a strict JSON response schema."""
+    """Invoke the GA Gemini v1 Interactions API with seed=0, store=False, and a strict JSON schema."""
     key = api_key or api_key_from_env()
     if not key:
         raise RuntimeError("GEMINI_API_KEY (or GOOGLE_API_KEY) is not set.")
-    url = f"{GEMINI_ENDPOINT.format(model=model)}?key={key}"
+    resolved_model = normalize_model_name(model)
+    response_format = {
+        "type": "text",
+        "mime_type": "application/json",
+        "schema": response_schema,
+    }
+
+    # Prefer official `google-genai` >= 3.x SDK when installed; fall back to GA v1 Interactions REST.
+    try:
+        from google import genai  # type: ignore[import-not-found]
+
+        client = genai.Client(api_key=key)
+        if hasattr(client, "interactions"):
+            interaction = client.interactions.create(
+                model=resolved_model,
+                input=user_prompt,
+                system_instruction=system_instruction,
+                response_format=response_format,
+                generation_config={"seed": 0},
+                store=False,
+            )
+            text = (getattr(interaction, "output_text", None) or "").strip()
+            if not text:
+                raise RuntimeError(f"Gemini interaction ({getattr(interaction, 'status', 'unknown')}) returned no output_text.")
+            return json.loads(text)
+    except ImportError:
+        pass
+
     payload = {
-        "systemInstruction": {"parts": [{"text": system_instruction}]},
-        "contents": [{"role": "user", "parts": [{"text": user_prompt}]}],
-        "generationConfig": {
-            "temperature": 0.0,
-            "responseMimeType": "application/json",
-            "responseSchema": response_schema,
-        },
+        "model": resolved_model,
+        "input": user_prompt,
+        "system_instruction": system_instruction,
+        "response_format": response_format,
+        "generation_config": {"seed": 0},
+        "store": False,
     }
     req = Request(
-        url,
+        GEMINI_INTERACTIONS_URL,
         data=json.dumps(payload).encode("utf-8"),
-        headers={"Content-Type": "application/json"},
+        headers={
+            "Content-Type": "application/json",
+            "x-goog-api-key": key,
+        },
         method="POST",
     )
     try:
@@ -439,17 +494,15 @@ def call_gemini_structured(
             body = json.loads(resp.read().decode("utf-8"))
     except HTTPError as exc:
         detail = exc.read().decode("utf-8", errors="replace")[:400]
-        raise RuntimeError(f"Gemini HTTP {exc.code}: {detail}") from exc
+        raise RuntimeError(f"Gemini Interactions HTTP {exc.code}: {detail}") from exc
     except (URLError, TimeoutError, OSError) as exc:
         raise RuntimeError(f"Gemini network error: {type(exc).__name__}: {exc}") from exc
 
-    candidates = body.get("candidates") or []
-    if not candidates:
-        raise RuntimeError("Gemini returned no candidates.")
-    parts = (candidates[0].get("content") or {}).get("parts") or []
-    text = "".join(part.get("text", "") for part in parts).strip()
+    if body.get("status") not in {None, "completed"}:
+        raise RuntimeError(f"Gemini interaction did not complete (status={body.get('status')}).")
+    text = _extract_interaction_output_text(body)
     if not text:
-        raise RuntimeError("Gemini candidate contained no JSON text.")
+        raise RuntimeError("Gemini interaction contained no model_output text.")
     return json.loads(text)
 
 
@@ -494,6 +547,7 @@ def extract_from_filing_text(
 ) -> dict[str, Any]:
     """Run cached Gemini extraction + deterministic validation and persist passing candidates."""
     symbol = ticker.strip().upper()
+    model = normalize_model_name(model)
     allowed = kpi_catalog_for_archetype(deterministic_archetype)
     doc_hash = hashlib.sha256(filing_text.encode("utf-8")).hexdigest()
     cache_key = hashlib.sha256(

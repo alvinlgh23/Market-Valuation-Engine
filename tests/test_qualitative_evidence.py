@@ -10,11 +10,13 @@ from company_economics_registry import Archetype
 from data_sources.operational_evidence import load_operational_evidence
 from evidence_contracts import ConstraintStatus, DirectionStatus, ValidationStatus, assess_constraint_claim
 from qualitative_evidence import (
+    _extract_interaction_output_text,
     accept_candidate,
     empty_candidate_store,
     evaluate_against_gold_standard,
     extract_from_filing_text,
     kpi_catalog_for_archetype,
+    normalize_model_name,
     reject_candidate,
     run_evidence_cli,
     validate_kpi_candidate,
@@ -248,13 +250,14 @@ def test_recorded_gemini_flow_cache_conflict_accept_and_gold_benchmark(tmp_path:
         filing_text=PLTR_FILING_EXCERPT,
         deterministic_archetype=Archetype.ENTERPRISE_AI_SOFTWARE,
         deterministic_confidence="HIGH",
-        model="gemini-2.5-flash",
+        model="gemini-4-hydrogen",
         transport=fake_gemini,
         cache_dir=cache_dir,
         candidate_store_path=cand_path,
         verified_store_path=gold_path,
     )
     assert calls["n"] == 1
+    assert summary["model"] == "gemini-4-hydrogen"
     assert summary["validated_count"] == 2
     assert summary["rejected_count"] == 1
     assert summary["constraint_statement_count"] == 1
@@ -273,7 +276,7 @@ def test_recorded_gemini_flow_cache_conflict_accept_and_gold_benchmark(tmp_path:
         filing_text=PLTR_FILING_EXCERPT,
         deterministic_archetype=Archetype.ENTERPRISE_AI_SOFTWARE,
         deterministic_confidence="HIGH",
-        model="gemini-2.5-flash",
+        model="gemini-4-hydrogen",
         transport=fake_gemini,
         cache_dir=cache_dir,
         candidate_store_path=cand_path,
@@ -310,3 +313,21 @@ def test_missing_api_key_graceful_fallback_and_cli_help(monkeypatch, capsys):
     rc = run_evidence_cli(["--help"])
     assert rc == 0
     assert "python model.py evidence review" in capsys.readouterr().out
+
+
+def test_interactions_api_envelope_and_model_normalization():
+    assert normalize_model_name(None) == "gemini-4-hydrogen"
+    assert normalize_model_name("gemini-4-neon") == "gemini-4-neon"
+    # Legacy prefixes auto-substitute to current gemini-4-hydrogen
+    assert normalize_model_name("gemini-2.5-flash") == "gemini-4-hydrogen"
+
+    envelope = {
+        "id": "v1_test123",
+        "status": "completed",
+        "steps": [
+            {"type": "thought", "signature": "sig_1", "summary": "Checking customers section."},
+            {"type": "model_output", "content": [{"type": "text", "text": "{\"kpis\": [], \"constraint_statements\": []}"}]},
+        ],
+    }
+    assert json.loads(_extract_interaction_output_text(envelope)) == {"kpis": [], "constraint_statements": []}
+
