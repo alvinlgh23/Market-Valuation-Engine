@@ -3957,6 +3957,9 @@ def run_cli(args):
     elif command in {"verdict", "card", "judgment"}:
         from company_verdict import main as run_company_verdict
         return run_company_verdict(args[1:])
+    elif command == "evidence":
+        from qualitative_evidence import run_evidence_cli
+        return run_evidence_cli(args[1:])
     elif command in {"10", "economics", "company-economics"}:
         ticker = args[1] if len(args) >= 2 else "PLTR"
         extra = args[2:]

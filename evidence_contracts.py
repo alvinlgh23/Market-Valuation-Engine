@@ -265,29 +265,38 @@ def assess_constraint_claim(
     proxy_direction: str | None = None,
     evidence_current: bool = True,
     explicitly_binding: bool | None = None,
+    direct_verified: bool = True,
 ) -> ResearchClaim:
     """Apply conservative deterministic sufficiency rules.
 
     A proxy can qualify direction as possible, but can never establish observed
     binding.  Direct evidence can establish a direction while binding remains a
     separate question unless the source explicitly addresses binding status.
+    Unverified machine-extracted direct evidence (``direct_verified=False``) can
+    at most support ``POTENTIALLY_BINDING`` and ``POSSIBLY_*`` direction; it can
+    never establish ``OBSERVED_*`` states until human documentary review passes.
     """
     limitations: list[str] = []
     if not evidence_current and (direct_ids or proxy_ids):
         limitations.append("Evidence is historical or stale for a current-state claim.")
+    if direct_ids and not direct_verified:
+        limitations.append(
+            "Direct evidence is machine-extracted and awaits human documentary verification; observed status is withheld."
+        )
     if direct_ids and counter_ids:
         constraint_status = ConstraintStatus.CONFLICTING_EVIDENCE
         direction_status = DirectionStatus.MIXED
-    elif explicitly_binding is True and direct_ids and evidence_current:
+    elif explicitly_binding is True and direct_ids and evidence_current and direct_verified:
         constraint_status = ConstraintStatus.OBSERVED_BINDING
         direction_status = _direction_status(direct_direction, observed=True)
-    elif explicitly_binding is False and direct_ids and evidence_current:
+    elif explicitly_binding is False and direct_ids and evidence_current and direct_verified:
         constraint_status = ConstraintStatus.OBSERVED_NON_BINDING
         direction_status = _direction_status(direct_direction, observed=True)
     elif direct_ids and evidence_current:
         constraint_status = ConstraintStatus.POTENTIALLY_BINDING
-        direction_status = _direction_status(direct_direction, observed=True)
-        limitations.append("Direct measurements do not by themselves establish that the mechanism is binding.")
+        direction_status = _direction_status(direct_direction, observed=direct_verified)
+        if direct_verified:
+            limitations.append("Direct measurements do not by themselves establish that the mechanism is binding.")
     elif proxy_ids:
         constraint_status = ConstraintStatus.EVIDENCE_INSUFFICIENT
         direction_status = _direction_status(proxy_direction, observed=False) if evidence_current else DirectionStatus.DIRECTION_UNKNOWN
@@ -313,7 +322,11 @@ def assess_constraint_claim(
         direct_evidence_ids=tuple(direct_ids),
         proxy_evidence_ids=tuple(proxy_ids),
         counterevidence_ids=tuple(counter_ids),
-        source_reliability=ValidationStatus.VALID if direct_ids or proxy_ids or counter_ids else ValidationStatus.UNVERIFIED,
+        source_reliability=(
+            ValidationStatus.UNVERIFIED
+            if (direct_ids and not direct_verified and not proxy_ids) or not (direct_ids or proxy_ids or counter_ids)
+            else ValidationStatus.VALID
+        ),
         measurement_directness=Directness.DIRECT if direct_ids else Directness.INDIRECT if proxy_ids else Directness.STRUCTURAL,
         temporal_relevance=ValidationStatus.VALID if evidence_current else ValidationStatus.INVALID,
         entity_specificity=ValidationStatus.VALID if direct_ids or proxy_ids else ValidationStatus.UNVERIFIED,

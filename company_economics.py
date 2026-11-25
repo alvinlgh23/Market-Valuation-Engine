@@ -385,7 +385,10 @@ class CompanyEconomicsProfile:
     segments: list[dict[str, Any]] = field(default_factory=list)
 
     def to_dict(self):
-        return {"company_economics": _jsonable(self)}
+        payload = _jsonable(self)
+        if not payload.get("segments"):
+            payload.pop("segments", None)
+        return {"company_economics": payload}
 
 
 class StructuredFinancialEvidenceProvider(ABC):
@@ -407,13 +410,64 @@ class QualitativeEvidenceProvider(ABC):
 
 
 class QualitativeCompanyEconomicsExtractor(QualitativeEvidenceProvider):
-    """Version 1 no-op boundary for future filing/transcript extraction."""
+    """Gemini-backed filing extraction boundary; strictly optional and human-reviewed."""
+
+    def __init__(self, candidate_store_path: Path | None = None):
+        from qualitative_evidence import CANDIDATE_REGISTRY
+
+        self.candidate_store_path = candidate_store_path or CANDIDATE_REGISTRY
 
     def collect(self, snapshot: CompanySnapshot) -> list[EvidenceItem]:
-        return []
+        if not self.candidate_store_path.exists():
+            return []
+        try:
+            payload = json.loads(self.candidate_store_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return []
+        items: list[EvidenceItem] = []
+        for idx, row in enumerate(payload.get("candidates") or [], start=1):
+            if str(row.get("issuer", "")).upper() != snapshot.ticker.upper():
+                continue
+            if row.get("review_state") != "PENDING_REVIEW":
+                continue
+            items.append(
+                EvidenceItem(
+                    id=f"QE{idx}",
+                    type=EvidenceType.FACT,
+                    tier=EvidenceTier.QUALITATIVE,
+                    metric=str(row.get("metric") or "unknown"),
+                    statement=f"Machine-extracted {row.get('metric')} is {row.get('value')} ({row.get('unit')}); awaits documentary review.",
+                    value=row.get("value"),
+                    unit=str(row.get("unit") or ""),
+                    period=str(row.get("reporting_period") or "Unavailable"),
+                    source=str(row.get("source_title") or "SEC filing"),
+                    source_type=str(row.get("source_type") or "issuer_sec_filing"),
+                    source_nature=SourceNature.REPORTED,
+                    confidence=Confidence.LOW,
+                    source_id=str(row.get("id") or f"QE{idx}"),
+                    source_url=row.get("source_url"),
+                    observation_date=row.get("observation_date"),
+                    fiscal_period_end=row.get("observation_date"),
+                    filing_date=row.get("publication_date"),
+                    validation_status="UNVERIFIED",
+                    staleness_status="HISTORICAL",
+                    limitation=row.get("limitation"),
+                    entity_identifier=snapshot.ticker,
+                    source_status="HISTORICAL_REPORTED",
+                    source_locator=row.get("locator"),
+                    extraction_method=row.get("extraction_method"),
+                )
+            )
+        return items
 
-    def extract(self, *_args, **_kwargs):
-        return {"status": "UNAVAILABLE", "reason": "Qualitative extraction is not live in Version 1."}
+    def extract(self, ticker: str | None = None, **kwargs):
+        from qualitative_evidence import api_key_from_env, extract_live_for_ticker
+
+        if not ticker:
+            return {"status": "UNAVAILABLE", "reason": "A ticker symbol is required for filing extraction."}
+        if not api_key_from_env():
+            return {"status": "API_KEY_MISSING", "reason": "Set GEMINI_API_KEY (or GOOGLE_API_KEY) to run live Gemini filing extraction."}
+        return extract_live_for_ticker(ticker, **kwargs)
 
 
 class ExistingStructuredFinancialProvider(StructuredFinancialEvidenceProvider):
@@ -902,6 +956,7 @@ class ConstraintDiagnosisEngine:
             direct_items = [next(item for item in ledger.items if item.id == evidence_id) for evidence_id in direct_ids]
             proxy_items = [next(item for item in ledger.items if item.id == evidence_id) for evidence_id in proxy_ids]
             evidence_current = not any(item.staleness_status == "STALE" for item in direct_items + proxy_items)
+            direct_verified = any(item.validation_status == "VALID" for item in direct_items) if direct_items else True
             direct_direction = None
             proxy_direction = None
             claim = assess_constraint_claim(
@@ -909,6 +964,7 @@ class ConstraintDiagnosisEngine:
                 mechanism=CONSTRAINT_REGISTRY[constraint].display_name, direct_ids=direct_ids, proxy_ids=proxy_ids,
                 counter_ids=evidence.contrary_evidence_ids, direct_direction=direct_direction,
                 proxy_direction=proxy_direction, evidence_current=evidence_current,
+                direct_verified=direct_verified,
             )
             if direct_ids:
                 inference = f"{constraint.value.replace('_', ' ').title()} has direct measurements, but binding status is {claim.constraint_status.value.lower().replace('_', ' ')} and direction is {claim.direction_status.value.lower().replace('_', ' ')}."
