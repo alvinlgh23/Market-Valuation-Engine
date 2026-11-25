@@ -7,3 +7,5 @@ os.environ["CHAINSTOX_HISTORY_DIR"] = _HISTORY_DIR
 # Tests must never fetch live chart history to fill market inputs (solution plan C1); tests that
 # exercise market_inputs inject a fake fetch, which bypasses this switch.
 os.environ["CHAINSTOX_DERIVE_MARKET_INPUTS"] = "0"
+# Tests must never fetch live SEC HTML/XBRL filing documents unless a fetcher is injected (Stage 2).
+os.environ["CHAINSTOX_FETCH_SEC_FILINGS"] = "0"

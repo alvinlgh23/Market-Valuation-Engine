@@ -382,6 +382,7 @@ class CompanyEconomicsProfile:
     evidence_registry: dict[str, dict[str, Any]] = field(default_factory=dict)
     classification_version: str = "phase8.1-evidence-authority-v2"
     operational_research: dict[str, Any] = field(default_factory=dict)
+    segments: list[dict[str, Any]] = field(default_factory=list)
 
     def to_dict(self):
         return {"company_economics": _jsonable(self)}
@@ -513,6 +514,7 @@ def snapshot_from_valuation_data(data: dict) -> CompanySnapshot:
             "operating_margin": SourceNature.REPORTED if _number(provider_margin) else SourceNature.CALCULATED,
             "fcf_margin": SourceNature.CALCULATED,
         },
+        segments=list(data.get("segments") or []),
         evidence_envelopes=data.get("evidence_envelopes") or {},
     )
 
@@ -729,6 +731,40 @@ def collect_base_evidence(snapshot: CompanySnapshot, ledger: EvidenceLedger):
             limitation=envelope.get("limitation"), entity_identifier=envelope.get("entity_identifier") or snapshot.ticker,
             source_status=envelope.get("source_status", "FIXTURE" if "fixture" in snapshot.sources.get(name, "") else "HISTORICAL_REPORTED"),
         )
+    for seg in snapshot.segments or []:
+        seg_id = seg.get("segment_id") or "segment"
+        seg_name = seg.get("segment_name") or seg_id
+        rev = seg.get("revenue")
+        if _number(rev):
+            growth = seg.get("revenue_growth")
+            ledger.add(
+                type=EvidenceType.FACT,
+                tier=EvidenceTier.DIRECT,
+                metric=f"segment:{seg_id}:revenue",
+                statement=f"Segment '{seg_name}' revenue is reported as {rev}.",
+                value=rev,
+                unit="currency",
+                period=str(seg.get("period_end") or snapshot.periods.get("revenue", "Latest available period")),
+                source=f"SEC {seg.get('form', '10-K')} XBRL segment disclosure",
+                source_type="structured_regulatory_data",
+                source_nature=SourceNature.REPORTED,
+                direction=_metric_direction("revenue_growth", growth) if _number(growth) else Direction.UNKNOWN,
+                confidence=Confidence.HIGH,
+                source_id=f"sec-seg:{snapshot.ticker}:{seg.get('accession_number', '')}:{seg_id}:revenue",
+                source_url=seg.get("source_url"),
+                observation_date=seg.get("period_end"),
+                fiscal_period_start=seg.get("period_start"),
+                fiscal_period_end=seg.get("period_end"),
+                filing_date=seg.get("filing_date"),
+                currency=seg.get("currency") or snapshot.currency or None,
+                raw_concept=seg.get("revenue_concept"),
+                normalized_concept=f"segment_revenue:{seg_id}",
+                transformation="Single-axis StatementBusinessSegmentsAxis/SegmentsAxis annual fact",
+                entity_identifier=snapshot.ticker,
+                source_status="HISTORICAL_REPORTED",
+                source_locator=seg.get("xbrl_member"),
+                extraction_method="deterministic_xbrl_segment_axis",
+            )
 
 
 class GrowthArchitectureBuilder:
@@ -1136,6 +1172,7 @@ def build_company_economics(snapshot: CompanySnapshot, valuation_report: dict | 
         architecture, constraints, scaling, sustainability, falsification, translation, valuation_review, market,
         _deduplicate_gaps(gaps), ledger.items, graph, ValidationResult("PENDING", {}, []), data_quality,
         qualitative_needed, qualitative_reason,
+        segments=list(snapshot.segments or []),
     )
     all_diagnoses = [constraints.primary_constraint, *constraints.secondary_constraints, *constraints.candidate_assessments]
     profile.research_claims = [

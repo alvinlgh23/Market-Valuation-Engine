@@ -764,7 +764,7 @@ def collect_sec_company_data(ticker: str) -> dict:
         else (f"SEC annual shares ({shares_row['end']})" if shares_row else "Unavailable")
     )
     cash_end = series.get("cash", [{}])[0].get("end") if series.get("cash") else None
-    return {
+    result = {
         "ticker": symbol,
         "company": name,
         "provider": "SEC submissions and Company Facts",
@@ -846,3 +846,6 @@ def collect_sec_company_data(ticker: str) -> dict:
             "operating_income_period": operating_period,
         },
     }
+    from data_sources.sec_filings import enrich_sec_filing_metadata
+
+    return enrich_sec_filing_metadata(result, submissions, cik)
