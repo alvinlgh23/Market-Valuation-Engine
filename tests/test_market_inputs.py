@@ -116,11 +116,32 @@ def test_env_switch_disables_live_fetch(monkeypatch):
     assert "derived_market_inputs" not in data
 
 
+def test_prefer_derived_beta_uses_regression_and_keeps_provider_beta_for_comparison():
+    stock, bench = _series_with_beta(1.6)
+    today = dt.date.fromisoformat(stock[-1]["date"])
+    data = {"ticker": "TEST", "currency": "USD", "shares": 10.0, "price": 99.0, "market_cap": 990.0, "beta": 0.9}
+    mi.fill_missing_market_inputs(data, fetch=_fetch_factory(stock, bench), today=today, prefer_derived_beta=True)
+    assert data["price"] == 99.0 and data["market_cap"] == 990.0
+    assert data["beta"] == pytest.approx(1.6, abs=0.02)
+    assert data["provider_beta"] == 0.9
+    assert "Yahoo Finance beta 0.90 kept for comparison" in data["input_sources"]["beta"]
+
+
+def test_prefer_derived_beta_falls_back_to_provider_beta_when_history_unavailable():
+    data = {"ticker": "TEST", "currency": "USD", "shares": 10.0, "price": 99.0, "market_cap": 990.0, "beta": 0.9}
+    mi.fill_missing_market_inputs(
+        data, fetch=_fetch_factory([], [], stock_status=ProviderStatus.RATE_LIMITED), prefer_derived_beta=True
+    )
+    assert data["beta"] == 0.9
+    assert data["provider_beta"] == 0.9
+
+
 def test_cost_of_equity_labels_derived_beta(monkeypatch):
     import intrinsic_valuation as iv
     monkeypatch.setattr(iv, "_risk_free", lambda: (0.04, "fixture"))
-    data = {"beta": 1.25, "input_sources": {"beta": "Derived: OLS slope of weekly returns"}}
+    data = {"beta": 1.25, "provider_beta": 1.05, "input_sources": {"beta": "Derived: OLS slope of weekly returns"}}
     result = iv._cost_of_equity(data)
     assert result["beta"] == 1.25 and result["beta_source"].startswith("Derived")
+    assert result["provider_beta"] == 1.05
     assert iv._cost_of_equity({"beta": 1.1})["beta_source"] == "Yahoo Finance beta"
     assert iv._cost_of_equity({"beta": None})["beta_source"] == "fallback beta of 1.0"

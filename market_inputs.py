@@ -168,17 +168,25 @@ def derive_market_inputs(
 
 
 def fill_missing_market_inputs(data: dict[str, Any], *, fetch: Callable[..., Any] | None = None,
-                               today: dt.date | None = None) -> dict[str, Any]:
-    """Fill ``price``, ``market_cap``, and ``beta`` on a normalized data dict only where they are missing.
+                               today: dt.date | None = None, prefer_derived_beta: bool = False) -> dict[str, Any]:
+    """Fill ``price``, ``market_cap``, and ``beta`` on a normalized data dict.
 
+    Provider-supplied ``price`` and ``market_cap`` are never replaced. When ``prefer_derived_beta`` is
+    true, the 2-year weekly regression beta becomes the primary ``beta`` and any provider beta is kept
+    on ``data["provider_beta"]`` for comparison (and as fallback if price history is unavailable).
     Records what was filled under ``data["derived_market_inputs"]`` and per-field sources under
-    ``data["input_sources"]``. Provider-supplied values are never replaced.
+    ``data["input_sources"]``.
     """
+    provider_beta = data.get("beta") if _number(data.get("beta")) else None
+    if provider_beta is not None:
+        data.setdefault("provider_beta", provider_beta)
     missing = [key for key in ("price", "market_cap", "beta") if not _number(data.get(key))]
-    if not missing:
+    want_beta = "beta" in missing or prefer_derived_beta
+    if not missing and not want_beta:
         return data
     if fetch is None and os.environ.get("CHAINSTOX_DERIVE_MARKET_INPUTS", "1") == "0":
         return data
+    requested = list(dict.fromkeys(missing + (["beta"] if want_beta else [])))
     shares_basis = (data.get("periods") or {}).get("shares") or "latest fiscal-year diluted shares"
     derived = derive_market_inputs(
         data.get("ticker", ""), financial_currency=data.get("currency"), shares=data.get("shares"),
@@ -198,11 +206,15 @@ def fill_missing_market_inputs(data: dict[str, Any], *, fetch: Callable[..., Any
             data["market_cap"] = data["price"] * data["shares"]
         sources["market_cap"] = f"Derived: {derived['market_cap_basis']}"
         filled.append("market_cap")
-    if "beta" in missing and _number(derived["beta"]):
+    if want_beta and _number(derived["beta"]):
         data["beta"] = derived["beta"]
         detail = derived["beta_detail"]
-        sources["beta"] = f"Derived: {detail['method']} ({detail['weeks']} weeks, {detail['window_start']} to {detail['window_end']})"
+        comparison = f"; Yahoo Finance beta {provider_beta:.2f} kept for comparison" if provider_beta is not None else ""
+        sources["beta"] = (
+            f"Derived: {detail['method']} ({detail['weeks']} weeks, {detail['window_start']} to {detail['window_end']})"
+            + comparison
+        )
         filled.append("beta")
     data["input_sources"] = sources
-    data["derived_market_inputs"] = {**derived, "filled": filled, "requested": missing}
+    data["derived_market_inputs"] = {**derived, "filled": filled, "requested": requested, "provider_beta": provider_beta}
     return data

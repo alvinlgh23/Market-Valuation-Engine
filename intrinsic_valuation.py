@@ -625,10 +625,10 @@ def collect_valuation_data(ticker: str) -> dict:
             "market_price": "Current / latest available market price",
         },
     }
-    # Solution plan C1: when the quote-summary endpoint is rate-limited, price, market cap and beta are
-    # derived from chart history instead of falling back to a beta of 1.0 and no market cap.
+    # Solution plan C1: self-computed 2-year weekly OLS beta is primary (Yahoo beta kept for comparison);
+    # when the quote-summary endpoint is rate-limited, price and market cap are also derived from chart history.
     from market_inputs import fill_missing_market_inputs
-    return fill_missing_market_inputs(data)
+    return fill_missing_market_inputs(data, prefer_derived_beta=True)
 
 
 def _required_data_missing(data: dict) -> list[str]:
@@ -665,9 +665,10 @@ def _cost_of_equity(data: dict) -> dict:
         beta_source = "fallback beta of 1.0"
     else:
         beta_source = derived_beta_source or "Yahoo Finance beta"
+    provider_beta = data.get("provider_beta") if _number(data.get("provider_beta")) else None
     erp = 0.045
     return {"risk_free_rate": risk_free, "risk_free_source": rf_source, "beta": beta, "beta_source": beta_source,
-            "equity_risk_premium": erp, "cost_of_equity": risk_free + beta * erp}
+            "provider_beta": provider_beta, "equity_risk_premium": erp, "cost_of_equity": risk_free + beta * erp}
 
 
 def _market_rates(data: dict) -> dict:
@@ -677,9 +678,10 @@ def _market_rates(data: dict) -> dict:
     erp = equity_inputs["equity_risk_premium"]
     cost_equity = equity_inputs["cost_of_equity"]
     interest = _row(data["income"], "Interest Expense", "Interest Expense Non Operating")
+    latest_interest = abs(interest[0]) if interest else data.get("interest_expense")
     pretax_cost_debt = 0.055
-    if interest and data["debt"] > 0:
-        pretax_cost_debt = _clamp(abs(interest[0]) / data["debt"], 0.025, 0.12)
+    if _number(latest_interest) and data["debt"] > 0:
+        pretax_cost_debt = _clamp(abs(latest_interest) / data["debt"], 0.025, 0.12)
     after_tax_debt = pretax_cost_debt * (1 - data["tax_rate"])
     if _number(data["market_cap"]) and data["market_cap"] > 0:
         equity = data["market_cap"]
@@ -698,6 +700,7 @@ def _market_rates(data: dict) -> dict:
         "erp_source": "explicit long-run developed-market fallback; live ERP feed unavailable",
         "beta": beta,
         "beta_source": beta_source,
+        "provider_beta": equity_inputs.get("provider_beta"),
         "cost_of_equity": cost_equity,
         "pre_tax_cost_of_debt": pretax_cost_debt,
         "after_tax_cost_of_debt": after_tax_debt,
@@ -1835,11 +1838,12 @@ def build_valuation_report(ticker: str, overrides: dict | None = None, data: dic
         )
     cross_checks = _cross_checks(data, scenarios)
     extreme_provider_growth = _number(_pick(data["info"], "revenueGrowth")) and abs(_pick(data["info"], "revenueGrowth")) > 1.5
+    statement_provider = data.get("provider") or "Yahoo Finance"
     report["data_quality"] = {
         "status": "LIMITED" if extreme_provider_growth or len(revenue) < 4 or not _number(data.get("working_capital_change")) else "GOOD",
         "missing": [],
         "reason": (
-            f"{len(revenue)} annual revenue periods available; market and statement fields sourced from Yahoo Finance. "
+            f"{len(revenue)} annual revenue periods available; primary statement provider: {statement_provider}. "
             + (
                 "The historical working-capital cash-flow impact is included."
                 if _number(data.get("working_capital_change"))
