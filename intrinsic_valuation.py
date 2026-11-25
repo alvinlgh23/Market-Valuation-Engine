@@ -572,7 +572,7 @@ def collect_valuation_data(ticker: str) -> dict:
     fcf_period = "Latest fiscal year" if ocf and capex else "Provider TTM / most recent"
     has_financials = bool(revenue and operating_income)
     security_type = classify_security(symbol, info, has_financials)
-    return {
+    data = {
         "ticker": symbol,
         "provider": "Yahoo Finance via yfinance",
         "ticker_obj": ticker_obj,
@@ -625,6 +625,10 @@ def collect_valuation_data(ticker: str) -> dict:
             "market_price": "Current / latest available market price",
         },
     }
+    # Solution plan C1: when the quote-summary endpoint is rate-limited, price, market cap and beta are
+    # derived from chart history instead of falling back to a beta of 1.0 and no market cap.
+    from market_inputs import fill_missing_market_inputs
+    return fill_missing_market_inputs(data)
 
 
 def _required_data_missing(data: dict) -> list[str]:
@@ -656,7 +660,11 @@ def _risk_free() -> tuple[float, str]:
 def _cost_of_equity(data: dict) -> dict:
     risk_free, rf_source = _risk_free()
     beta = data["beta"] if _number(data.get("beta")) and 0.25 <= data["beta"] <= 3 else 1.0
-    beta_source = "Yahoo Finance beta" if beta == data.get("beta") else "fallback beta of 1.0"
+    derived_beta_source = (data.get("input_sources") or {}).get("beta")
+    if beta != data.get("beta"):
+        beta_source = "fallback beta of 1.0"
+    else:
+        beta_source = derived_beta_source or "Yahoo Finance beta"
     erp = 0.045
     return {"risk_free_rate": risk_free, "risk_free_source": rf_source, "beta": beta, "beta_source": beta_source,
             "equity_risk_premium": erp, "cost_of_equity": risk_free + beta * erp}
