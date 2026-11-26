@@ -121,7 +121,8 @@ function AxisVisual({ name, axis }: { name: string; axis: Axis }) {
       const margin = signed(quarter.margin_change, 100, " pts");
       if (margin) chips.push([`Margin ${margin}`, Number(quarter.margin_change) > 0.01 ? "supportive" : Number(quarter.margin_change) < -0.01 ? "against" : "mixed", "Operating margin against a year earlier"]);
       const beat = signed(quarter.eps_surprise);
-      if (beat) chips.push([`EPS vs forecast ${beat}`, Number(quarter.eps_surprise) >= 0 ? "supportive" : "against", "Earnings per share against the analysts' forecast"]);
+      if (beat && quarter.eps_surprise_outsized) chips.push([`EPS vs forecast ${beat}`, "mixed", "A gap this large usually comes from a one-off item; check the filing before reading it as the business"]);
+      else if (beat) chips.push([`EPS vs forecast ${beat}`, Number(quarter.eps_surprise) >= 0 ? "supportive" : "against", "Earnings per share against the analysts' forecast"]);
       if (health.state && health.state !== "UNKNOWN") chips.push([`Finances: ${String(health.label).toLowerCase()}`, health.state === "STRONG" ? "supportive" : health.state === "WEAK" ? "against" : health.state === "FAIR" ? "mixed" : "unknown", String(health.reason ?? "")]);
       return <div className="jc-chips">{chips.map(([text, tone, title]) => <span key={text} title={title}><Chip tone={tone}>{text}</Chip></span>)}</div>;
     }

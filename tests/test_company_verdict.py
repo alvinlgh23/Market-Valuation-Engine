@@ -343,3 +343,17 @@ def test_conclusion_says_when_price_and_business_disagree():
     outside = cv.company_conclusion({**card, "price_reading": {"kind": "noise", "outside_driver": "macro", "price_change": -0.13, "parts": {}}})
     assert outside["agreement"] == "OUTSIDE" and "says little about the business" in outside["sentences"][2]
     assert cv._signed(-0.002) == "0%" and cv.business_direction(None, None) == "UNKNOWN"
+
+
+def test_walkthrough_conclusion_names_both_halves_and_carries_the_fit_caveat():
+    """Walkthrough 2026-11-26: CRM read "mixed" next to a "Deteriorating" axis, and claimed the move said little
+    about the business while the price split explained a quarter of weekly moves."""
+    card = {"axes": {"fundamentals": {"state": "Deteriorating", "detail": {"quarterly": {"revenue_yoy": 0.11, "margin_change": -0.014}}},
+                     "expectations": {"state": "Estimates rising", "detail": {"revisions_up_30d": 2, "revisions_down_30d": 1}},
+                     "valuation": {"state": "Fair value withheld", "detail": {}}},
+            "price_reading": {"kind": "noise", "price_change": -0.13, "parts": {}, "outside_driver": "macro", "confidence": "LOW",
+                              "low_fit_note": "The model explains only 25% of weekly moves; treat the split as rough."}}
+    text = " ".join(cv.company_conclusion(card)["sentences"])
+    assert text.startswith("The filings weakened but analysts are raising estimates:")
+    assert "If that split holds, the move says little about the business itself." in text
+    assert "Read that split with care: the model explains only 25% of weekly moves" in text

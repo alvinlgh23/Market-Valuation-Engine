@@ -67,3 +67,12 @@ def test_a_fast_grower_easing_is_not_deteriorating():
     assert q.change(-0.12, 0.0, prior_growth=0.55)["state"] == "DETERIORATING"
     assert q.change(-0.04, 0.0, prior_growth=0.10)["state"] == "DETERIORATING"
     assert q.change(-0.04, 0.0)["state"] == "DETERIORATING"     # no prior growth: the 3-point floor
+
+
+def test_an_outsized_eps_gap_is_flagged_not_read_as_a_beat():
+    """Walkthrough 2026-11-26: CRM's $5.90 against $3.27 came with a jump in reported EPS - a one-off, not the business."""
+    income = {"Total Revenue": rows([100, 100, 100, 100, 110, 115, 125])}
+    result = q.read(income, {}, {}, {"epsActual": 5.9, "epsEstimate": 3.27, "surprisePercent": 0.8036})
+    assert result["eps_surprise_outsized"] is True
+    assert "beat forecasts" not in result["summary"] and "($5.90 against $3.27)" in result["summary"]
+    assert q.read(income, {}, {}, {"epsActual": 1.1, "epsEstimate": 1.0, "surprisePercent": 0.1})["eps_surprise_outsized"] is False

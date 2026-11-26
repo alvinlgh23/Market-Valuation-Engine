@@ -97,7 +97,7 @@ def _attr(company, z, macro=-0.20, market=-0.03, sector=-0.01, r2=0.6):
 def test_macro_drop_with_normal_company_part_is_noise():
     reading = price_reading(_attr(-0.02, -0.2), "Estimates stable or mixed")
     assert reading["kind"] == "noise"
-    assert reading["label"] == "Macro (mainly equity volatility)-driven; company move is normal noise"
+    assert reading["label"] == "Macro (mainly equity volatility)-driven; company part within its normal range"
     assert reading["short"] == "Macro-driven"
 
 

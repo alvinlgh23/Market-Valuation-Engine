@@ -27,6 +27,10 @@ STRONG_LEVERAGE, WEAK_LEVERAGE = 2.0, 4.0
 YEAR_TOLERANCE = 20
 
 
+# Walkthrough 2026-11-26: a beat or miss of half the forecast or more is usually a one-off item (CRM, Jul 2026:
+# $5.90 against $3.27 while reported EPS also jumped), so it is flagged rather than read as the business.
+OUTSIZED_SURPRISE = 0.5
+
 def _num(value: Any) -> float | None:
     return float(value) if isinstance(value, (int, float)) and math.isfinite(value) else None
 
@@ -155,7 +159,12 @@ def read(income: dict[str, dict[str, Any]], cashflow: dict[str, dict[str, Any]],
         parts.append(f"sales {_signed_pct(growth)} from a year earlier{pace}")
     if margin is not None:
         parts.append(f"operating margin {margin * 100:.0f}%" + (f", {'up' if margin_change >= 0 else 'down'} {abs(margin_change) * 100:.1f} points" if margin_change is not None else ""))
-    if eps_surprise is not None:
+    outsized = eps_surprise is not None and abs(eps_surprise) >= OUTSIZED_SURPRISE
+    if outsized:
+        actual, estimate = _num(eps.get("epsActual")), _num(eps.get("epsEstimate"))
+        numbers = f" (${actual:.2f} against ${estimate:.2f})" if actual is not None and estimate is not None else ""
+        parts.append(f"earnings per share far from the forecast{numbers}, a gap that usually comes from a one-off item, so check the filing")
+    elif eps_surprise is not None:
         parts.append(f"earnings per share {'beat' if eps_surprise >= 0 else 'missed'} forecasts by {abs(eps_surprise) * 100:.0f}%")
     summary = f"Quarter to {quarter:%b %Y}: " + "; ".join(parts) + "." if parts else f"Quarter to {quarter:%b %Y}."
     money = ""
@@ -163,7 +172,7 @@ def read(income: dict[str, dict[str, Any]], cashflow: dict[str, dict[str, Any]],
         money = f" Finances {finances['label'].lower()}: {finances['reason']}" + (f" (free cash flow {_money(fcf_ttm)} over four quarters)." if fcf_ttm is not None else ".")
     return {"status": "AVAILABLE", "quarter": quarter.isoformat(), "revenue_yoy": growth, "revenue_yoy_prior_quarter": growth_before,
             "revenue_acceleration": acceleration, "operating_margin": margin, "operating_margin_year_ago": margin_prior, "margin_change": margin_change,
-            "eps_actual": _num(eps.get("epsActual")), "eps_estimate": _num(eps.get("epsEstimate")), "eps_surprise": eps_surprise,
+            "eps_actual": _num(eps.get("epsActual")), "eps_estimate": _num(eps.get("epsEstimate")), "eps_surprise": eps_surprise, "eps_surprise_outsized": outsized,
             "fcf_quarter": fcf[-1][1] if fcf else None, "fcf_ttm": fcf_ttm, "net_debt": net_debt, "ebitda_ttm": ebitda_ttm,
             "health": finances, "change": shift, "summary": summary + money,
             "rules": {"health": "Strong: positive free cash flow over four quarters and net debt under 2x EBITDA or net cash. Weak: negative free cash flow or net debt over 4x EBITDA. Fair: in between. Banks: not applicable.",
