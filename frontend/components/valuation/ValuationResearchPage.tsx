@@ -66,13 +66,30 @@ function ValueBadge({ value }: { value?: string }) {
 
 function ViewNav({ ticker, view, fixture }: { ticker: string; view: ValuationView; fixture: boolean }) {
   const params = useSearchParams();
-  const views: Array<[ValuationView, string]> = [["overview", "Overview"], ["economics-model", "Economics vs Model"], ["dcf", "DCF"], ["assumptions", "Assumptions"], ["reverse-dcf", "Reverse DCF"], ["sensitivity", "Sensitivity"], ["validation", "Validation"], ["evidence", "Evidence"], ["report", "Full Report"]];
+  const views: Array<[ValuationView, string]> = [["overview", "Overview"], ["reverse-dcf", "What the price assumes"], ["economics-model", "Business vs model"], ["dcf", "Cash-flow model"], ["assumptions", "Assumptions"], ["sensitivity", "What-if table"], ["validation", "Checks"], ["evidence", "Evidence"], ["report", "Full report"]];
   return <nav className="valuation-view-nav" aria-label="Valuation views">{views.map(([key, label]) => { const query = new URLSearchParams(params.toString()); query.set("view", key); query.delete("refresh"); if (fixture) query.set("fixture", "1"); return <Link className={view === key ? "active" : ""} href={`/valuation/${ticker}?${query}`} key={key}>{label}</Link>; })}</nav>;
 }
 
 function headlineReverse(report: ValuationReport): Record<string, unknown> {
   return report.fair_value?.method === "PHASED" && report.fair_value.reverse_dcf ? report.fair_value.reverse_dcf : report.reverse_dcf;
 }
+
+// P20 item 12: lead with what the price assumes, the same reading as the company card; the bear/base/bull
+// range is the model's output under fixed assumptions and is shown second, not as a target.
+function pricedGrowth(report: ValuationReport): { headline: string; detail: string } {
+  const rev = headlineReverse(report);
+  const implied = typeof rev.required_5y_revenue_cagr === "number" ? rev.required_5y_revenue_cagr : null;
+  const observed = report.fair_value?.observed_growth ?? report.historical_base.current_provider_revenue_growth ?? null;
+  if (rev.status === "NO_ECONOMIC_SOLUTION") return { headline: "Price is above the model's best case", detail: "Even 50% first-year sales growth at the base margin and discount rate does not reach today's price." };
+  if (implied == null) return { headline: "No reading of what the price assumes", detail: "The model could not solve for the growth the price needs." };
+  return { headline: `Prices in ${pct(implied)} sales growth a year for 5 years`, detail: observed != null ? `Sales grew ${pct(observed)} over the last 12 months. The company page compares this with analysts' and past growth, both faded to year 5.` : "The company page compares this with analysts' and past growth, both faded to year 5." };
+}
+
+const RANGE_WORDS: Record<string, string> = {
+  "Market Below Bear": "Price below the model's low case", "Within Bear/Base": "Price between the model's low and middle cases",
+  "Near Base": "Price near the model's middle case", "Within Base/Bull": "Price between the model's middle and high cases",
+  "Market Above Bull": "Price above the model's high case",
+};
 
 /** Exact replica of intrinsic_valuation.py _dcf / _dcf_extended for instant 60fps interactive slider feedback. */
 function computeInteractiveFairValue(params: {
@@ -156,7 +173,7 @@ export function InteractiveValuationSandbox({ report }: { report: ValuationRepor
     <section className="valuation-sandbox" aria-label="Interactive valuation sandbox">
       <header>
         <div>
-          <span>WHAT-IF ASSUMPTION SANDBOX</span>
+          <span>WHAT IF</span>
           <h2>Test what the share price requires</h2>
           <p>Drag any assumption to see how model value compares with today&apos;s market price ({money(price)}). Baseline report figures remain untouched.</p>
         </div>
@@ -167,7 +184,7 @@ export function InteractiveValuationSandbox({ report }: { report: ValuationRepor
             </button>
           ) : null}
           <button type="button" onClick={() => setWacc(Math.max(0.055, defaultWacc - 0.01))}>
-            Lower ERP (−1pt WACC)
+            Discount rate 1 point lower
           </button>
           {isModified ? (
             <button type="button" className="reset" onClick={() => { setGrowth(defaultGrowth); setMargin(defaultMargin); setWacc(defaultWacc); }}>
@@ -179,30 +196,28 @@ export function InteractiveValuationSandbox({ report }: { report: ValuationRepor
       <div className="sandbox-grid">
         <div className="sandbox-controls">
           <label>
-            <div><span>Year-1 revenue growth</span><strong>{pct(growth)}</strong></div>
+            <div><span>First-year sales growth</span><strong>{pct(growth)}</strong></div>
             <input type="range" min={-0.10} max={0.55} step={0.005} value={growth} onChange={(e) => setGrowth(Number(e.target.value))} />
             <small>Model default: {pct(defaultGrowth)}{Number.isFinite(observedGrowth) ? ` · Observed 12M: ${pct(observedGrowth)}` : ""}</small>
           </label>
           <label>
-            <div><span>Target FCFF margin</span><strong>{pct(margin)}</strong></div>
+            <div><span title="Free cash flow to the firm as a share of sales">Long-run cash-flow margin</span><strong>{pct(margin)}</strong></div>
             <input type="range" min={0.04} max={0.55} step={0.005} value={margin} onChange={(e) => setMargin(Number(e.target.value))} />
-            <small>Model default: {pct(defaultMargin)} · Current FCFF margin: {pct(currentMargin)}</small>
+            <small>Model default: {pct(defaultMargin)} · Current: {pct(currentMargin)}</small>
           </label>
           <label>
-            <div><span>Discount rate (WACC)</span><strong>{pct(wacc)}</strong></div>
+            <div><span title="Weighted average cost of capital">Discount rate</span><strong>{pct(wacc)}</strong></div>
             <input type="range" min={Math.max(terminal + 0.01, 0.055)} max={0.16} step={0.0025} value={wacc} onChange={(e) => setWacc(Number(e.target.value))} />
-            <small>Model policy (4.5% ERP): {pct(defaultWacc)} · Terminal growth: {pct(terminal)}</small>
+            <small>Model default: {pct(defaultWacc)} (4.5% extra return asked of stocks) · Long-run growth: {pct(terminal)}</small>
           </label>
         </div>
         <div className="sandbox-result">
-          <span>{isModified ? "YOUR SIMULATED VALUE" : "MODEL BASE VALUE"}</span>
+          <span>{isModified ? "MODEL VALUE WITH YOUR ASSUMPTIONS" : "MODEL VALUE WITH ITS OWN ASSUMPTIONS"}</span>
           <strong>{money(simulated)}</strong>
           {price != null && deltaVsPrice != null ? (
-            <p className={deltaVsPrice >= 0 ? "up" : "down"}>
-              {deltaVsPrice >= 0 ? `+${(deltaVsPrice * 100).toFixed(1)}% above` : `−${Math.abs(deltaVsPrice * 100).toFixed(1)}% below`} market price ({money(price)})
-            </p>
+            <p className="neutral">Today&apos;s price is {money(price)}. {Math.abs(deltaVsPrice) < 0.02 ? "These assumptions roughly reproduce it." : `These assumptions give a ${deltaVsPrice >= 0 ? "higher" : "lower"} value; ask which assumption the market disagrees with, not how far the price “should” move.`}</p>
           ) : null}
-          <small>{extWeight > 0 ? `Uses ${Math.round(extWeight * 100)}% 10-year / ${Math.round((1 - extWeight) * 100)}% 5-year horizon blend.` : "Uses 5-year explicit FCFF forecast decaying to 2.5% terminal growth."}</small>
+          <small>{extWeight > 0 ? `Uses ${Math.round(extWeight * 100)}% 10-year / ${Math.round((1 - extWeight) * 100)}% 5-year horizon blend.` : "Five years of forecast cash flow, then growth fading to 2.5% a year."}</small>
         </div>
       </div>
     </section>
@@ -229,7 +244,7 @@ function FairValueRange({ report }: { report: ValuationReport }) {
     (r) => !(phased && rev.status === "CONVERGED" && r.toLowerCase().includes("reverse dcf"))
   );
   return <section className="valuation-range-surface" aria-label="Fair value range">
-    <header><span>FAIR VALUE RANGE</span><ValueBadge value={report.validation.status} /><ValueBadge value={valuationState(report)} /></header>
+    <header><span title="What the cash-flow model gives under its low, middle and high assumptions. Not a price target.">MODEL RANGE · NOT A TARGET</span><ValueBadge value={report.validation.status} /><small className="valuation-range-words">{RANGE_WORDS[valuationState(report)] ?? valuationState(report)}</small></header>
     {report.validation.status === "PROVISIONAL" ? <p>{filteredReasons.length ? filteredReasons.join(" ") : "Headline 10-year reverse DCF converged; 5-year fixed-horizon check exceeded the 50% Year-1 cap."} <Link href={`/valuation/${report.company.ticker}?${new URLSearchParams({ ...Object.fromEntries(params), view: "validation" })}`}>Inspect validation →</Link></p> : null}
     <div className={`valuation-range-track${compressed ? " is-compressed" : ""}`}>
       <div className="valuation-range-line" />
@@ -249,7 +264,7 @@ function EconomicsModelMarket({ report, company }: { report: ValuationReport; co
   const phased = report.fair_value?.method === "PHASED";
   const modelGrowthVal = phased && typeof report.fair_value?.observed_growth === "number" ? Math.min(report.fair_value.observed_growth, 0.50) : baseGrowth?.value;
   const rows = [
-    { label: "Revenue Growth", observed: report.fair_value?.observed_growth ?? economics?.raw.growth_sustainability.current_revenue_growth, observedPeriod: "Trailing 12M / latest reported", model: modelGrowthVal, modelPeriod: phased ? "Headline 10-year blend Y1" : baseGrowth?.period, implied: reverse.required_5y_revenue_cagr ?? reverse.required_year_1_revenue_growth, impliedPeriod: reverse.status === "NO_ECONOMIC_SOLUTION" ? "Exceeds 50% Y1 cap at base margin" : "Reverse DCF implied growth" },
+    { label: "Revenue Growth", observed: report.fair_value?.observed_growth ?? economics?.raw.growth_sustainability.current_revenue_growth, observedPeriod: "Trailing 12M / latest reported", model: modelGrowthVal, modelPeriod: phased ? "Headline 10-year blend Y1" : baseGrowth?.period, implied: reverse.required_5y_revenue_cagr ?? reverse.required_year_1_revenue_growth, impliedPeriod: reverse.status === "NO_ECONOMIC_SOLUTION" ? "Exceeds 50% Y1 cap at base margin" : "Growth the price needs" },
     { label: "FCFF Margin", observed: report.historical_base.fcff_margin, observedPeriod: String(report.historical_base.period_basis && typeof report.historical_base.period_basis === "object" ? (report.historical_base.period_basis as Record<string, unknown>).fcff || "Latest fiscal year" : "Latest fiscal year"), model: baseMargin?.value, modelPeriod: baseMargin?.period, implied: reverse.required_year_5_fcff_margin ?? (reverse.fixed_assumptions as Record<string, unknown> | undefined)?.year_5_fcff_margin, impliedPeriod: "Held at base target in solve" },
     { label: "Dilution", observed: null, observedPeriod: "Not directly observed in Company Economics", model: assumption(report, "annual_dilution")?.value, modelPeriod: "Annual through forecast", implied: reverse.annual_dilution || (reverse.fixed_assumptions as Record<string, unknown> | undefined)?.annual_dilution, impliedPeriod: "Fixed in reverse DCF" }
   ];
@@ -266,16 +281,21 @@ function EconomicsModelMarket({ report, company }: { report: ValuationReport; co
   </section>;
 }
 
+const PLAIN_ASSUMPTION: Record<string, string> = {
+  year_1_revenue_growth: "First-year sales growth", year_5_fcff_margin: "Cash-flow margin in year 5", wacc: "Discount rate",
+  terminal_growth: "Long-run growth", annual_dilution: "New shares a year",
+};
+
 function Snapshot({ report, company }: { report: ValuationReport; company: CompanyEconomicsPayload | null }) {
   const money = moneyFormatter(report.company.currency);
   const economics = company ? adaptCompanyEconomics(company) : null;
   const rev = headlineReverse(report);
   return <div className="valuation-overview-grid">
+    <section className="valuation-read-panel"><span>WHAT THE PRICE ASSUMES</span><h2>{pricedGrowth(report).headline}</h2><p>{pricedGrowth(report).detail}</p>{report.fallback?.why_standard_dcf_is_inappropriate ? <p>{report.fallback.why_standard_dcf_is_inappropriate}</p> : null}<dl><div><dt>Market price</dt><dd>{money(report.company.current_market_price)}</dd></div><div><dt>Validation</dt><dd>{humanize(report.validation.status)}</dd></div><div><dt>Solve</dt><dd>{humanize(String(rev.status || "Unavailable"))}</dd></div></dl></section>
     <FairValueRange report={report} />
-    <section className="valuation-read-panel"><span>CURRENT READ</span><h2>{valuationState(report)}</h2><p>{report.final_interpretation.text || report.data_quality.reason || report.fallback?.why_standard_dcf_is_inappropriate}</p><dl><div><dt>Market price</dt><dd>{money(report.company.current_market_price)}</dd></div><div><dt>Validation</dt><dd>{humanize(report.validation.status)}</dd></div><div><dt>Reverse DCF</dt><dd>{humanize(String(rev.status || "Unavailable"))}</dd></div></dl></section>
-    <section className="valuation-mini-ledger"><span>OBSERVED ECONOMICS</span><dl><div><dt>Revenue growth</dt><dd>{pct(report.fair_value?.observed_growth ?? economics?.raw.growth_sustainability.current_revenue_growth ?? report.historical_base.current_provider_revenue_growth)}</dd></div><div><dt>FCFF margin</dt><dd>{pct(report.historical_base.fcff_margin)}</dd></div><div><dt>Constraint</dt><dd>{economics?.primaryConstraint.label || "See operating signals"}</dd></div><div><dt>Scaling</dt><dd>{economics?.raw.scaling_economics.interpretation || "Unavailable"}</dd></div></dl></section>
-    <section className="valuation-mini-ledger"><span>MODEL ASSUMPTIONS</span><dl>{["year_1_revenue_growth", "year_5_fcff_margin", "wacc", "terminal_growth", "annual_dilution"].map((name) => <div key={name}><dt>{humanize(name)}</dt><dd>{assumption(report, name)?.unit === "multiple" ? number(assumption(report, name)?.value) : pct(assumption(report, name)?.value)}</dd></div>)}</dl></section>
-    <section className="valuation-mini-ledger market-implied"><span>MARKET-IMPLIED EXPECTATIONS</span><dl><div><dt>Solved variable</dt><dd>{String(rev.solved_variable || "Year-1 revenue growth")}</dd></div><div><dt>Status</dt><dd>{humanize(String(rev.status || "Unavailable"))}</dd></div><div><dt>Required 5Y revenue CAGR</dt><dd>{pct(rev.required_5y_revenue_cagr)}</dd></div><div><dt>{rev.high_case_value != null ? "Max value at 50% Y1 growth" : "Solved Year-1 growth"}</dt><dd>{rev.high_case_value != null ? money(rev.high_case_value) : pct(rev.required_year_1_revenue_growth)}</dd></div></dl></section>
+    <section className="valuation-mini-ledger"><span>WHAT THE BUSINESS SHOWS</span><dl><div><dt>Sales growth, 12 months</dt><dd>{pct(report.fair_value?.observed_growth ?? economics?.raw.growth_sustainability.current_revenue_growth ?? report.historical_base.current_provider_revenue_growth)}</dd></div><div><dt title="Free cash flow to the firm as a share of sales">Cash-flow margin</dt><dd>{pct(report.historical_base.fcff_margin)}</dd></div><div><dt>Constraint</dt><dd>{economics?.primaryConstraint.label || "See operating signals"}</dd></div><div><dt>Scaling</dt><dd>{economics?.raw.scaling_economics.interpretation || "Unavailable"}</dd></div></dl></section>
+    <section className="valuation-mini-ledger"><span>MODEL ASSUMPTIONS</span><dl>{["year_1_revenue_growth", "year_5_fcff_margin", "wacc", "terminal_growth", "annual_dilution"].map((name) => <div key={name}><dt title={humanize(name)}>{PLAIN_ASSUMPTION[name] ?? humanize(name)}</dt><dd>{assumption(report, name)?.unit === "multiple" ? number(assumption(report, name)?.value) : pct(assumption(report, name)?.value)}</dd></div>)}</dl></section>
+    <section className="valuation-mini-ledger market-implied"><span>WHAT THE PRICE NEEDS</span><dl><div><dt>Solve</dt><dd>{humanize(String(rev.status || "Unavailable"))}</dd></div><div><dt>Sales growth a year, 5 years</dt><dd>{pct(rev.required_5y_revenue_cagr)}</dd></div><div><dt>{rev.high_case_value != null ? "Model value at 50% first-year growth" : "First-year growth needed"}</dt><dd>{rev.high_case_value != null ? money(rev.high_case_value) : pct(rev.required_year_1_revenue_growth)}</dd></div></dl></section>
   </div>;
 }
 
@@ -354,7 +374,7 @@ function ReverseDcf({ report, company }: { report: ValuationReport; company: Com
   const money = moneyFormatter(report.company.currency);
   const reverse = headlineReverse(report);
   const economics = company ? adaptCompanyEconomics(company) : null;
-  return <section className="valuation-section reverse-dcf-workspace"><header><span>MARKET-IMPLIED EXPECTATIONS</span><h2>{reverse.status === "NO_ECONOMIC_SOLUTION" ? "Market price exceeds the 50% Year-1 growth bound at base margin & WACC" : humanize(String(reverse.status || "Reverse DCF unavailable"))}</h2><ValueBadge value={String(reverse.status || "UNAVAILABLE")} /></header><div className="valuation-kpi-grid">{[["Current price", money(report.company.current_market_price)], ["Solved variable", String(reverse.solved_variable || "Year-1 revenue growth")], ["Search bounds", Array.isArray((reverse.search_bounds as Record<string, unknown> | undefined)?.year_1_revenue_growth) ? `${pct(((reverse.search_bounds as Record<string, number[]>).year_1_revenue_growth)[0])} to ${pct(((reverse.search_bounds as Record<string, number[]>).year_1_revenue_growth)[1])}` : "−20.0% to 50.0%"], ["Solved 5Y CAGR", pct(reverse.required_5y_revenue_cagr)], ["Year-1 growth", pct(reverse.required_year_1_revenue_growth)], ["Max value at 50% Y1", money(reverse.high_case_value)], ["Residual", money(reverse.residual_per_share)], ["Observed revenue growth", pct(report.fair_value?.observed_growth ?? economics?.raw.growth_sustainability.current_revenue_growth)]].map(([k, v]) => <article key={k}><span>{k}</span><strong>{v}</strong></article>)}</div><p>{String(reverse.reason || "Other assumptions remain fixed; use the Interactive Sandbox on Overview to adjust margin and WACC alongside growth.")}</p>{reverse.status === "NO_ECONOMIC_SOLUTION" ? <ul className="valuation-explain-list"><li>Fixed base-case margin assumption may be more conservative than market pricing.</li><li>4.5% fixed equity risk premium may produce a higher WACC than the market currently applies.</li><li>Market may be pricing multi-decade compounding beyond the 50% Year-1 growth bound.</li></ul> : null}</section>;
+  return <section className="valuation-section reverse-dcf-workspace"><header><span>WHAT THE PRICE ASSUMES</span><h2>{reverse.status === "NO_ECONOMIC_SOLUTION" ? "The price is above what even 50% first-year sales growth can justify" : humanize(String(reverse.status || "Reverse DCF unavailable"))}</h2><ValueBadge value={String(reverse.status || "UNAVAILABLE")} /></header><div className="valuation-kpi-grid">{[["Current price", money(report.company.current_market_price)], ["Solved variable", String(reverse.solved_variable || "Year-1 revenue growth")], ["Search bounds", Array.isArray((reverse.search_bounds as Record<string, unknown> | undefined)?.year_1_revenue_growth) ? `${pct(((reverse.search_bounds as Record<string, number[]>).year_1_revenue_growth)[0])} to ${pct(((reverse.search_bounds as Record<string, number[]>).year_1_revenue_growth)[1])}` : "−20.0% to 50.0%"], ["Solved 5Y CAGR", pct(reverse.required_5y_revenue_cagr)], ["Year-1 growth", pct(reverse.required_year_1_revenue_growth)], ["Max value at 50% Y1", money(reverse.high_case_value)], ["Residual", money(reverse.residual_per_share)], ["Observed revenue growth", pct(report.fair_value?.observed_growth ?? economics?.raw.growth_sustainability.current_revenue_growth)]].map(([k, v]) => <article key={k}><span>{k}</span><strong>{v}</strong></article>)}</div><p>{String(reverse.reason || "Other assumptions remain fixed; use the Interactive Sandbox on Overview to adjust margin and WACC alongside growth.")}</p>{reverse.status === "NO_ECONOMIC_SOLUTION" ? <ul className="valuation-explain-list"><li>Fixed base-case margin assumption may be more conservative than market pricing.</li><li>4.5% fixed equity risk premium may produce a higher WACC than the market currently applies.</li><li>Market may be pricing multi-decade compounding beyond the 50% Year-1 growth bound.</li></ul> : null}</section>;
 }
 
 function Sensitivity({ report, cell, fixture = false }: { report: ValuationReport; cell?: string; fixture?: boolean }) {
@@ -392,9 +412,9 @@ export function ValuationResearchPage({ report, company, view = "overview", data
             <span>VALUATION / {report.company.ticker}{from ? ` · FROM ${from.toUpperCase()}` : ""}</span>
           </div>
           <h1>{report.company.name}</h1>
-          <p>{report.selected_method}</p>
+          <p title={report.selected_method}>Cash-flow model, checked against cash-flow yield and trading multiples</p>
         </div>
-        <aside><ValueBadge value={valuationState(report)} /><strong>{money(report.company.current_market_price)}</strong><small>Current / latest available market price</small></aside>
+        <aside><strong>{money(report.company.current_market_price)}</strong><small>{pricedGrowth(report).headline}</small></aside>
       </header>
       <ViewNav ticker={report.company.ticker} view={view} fixture={dataState === "FIXTURE"} />
       {report.unit_bridge?.note ? <p className="valuation-unit-note">{report.unit_bridge.note} Quoted price {report.unit_bridge.quote_price != null ? `$${report.unit_bridge.quote_price.toFixed(2)}` : "—"}.</p> : null}

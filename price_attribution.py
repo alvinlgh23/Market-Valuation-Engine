@@ -211,7 +211,7 @@ def build_attribution(ticker: str, archetype: str, sector_etf: str | None,
 
 
 # ---- Checklist 10.2: fundamentals or noise -------------------------------------------------------
-NOISE_Z = 1.0        # company part within one residual standard deviation: normal noise
+NOISE_Z = 1.0        # company part within one residual standard deviation: its normal range
 EVENT_Z = 2.0        # beyond two: a real company-specific move
 LOW_FIT_R2 = 0.30
 PART_LABEL = {"macro": "Macro", "market": "Broad market", "sector": "Sector"}
@@ -222,7 +222,7 @@ def price_reading(attribution: dict[str, Any] | None, expectations_state: str | 
     """One sentence: did the company's own story move the price, and do estimates agree?
 
     Rules (fixed, tested):
-      |z| < 1            normal noise; name the largest outside driver if it explains >= 5 points
+      |z| < 1            within the company's normal range; name the largest outside driver if it explains >= 5 points
       1 <= |z| < 2       some company-specific move (watch)
       |z| >= 2           company-specific move; estimates moving the same way => fundamentals changing,
                          otherwise => estimates unchanged (sentiment or flows)
@@ -245,7 +245,7 @@ def price_reading(attribution: dict[str, Any] | None, expectations_state: str | 
         kind, label = "unknown", "Company part could not be scored"
     elif abs(z) < NOISE_Z:
         kind = "noise"
-        label = f"{driver}-driven; company move is normal noise" if abs(parts[outside]) >= 0.05 else "Normal range; no clear driver"
+        label = f"{driver}-driven; company part within its normal range" if abs(parts[outside]) >= 0.05 else "Normal range; no clear driver"
     elif abs(z) < EVENT_Z:
         kind, label = "watch", f"Some company-specific {direction}"
     elif (direction == "drop" and estimates_down) or (direction == "rise" and estimates_up):

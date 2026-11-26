@@ -171,8 +171,8 @@ def volatility_step(vix: dict[str, Any], liquidity_link: dict[str, Any] | None) 
     if level >= 25 and fade.get("days"):
         few = " · few cases" if fade.get("episodes", 0) < 10 else ""
         notes.append({"tag": "TESTED", "label": f"Tested{few}",
-                      "text": f"In the past three years, when the VIX was above 25 it was lower a month later {fade['share_lower']:.0%} of the time "
-                              f"({fade['days']} days in {fade['episodes']} separate spells)."})
+                      "text": f"In the past three years, when the VIX was above 25, the VIX itself had fallen back a month later {fade['share_lower']:.0%} of the time "
+                              f"({fade['days']} days in {fade['episodes']} separate spells). This is about fear easing, not about whether stocks rose."})
     link = liquidity_link or {}
     if link.get("verdict") == "NO_LINK":
         tight, other = _num(link.get("tight_next_vol")), _num(link.get("other_next_vol"))

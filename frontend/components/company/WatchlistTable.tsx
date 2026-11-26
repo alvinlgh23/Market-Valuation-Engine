@@ -40,13 +40,23 @@ function needsAttention(row: SummaryRow, drv: Drivers | undefined): boolean {
   return fundTone === "against" || estTone === "against";
 }
 
-function plainDriverTag(drv: Drivers | undefined): { text: string; tone: "calm" | "watch" | "company" | "fundamentals" } {
+// The estimates part comes from the row's own estimates reading, never a fixed phrase (walkthrough 2026-11-26).
+function estimatesWord(expectations: string | undefined): string {
+  if (!expectations) return "estimates unavailable";
+  if (expectations.startsWith("Estimates rising")) return "analysts raising estimates";
+  if (expectations.startsWith("Estimates falling")) return "analysts cutting estimates";
+  if (expectations.includes("unavailable")) return "estimates unavailable";
+  return "estimates steady";
+}
+
+function plainDriverTag(drv: Drivers | undefined, expectations?: string): { text: string; tone: "calm" | "watch" | "company" | "fundamentals" } {
   if (!drv?.reading) return { text: "Checking price drivers…", tone: "calm" };
   const kind = drv.reading.kind;
-  if (kind === "fundamentals") return { text: "Moved with estimate shifts", tone: "fundamentals" };
-  if (kind === "company") return { text: "Stock-specific move · estimates steady", tone: "company" };
-  if (kind === "watch") return { text: "Mostly market · minor stock move", tone: "watch" };
-  if (kind === "noise") return { text: "Market / sector noise", tone: "calm" };
+  const direction = /\bdrop\b/.test(drv.reading.label) ? "drop" : "rise";
+  if (kind === "fundamentals") return { text: `Stock-specific ${direction} · ${estimatesWord(expectations)}`, tone: "fundamentals" };
+  if (kind === "company") return { text: `Stock-specific ${direction} · ${estimatesWord(expectations)}`, tone: "company" };
+  if (kind === "watch") return { text: `Mostly market · some stock-specific ${direction}`, tone: "watch" };
+  if (kind === "noise") return { text: "Moved with market & sector", tone: "calm" };
   return { text: "Driver history pending", tone: "calm" };
 }
 
@@ -285,7 +295,7 @@ export function WatchlistTable() {
     const move3m = drv?.attribution?.windows?.["3M"]?.price_change;
     const recentBridge = drv?.attribution?.recent_move?.since_window_end;
     const livePrice = drv?.attribution?.recent_move?.latest_price ?? null;
-    const driverBadge = plainDriverTag(drv);
+    const driverBadge = plainDriverTag(drv, row.axes.expectations);
     const takeaway = buildTakeaway(row);
 
     return (
@@ -387,7 +397,7 @@ export function WatchlistTable() {
         <div className="wl-sections">
           <div className="wl-clean-head" aria-hidden="true">
             <span>Company</span>
-            <span>Price vs Fair Value</span>
+            <span>What the price assumes</span>
             <span>3M Move &amp; Cause</span>
             <span>Fundamentals &amp; Expectations</span>
             <span />

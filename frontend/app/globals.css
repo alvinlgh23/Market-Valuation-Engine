@@ -4323,3 +4323,25 @@ html, body { background: var(--research-bg); font-family: var(--font-research); 
 .wl-title-group .data-refresh { margin: 6px 0 0; }
 @keyframes data-refresh-pulse { 50% { opacity: .35; } }
 @media (prefers-reduced-motion: reduce) { .data-refresh.tone-running i { animation: none; } }
+
+/* P20 item 11: one line per holding - does the price agree with the business? */
+.tdy-verdicts { margin-bottom: 16px; }
+.tdy-verdicts li + li { border-top: 1px solid var(--research-line); }
+.tdy-verdicts li a { display: grid; grid-template-columns: 56px 190px minmax(0, 1fr); align-items: center; gap: 14px; padding: 10px 2px; color: var(--research-text); text-decoration: none; font-size: 13px; }
+.tdy-verdicts li a:hover { background: rgba(255, 255, 255, .025); }
+.tdy-verdicts li b { font-weight: 600; letter-spacing: .01em; }
+.tdy-verdict-line { color: var(--research-muted); line-height: 1.45; }
+.tdy-agree { justify-self: start; padding: 3px 9px; border-radius: 999px; font-size: 11.5px; white-space: nowrap; border: 1px solid var(--research-line); color: var(--research-muted); }
+.tdy-agree.is-opposed { color: #e8c48d; border-color: rgba(229, 165, 75, .32); background: rgba(229, 165, 75, .07); }
+.tdy-agree.is-aligned { color: var(--research-positive); border-color: rgba(62, 207, 142, .28); background: rgba(62, 207, 142, .06); }
+.tdy-agree.is-outside { color: var(--research-text); }
+.tdy-muted { margin: 10px 0 0; color: var(--research-faint); font-size: 12px; line-height: 1.5; }
+@media (max-width: 760px) {
+  .tdy-verdicts li a { grid-template-columns: 52px minmax(0, 1fr); row-gap: 6px; }
+  .tdy-verdict-line { grid-column: 1 / -1; }
+}
+
+/* P20 item 12: growth-first valuation page */
+.sandbox-result p.neutral { margin: 0; color: var(--research-muted); font-size: 13px; line-height: 1.5; }
+.valuation-range-words { color: var(--research-muted); font-size: 12.5px; }
+.valuation-object-header aside small { max-width: 260px; text-align: right; line-height: 1.4; }
