@@ -301,3 +301,45 @@ def test_sp500_members_map_by_gics_before_yahoo(tmp_path, monkeypatch):
     assert cv.sector_etf_for("BRK-B", None)[0] == "XLF"
     assert cv.sector_etf_for("SHOP", "Technology") == ("XLK", "proxy from Yahoo sector 'Technology'")   # outside the S&P 500
     assert cv.sector_etf_for("TSM", "Technology")[0] == "SMH"   # the sector engine's own list still comes first
+
+
+def test_fast_growth_references_fade_over_five_years():
+    """20.3: a reference fades in a straight line to 2.5% by year five."""
+    assert abs(cv.faded_five_year(0.834) - 0.4002) < 1e-3
+    assert abs(cv.faded_five_year(0.05) - 0.0375) < 1e-3
+    assert abs(cv.faded_five_year(0.025) - 0.025) < 1e-9
+    band = cv.growth_band_from({"revenue_cagr_2y_consensus": 0.834, "revenue_cagr_3y_history": 1.0})
+    # +36% against +40% / +47% faded: in line, not "priced low" as against the raw +83% / +100%.
+    assert cv.band_reading(0.356, band) == "Price roughly matches observed/consensus growth"
+    assert cv.band_reading(0.356, {"consensus_2y": 0.834, "history_3y": 1.0}) == "Price implies less growth than observed/consensus"
+
+
+def test_a_reading_that_only_just_crossed_the_line_is_held():
+    """20.2: within 3 points of a line the previous reading under the same rules is kept."""
+    band = {"consensus_2y": 0.10, "history_3y": 0.10, "consensus_2y_faded": 0.10, "history_3y_faded": 0.10}
+    near = {"state": "Price implies more growth than observed/consensus", "evidence": ["x"], "detail": {"implied_5y_revenue_cagr": 0.16, "growth_band": band}}
+    held = cv.steady_reading(near, "Price roughly matches observed/consensus growth")
+    assert held["state"] == "Price roughly matches observed/consensus growth" and held["detail"]["unheld_state"] == near["state"]
+    far = {**near, "detail": {"implied_5y_revenue_cagr": 0.25, "growth_band": band}}
+    assert cv.steady_reading(far, "Price roughly matches observed/consensus growth")["state"] == near["state"]
+    assert cv.steady_reading(near, None)["state"] == near["state"]
+    ceiling = {"state": "Price implies growth above what the model can reach", "evidence": ["x"], "detail": {"price_to_max_case": 1.06}}
+    assert "Only just above the model's reach" in cv.steady_reading(ceiling, None)["evidence"][1]
+
+
+def test_conclusion_says_when_price_and_business_disagree():
+    card = {"axes": {
+        "fundamentals": {"state": "Improving", "detail": {"quarterly": {"revenue_yoy": 1.06, "margin_change": 0.054}}},
+        "expectations": {"state": "Estimates rising", "detail": {"revisions_up_30d": 7, "revisions_down_30d": 0}},
+        "valuation": {"state": "Price roughly matches observed/consensus growth",
+                      "detail": {"price": 149.3, "implied_5y_revenue_cagr": 0.356, "growth_band": {"consensus_2y_faded": 0.40, "history_3y_faded": 0.47}}}},
+        "price_reading": {"kind": "company", "price_change": -0.415, "parts": {"company": -0.242}}}
+    result = cv.company_conclusion(card)
+    assert result["business"] == "BETTER" and result["agreement"] == "OPPOSED"
+    assert result["sentences"][0].startswith("The business is getting better: sales +106% from a year earlier")
+    assert "fell 42% over three months; most of it was specific to the company (−24%)" in result["sentences"][1]
+    assert result["sentences"][2].startswith("The price and the business point in opposite directions")
+    assert "about in line with what analysts' and past growth imply once they fade (+40% to +47%)" in result["sentences"][3]
+    outside = cv.company_conclusion({**card, "price_reading": {"kind": "noise", "outside_driver": "macro", "price_change": -0.13, "parts": {}}})
+    assert outside["agreement"] == "OUTSIDE" and "says little about the business" in outside["sentences"][2]
+    assert cv._signed(-0.002) == "0%" and cv.business_direction(None, None) == "UNKNOWN"

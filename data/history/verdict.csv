@@ -95,3 +95,225 @@ verdict.AMAT.flow,2026-11-22,,Money flowing out,company_verdict,LIVE,2026-11-22T
 verdict.AMAT.fundamentals,2026-11-22,,Mixed,company_verdict,LIVE,2026-11-22T09:42:11+08:00
 verdict.AMAT.macro,2026-11-22,,Headwind,company_verdict,LIVE,2026-11-22T09:42:11+08:00
 verdict.AMAT.valuation,2026-11-22,,Fair value withheld,company_verdict,LIVE,2026-11-22T09:42:11+08:00
+verdict.PLTR.crowding,2026-11-22,,Low Chase Risk,company_verdict,LIVE,2026-11-22T10:05:13+08:00
+verdict.PLTR.expectations,2026-11-22,,Estimates rising,company_verdict,LIVE,2026-11-22T10:05:13+08:00
+verdict.PLTR.flow,2026-11-22,,Money flowing out,company_verdict,LIVE,2026-11-22T10:05:13+08:00
+verdict.PLTR.fundamentals,2026-11-22,,Improving,company_verdict,LIVE,2026-11-22T10:05:13+08:00
+verdict.PLTR.macro,2026-11-22,,Headwind,company_verdict,LIVE,2026-11-22T10:05:13+08:00
+verdict.PLTR.valuation,2026-11-22,,Fair value withheld,company_verdict,LIVE,2026-11-22T10:05:13+08:00
+verdict.AMD.crowding,2026-11-22,,Low Chase Risk,company_verdict,LIVE,2026-11-22T10:05:54+08:00
+verdict.AMD.expectations,2026-11-22,,Estimates rising,company_verdict,LIVE,2026-11-22T10:05:54+08:00
+verdict.AMD.flow,2026-11-22,,Money flowing out,company_verdict,LIVE,2026-11-22T10:05:54+08:00
+verdict.AMD.fundamentals,2026-11-22,,Improving,company_verdict,LIVE,2026-11-22T10:05:54+08:00
+verdict.AMD.macro,2026-11-22,,Headwind,company_verdict,LIVE,2026-11-22T10:05:54+08:00
+verdict.AMD.valuation,2026-11-22,,Fair value withheld,company_verdict,LIVE,2026-11-22T10:05:54+08:00
+verdict.CRM.crowding,2026-11-22,,Low Chase Risk,company_verdict,LIVE,2026-11-22T10:08:17+08:00
+verdict.CRM.expectations,2026-11-22,,Estimates rising,company_verdict,LIVE,2026-11-22T10:08:17+08:00
+verdict.CRM.flow,2026-11-22,,Money flowing out,company_verdict,LIVE,2026-11-22T10:08:17+08:00
+verdict.CRM.fundamentals,2026-11-22,,Improving,company_verdict,LIVE,2026-11-22T10:08:17+08:00
+verdict.CRM.macro,2026-11-22,,Headwind,company_verdict,LIVE,2026-11-22T10:08:17+08:00
+verdict.CRM.valuation,2026-11-22,,Fair value withheld,company_verdict,LIVE,2026-11-22T10:08:17+08:00
+verdict.BAC.crowding,2026-11-22,,Low Chase Risk,company_verdict,LIVE,2026-11-22T10:08:30+08:00
+verdict.BAC.expectations,2026-11-22,,Estimates falling,company_verdict,LIVE,2026-11-22T10:08:30+08:00
+verdict.BAC.flow,2026-11-22,,Money flowing in,company_verdict,LIVE,2026-11-22T10:08:30+08:00
+verdict.BAC.fundamentals,2026-11-22,,Improving,company_verdict,LIVE,2026-11-22T10:08:30+08:00
+verdict.BAC.macro,2026-11-22,,Headwind,company_verdict,LIVE,2026-11-22T10:08:30+08:00
+verdict.BAC.valuation,2026-11-22,,Fair value withheld,company_verdict,LIVE,2026-11-22T10:08:30+08:00
+verdict.WMT.crowding,2026-11-22,,Chase Risk Not Excessive,company_verdict,LIVE,2026-11-22T10:08:41+08:00
+verdict.WMT.expectations,2026-11-22,,Estimates stable or mixed,company_verdict,LIVE,2026-11-22T10:08:41+08:00
+verdict.WMT.flow,2026-11-22,,Money flowing in,company_verdict,LIVE,2026-11-22T10:08:41+08:00
+verdict.WMT.fundamentals,2026-11-22,,Improving,company_verdict,LIVE,2026-11-22T10:08:41+08:00
+verdict.WMT.macro,2026-11-22,,Headwind,company_verdict,LIVE,2026-11-22T10:08:41+08:00
+verdict.WMT.valuation,2026-11-22,,Fair value withheld,company_verdict,LIVE,2026-11-22T10:08:41+08:00
+verdict.UBER.crowding,2026-11-22,,Low Chase Risk,company_verdict,LIVE,2026-11-22T10:56:55+08:00
+verdict.UBER.expectations,2026-11-22,,Estimates falling,company_verdict,LIVE,2026-11-22T10:56:55+08:00
+verdict.UBER.flow,2026-11-22,,Money flowing out,company_verdict,LIVE,2026-11-22T10:56:55+08:00
+verdict.UBER.fundamentals,2026-11-22,,Improving,company_verdict,LIVE,2026-11-22T10:56:55+08:00
+verdict.UBER.macro,2026-11-22,,Headwind,company_verdict,LIVE,2026-11-22T10:56:55+08:00
+verdict.UBER.valuation,2026-11-22,,Fair value withheld,company_verdict,LIVE,2026-11-22T10:56:55+08:00
+verdict.TSM.crowding,2026-11-22,,Low Chase Risk,company_verdict,LIVE,2026-11-22T15:11:44+08:00
+verdict.TSM.expectations,2026-11-22,,Estimates rising,company_verdict,LIVE,2026-11-22T15:11:44+08:00
+verdict.TSM.flow,2026-11-22,,Money flowing out,company_verdict,LIVE,2026-11-22T15:11:44+08:00
+verdict.TSM.fundamentals,2026-11-22,,Improving,company_verdict,LIVE,2026-11-22T15:11:44+08:00
+verdict.TSM.macro,2026-11-22,,Headwind,company_verdict,LIVE,2026-11-22T15:11:44+08:00
+verdict.TSM.valuation,2026-11-22,,Fair value withheld,company_verdict,LIVE,2026-11-22T15:11:44+08:00
+verdict.SOFI.crowding,2026-11-22,,Low Chase Risk,company_verdict,LIVE,2026-11-22T17:05:43+08:00
+verdict.SOFI.expectations,2026-11-22,,Estimates rising,company_verdict,LIVE,2026-11-22T17:05:43+08:00
+verdict.SOFI.flow,2026-11-22,,Money flowing in,company_verdict,LIVE,2026-11-22T17:05:43+08:00
+verdict.SOFI.fundamentals,2026-11-22,,Improving,company_verdict,LIVE,2026-11-22T17:05:43+08:00
+verdict.SOFI.macro,2026-11-22,,Headwind,company_verdict,LIVE,2026-11-22T17:05:43+08:00
+verdict.SOFI.valuation,2026-11-22,,Fair value withheld,company_verdict,LIVE,2026-11-22T17:05:43+08:00
+verdict.TSLA.crowding,2026-11-22,,Low Chase Risk,company_verdict,LIVE,2026-11-22T21:56:14+08:00
+verdict.TSLA.expectations,2026-11-22,,Estimates falling,company_verdict,LIVE,2026-11-22T21:56:14+08:00
+verdict.TSLA.flow,2026-11-22,,Money flowing in,company_verdict,LIVE,2026-11-22T21:56:14+08:00
+verdict.TSLA.fundamentals,2026-11-22,,Mixed,company_verdict,LIVE,2026-11-22T21:56:14+08:00
+verdict.TSLA.macro,2026-11-22,,Headwind,company_verdict,LIVE,2026-11-22T21:56:14+08:00
+verdict.TSLA.valuation,2026-11-22,,Fair value withheld,company_verdict,LIVE,2026-11-22T21:56:14+08:00
+verdict.CAT.crowding,2026-11-22,,Low Chase Risk,company_verdict,LIVE,2026-11-22T22:28:50+08:00
+verdict.CAT.expectations,2026-11-22,,Estimates stable or mixed,company_verdict,LIVE,2026-11-22T22:28:50+08:00
+verdict.CAT.flow,2026-11-22,,Money flowing in,company_verdict,LIVE,2026-11-22T22:28:50+08:00
+verdict.CAT.fundamentals,2026-11-22,,Mixed,company_verdict,LIVE,2026-11-22T22:28:50+08:00
+verdict.CAT.macro,2026-11-22,,No confirmed exposure has a current reading,company_verdict,LIVE,2026-11-22T22:28:50+08:00
+verdict.CAT.valuation,2026-11-22,,Price implies more growth than observed/consensus,company_verdict,LIVE,2026-11-22T22:28:50+08:00
+verdict.TSLA.crowding,2026-11-23,,Low Chase Risk,company_verdict,LIVE,2026-11-23T19:28:05+08:00
+verdict.TSLA.expectations,2026-11-23,,Estimates falling,company_verdict,LIVE,2026-11-23T19:28:05+08:00
+verdict.TSLA.flow,2026-11-23,,Money flowing in,company_verdict,LIVE,2026-11-23T19:28:05+08:00
+verdict.TSLA.fundamentals,2026-11-23,,Improving,company_verdict,LIVE,2026-11-23T19:28:05+08:00
+verdict.TSLA.macro,2026-11-23,,No confirmed exposure has a current reading,company_verdict,LIVE,2026-11-23T19:28:05+08:00
+verdict.TSLA.valuation,2026-11-23,,Price implies growth above what the model can reach,company_verdict,LIVE,2026-11-23T19:28:05+08:00
+verdict.UBER.crowding,2026-11-23,,Low Chase Risk,company_verdict,LIVE,2026-11-23T19:28:18+08:00
+verdict.UBER.expectations,2026-11-23,,Estimates falling,company_verdict,LIVE,2026-11-23T19:28:18+08:00
+verdict.UBER.flow,2026-11-23,,Money flowing out,company_verdict,LIVE,2026-11-23T19:28:18+08:00
+verdict.UBER.fundamentals,2026-11-23,,Improving,company_verdict,LIVE,2026-11-23T19:28:18+08:00
+verdict.UBER.macro,2026-11-23,,Headwind,company_verdict,LIVE,2026-11-23T19:28:18+08:00
+verdict.UBER.valuation,2026-11-23,,Depends on which cash-flow measure,company_verdict,LIVE,2026-11-23T19:28:18+08:00
+verdict.SOFI.crowding,2026-11-23,,Low Chase Risk,company_verdict,LIVE,2026-11-23T19:28:32+08:00
+verdict.SOFI.expectations,2026-11-23,,Estimates rising,company_verdict,LIVE,2026-11-23T19:28:32+08:00
+verdict.SOFI.flow,2026-11-23,,Money flowing in,company_verdict,LIVE,2026-11-23T19:28:32+08:00
+verdict.SOFI.fundamentals,2026-11-23,,Improving,company_verdict,LIVE,2026-11-23T19:28:32+08:00
+verdict.SOFI.macro,2026-11-23,,Headwind,company_verdict,LIVE,2026-11-23T19:28:32+08:00
+verdict.SOFI.valuation,2026-11-23,,Price implies higher ROE than the bank earns,company_verdict,LIVE,2026-11-23T19:28:32+08:00
+verdict.TSM.crowding,2026-11-23,,Low Chase Risk,company_verdict,LIVE,2026-11-23T19:28:44+08:00
+verdict.TSM.expectations,2026-11-23,,Estimates rising,company_verdict,LIVE,2026-11-23T19:28:44+08:00
+verdict.TSM.flow,2026-11-23,,Money flowing out,company_verdict,LIVE,2026-11-23T19:28:44+08:00
+verdict.TSM.fundamentals,2026-11-23,,Improving,company_verdict,LIVE,2026-11-23T19:28:44+08:00
+verdict.TSM.macro,2026-11-23,,Headwind,company_verdict,LIVE,2026-11-23T19:28:44+08:00
+verdict.TSM.valuation,2026-11-23,,Depends on which cash-flow measure,company_verdict,LIVE,2026-11-23T19:28:44+08:00
+verdict.AMD.crowding,2026-11-23,,Low Chase Risk,company_verdict,LIVE,2026-11-23T19:31:54+08:00
+verdict.AMD.expectations,2026-11-23,,Estimates rising,company_verdict,LIVE,2026-11-23T19:31:54+08:00
+verdict.AMD.flow,2026-11-23,,Money flowing out,company_verdict,LIVE,2026-11-23T19:31:54+08:00
+verdict.AMD.fundamentals,2026-11-23,,Improving,company_verdict,LIVE,2026-11-23T19:31:54+08:00
+verdict.AMD.macro,2026-11-23,,Headwind,company_verdict,LIVE,2026-11-23T19:31:54+08:00
+verdict.AMD.valuation,2026-11-23,,Price implies growth above what the model can reach,company_verdict,LIVE,2026-11-23T19:31:54+08:00
+verdict.CRM.crowding,2026-11-23,,Low Chase Risk,company_verdict,LIVE,2026-11-23T19:32:08+08:00
+verdict.CRM.expectations,2026-11-23,,Estimates rising,company_verdict,LIVE,2026-11-23T19:32:08+08:00
+verdict.CRM.flow,2026-11-23,,Money flowing out,company_verdict,LIVE,2026-11-23T19:32:08+08:00
+verdict.CRM.fundamentals,2026-11-23,,Improving,company_verdict,LIVE,2026-11-23T19:32:08+08:00
+verdict.CRM.macro,2026-11-23,,Headwind,company_verdict,LIVE,2026-11-23T19:32:08+08:00
+verdict.CRM.valuation,2026-11-23,,Price implies less growth than observed/consensus,company_verdict,LIVE,2026-11-23T19:32:08+08:00
+verdict.BAC.crowding,2026-11-23,,Low Chase Risk,company_verdict,LIVE,2026-11-23T19:32:23+08:00
+verdict.BAC.expectations,2026-11-23,,Estimates falling,company_verdict,LIVE,2026-11-23T19:32:23+08:00
+verdict.BAC.flow,2026-11-23,,Money flowing in,company_verdict,LIVE,2026-11-23T19:32:23+08:00
+verdict.BAC.fundamentals,2026-11-23,,Improving,company_verdict,LIVE,2026-11-23T19:32:23+08:00
+verdict.BAC.macro,2026-11-23,,Headwind,company_verdict,LIVE,2026-11-23T19:32:23+08:00
+verdict.BAC.valuation,2026-11-23,,Price roughly matches the bank's ROE,company_verdict,LIVE,2026-11-23T19:32:23+08:00
+verdict.WMT.crowding,2026-11-23,,Chase Risk Not Excessive,company_verdict,LIVE,2026-11-23T19:32:37+08:00
+verdict.WMT.expectations,2026-11-23,,Estimates stable or mixed,company_verdict,LIVE,2026-11-23T19:32:37+08:00
+verdict.WMT.flow,2026-11-23,,Money flowing in,company_verdict,LIVE,2026-11-23T19:32:37+08:00
+verdict.WMT.fundamentals,2026-11-23,,Improving,company_verdict,LIVE,2026-11-23T19:32:37+08:00
+verdict.WMT.macro,2026-11-23,,Headwind,company_verdict,LIVE,2026-11-23T19:32:37+08:00
+verdict.WMT.valuation,2026-11-23,,Price implies more growth than observed/consensus,company_verdict,LIVE,2026-11-23T19:32:37+08:00
+verdict.PLTR.crowding,2026-11-23,,Low Chase Risk,company_verdict,LIVE,2026-11-23T19:33:05+08:00
+verdict.PLTR.expectations,2026-11-23,,Estimates rising,company_verdict,LIVE,2026-11-23T19:33:05+08:00
+verdict.PLTR.flow,2026-11-23,,Money flowing out,company_verdict,LIVE,2026-11-23T19:33:05+08:00
+verdict.PLTR.fundamentals,2026-11-23,,Improving,company_verdict,LIVE,2026-11-23T19:33:05+08:00
+verdict.PLTR.macro,2026-11-23,,Headwind,company_verdict,LIVE,2026-11-23T19:33:05+08:00
+verdict.PLTR.valuation,2026-11-23,,Fair value withheld,company_verdict,LIVE,2026-11-23T19:33:05+08:00
+verdict.UBER.crowding,2026-11-24,,Low Chase Risk,company_verdict,LIVE,2026-11-24T11:16:32+08:00
+verdict.UBER.expectations,2026-11-24,,Estimates falling,company_verdict,LIVE,2026-11-24T11:16:32+08:00
+verdict.UBER.flow,2026-11-24,,Money flowing out,company_verdict,LIVE,2026-11-24T11:16:32+08:00
+verdict.UBER.fundamentals,2026-11-24,,Improving,company_verdict,LIVE,2026-11-24T11:16:32+08:00
+verdict.UBER.macro,2026-11-24,,Headwind,company_verdict,LIVE,2026-11-24T11:16:32+08:00
+verdict.UBER.valuation,2026-11-24,,Depends on which cash-flow measure,company_verdict,LIVE,2026-11-24T11:16:32+08:00
+verdict.PLTR.crowding,2026-11-24,,Chase Risk Not Excessive,company_verdict,LIVE,2026-11-24T11:16:44+08:00
+verdict.PLTR.expectations,2026-11-24,,Estimates rising,company_verdict,LIVE,2026-11-24T11:16:44+08:00
+verdict.PLTR.flow,2026-11-24,,Money flowing out,company_verdict,LIVE,2026-11-24T11:16:44+08:00
+verdict.PLTR.fundamentals,2026-11-24,,Improving,company_verdict,LIVE,2026-11-24T11:16:44+08:00
+verdict.PLTR.macro,2026-11-24,,Headwind,company_verdict,LIVE,2026-11-24T11:16:44+08:00
+verdict.PLTR.valuation,2026-11-24,,Fair value withheld,company_verdict,LIVE,2026-11-24T11:16:44+08:00
+verdict.TSM.crowding,2026-11-24,,Low Chase Risk,company_verdict,LIVE,2026-11-24T11:16:46+08:00
+verdict.TSM.expectations,2026-11-24,,Estimates rising,company_verdict,LIVE,2026-11-24T11:16:46+08:00
+verdict.TSM.flow,2026-11-24,,Money flowing out,company_verdict,LIVE,2026-11-24T11:16:46+08:00
+verdict.TSM.fundamentals,2026-11-24,,Improving,company_verdict,LIVE,2026-11-24T11:16:46+08:00
+verdict.TSM.macro,2026-11-24,,Headwind,company_verdict,LIVE,2026-11-24T11:16:46+08:00
+verdict.TSM.valuation,2026-11-24,,Depends on which cash-flow measure,company_verdict,LIVE,2026-11-24T11:16:46+08:00
+verdict.LLY.crowding,2026-11-24,,Chase Risk Not Excessive,company_verdict,LIVE,2026-11-24T11:16:46+08:00
+verdict.LLY.expectations,2026-11-24,,Estimates rising,company_verdict,LIVE,2026-11-24T11:16:46+08:00
+verdict.LLY.flow,2026-11-24,,Money flowing in,company_verdict,LIVE,2026-11-24T11:16:46+08:00
+verdict.LLY.fundamentals,2026-11-24,,Improving,company_verdict,LIVE,2026-11-24T11:16:46+08:00
+verdict.LLY.macro,2026-11-24,,Tailwind,company_verdict,LIVE,2026-11-24T11:16:46+08:00
+verdict.LLY.valuation,2026-11-24,,Price implies more growth than observed/consensus,company_verdict,LIVE,2026-11-24T11:16:46+08:00
+verdict.CAT.crowding,2026-11-24,,Low Chase Risk,company_verdict,LIVE,2026-11-24T11:16:46+08:00
+verdict.CAT.expectations,2026-11-24,,Estimates stable or mixed,company_verdict,LIVE,2026-11-24T11:16:46+08:00
+verdict.CAT.flow,2026-11-24,,Money flowing in,company_verdict,LIVE,2026-11-24T11:16:46+08:00
+verdict.CAT.fundamentals,2026-11-24,,Mixed,company_verdict,LIVE,2026-11-24T11:16:46+08:00
+verdict.CAT.macro,2026-11-24,,No confirmed exposure has a current reading,company_verdict,LIVE,2026-11-24T11:16:46+08:00
+verdict.CAT.valuation,2026-11-24,,Price implies more growth than observed/consensus,company_verdict,LIVE,2026-11-24T11:16:46+08:00
+verdict.CRM.crowding,2026-11-24,,Low Chase Risk,company_verdict,LIVE,2026-11-24T11:16:46+08:00
+verdict.CRM.expectations,2026-11-24,,Estimates rising,company_verdict,LIVE,2026-11-24T11:16:46+08:00
+verdict.CRM.flow,2026-11-24,,Money flowing out,company_verdict,LIVE,2026-11-24T11:16:46+08:00
+verdict.CRM.fundamentals,2026-11-24,,Improving,company_verdict,LIVE,2026-11-24T11:16:46+08:00
+verdict.CRM.macro,2026-11-24,,Headwind,company_verdict,LIVE,2026-11-24T11:16:46+08:00
+verdict.CRM.valuation,2026-11-24,,Price implies less growth than observed/consensus,company_verdict,LIVE,2026-11-24T11:16:46+08:00
+verdict.MSFT.crowding,2026-11-24,,Chase Risk Not Excessive,company_verdict,LIVE,2026-11-24T11:16:47+08:00
+verdict.MSFT.expectations,2026-11-24,,Estimates stable or mixed,company_verdict,LIVE,2026-11-24T11:16:47+08:00
+verdict.MSFT.flow,2026-11-24,,Money flowing out,company_verdict,LIVE,2026-11-24T11:16:47+08:00
+verdict.MSFT.fundamentals,2026-11-24,,Mixed,company_verdict,LIVE,2026-11-24T11:16:47+08:00
+verdict.MSFT.macro,2026-11-24,,No confirmed exposure has a current reading,company_verdict,LIVE,2026-11-24T11:16:47+08:00
+verdict.MSFT.valuation,2026-11-24,,Price implies growth above what the model can reach,company_verdict,LIVE,2026-11-24T11:16:47+08:00
+verdict.TSLA.crowding,2026-11-24,,Low Chase Risk,company_verdict,LIVE,2026-11-24T11:16:49+08:00
+verdict.TSLA.expectations,2026-11-24,,Estimates falling,company_verdict,LIVE,2026-11-24T11:16:49+08:00
+verdict.TSLA.flow,2026-11-24,,Money flowing in,company_verdict,LIVE,2026-11-24T11:16:49+08:00
+verdict.TSLA.fundamentals,2026-11-24,,Improving,company_verdict,LIVE,2026-11-24T11:16:49+08:00
+verdict.TSLA.macro,2026-11-24,,No confirmed exposure has a current reading,company_verdict,LIVE,2026-11-24T11:16:49+08:00
+verdict.TSLA.valuation,2026-11-24,,Price implies growth above what the model can reach,company_verdict,LIVE,2026-11-24T11:16:49+08:00
+verdict.COST.crowding,2026-11-24,,Chase Risk Not Excessive,company_verdict,LIVE,2026-11-24T11:16:49+08:00
+verdict.COST.expectations,2026-11-24,,Estimates stable or mixed,company_verdict,LIVE,2026-11-24T11:16:49+08:00
+verdict.COST.flow,2026-11-24,,Money flowing in,company_verdict,LIVE,2026-11-24T11:16:49+08:00
+verdict.COST.fundamentals,2026-11-24,,Improving,company_verdict,LIVE,2026-11-24T11:16:49+08:00
+verdict.COST.macro,2026-11-24,,Headwind,company_verdict,LIVE,2026-11-24T11:16:49+08:00
+verdict.COST.valuation,2026-11-24,,Price implies more growth than observed/consensus,company_verdict,LIVE,2026-11-24T11:16:49+08:00
+verdict.WMT.crowding,2026-11-24,,Chase Risk Not Excessive,company_verdict,LIVE,2026-11-24T11:16:49+08:00
+verdict.WMT.expectations,2026-11-24,,Estimates stable or mixed,company_verdict,LIVE,2026-11-24T11:16:49+08:00
+verdict.WMT.flow,2026-11-24,,Money flowing in,company_verdict,LIVE,2026-11-24T11:16:49+08:00
+verdict.WMT.fundamentals,2026-11-24,,Improving,company_verdict,LIVE,2026-11-24T11:16:49+08:00
+verdict.WMT.macro,2026-11-24,,Headwind,company_verdict,LIVE,2026-11-24T11:16:49+08:00
+verdict.WMT.valuation,2026-11-24,,Price implies more growth than observed/consensus,company_verdict,LIVE,2026-11-24T11:16:49+08:00
+verdict.XOM.crowding,2026-11-24,,Low Chase Risk,company_verdict,LIVE,2026-11-24T11:16:49+08:00
+verdict.XOM.expectations,2026-11-24,,Estimates rising,company_verdict,LIVE,2026-11-24T11:16:49+08:00
+verdict.XOM.flow,2026-11-24,,Mixed (not persistent),company_verdict,LIVE,2026-11-24T11:16:49+08:00
+verdict.XOM.fundamentals,2026-11-24,,Improving,company_verdict,LIVE,2026-11-24T11:16:49+08:00
+verdict.XOM.macro,2026-11-24,,Tailwind,company_verdict,LIVE,2026-11-24T11:16:49+08:00
+verdict.XOM.valuation,2026-11-24,,Fair value withheld,company_verdict,LIVE,2026-11-24T11:16:49+08:00
+verdict.META.crowding,2026-11-24,,Low Chase Risk,company_verdict,LIVE,2026-11-24T11:16:49+08:00
+verdict.META.expectations,2026-11-24,,Estimates stable or mixed,company_verdict,LIVE,2026-11-24T11:16:49+08:00
+verdict.META.flow,2026-11-24,,Mixed (not persistent),company_verdict,LIVE,2026-11-24T11:16:49+08:00
+verdict.META.fundamentals,2026-11-24,,Improving,company_verdict,LIVE,2026-11-24T11:16:49+08:00
+verdict.META.macro,2026-11-24,,No confirmed exposure has a current reading,company_verdict,LIVE,2026-11-24T11:16:49+08:00
+verdict.META.valuation,2026-11-24,,Price roughly matches observed/consensus growth,company_verdict,LIVE,2026-11-24T11:16:49+08:00
+verdict.AMD.crowding,2026-11-24,,Low Chase Risk,company_verdict,LIVE,2026-11-24T11:16:49+08:00
+verdict.AMD.expectations,2026-11-24,,Estimates rising,company_verdict,LIVE,2026-11-24T11:16:49+08:00
+verdict.AMD.flow,2026-11-24,,Money flowing out,company_verdict,LIVE,2026-11-24T11:16:49+08:00
+verdict.AMD.fundamentals,2026-11-24,,Improving,company_verdict,LIVE,2026-11-24T11:16:49+08:00
+verdict.AMD.macro,2026-11-24,,Headwind,company_verdict,LIVE,2026-11-24T11:16:49+08:00
+verdict.AMD.valuation,2026-11-24,,Price implies growth above what the model can reach,company_verdict,LIVE,2026-11-24T11:16:49+08:00
+verdict.NVDA.crowding,2026-11-24,,Low Chase Risk,company_verdict,LIVE,2026-11-24T11:16:50+08:00
+verdict.NVDA.expectations,2026-11-24,,Estimates rising,company_verdict,LIVE,2026-11-24T11:16:50+08:00
+verdict.NVDA.flow,2026-11-24,,Money flowing out,company_verdict,LIVE,2026-11-24T11:16:50+08:00
+verdict.NVDA.fundamentals,2026-11-24,,Improving,company_verdict,LIVE,2026-11-24T11:16:50+08:00
+verdict.NVDA.macro,2026-11-24,,Headwind,company_verdict,LIVE,2026-11-24T11:16:50+08:00
+verdict.NVDA.valuation,2026-11-24,,Price implies growth above what the model can reach,company_verdict,LIVE,2026-11-24T11:16:50+08:00
+verdict.BAC.crowding,2026-11-24,,Low Chase Risk,company_verdict,LIVE,2026-11-24T11:16:50+08:00
+verdict.BAC.expectations,2026-11-24,,Estimates falling,company_verdict,LIVE,2026-11-24T11:16:50+08:00
+verdict.BAC.flow,2026-11-24,,Money flowing in,company_verdict,LIVE,2026-11-24T11:16:50+08:00
+verdict.BAC.fundamentals,2026-11-24,,Improving,company_verdict,LIVE,2026-11-24T11:16:50+08:00
+verdict.BAC.macro,2026-11-24,,Headwind,company_verdict,LIVE,2026-11-24T11:16:50+08:00
+verdict.BAC.valuation,2026-11-24,,Price roughly matches the bank's ROE,company_verdict,LIVE,2026-11-24T11:16:50+08:00
+verdict.AMAT.crowding,2026-11-24,,Low Chase Risk,company_verdict,LIVE,2026-11-24T11:16:50+08:00
+verdict.AMAT.expectations,2026-11-24,,Estimates rising,company_verdict,LIVE,2026-11-24T11:16:50+08:00
+verdict.AMAT.flow,2026-11-24,,Money flowing out,company_verdict,LIVE,2026-11-24T11:16:50+08:00
+verdict.AMAT.fundamentals,2026-11-24,,Improving,company_verdict,LIVE,2026-11-24T11:16:50+08:00
+verdict.AMAT.macro,2026-11-24,,Headwind,company_verdict,LIVE,2026-11-24T11:16:50+08:00
+verdict.AMAT.valuation,2026-11-24,,Price implies growth above what the model can reach,company_verdict,LIVE,2026-11-24T11:16:50+08:00
+verdict.SOFI.crowding,2026-11-24,,Low Chase Risk,company_verdict,LIVE,2026-11-24T11:16:50+08:00
+verdict.SOFI.expectations,2026-11-24,,Estimates rising,company_verdict,LIVE,2026-11-24T11:16:50+08:00
+verdict.SOFI.flow,2026-11-24,,Money flowing in,company_verdict,LIVE,2026-11-24T11:16:50+08:00
+verdict.SOFI.fundamentals,2026-11-24,,Improving,company_verdict,LIVE,2026-11-24T11:16:50+08:00
+verdict.SOFI.macro,2026-11-24,,Headwind,company_verdict,LIVE,2026-11-24T11:16:50+08:00
+verdict.SOFI.valuation,2026-11-24,,Price implies higher ROE than the bank earns,company_verdict,LIVE,2026-11-24T11:16:50+08:00
+verdict.V.crowding,2026-11-24,,Chase Risk Not Excessive,company_verdict,LIVE,2026-11-24T11:16:50+08:00
+verdict.V.expectations,2026-11-24,,Estimates stable or mixed,company_verdict,LIVE,2026-11-24T11:16:50+08:00
+verdict.V.flow,2026-11-24,,Money flowing in,company_verdict,LIVE,2026-11-24T11:16:50+08:00
+verdict.V.fundamentals,2026-11-24,,Improving,company_verdict,LIVE,2026-11-24T11:16:50+08:00
+verdict.V.macro,2026-11-24,,Headwind,company_verdict,LIVE,2026-11-24T11:16:50+08:00
+verdict.V.valuation,2026-11-24,,Price implies more growth than observed/consensus,company_verdict,LIVE,2026-11-24T11:16:50+08:00

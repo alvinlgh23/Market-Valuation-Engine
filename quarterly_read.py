@@ -112,6 +112,13 @@ def change(acceleration: float | None, margin_change: float | None, prior_growth
     return {"state": "MIXED", "label": "Mixed", "reasons": reasons}
 
 
+def _signed_pct(value: float, digits: int = 0) -> str:
+    rounded = round(value * 100, digits)
+    if abs(rounded) == 0:
+        return f"0.{'0' * digits}%" if digits else "0%"
+    return f"{rounded:+.{digits}f}%"
+
+
 def _money(value: float) -> str:
     sign = "−" if value < 0 else ""
     value = abs(value)
@@ -144,8 +151,8 @@ def read(income: dict[str, dict[str, Any]], cashflow: dict[str, dict[str, Any]],
     parts = []
     if growth is not None:
         limit = growth_threshold(growth_before)
-        pace = "" if growth_before is None else f", {'faster than' if acceleration > limit else 'slower than' if acceleration < -limit else 'about the same as'} last quarter's {growth_before * 100:+.0f}%"
-        parts.append(f"sales {growth * 100:+.0f}% from a year earlier{pace}")
+        pace = "" if growth_before is None else f", {'faster than' if acceleration > limit else 'slower than' if acceleration < -limit else 'about the same as'} last quarter's {_signed_pct(growth_before)}"
+        parts.append(f"sales {_signed_pct(growth)} from a year earlier{pace}")
     if margin is not None:
         parts.append(f"operating margin {margin * 100:.0f}%" + (f", {'up' if margin_change >= 0 else 'down'} {abs(margin_change) * 100:.1f} points" if margin_change is not None else ""))
     if eps_surprise is not None:

@@ -1,5 +1,29 @@
 // One shared request for the watchlist's last recorded card states (history only, no network).
-export type SummaryRow = { ticker: string; last_card: string | null; axes: Record<string, string>; price_to_max_case?: number | null; changed: Array<{ axis: string; from: string; to: string; on: string; origin?: "COMPANY" | "RULES" | "UNKNOWN" }> };
+export type WatchlistValuationDetail = {
+  price: number | null;
+  bear: number | null;
+  base: number | null;
+  bull: number | null;
+  price_to_max_case?: number | null;
+  implied_roe?: number | null;
+  latest_roe?: number | null;
+  currency?: string;
+  implied_growth?: number | null;
+  reference_low?: number | null;
+  reference_high?: number | null;
+};
+
+export type SummaryRow = {
+  ticker: string;
+  name?: string | null;
+  last_card: string | null;
+  axes: Record<string, string>;
+  price_to_max_case?: number | null;
+  latest_price?: number | null;
+  valuation_detail?: WatchlistValuationDetail | null;
+  operating_constraint?: string | null;
+  changed: Array<{ axis: string; from: string; to: string; on: string; origin?: "COMPANY" | "RULES" | "UNKNOWN" }>;
+};
 
 let shared: Promise<SummaryRow[]> | null = null;
 export function loadWatchlistSummary(): Promise<SummaryRow[]> {
@@ -15,4 +39,11 @@ export const CARD_AXES: ReadonlyArray<readonly [string, string]> = [["flow", "Mo
 /** Checklist 18.16: the short cell label, with the stretch above the ceiling when it is known. */
 export function cellLabel(short: string, axis: string, row: { price_to_max_case?: number | null }) {
   return axis === "valuation" && short === "Beyond model" && typeof row.price_to_max_case === "number" ? `Beyond model · ${row.price_to_max_case.toFixed(1)}x` : short;
+}
+
+/** After the list changes, the next read fetches it again (summary, drivers and events). */
+export function resetWatchlistLoaders() {
+  shared = null;
+  void import("./watchlist-drivers").then((module) => module.resetWatchlistDrivers?.());
+  void import("./watchlist-events").then((module) => module.resetWatchlistEvents());
 }

@@ -572,7 +572,7 @@ def collect_valuation_data(ticker: str) -> dict:
     fcf_period = "Latest fiscal year" if ocf and capex else "Provider TTM / most recent"
     has_financials = bool(revenue and operating_income)
     security_type = classify_security(symbol, info, has_financials)
-    return {
+    data = {
         "ticker": symbol,
         "provider": "Yahoo Finance via yfinance",
         "ticker_obj": ticker_obj,
@@ -625,6 +625,10 @@ def collect_valuation_data(ticker: str) -> dict:
             "market_price": "Current / latest available market price",
         },
     }
+    # Solution plan C1: self-computed 2-year weekly OLS beta is primary (Yahoo beta kept for comparison);
+    # when the quote-summary endpoint is rate-limited, price and market cap are also derived from chart history.
+    from market_inputs import fill_missing_market_inputs
+    return fill_missing_market_inputs(data, prefer_derived_beta=True)
 
 
 def _required_data_missing(data: dict) -> list[str]:
@@ -656,10 +660,15 @@ def _risk_free() -> tuple[float, str]:
 def _cost_of_equity(data: dict) -> dict:
     risk_free, rf_source = _risk_free()
     beta = data["beta"] if _number(data.get("beta")) and 0.25 <= data["beta"] <= 3 else 1.0
-    beta_source = "Yahoo Finance beta" if beta == data.get("beta") else "fallback beta of 1.0"
+    derived_beta_source = (data.get("input_sources") or {}).get("beta")
+    if beta != data.get("beta"):
+        beta_source = "fallback beta of 1.0"
+    else:
+        beta_source = derived_beta_source or "Yahoo Finance beta"
+    provider_beta = data.get("provider_beta") if _number(data.get("provider_beta")) else None
     erp = 0.045
     return {"risk_free_rate": risk_free, "risk_free_source": rf_source, "beta": beta, "beta_source": beta_source,
-            "equity_risk_premium": erp, "cost_of_equity": risk_free + beta * erp}
+            "provider_beta": provider_beta, "equity_risk_premium": erp, "cost_of_equity": risk_free + beta * erp}
 
 
 def _market_rates(data: dict) -> dict:
@@ -669,9 +678,10 @@ def _market_rates(data: dict) -> dict:
     erp = equity_inputs["equity_risk_premium"]
     cost_equity = equity_inputs["cost_of_equity"]
     interest = _row(data["income"], "Interest Expense", "Interest Expense Non Operating")
+    latest_interest = abs(interest[0]) if interest else data.get("interest_expense")
     pretax_cost_debt = 0.055
-    if interest and data["debt"] > 0:
-        pretax_cost_debt = _clamp(abs(interest[0]) / data["debt"], 0.025, 0.12)
+    if _number(latest_interest) and data["debt"] > 0:
+        pretax_cost_debt = _clamp(abs(latest_interest) / data["debt"], 0.025, 0.12)
     after_tax_debt = pretax_cost_debt * (1 - data["tax_rate"])
     if _number(data["market_cap"]) and data["market_cap"] > 0:
         equity = data["market_cap"]
@@ -690,6 +700,7 @@ def _market_rates(data: dict) -> dict:
         "erp_source": "explicit long-run developed-market fallback; live ERP feed unavailable",
         "beta": beta,
         "beta_source": beta_source,
+        "provider_beta": equity_inputs.get("provider_beta"),
         "cost_of_equity": cost_equity,
         "pre_tax_cost_of_debt": pretax_cost_debt,
         "after_tax_cost_of_debt": after_tax_debt,
@@ -1056,11 +1067,12 @@ def extended_horizon(data, assumptions, kind, spreads=None, observed_override=No
     first = min(observed, EXTENDED_POLICY["first_year_growth_cap"])
     # Same growth spreads as the five-year scenarios (company history when available, checklist 7.5).
     deltas = {name: (spreads or DEFAULT_SCENARIO_SPREADS)[name]["growth"] for name in ("bear", "base", "bull")}
-    scenarios, checks = {}, {}
+    scenarios, checks, forecasts = {}, {}, {}
     try:
         for name, items in assumptions.items():
             result = _dcf_extended(data, items, first + deltas[name], years, decay)
             scenarios[name] = result["fair_value_per_share"]
+            forecasts[name] = result["forecast"]
             checks[name] = _extended_checks(data, result, items)
         base = assumptions["base"]
         wacc_item = next(item for item in base if item.name == "wacc")
@@ -1081,7 +1093,7 @@ def extended_horizon(data, assumptions, kind, spreads=None, observed_override=No
     return {
         "state": "COMPUTED", "default": False, "observed_growth": observed, "type_cap": cap, "first_year_growth": first,
         "weight": extended_weight(observed, cap),
-        "policy": dict(EXTENDED_POLICY), "fair_value": scenarios, "checks": checks, "checks_passed": passed,
+        "policy": dict(EXTENDED_POLICY), "fair_value": scenarios, "base_forecast": forecasts.get("base"), "checks": checks, "checks_passed": passed,
         "reverse_dcf": _extended_reverse(data, assumptions["base"], years, decay), "sensitivity": sensitivity,
         "assumptions_to_state": "First-year growth cap (50%), linear decay to terminal growth and a 10-year explicit period are model policy without calibration; see sensitivity.",
         "note": "Ten-year values at full weight; the headline fair value blends them with the five-year values by `weight` (see report['fair_value']).",
@@ -1170,6 +1182,7 @@ def phased_fair_value(data, assumptions, scenarios, extended, reverse, kind=None
     blended = {name: (1 - weight) * five[name] + weight * ten[name] for name in five}
     blended_reverse = _blended_reverse(data, assumptions["base"], weight, EXTENDED_POLICY["years"], EXTENDED_POLICY["decay"]) if weight > 0 else reverse
     return {**output, "method": "PHASED" if weight > 0 else "FIVE_YEAR", "extended_weight": weight, "fair_value": blended, "ten_year": ten,
+            "ten_year_forecast": extended.get("base_forecast"),
             "reverse_dcf": blended_reverse,
             "reason": f"Observed growth {extended['observed_growth']:.1%} vs cap {extended['type_cap']:.0%}: ten-year model weighted {weight:.0%}, five-year {1 - weight:.0%}."}
 
@@ -1825,11 +1838,12 @@ def build_valuation_report(ticker: str, overrides: dict | None = None, data: dic
         )
     cross_checks = _cross_checks(data, scenarios)
     extreme_provider_growth = _number(_pick(data["info"], "revenueGrowth")) and abs(_pick(data["info"], "revenueGrowth")) > 1.5
+    statement_provider = data.get("provider") or "Yahoo Finance"
     report["data_quality"] = {
         "status": "LIMITED" if extreme_provider_growth or len(revenue) < 4 or not _number(data.get("working_capital_change")) else "GOOD",
         "missing": [],
         "reason": (
-            f"{len(revenue)} annual revenue periods available; market and statement fields sourced from Yahoo Finance. "
+            f"{len(revenue)} annual revenue periods available; primary statement provider: {statement_provider}. "
             + (
                 "The historical working-capital cash-flow impact is included."
                 if _number(data.get("working_capital_change"))

@@ -1,20 +1,27 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { attentionItems, buildAlerts, dataAge, marketRead, pct, type Alert } from "../../lib/alerts.mjs";
 import { axisTone, shortState } from "../../lib/judgment-tone.mjs";
 import { sectorLeadershipBars } from "../../lib/dashboard-orchestration";
 import type { ResearchSystem } from "../../lib/research-system-types";
 import { loadWatchlistDrivers, type DriverRow } from "../../lib/watchlist-drivers";
-import { CARD_AXES, cellLabel, loadWatchlistSummary, type SummaryRow } from "../../lib/watchlist-summary";
+import { CARD_AXES, cellLabel, loadWatchlistSummary, resetWatchlistLoaders, type SummaryRow } from "../../lib/watchlist-summary";
+import { refreshLine, useDailyRefresh } from "../../lib/daily-refresh";
 import { loadWatchlistEvents, type WatchlistEvents } from "../../lib/watchlist-events";
 import { Criteria } from "./Criteria";
 import { StoryDigest } from "../story/MarketStoryView";
 
 // Checklist 14.3 / 18.14: Today answers what needs attention next, then explains why holdings moved.
-// Every reading opens its criteria on hover; detail lives on the Macro, Markets and company pages.
-
 const WATCH_AXES = CARD_AXES;
+const COMPACT_AXIS_HEADER: Record<string, string> = {
+  flow: "Flow",
+  crowding: "Crowd",
+  macro: "Macro",
+  expectations: "Est.",
+  fundamentals: "Fund.",
+  valuation: "Value"
+};
 const VISIBLE_ALERTS = 5;
 
 function Card({ title, aside, children, className = "" }: { title?: string; aside?: ReactNode; children: ReactNode; className?: string }) {
@@ -42,18 +49,27 @@ function AlertRow({ alert }: { alert: Alert }) {
   </li>;
 }
 
+function compactCellText(label: string) {
+  return label.replace(/^Beyond model · /, ">").replace(/^Beyond model$/, "Beyond");
+}
+
 export function TodayView({ system, status }: { system: ResearchSystem; status?: ReactNode }) {
   const [drivers, setDrivers] = useState<DriverRow[] | null>(null);
   const [summary, setSummary] = useState<SummaryRow[] | null>(null);
   const [events, setEvents] = useState<WatchlistEvents | null>(null);
   const [showAll, setShowAll] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
+  // P20 item 6: when today's background refresh finishes, read its precomputed results again.
+  const refresh = useDailyRefresh(useCallback(() => { resetWatchlistLoaders(); setReloadKey((key) => key + 1); }, []));
+  const refreshNote = refreshLine(refresh);
+
   useEffect(() => {
     let active = true;
     loadWatchlistEvents().then((value) => { if (active) setEvents(value); });
     loadWatchlistDrivers().then((rows) => { if (active) setDrivers(rows); });
     loadWatchlistSummary().then((rows) => { if (active) setSummary(rows); });
     return () => { active = false; };
-  }, []);
+  }, [reloadKey]);
 
   const environment = system.environment;
   const now = useMemo(() => new Date(), []);
@@ -75,9 +91,12 @@ export function TodayView({ system, status }: { system: ResearchSystem; status?:
       <div className="tdy-top-right">{status}</div>
     </header>
 
+    {refreshNote ? <div className={`data-refresh tone-${refreshNote.tone}`} role="status"><i aria-hidden="true" />{refreshNote.text}</div> : null}
+
     {age.stale ? <div className="tdy-stale" role="status" suppressHydrationWarning>
       <i aria-hidden="true" />Data is from {environment?.as_of ?? "an unknown date"}{age.days != null ? `, ${age.days} business days ago` : ""}. Alerts describe that date, not today.
     </div> : null}
+
 
     <div className="tdy-grid tdy-grid-top">
       <Card className="tdy-read">
@@ -88,7 +107,6 @@ export function TodayView({ system, status }: { system: ResearchSystem; status?:
       <StoryDigest />
     </div>
 
-    {/* Checklist 18.14: what to look at next, apart from why holdings moved. */}
     <Card title="Needs your attention" aside={<small>Scheduled events, changed readings and tested patterns</small>} className="tdy-alerts tdy-attention">
       {events == null || summary == null ? <p className="tdy-empty">Checking your holdings&apos; calendar…</p> : null}
       {events != null && summary != null && !attention.length ? <p className="tdy-empty">Nothing needs your attention: no earnings or Fed decision in the next three weeks, and no reading changed.</p> : null}
@@ -103,15 +121,16 @@ export function TodayView({ system, status }: { system: ResearchSystem; status?:
     </Card>
 
     <div className="tdy-grid tdy-grid-bottom">
-      <Card title="Watchlist" aside={<Link href="/companies">Open</Link>} className="tdy-watch">
+      <Card title="Watchlist" aside={<Link href="/companies">Open &amp; edit</Link>} className="tdy-watch">
         {summary == null ? <p className="tdy-empty">Loading…</p> : <div role="table" aria-label="Watchlist readings">
-          <div className="tdy-watch-row tdy-watch-head" role="row"><span role="columnheader">Ticker</span>{WATCH_AXES.map(([, label]) => <span key={label} role="columnheader">{label}</span>)}</div>
+          <div className="tdy-watch-row tdy-watch-head" role="row"><span role="columnheader">Ticker</span>{WATCH_AXES.map(([key, label]) => <span key={key} role="columnheader" title={label}>{COMPACT_AXIS_HEADER[key] ?? label}</span>)}</div>
           {summary.map((row) => <Link key={row.ticker} href={`/company/${row.ticker}`} className="tdy-watch-row" role="row">
             <b role="rowheader">{row.ticker}</b>
-            {WATCH_AXES.map(([key]) => {
+            {WATCH_AXES.map(([key, fullLabel]) => {
               const state = row.axes[key];
               const change = row.changed.find((item) => item.axis === key && item.origin === "COMPANY");
-              return <span key={key} role="cell" className={`tone-${state ? axisTone(key, state) : "unknown"}${change ? " changed" : ""}`} title={`${state ?? "No card yet"}${change ? ` (was ${change.from}, changed ${change.on})` : ""}`}>{cellLabel(shortState(state), key, row)}</span>;
+              const rawText = cellLabel(shortState(state), key, row);
+              return <span key={key} role="cell" className={`tone-${state ? axisTone(key, state) : "unknown"}${change ? " changed" : ""}`} title={`${fullLabel}: ${state ?? "No card yet"}${change ? ` (was ${change.from}, changed ${change.on})` : ""}`}>{compactCellText(rawText)}</span>;
             })}
           </Link>)}
         </div>}

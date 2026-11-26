@@ -3764,3 +3764,8 @@ risk.coverage,2024-11-18,1.0,,Yahoo daily closes (backfill),BACKFILL,2026-11-20T
 risk.published_regime,2024-11-18,,Healthy Rotation,Yahoo daily closes (backfill),BACKFILL,2026-11-20T13:12:35+08:00
 risk.regime,2024-11-18,,Healthy Rotation,Yahoo daily closes (backfill),BACKFILL,2026-11-20T13:12:35+08:00
 risk.supporting_evidence,2024-11-18,2.0,,Yahoo daily closes (backfill),BACKFILL,2026-11-20T13:12:35+08:00
+risk.conflicting_evidence,2026-11-23,0.0,,Python core market engine,LIVE,2026-11-24T13:38:27+08:00
+risk.coverage,2026-11-23,1.0,,Python core market engine,LIVE,2026-11-24T13:38:27+08:00
+risk.published_regime,2026-11-23,,Narrow Leadership Unwind,Python core market engine,LIVE,2026-11-24T13:38:27+08:00
+risk.regime,2026-11-23,,Narrow Leadership Unwind,Python core market engine,LIVE,2026-11-24T13:38:27+08:00
+risk.supporting_evidence,2026-11-23,7.0,,Python core market engine,LIVE,2026-11-24T13:38:27+08:00

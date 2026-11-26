@@ -24,6 +24,11 @@ REQUIRED_FIELDS = {
     "reporting_period", "observation_date", "publication_date", "source_title",
     "source_url", "extraction_method", "verification_status",
 }
+ALLOWED_VERIFICATION_STATUSES = {
+    "DOCUMENTARY_VERIFIED",
+    "CURATED_UNVERIFIED",
+    "MACHINE_EXTRACTED",
+}
 
 
 @dataclass(frozen=True)
@@ -77,7 +82,7 @@ def load_operational_evidence(ticker: str, path: Path = DEFAULT_REGISTRY) -> lis
             raise ValueError(f"Operational evidence entry {row.get('id', index)} lacks: {', '.join(missing)}")
         if not row.get("source_url") or not str(row["source_url"]).startswith(("https://", "http://")):
             raise ValueError(f"Operational evidence entry {row['id']} needs a source URL.")
-        if row.get("verification_status") not in {"DOCUMENTARY_VERIFIED", "CURATED_UNVERIFIED"}:
+        if row.get("verification_status") not in ALLOWED_VERIFICATION_STATUSES:
             raise ValueError(f"Operational evidence entry {row['id']} has an unsupported verification status.")
         if row.get("value") is None or not row.get("unit") or not row.get("reporting_period"):
             raise ValueError(f"Operational evidence entry {row['id']} lacks value, unit, or period.")
@@ -88,7 +93,7 @@ def load_operational_evidence(ticker: str, path: Path = DEFAULT_REGISTRY) -> lis
 
 def enrich_snapshot(snapshot: Any, path: Path = DEFAULT_REGISTRY):
     """Mutate the normalized snapshot boundary, not downstream claim logic."""
-    entries = load_operational_evidence(snapshot.ticker, path)
+    entries = sorted(load_operational_evidence(snapshot.ticker, path), key=lambda item: item.observation_date)
     envelopes = dict(getattr(snapshot, "evidence_envelopes", {}) or {})
     for entry in entries:
         snapshot.operational_metrics[entry.metric] = entry.value

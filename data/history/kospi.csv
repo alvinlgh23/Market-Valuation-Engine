@@ -1,0 +1,16 @@
+signal_id,observation_date,value,label,source,source_state,recorded_at
+kospi.factor.consumption.corr,2026-11-24,0.1895,,KOSPI Multi-Factor Signal Monitor,LIVE,2026-11-24T13:38:48+08:00
+kospi.factor.consumption.pval,2026-11-24,0.005,,KOSPI Multi-Factor Signal Monitor,LIVE,2026-11-24T13:38:48+08:00
+kospi.factor.consumption.strength,2026-11-24,,Moderate,KOSPI Multi-Factor Signal Monitor,LIVE,2026-11-24T13:38:48+08:00
+kospi.factor.cultural.corr,2026-11-24,0.0066,,KOSPI Multi-Factor Signal Monitor,LIVE,2026-11-24T13:38:48+08:00
+kospi.factor.cultural.pval,2026-11-24,1.0,,KOSPI Multi-Factor Signal Monitor,LIVE,2026-11-24T13:38:48+08:00
+kospi.factor.cultural.strength,2026-11-24,,No Signal,KOSPI Multi-Factor Signal Monitor,LIVE,2026-11-24T13:38:48+08:00
+kospi.factor.macro.corr,2026-11-24,-0.0067,,KOSPI Multi-Factor Signal Monitor,LIVE,2026-11-24T13:38:48+08:00
+kospi.factor.macro.pval,2026-11-24,1.0,,KOSPI Multi-Factor Signal Monitor,LIVE,2026-11-24T13:38:48+08:00
+kospi.factor.macro.strength,2026-11-24,,No Signal,KOSPI Multi-Factor Signal Monitor,LIVE,2026-11-24T13:38:48+08:00
+kospi.factor.tech.corr,2026-11-24,0.3018,,KOSPI Multi-Factor Signal Monitor,LIVE,2026-11-24T13:38:48+08:00
+kospi.factor.tech.pval,2026-11-24,0.0,,KOSPI Multi-Factor Signal Monitor,LIVE,2026-11-24T13:38:48+08:00
+kospi.factor.tech.strength,2026-11-24,,Strong,KOSPI Multi-Factor Signal Monitor,LIVE,2026-11-24T13:38:48+08:00
+kospi.regime,2026-11-24,,Tech-Sensitive,KOSPI Multi-Factor Signal Monitor,LIVE,2026-11-24T13:38:48+08:00
+kospi.volatility.current,2026-11-24,3.788,,KOSPI Multi-Factor Signal Monitor,LIVE,2026-11-24T13:38:48+08:00
+kospi.volatility.regime,2026-11-24,,High,KOSPI Multi-Factor Signal Monitor,LIVE,2026-11-24T13:38:48+08:00

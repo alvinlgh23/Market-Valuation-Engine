@@ -3,13 +3,50 @@
 import { useEffect, useMemo, useState } from "react";
 import type { CompanyResearchViewModel, EvidenceViewModel } from "../../lib/company-economics-types";
 import { confidenceLabel, formatValue, humanize } from "../../lib/companyEconomicsAdapter";
+import { loadCachedCompanyCard, loadCompanyCard } from "../../lib/company-card";
 import { EconomicMap, evidenceForEconomicNode } from "./EconomicMap";
 import { OperationalResearch } from "./OperationalResearch";
+import { PriceDriversPanel, type Attribution, type PriceReading } from "./PriceDrivers";
 import { ConfidenceLabel, EvidenceTypeBadge, Unavailable } from "./ResearchPrimitives";
+import { OperatingSignals, type Operating } from "./StoredProfileReads";
 import { InspectorRead, ResearchWorkspace, WorkspaceAction } from "../research/ResearchWorkspace";
 
 export type CompanyWorkspaceKind = "economics" | "valuation" | "thesis" | "financials" | "evidence";
 type GraphNode = CompanyResearchViewModel["raw"]["economic_graph"]["nodes"][number];
+
+type LiveCardSnapshot = {
+  axes?: Record<string, { state?: string; confidence?: string; evidence?: string[]; detail?: Record<string, unknown> }>;
+  attribution?: Attribution;
+  price_reading?: PriceReading;
+  operating?: Operating | null;
+  next_catalysts?: { last_earnings?: string | null };
+};
+
+function useLiveCardSnapshot(ticker: string): LiveCardSnapshot | null {
+  const [card, setCard] = useState<LiveCardSnapshot | null>(null);
+  useEffect(() => {
+    let active = true;
+    loadCachedCompanyCard(ticker).then((res) => {
+      if (active && res.card) setCard((prev) => prev ?? (res.card as unknown as LiveCardSnapshot));
+    });
+    loadCompanyCard(ticker).then((res) => {
+      if (active && res.card) setCard(res.card as unknown as LiveCardSnapshot);
+    });
+    return () => { active = false; };
+  }, [ticker]);
+  return card;
+}
+
+function formatScalingMetric(value: number | null | undefined, unit: string) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return "Unavailable";
+  if (unit === "decimal") return `${(value * 100).toFixed(1)}%`;
+  if (unit.includes("currency")) {
+    if (Math.abs(value) >= 1e6) return `$${(value / 1e6).toFixed(2)}M`;
+    if (Math.abs(value) >= 1e3) return `$${Math.round(value / 1e3).toLocaleString("en-US")}K`;
+    return `$${value.toFixed(0)}`;
+  }
+  return value.toLocaleString("en-US", { maximumFractionDigits: 2 });
+}
 
 function useDepthEscape(onClose: () => void) {
   useEffect(() => {
@@ -24,10 +61,21 @@ function useDepthEscape(onClose: () => void) {
   }, [onClose]);
 }
 
-function EvidenceList({ items, onSelect }: { items: EvidenceViewModel[]; onSelect: (item: EvidenceViewModel) => void }) {
+function EvidenceList({ items, selectedId, onSelect }: { items: EvidenceViewModel[]; selectedId?: string | null; onSelect: (item: EvidenceViewModel) => void }) {
   const uniqueItems = Array.from(new Map(items.map((item) => [item.id, item])).values());
   if (!uniqueItems.length) return <p className="workspace-empty">No connected evidence is available.</p>;
-  return <div className="workspace-evidence-list">{uniqueItems.map((item) => <button key={item.id} type="button" onClick={() => onSelect(item)}><span>{item.id}</span><div><strong>{item.label}</strong><EvidenceTypeBadge type={item.typeLabel} /></div><b>{item.valueLabel}</b><i>→</i></button>)}</div>;
+  return (
+    <div className="workspace-evidence-list">
+      {uniqueItems.map((item) => (
+        <button key={item.id} type="button" className={selectedId === item.id ? "selected" : ""} onClick={() => onSelect(item)}>
+          <span>{item.id}</span>
+          <div><strong>{item.label}</strong><EvidenceTypeBadge type={item.typeLabel} /></div>
+          <b>{item.valueLabel}</b>
+          <i>→</i>
+        </button>
+      ))}
+    </div>
+  );
 }
 
 function evidenceByType(items: EvidenceViewModel[]) {
@@ -85,20 +133,37 @@ function NodeInspector({ company, node, onEvidence }: { company: CompanyResearch
       <InspectorRead label="Evidence nature">{evidence.length ? <p>{splitEvidence.direct.length} direct / {splitEvidence.proxy.length} proxy / {splitEvidence.inference.length} inference</p> : <p>No connected evidence classification.</p>}</InspectorRead>
     </>}
     <div className="inspector-evidence-preview"><span>CONNECTED EVIDENCE / {evidence.length}</span><EvidenceList items={evidence.slice(0, 4)} onSelect={(item) => onEvidence([item])} /></div>
-    <WorkspaceAction onClick={() => onEvidence(evidence)}>Trace Evidence</WorkspaceAction>
+    <WorkspaceAction onClick={() => onEvidence(evidence)}>Trace All Node Evidence</WorkspaceAction>
   </div>;
 }
 
-function EvidenceWorkspace({ company, initialItems, onClose }: { company: CompanyResearchViewModel; initialItems?: EvidenceViewModel[]; onClose: () => void }) {
+function EvidenceWorkspace({ company, initialItems, onClose, onResetFilter, inline = false }: { company: CompanyResearchViewModel; initialItems?: EvidenceViewModel[]; onClose: () => void; onResetFilter?: () => void; inline?: boolean }) {
   const [filter, setFilter] = useState<"all" | "direct" | "proxy" | "inference" | "gaps">("all");
-  const [selected, setSelected] = useState<EvidenceViewModel | null>(null);
-  const [sourceOpen, setSourceOpen] = useState(false);
   const items = initialItems?.length ? initialItems : company.evidence;
   const filtered = useMemo(() => filter === "all" || filter === "gaps" ? items : items.filter((item) => item.typeLabel.toLowerCase() === filter), [filter, items]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [sourceOpen, setSourceOpen] = useState(false);
+  const selected = filtered.find((i) => i.id === selectedId) ?? filtered[0] ?? null;
+
   return <>
-    <ResearchWorkspace code="LEVEL 3 / EVIDENCE" title="Evidence Trace" ticker={company.ticker} depth={2} onClose={onClose} inspector={selected ? <EvidenceInspector item={selected} onSource={() => setSourceOpen(true)} /> : <div className="inspector-empty"><span>SELECT EVIDENCE</span><h3>Trace a metric</h3><p>Inspect classification, use, period, source nature, and confidence.</p></div>}>
-      <div className="evidence-workspace-header"><div><strong>{items.length}</strong><span>Evidence items in current trace</span></div><nav>{(["all", "direct", "proxy", "inference", "gaps"] as const).map((key) => <button type="button" className={filter === key ? "active" : ""} key={key} onClick={() => setFilter(key)}>{key}</button>)}</nav></div>
-      {filter === "gaps" ? <div className="workspace-gap-list">{company.dataGaps.map((gap) => <article key={`${gap.missing_field}-${gap.related_constraint}`}><span>DATA GAP</span><h3>{gap.label}</h3><p>{gap.why_it_matters}</p><small>{gap.confidence_impact}</small></article>)}</div> : <EvidenceList items={filtered} onSelect={(item) => { setSelected(item); setSourceOpen(false); }} />}
+    <ResearchWorkspace
+      code="EVIDENCE & PROVENANCE"
+      title="Evidence Trace"
+      ticker={company.ticker}
+      depth={inline ? 1 : 2}
+      inline={inline}
+      onClose={onClose}
+      inspector={selected ? <EvidenceInspector item={selected} onSource={() => setSourceOpen(true)} /> : <div className="inspector-empty"><span>SELECT EVIDENCE</span><h3>Trace a metric</h3><p>Inspect classification, use, period, source nature, and confidence.</p></div>}
+    >
+      <div className="evidence-workspace-header">
+        <div>
+          <strong>{items.length}</strong>
+          <span>{initialItems?.length ? "Filtered node evidence items" : "Verified evidence items"}</span>
+          {initialItems?.length && onResetFilter ? <button type="button" className="ev-reset-btn" onClick={onResetFilter}>Show all {company.evidence.length} items</button> : null}
+        </div>
+        <nav>{(["all", "direct", "proxy", "inference", "gaps"] as const).map((key) => <button type="button" className={filter === key ? "active" : ""} key={key} onClick={() => setFilter(key)}>{key}</button>)}</nav>
+      </div>
+      {filter === "gaps" ? <div className="workspace-gap-list">{company.dataGaps.map((gap) => <article key={`${gap.missing_field}-${gap.related_constraint}`}><span>DATA GAP</span><h3>{gap.label}</h3><p>{gap.why_it_matters}</p><small>{gap.confidence_impact}</small></article>)}</div> : <EvidenceList items={filtered} selectedId={selected?.id} onSelect={(item) => { setSelectedId(item.id); setSourceOpen(false); }} />}
     </ResearchWorkspace>
     {selected && sourceOpen ? <SourceTrace item={selected} onClose={() => setSourceOpen(false)} /> : null}
   </>;
@@ -117,11 +182,11 @@ function SourceTrace({ item, onClose }: { item: EvidenceViewModel; onClose: () =
   </ResearchWorkspace>;
 }
 
-function ValuationWorkspace({ company, onClose, onEvidence }: { company: CompanyResearchViewModel; onClose: () => void; onEvidence: (items: EvidenceViewModel[]) => void }) {
+function ValuationWorkspace({ company, onClose, onEvidence, inline = false }: { company: CompanyResearchViewModel; onClose: () => void; onEvidence: (items: EvidenceViewModel[]) => void; inline?: boolean }) {
   const [detail, setDetail] = useState<"reverse" | "assumptions" | "sensitivity" | null>(null);
   const market = company.raw.market_expectations_comparison;
   return <>
-    <ResearchWorkspace code="LEVEL 1 / VALUATION" title="Valuation Workspace" ticker={company.ticker} onClose={onClose} inspector={<div className="valuation-workspace-read"><span>ECONOMIC READ</span><h3>{humanize(market.state)}</h3><p>{market.reason}</p><WorkspaceAction onClick={() => onEvidence(market.evidence_ids.map((id) => company.evidenceById[id]).filter(Boolean))}>Trace Valuation Evidence</WorkspaceAction></div>}>
+    <ResearchWorkspace code="LEVEL 1 / VALUATION" title="Valuation Workspace" ticker={company.ticker} inline={inline} onClose={onClose} inspector={<div className="valuation-workspace-read"><span>ECONOMIC READ</span><h3>{humanize(market.state)}</h3><p>{market.reason}</p><WorkspaceAction onClick={() => onEvidence(market.evidence_ids.map((id) => company.evidenceById[id]).filter(Boolean))}>Trace Valuation Evidence</WorkspaceAction></div>}>
       <div className="valuation-workspace-canvas">
         <section className="valuation-range-compact"><header><span>INTRINSIC RANGE</span><small>Scenario values unavailable in Company Economics fixture</small></header><div>{["Bear", "Base", "Bull", "Current Price"].map((label) => <div key={label}><span>{label}</span><Unavailable reason="Unavailable" /></div>)}</div></section>
         <section className="economics-dcf-bridge"><header><span>OBSERVED ECONOMICS</span><i>→</i><span>DCF ASSUMPTIONS</span></header>{company.raw.valuation_assumption_review.reviews.map((review) => { const observed = review.assumption === "revenue_growth" ? company.raw.growth_sustainability.current_revenue_growth : company.evidence.find((item) => item.metric === "fcf_margin")?.value; return <button type="button" key={review.assumption} onClick={() => setDetail("assumptions")}><div><small>Observed {humanize(review.assumption)}</small><strong>{formatValue(observed, "decimal")}</strong></div><i>→</i><div><small>{humanize(review.assumption)} assumption</small><strong>{formatValue(review.dcf_value, "decimal")}</strong></div><span>{humanize(review.state)}</span></button>; })}</section>
@@ -140,25 +205,184 @@ function ValuationDetail({ company, detail, onClose }: { company: CompanyResearc
   </ResearchWorkspace>;
 }
 
-function ThesisWorkspace({ company, onClose }: { company: CompanyResearchViewModel; onClose: () => void }) {
+function PositioningWorkspace({ company, onClose, inline = false }: { company: CompanyResearchViewModel; onClose: () => void; inline?: boolean }) {
   const sustainability = company.raw.growth_sustainability;
-  return <ResearchWorkspace code="LEVEL 1 / THESIS" title="Growth Sustainability" ticker={company.ticker} onClose={onClose}><div className="thesis-workspace"><header><span>CURRENT READ</span><h3>{company.raw.scaling_economics.interpretation}</h3><ConfidenceLabel value={sustainability.confidence} /></header><p>{sustainability.interpretation}</p><section><span>WHAT WOULD BREAK THIS VIEW?</span>{company.raw.falsification_conditions.map((item, index) => <article key={item.condition}><b>{String(index + 1).padStart(2, "0")}</b><div><strong>{item.condition}</strong><p>{item.rationale}</p></div></article>)}</section></div></ResearchWorkspace>;
+  const scaling = company.raw.scaling_economics;
+  const liveCard = useLiveCardSnapshot(company.ticker);
+  const positioningAxes = [
+    ["flow", "Sector Money Flow"],
+    ["crowding", "Valuation Crowding"],
+    ["macro", "Macro Sensitivity"],
+    ["expectations", "Analyst Consensus"],
+  ] as const;
+
+  return (
+    <ResearchWorkspace code="MARKET POSITIONING & THESIS" title="Positioning & Growth Thesis" ticker={company.ticker} inline={inline} onClose={onClose}>
+      <div className="thesis-workspace positioning-upgraded">
+        {liveCard?.attribution ? (
+          <PriceDriversPanel
+            attribution={liveCard.attribution}
+            reading={liveCard.price_reading}
+            lastEarnings={liveCard.next_catalysts?.last_earnings ?? undefined}
+          />
+        ) : null}
+
+        {liveCard?.axes ? (
+          <section className="pos-live-grid" aria-label="Live market positioning">
+            {positioningAxes.map(([key, label]) => {
+              const ax = liveCard.axes?.[key];
+              if (!ax) return null;
+              return (
+                <article key={key} className="pos-live-card">
+                  <span>{label}</span>
+                  <strong>{ax.state ?? "—"}</strong>
+                  {ax.evidence?.[0] ? <p>{ax.evidence[0]}</p> : null}
+                </article>
+              );
+            })}
+          </section>
+        ) : null}
+
+        <header className="pos-thesis-head">
+          <div>
+            <span>SCALING ECONOMICS &amp; GROWTH ENGINE</span>
+            <h3>{scaling.interpretation}</h3>
+          </div>
+          <ConfidenceLabel value={sustainability.confidence} />
+        </header>
+        <p className="pos-equation">{company.growthEquation}</p>
+        <p>{sustainability.interpretation}</p>
+
+        {scaling.metrics?.length ? (
+          <div className="pos-scaling-metrics">
+            {scaling.metrics.map((m) => (
+              <article key={m.name}>
+                <span>{humanize(m.name)}</span>
+                <strong>{formatScalingMetric(m.value, m.unit)}</strong>
+                <small>{m.interpretation}</small>
+              </article>
+            ))}
+          </div>
+        ) : null}
+
+        <section>
+          <span>WHAT WOULD BREAK THIS VIEW?</span>
+          {company.raw.falsification_conditions.map((item, index) => (
+            <article key={item.condition}>
+              <b>{String(index + 1).padStart(2, "0")}</b>
+              <div>
+                <strong>{item.condition}</strong>
+                <p>{item.rationale}</p>
+              </div>
+            </article>
+          ))}
+        </section>
+      </div>
+    </ResearchWorkspace>
+  );
 }
 
-function FinancialWorkspace({ company, onClose }: { company: CompanyResearchViewModel; onClose: () => void }) {
-  return <ResearchWorkspace code="LEVEL 1 / FINANCIALS" title="Financial Translation" ticker={company.ticker} onClose={onClose}><div className="financial-workspace"><div className="financial-causal-chain">{["Economic Evidence", "Revenue Durability", "Margin Durability", "FCFF Conversion", "Valuation Assumptions"].map((item, index) => <div key={item}><span>{item}</span>{index < 4 ? <i>↓</i> : null}</div>)}</div><section>{Object.entries(company.raw.financial_translation).map(([key, item]) => <article key={key}><span>{humanize(key)}</span><strong>{humanize(item.state)}</strong><p>{item.reason}</p></article>)}</section></div></ResearchWorkspace>;
+function FinancialWorkspace({ company, onClose, inline = false }: { company: CompanyResearchViewModel; onClose: () => void; inline?: boolean }) {
+  const liveCard = useLiveCardSnapshot(company.ticker);
+  const scaling = company.raw.scaling_economics;
+  return (
+    <ResearchWorkspace code="FILINGS & FINANCIAL TRANSLATION" title="Financials & Operating Signals" ticker={company.ticker} inline={inline} onClose={onClose}>
+      <div className="financial-workspace financials-upgraded">
+        {liveCard?.operating ? <OperatingSignals operating={liveCard.operating} /> : null}
+
+        {liveCard?.axes?.fundamentals?.evidence?.length ? (
+          <section className="fin-quarter-summary">
+            <span>LATEST QUARTERLY FILING READ</span>
+            <h3>{liveCard.axes.fundamentals.state}</h3>
+            <ul>
+              {liveCard.axes.fundamentals.evidence.map((line) => <li key={line}>{line}</li>)}
+            </ul>
+          </section>
+        ) : null}
+
+        <div className="financial-causal-chain">
+          {["Economic Evidence", "Revenue Durability", "Margin Durability", "FCFF Conversion", "Valuation Assumptions"].map((item, index) => (
+            <div key={item}><span>{item}</span>{index < 4 ? <i>↓</i> : null}</div>
+          ))}
+        </div>
+
+        <section>
+          {Object.entries(company.raw.financial_translation).map(([key, item]) => (
+            <article key={key}>
+              <span>{humanize(key)}</span>
+              <strong>{humanize(item.state)}</strong>
+              <p>{item.reason}</p>
+            </article>
+          ))}
+        </section>
+
+        {scaling.metrics?.length ? (
+          <div className="pos-scaling-metrics">
+            {scaling.metrics.map((m) => (
+              <article key={m.name}>
+                <span>{humanize(m.name)}</span>
+                <strong>{formatScalingMetric(m.value, m.unit)}</strong>
+                <small>{m.interpretation}</small>
+              </article>
+            ))}
+          </div>
+        ) : null}
+      </div>
+    </ResearchWorkspace>
+  );
 }
 
-export function CompanyWorkspaces({ company, workspace, selectedNodeId, onNode, onClose, onEvidence }: { company: CompanyResearchViewModel; workspace: CompanyWorkspaceKind | null; selectedNodeId: string | null; onNode: (nodeId: string) => void; onClose: () => void; onEvidence: (items?: EvidenceViewModel[]) => void }) {
+export function CompanyWorkspaces({
+  company,
+  workspace,
+  selectedNodeId,
+  onNode,
+  onClose,
+  onEvidence,
+  inline = false
+}: {
+  company: CompanyResearchViewModel;
+  workspace: CompanyWorkspaceKind | null;
+  selectedNodeId: string | null;
+  onNode: (nodeId: string) => void;
+  onClose: () => void;
+  onEvidence: (items?: EvidenceViewModel[]) => void;
+  inline?: boolean;
+}) {
   const [evidenceItems, setEvidenceItems] = useState<EvidenceViewModel[] | undefined>();
-  const selectedNode = company.raw.economic_graph.nodes.find((node) => node.id === selectedNodeId) ?? null;
+  const nodes = company.raw.economic_graph.nodes;
+  const selectedNode = nodes.find((node) => node.id === selectedNodeId) ?? nodes[0] ?? null;
   const openEvidence = (items?: EvidenceViewModel[]) => { setEvidenceItems(items); onEvidence(items); };
   if (!workspace) return null;
   return <>
-    {workspace === "economics" ? <ResearchWorkspace code="LEVEL 1 / COMPANY ECONOMICS" title="Economic Map" ticker={company.ticker} onClose={onClose} inspector={<NodeInspector company={company} node={selectedNode} onEvidence={openEvidence} />}><EconomicMap company={company} selectedNodeId={selectedNodeId} onSelectNode={(node) => onNode(node.id)} inlineInspector={false} /></ResearchWorkspace> : null}
-    {workspace === "valuation" ? <ValuationWorkspace company={company} onClose={onClose} onEvidence={openEvidence} /> : null}
-    {workspace === "thesis" ? <ThesisWorkspace company={company} onClose={onClose} /> : null}
-    {workspace === "financials" ? <FinancialWorkspace company={company} onClose={onClose} /> : null}
-    {workspace === "evidence" ? <EvidenceWorkspace company={company} initialItems={evidenceItems} onClose={onClose} /> : null}
+    {workspace === "economics" ? (
+      <ResearchWorkspace
+        code="COMPANY ECONOMICS"
+        title="Economic Map"
+        ticker={company.ticker}
+        inline={inline}
+        onClose={onClose}
+        inspector={<NodeInspector company={company} node={selectedNode} onEvidence={openEvidence} />}
+      >
+        <div className="econ-inline-question">
+          <span>CORE ECONOMIC QUESTION</span>
+          <p>{company.coreQuestion}</p>
+        </div>
+        <EconomicMap company={company} selectedNodeId={selectedNode?.id ?? null} onSelectNode={(node) => onNode(node.id)} inlineInspector={false} />
+        <OperationalResearch research={company.raw.operational_research} />
+      </ResearchWorkspace>
+    ) : null}
+    {workspace === "valuation" ? <ValuationWorkspace company={company} inline={inline} onClose={onClose} onEvidence={openEvidence} /> : null}
+    {workspace === "thesis" ? <PositioningWorkspace company={company} inline={inline} onClose={onClose} /> : null}
+    {workspace === "financials" ? <FinancialWorkspace company={company} inline={inline} onClose={onClose} /> : null}
+    {workspace === "evidence" ? (
+      <EvidenceWorkspace
+        company={company}
+        initialItems={evidenceItems}
+        inline={inline}
+        onResetFilter={() => setEvidenceItems(undefined)}
+        onClose={onClose}
+      />
+    ) : null}
   </>;
 }

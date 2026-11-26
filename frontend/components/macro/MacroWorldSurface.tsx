@@ -11,10 +11,16 @@ import { TransmissionGraph } from "../charts/AnalyticalCharts";
 import { normalizeTransmissions } from "../../lib/research-visualization-adapter";
 
 const REGION_ORDER = ["US", "JP", "KR", "EURO_AREA"];
-// Checklist 18.8: short codes for display; EURO_AREA is an internal key.
 const REGION_CODE: Record<string, string> = { EURO_AREA: "EA" };
 const code = (id: string) => REGION_CODE[id] ?? id;
 function timestamp(value: string) { return value.replace("T", " ").replace(/([+-]\d\d:\d\d|Z)$/, " UTC"); }
+
+const CHANNEL_EQUITY_LINK: Record<string, string> = {
+  "jp-us-yen-carry": "Equity impact: Global risk liquidity & high-valuation US tech (NVDA, MSFT, AMD, PLTR)",
+  "us-jp-rate-fx": "Equity impact: Rate-differential pressure on JPY funding & Japanese financials",
+  "us-eu-rate-fx": "Equity impact: US multinational FX translation & European demand (MSFT, V, COST, CAT)",
+  "us-kr-dollar-kospi": "Equity impact: Global memory, foundry & AI hardware cycle (NVDA, TSM, AMD)",
+};
 
 function readQuery() {
   if (typeof window === "undefined") return { mode: "regions", region: "", detail: "", edge: "" };
@@ -107,11 +113,14 @@ function EdgeInspector({ edge, evidence, onClose }: { edge: MacroTransmission; e
   return <aside className="macro-edge-inspector" aria-label={`${edge.label} transmission detail`}><header><span>TRANSMISSION / {edge.source} → {edge.target}</span><button type="button" onClick={onClose}>Close · ESC</button></header><h2>{edge.label}</h2><div className="edge-status"><div><span>Structural</span><Status value={edge.structural_state} /></div><div><span>Current</span><Status value={edge.current_state} /></div><div><span>Confidence</span><Status value={edge.confidence} /></div></div><section><span>Mechanism</span><p>{edge.mechanism}</p></section><section className="transmission-chain"><span>Structural chain</span><div>{chain.map((item, index) => <span key={item}><b>{item}</b>{index < chain.length - 1 ? <i>↓</i> : null}</span>)}</div></section><section><span>Current read</span><p>{edge.summary}</p></section><section className="edge-caveat"><span>Interpretive limit</span><p>{edge.caveat}</p></section><section><span>Counter evidence</span><p>No separately normalized counter-evidence series is supplied for this relationship.</p></section><section><span>Missing evidence</span><p>{edge.current_state === "INSUFFICIENT" ? edge.caveat : "No additional missing-field list is supplied beyond the stated interpretive limit."}</p></section><section><span>Activation / weakening</span><p>No numeric activation threshold is supplied. The current state changes only through the existing deterministic regional evidence and coverage rules.</p></section><div className="macro-detail-heading"><span>Evidence</span><b>{evidence.length} linked records</b></div>{evidence.map((item) => <div className="edge-evidence" key={item.id}><span>{item.evidence_type}</span><strong>{item.label}</strong><b>{item.value}</b><small>{item.period}</small></div>)}</aside>;
 }
 
-export function MacroWorldSurface({ world }: { world: MacroWorld }) {
-  const [mode, setMode] = useState("regions");
-  const [regionId, setRegionId] = useState("");
-  const [detailId, setDetailId] = useState("");
-  const [edgeId, setEdgeId] = useState("");
+export type WorldQuery = { mode?: string; region?: string; detail?: string; edge?: string };
+
+// The server passes the URL query in, so the first client render matches the server render (no hydration mismatch).
+export function MacroWorldSurface({ world, initial = {} }: { world: MacroWorld; initial?: WorldQuery }) {
+  const [mode, setMode] = useState(initial.mode || "regions");
+  const [regionId, setRegionId] = useState(initial.region || "");
+  const [detailId, setDetailId] = useState(initial.detail || "");
+  const [edgeId, setEdgeId] = useState(initial.edge || "");
   const [notice, setNotice] = useState("");
   const [hoverRegionId, setHoverRegionId] = useState("");
   const [hoverUnavailable, setHoverUnavailable] = useState("");
@@ -125,17 +134,18 @@ export function MacroWorldSurface({ world }: { world: MacroWorld }) {
     ["mode", "region", "detail", "edge"].forEach((key) => { const value = values[key as keyof typeof values]; if (value) url.searchParams.set(key, value); else url.searchParams.delete(key); });
     window.history.pushState({}, "", url);
   }
-  function selectRegion(id: string) { setRegionId(id); setDetailId(""); setNotice(""); push({ mode: "regions", region: id, detail: "", edge: "" }); }
+  function selectRegion(id: string) { setRegionId(id); setDetailId(""); setEdgeId(""); setNotice(""); push({ mode: "regions", region: id, detail: "", edge: "" }); }
   function selectDetail(id: string) { setDetailId(id); push({ mode: "regions", region: regionId, detail: id, edge: "" }); }
-  function selectEdge(id: string) { setEdgeId(id); push({ mode: "transmission", region: "", detail: "", edge: id }); }
+  function selectEdge(id: string) { setEdgeId(id); setRegionId(""); setDetailId(""); push({ mode: "transmission", region: "", detail: "", edge: id }); }
+  function selectEdgeInline(id: string) { setEdgeId(id); setRegionId(""); setDetailId(""); push({ mode: "regions", region: "", detail: "", edge: id }); }
   function changeMode(next: string) { setMode(next); setRegionId(""); setDetailId(""); setEdgeId(""); push({ mode: next, region: "", detail: "", edge: "" }); }
 
   useEffect(() => {
     const sync = () => { const query = readQuery(); setMode(query.mode); setRegionId(query.region); setDetailId(query.detail); setEdgeId(query.edge); };
-    sync();
     window.addEventListener("popstate", sync);
     return () => window.removeEventListener("popstate", sync);
   }, []);
+
   useEffect(() => {
     const closeDeepest = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
@@ -146,19 +156,202 @@ export function MacroWorldSurface({ world }: { world: MacroWorld }) {
     window.addEventListener("keydown", closeDeepest);
     return () => window.removeEventListener("keydown", closeDeepest);
   });
+
   const evidence = useMemo(() => edge ? edge.evidence_ids.map((id) => world.evidence_index[id]).filter(Boolean) : [], [edge, world]);
   const transmission = useMemo(() => normalizeTransmissions(world), [world]);
+  const activeCount = world.transmissions.filter((t) => t.current_state === "ACTIVE").length;
+  const hasRegionsInspector = Boolean(region || edge);
 
-  return <div className="macro-world-surface">
-    <header className="macro-world-header"><div><span>MACRO / WORLD RESEARCH SYSTEM</span><h1>World Macro Map</h1><p>Start with the world. Open one economy, one mechanism, and only then the evidence beneath it.</p></div><div className="macro-mode-switch" role="tablist"><button role="tab" aria-selected={mode === "regions"} onClick={() => changeMode("regions")}>Regions</button></div></header>
-    <div className="macro-coverage-strip"><span>Coverage / 05 economies</span><span>State / cached research</span><span>Facts · proxies · inference</span><span>No recommendations</span></div>
-    {mode === "regions" ? <div className={`macro-region-layout ${region ? "has-inspector" : ""}`}><main>
-      <div className="macro-world-map-wrap"><MacroWorldMap regions={world.regions} selected={regionId} onSelect={selectRegion} onUnavailable={(label) => setNotice(`${label.toUpperCase()} / NOT AVAILABLE — no verified macro profile is integrated.`)} onHover={(id) => { setHoverRegionId(id); setHoverUnavailable(""); }} onHoverUnavailable={(label) => { setHoverUnavailable(label); setHoverRegionId(""); }} onLeave={() => { setHoverRegionId(""); setHoverUnavailable(""); }} />
-      {hoverRegion ? <aside className="macro-map-tooltip" aria-live="polite"><header><strong>{hoverRegion.name.toUpperCase()}</strong><CoverageBar coverage={hoverRegion.coverage} /></header><span>Research coverage</span>{hoverRegion.components.slice(0, 5).map((item) => <div key={item.id}><b>{item.label}</b><small>{item.confidence}</small></div>)}<p>{hoverRegion.brief}</p><small>Click marker to open {hoverRegion.name}.</small></aside> : null}
-      {hoverUnavailable ? <aside className="macro-map-tooltip unavailable" aria-live="polite"><header><strong>{hoverUnavailable.toUpperCase()}</strong><Status value="NOT AVAILABLE" /></header><p>No verified CHAINSTOX macro engine currently covers this economy.</p></aside> : null}</div>
-      {notice ? <div className="macro-unavailable-notice" role="status"><strong>NOT AVAILABLE</strong><span>{notice}</span><button onClick={() => setNotice("")} type="button">Dismiss</button></div> : null}
-      <section className="macro-region-index"><header><span>Supported economy index</span><small className="cov-legend"><i className="cov-seg cov-full" />all data <i className="cov-seg cov-partial" />some missing <i className="cov-seg cov-stale" />out of date <i className="cov-seg cov-missing" />none <i className="cov-seg cov-not_covered" />not modelled</small></header>{REGION_ORDER.map((id) => { const item = world.regions[id]; return <button type="button" key={id} onClick={() => selectRegion(id)}><b>{code(id)}</b><span><strong>{item.name}</strong><small>{item.framework}</small></span><CoverageBar coverage={item.coverage} /><i>→</i></button>; })}</section>
-    </main>{region ? <RegionInspector region={region} selectedDetail={detailId} onDetail={selectDetail} onClose={() => { setRegionId(""); setDetailId(""); push({ region: "", detail: "" }); }} /> : null}</div> : <div className={`macro-transmission-layout ${edge ? "has-inspector" : ""}`}><main><header className="transmission-header"><span>MECHANISM NETWORK</span><h2>Cross-border transmission</h2><p>Solid, dashed, and dotted edges distinguish fact, proxy, and inference. No coefficient or causal strength is invented.</p></header><TransmissionGraph nodes={transmission.nodes} edges={transmission.edges} selected={edgeId} onSelect={(item) => selectEdge(item.id)} /><div className="transmission-edge-list">{world.transmissions.map((item) => <button type="button" key={item.id} className={edgeId === item.id ? "active" : ""} onClick={() => selectEdge(item.id)}><span>{item.source} → {item.target}</span><strong>{item.label}</strong><Status value={item.current_state} /></button>)}</div></main>{edge ? <EdgeInspector edge={edge} evidence={evidence} onClose={() => { setEdgeId(""); push({ edge: "" }); }} /> : null}</div>}
-    <footer className="macro-world-footer"><span>{world.disclaimer}</span><span>Generated {timestamp(world.generated_at)}</span></footer>
-  </div>;
+  return (
+    <div className="macro-world-surface macro-world-upgraded">
+      <header className="macro-world-header">
+        <div>
+          <Link className="markets-back-link" href="/macro">← Market story</Link>
+          <span>GLOBAL MACRO &amp; CROSS-BORDER TRANSMISSION</span>
+          <h1>World Macro Map</h1>
+          <p>How central-bank stances, currency funding stress, and Korea&apos;s semiconductor cycle across the 4 modelled economies transmit into US equities.</p>
+        </div>
+        <div className="macro-mode-switch" role="tablist">
+          <button role="tab" aria-selected={mode === "regions"} onClick={() => changeMode("regions")}>World &amp; Channels</button>
+          <button role="tab" aria-selected={mode === "transmission"} onClick={() => changeMode("transmission")}>Mechanism Graph</button>
+        </div>
+      </header>
+
+      <div className="macro-world-summary-bar">
+        <span className="mws-pill active">
+          <i />
+          <b>{activeCount} active cross-border {activeCount === 1 ? "pressure" : "pressures"}</b>
+        </span>
+        <span className="mws-text">
+          {world.transmissions
+            .filter((t) => t.current_state === "ACTIVE")
+            .map((t) => t.label)
+            .join(" · ") || "No elevated cross-border transmission triggers."}
+        </span>
+        <span className="mws-meta">4 modelled economies (US · Japan · South Korea · Euro Area)</span>
+      </div>
+
+      {mode === "regions" ? (
+        <div className={`macro-region-layout ${hasRegionsInspector ? "has-inspector" : ""}`}>
+          <div className="macro-world-main">
+            <div className="macro-world-map-wrap">
+              <MacroWorldMap
+                regions={world.regions}
+                transmissions={world.transmissions}
+                selected={regionId}
+                selectedEdge={edgeId}
+                onSelect={selectRegion}
+                onSelectEdge={selectEdgeInline}
+                onUnavailable={(label) => setNotice(`${label.toUpperCase()} / NOT AVAILABLE — no verified macro profile is integrated.`)}
+                onHover={(id) => { setHoverRegionId(id); setHoverUnavailable(""); }}
+                onHoverUnavailable={(label) => { setHoverUnavailable(label); setHoverRegionId(""); }}
+                onLeave={() => { setHoverRegionId(""); setHoverUnavailable(""); }}
+              />
+              {hoverRegion ? (
+                <aside className="macro-map-tooltip" aria-live="polite">
+                  <header><strong>{hoverRegion.name.toUpperCase()}</strong><CoverageBar coverage={hoverRegion.coverage} /></header>
+                  <p>{hoverRegion.brief}</p>
+                  {hoverRegion.components.filter((c) => c.state !== "NOT AVAILABLE").slice(0, 4).map((item) => (
+                    <div key={item.id}><b>{item.label}</b><small>{item.state}</small></div>
+                  ))}
+                  <small>Click card to inspect {hoverRegion.name} mechanisms &amp; evidence →</small>
+                </aside>
+              ) : null}
+              {hoverUnavailable ? (
+                <aside className="macro-map-tooltip unavailable" aria-live="polite">
+                  <header><strong>{hoverUnavailable.toUpperCase()}</strong><Status value="NOT AVAILABLE" /></header>
+                  <p>No verified CHAINSTOX macro engine currently covers this economy.</p>
+                </aside>
+              ) : null}
+            </div>
+
+            {notice ? (
+              <div className="macro-unavailable-notice" role="status">
+                <strong>NOT AVAILABLE</strong>
+                <span>{notice}</span>
+                <button onClick={() => setNotice("")} type="button">Dismiss</button>
+              </div>
+            ) : null}
+
+            {/* Live Cross-Border Transmission Channels visible immediately on first load */}
+            <section className="macro-live-channels" aria-label="Cross-border transmission channels">
+              <header>
+                <div>
+                  <span>CROSS-BORDER TRANSMISSION</span>
+                  <h2>How foreign policy &amp; FX transmit into US stocks</h2>
+                </div>
+                <small>Click any channel to trace evidence</small>
+              </header>
+              <div className="macro-channel-grid">
+                {world.transmissions.map((item) => {
+                  const isActive = item.current_state === "ACTIVE";
+                  return (
+                    <button
+                      type="button"
+                      key={item.id}
+                      className={`macro-channel-card ${isActive ? "is-active" : "is-watch"}${edgeId === item.id ? " selected" : ""}`}
+                      onClick={() => selectEdgeInline(item.id)}
+                    >
+                      <div className="mcc-top">
+                        <span className="mcc-route">{code(item.source)} → {code(item.target)}</span>
+                        <Status value={item.current_state} />
+                      </div>
+                      <strong>{item.label}</strong>
+                      <p>{item.summary}</p>
+                      <small className="mcc-equity">{CHANNEL_EQUITY_LINK[item.id] ?? item.mechanism}</small>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+
+            {/* 4 Supported Economy Cards (preserving .macro-region-index > button contract) */}
+            <section className="macro-region-index macro-economy-cards">
+              <header>
+                <div>
+                  <span>REGIONAL CENTRAL BANKS &amp; CYCLES</span>
+                  <h2>Modelled economies</h2>
+                </div>
+                <small>Click an economy to inspect policy models &amp; watch conditions</small>
+              </header>
+              {REGION_ORDER.map((id) => {
+                const item = world.regions[id];
+                const validComps = item.components.filter((c) => c.state && c.state !== "NOT AVAILABLE" && c.state !== "INSUFFICIENT");
+                return (
+                  <button
+                    type="button"
+                    key={id}
+                    className={`macro-econ-card${regionId === id ? " selected" : ""}`}
+                    onClick={() => selectRegion(id)}
+                  >
+                    <div className="mec-head">
+                      <div className="mec-title">
+                        <b>{code(id)}</b>
+                        <strong>{item.name}</strong>
+                      </div>
+                      <CoverageBar coverage={item.coverage} />
+                    </div>
+                    <p className="mec-brief">{item.brief}</p>
+                    <div className="mec-pills">
+                      {validComps.slice(0, 4).map((comp) => (
+                        <span key={comp.id}><em>{comp.label}:</em> {comp.state}</span>
+                      ))}
+                    </div>
+                    <small className="mec-cta">Inspect {item.name} policy &amp; evidence →</small>
+                  </button>
+                );
+              })}
+            </section>
+          </div>
+
+          {region ? (
+            <RegionInspector
+              region={region}
+              selectedDetail={detailId}
+              onDetail={selectDetail}
+              onClose={() => { setRegionId(""); setDetailId(""); push({ region: "", detail: "" }); }}
+            />
+          ) : edge ? (
+            <EdgeInspector
+              edge={edge}
+              evidence={evidence}
+              onClose={() => { setEdgeId(""); push({ edge: "" }); }}
+            />
+          ) : null}
+        </div>
+      ) : (
+        <div className={`macro-transmission-layout ${edge ? "has-inspector" : ""}`}>
+          <div className="macro-world-main">
+            <header className="transmission-header">
+              <span>MECHANISM NETWORK</span>
+              <h2>Cross-border transmission</h2>
+              <p>Solid, dashed, and dotted edges distinguish fact, proxy, and inference. No coefficient or causal strength is invented.</p>
+            </header>
+            <TransmissionGraph nodes={transmission.nodes} edges={transmission.edges} selected={edgeId} onSelect={(item) => selectEdge(item.id)} />
+            <div className="transmission-edge-list">
+              {world.transmissions.map((item) => (
+                <button type="button" key={item.id} className={edgeId === item.id ? "active" : ""} onClick={() => selectEdge(item.id)}>
+                  <span>{item.source} → {item.target}</span>
+                  <strong>{item.label}</strong>
+                  <Status value={item.current_state} />
+                </button>
+              ))}
+            </div>
+          </div>
+          {edge ? (
+            <EdgeInspector
+              edge={edge}
+              evidence={evidence}
+              onClose={() => { setEdgeId(""); push({ edge: "" }); }}
+            />
+          ) : null}
+        </div>
+      )}
+
+      <footer className="macro-world-footer">
+        <span>{world.disclaimer}</span>
+        <span>Generated {timestamp(world.generated_at)}</span>
+      </footer>
+    </div>
+  );
 }

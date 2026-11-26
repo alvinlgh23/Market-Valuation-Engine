@@ -186,6 +186,16 @@ class CompanyProfileCache:
             return []
 
 
+def with_derived_market_inputs(data: dict[str, Any]) -> dict[str, Any]:
+    """Solution plan C1: the SEC path has no market data; derive price, beta and market cap from chart history."""
+    from market_inputs import fill_missing_market_inputs
+
+    periods = data.setdefault("periods", {})
+    if data.get("shares") is not None and "shares" not in periods:
+        periods["shares"] = "SEC annual shares aligned to the latest revenue period"
+    return fill_missing_market_inputs(data)
+
+
 class FailoverStructuredCompanyProvider:
     """Prefer the existing rich provider, then fall back to SEC filings."""
 
@@ -214,7 +224,7 @@ class FailoverStructuredCompanyProvider:
             primary_error = f"{type(exc).__name__}: {exc}"
         data = self.fallback(ticker)
         data["provider_failover"] = {"used": True, "primary_error": primary_error, "fallback": data.get("provider")}
-        return data
+        return with_derived_market_inputs(data)
 
 
 class SecurityResolver:
@@ -225,7 +235,7 @@ class SecurityResolver:
     def __init__(self, provider: Callable[[str], dict[str, Any]] | None = None, cache: CompanyProfileCache | None = None):
         if provider is None and os.environ.get("CHAINSTOX_COMPANY_PROVIDER", "").lower() == "sec":
             from data_sources.sec_company import collect_sec_company_data
-            provider = collect_sec_company_data
+            provider = lambda symbol: with_derived_market_inputs(collect_sec_company_data(symbol))  # noqa: E731
         self.provider = provider or FailoverStructuredCompanyProvider()
         self.cache = cache or CompanyProfileCache()
 

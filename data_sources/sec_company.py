@@ -27,10 +27,12 @@ DEBT_TOTAL_CONCEPTS = (
     "LongTermDebtAndFinanceLeaseObligations",
     "LongTermDebtAndCapitalLeaseObligations",
     "DebtAndFinanceLeaseObligations",
+    "DebtLongtermAndShorttermCombinedAmount",
 )
 DEBT_CURRENT_CONCEPTS = (
     "LongTermDebtAndFinanceLeaseObligationsCurrent",
     "LongTermDebtAndCapitalLeaseObligationsCurrent",
+    "DebtCurrent",
     "LongTermDebtCurrent",
 )
 DEBT_NONCURRENT_CONCEPTS = (
@@ -39,21 +41,48 @@ DEBT_NONCURRENT_CONCEPTS = (
     "LongTermDebtNoncurrent",
 )
 
+FLOW_METRICS = {
+    "revenue",
+    "gross_profit",
+    "operating_income",
+    "net_income",
+    "operating_cash_flow",
+    "capex",
+    "sbc",
+}
+FLOW_SHARE_CONCEPTS = {
+    "WeightedAverageNumberOfDilutedSharesOutstanding",
+    "WeightedAverageNumberOfSharesOutstandingBasic",
+    "AdjustedWeightedAverageShares",
+    "WeightedAverageShares",
+}
+
 US_GAAP_CONCEPTS = {
     "revenue": ("RevenueFromContractWithCustomerExcludingAssessedTax", "Revenues", "SalesRevenueNet", "SalesRevenueGoodsNet"),
+    "gross_profit": ("GrossProfit",),
     "operating_income": ("OperatingIncomeLoss",),
     "net_income": ("NetIncomeLoss", "ProfitLoss"),
     "assets": ("Assets",),
     "inventory": ("InventoryNet",),
     "operating_cash_flow": ("NetCashProvidedByUsedInOperatingActivities",),
-    "capex": ("PaymentsToAcquirePropertyPlantAndEquipment", "PaymentsForAdditionsToPropertyPlantAndEquipment", "PaymentsToAcquireProductiveAssets"),
+    "capex": (
+        "PaymentsToAcquirePropertyPlantAndEquipment",
+        "PaymentsForAdditionsToPropertyPlantAndEquipment",
+        "PaymentsToAcquireProductiveAssets",
+        "PaymentsToAcquireOtherPropertyPlantAndEquipment",
+    ),
     "sbc": ("ShareBasedCompensation", "AllocatedShareBasedCompensationExpense"),
     "cash": ("CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents", "CashAndCashEquivalentsAtCarryingValue"),
-    "shares": ("CommonStockSharesOutstanding",),
+    "shares": (
+        "WeightedAverageNumberOfDilutedSharesOutstanding",
+        "WeightedAverageNumberOfSharesOutstandingBasic",
+        "CommonStockSharesOutstanding",
+    ),
 }
 
 IFRS_CONCEPTS = {
     "revenue": ("Revenue", "RevenueFromContractsWithCustomers"),
+    "gross_profit": ("GrossProfit",),
     "operating_income": ("ProfitLossFromOperatingActivities",),
     "net_income": ("ProfitLossAttributableToOwnersOfParent", "ProfitLoss"),
     "assets": ("Assets",),
@@ -62,7 +91,21 @@ IFRS_CONCEPTS = {
     "capex": ("PurchaseOfPropertyPlantAndEquipmentClassifiedAsInvestingActivities",),
     "sbc": ("ExpenseFromSharebasedPaymentTransactionsInWhichGoodsOrServicesReceivedDidNotQualifyForRecognitionAsAssets",),
     "cash": ("CashAndCashEquivalents",),
-    "shares": ("NumberOfSharesIssuedAndFullyPaid",),
+    "shares": (
+        "AdjustedWeightedAverageShares",
+        "WeightedAverageShares",
+        "NumberOfSharesIssuedAndFullyPaid",
+    ),
+}
+
+SKIP_WORKING_CAPITAL_CONCEPTS = {
+    "IncreaseDecreaseInCashAndCashEquivalents",
+    "IncreaseDecreaseInDeferredIncomeTaxes",
+    "IncreaseDecreaseInEquitySecuritiesFvNi",
+    "IncreaseDecreaseInOutstandingChecksFinancingActivities",
+    "IncreaseDecreaseInDeposits",
+    "IncreaseDecreaseInLoansHeldForSale",
+    "IncreaseDecreaseInFederalFundsPurchasedAndSecuritiesSoldUnderAgreementsToRepurchaseNet",
 }
 
 
@@ -128,7 +171,14 @@ def _annual_series(
     within a historical series.
     """
     taxonomy_facts = facts.get("facts", {}).get(taxonomy, {})
-    flow_concepts = {concept for mapping in (US_GAAP_CONCEPTS, IFRS_CONCEPTS) for metric, names in mapping.items() if metric in {"revenue", "operating_income", "net_income", "operating_cash_flow", "capex", "sbc"} for concept in names}
+    flow_concepts = {
+        concept
+        for mapping in (US_GAAP_CONCEPTS, IFRS_CONCEPTS)
+        for metric, names in mapping.items()
+        if metric in FLOW_METRICS
+        for concept in names
+    } | FLOW_SHARE_CONCEPTS
+
     def valid_period(row, concept):
         try:
             end = dt.date.fromisoformat(row["end"])
@@ -137,6 +187,7 @@ def _annual_series(
             return not row.get("start")
         except (ValueError, TypeError, KeyError):
             return False
+
     candidates_by_concept: list[tuple[int, str, list[dict]]] = []
     for priority, concept in enumerate(concepts):
         rows = taxonomy_facts.get(concept, {}).get("units", {}).get(unit, [])
@@ -173,11 +224,72 @@ def _latest_fy_fact(facts: dict, concepts: tuple[str, ...], unit: str = "USD") -
     return series[0] if series else None
 
 
-def _select_debt(facts: dict) -> dict:
+def _instant_fact_at_end(
+    facts: dict,
+    concepts: tuple[str, ...],
+    period_end: str,
+    unit: str = "USD",
+    *,
+    taxonomy: str = "us-gaap",
+    forms: tuple[str, ...] = ("10-K",),
+) -> dict | None:
+    taxonomy_facts = facts.get("facts", {}).get(taxonomy, {})
+    for concept in concepts:
+        rows = [
+            {**row, "concept": concept, "unit": unit}
+            for row in taxonomy_facts.get(concept, {}).get("units", {}).get(unit, [])
+            if row.get("form") in forms
+            and row.get("fp") == "FY"
+            and row.get("end") == period_end
+            and not row.get("start")
+            and isinstance(row.get("val"), (int, float))
+        ]
+        if rows:
+            return max(rows, key=lambda item: (str(item.get("filed", "")), str(item.get("accn", ""))))
+    return None
+
+
+def _flow_fact_at_end(
+    facts: dict,
+    concepts: tuple[str, ...],
+    period_end: str,
+    unit: str = "USD",
+    *,
+    taxonomy: str = "us-gaap",
+    forms: tuple[str, ...] = ("10-K",),
+) -> dict | None:
+    taxonomy_facts = facts.get("facts", {}).get(taxonomy, {})
+    try:
+        end_date = dt.date.fromisoformat(period_end)
+    except ValueError:
+        return None
+    for concept in concepts:
+        rows = []
+        for row in taxonomy_facts.get(concept, {}).get("units", {}).get(unit, []):
+            if (
+                row.get("form") not in forms
+                or row.get("fp") != "FY"
+                or row.get("end") != period_end
+                or not row.get("start")
+                or not isinstance(row.get("val"), (int, float))
+            ):
+                continue
+            try:
+                days = (end_date - dt.date.fromisoformat(row["start"])).days
+            except ValueError:
+                continue
+            if 330 <= days <= 380:
+                rows.append({**row, "concept": concept, "unit": unit})
+        if rows:
+            return max(rows, key=lambda item: (str(item.get("filed", "")), str(item.get("accn", ""))))
+    return None
+
+
+def _select_debt(facts: dict, unit: str = "USD") -> dict:
     """Select total debt from non-overlapping SEC facts with explicit coverage."""
-    total = _latest_fy_fact(facts, DEBT_TOTAL_CONCEPTS)
-    current = _latest_fy_fact(facts, DEBT_CURRENT_CONCEPTS)
-    noncurrent = _latest_fy_fact(facts, DEBT_NONCURRENT_CONCEPTS)
+    total = _latest_fy_fact(facts, DEBT_TOTAL_CONCEPTS, unit)
+    current = _latest_fy_fact(facts, DEBT_CURRENT_CONCEPTS, unit)
+    noncurrent = _latest_fy_fact(facts, DEBT_NONCURRENT_CONCEPTS, unit)
 
     aligned = current is not None and noncurrent is not None and current["end"] == noncurrent["end"]
     components_are_newer = aligned and total is not None and current["end"] > total["end"]
@@ -208,6 +320,38 @@ def _select_debt(facts: dict) -> dict:
             "missing_components": [],
         }
 
+    # Verified zero current maturities: LongTermDebt equals LongTermDebtNoncurrent on the same
+    # period end, next-12-month principal maturities are explicitly reported as 0, and any
+    # short-term borrowings / commercial paper on that date are absent or 0.
+    if current is None and noncurrent is not None:
+        end = str(noncurrent["end"])
+        lt_total = _instant_fact_at_end(facts, ("LongTermDebt",), end, unit)
+        next_12m = _instant_fact_at_end(
+            facts, ("LongTermDebtMaturitiesRepaymentsOfPrincipalInNextTwelveMonths",), end, unit
+        )
+        short_term = _instant_fact_at_end(facts, ("ShortTermBorrowings", "CommercialPaper"), end, unit)
+        if (
+            lt_total is not None
+            and next_12m is not None
+            and float(next_12m["val"]) == 0.0
+            and float(lt_total["val"]) == float(noncurrent["val"])
+            and (short_term is None or float(short_term["val"]) == 0.0)
+        ):
+            selected_names = [noncurrent["concept"], lt_total["concept"], next_12m["concept"]]
+            if short_term is not None:
+                selected_names.append(short_term["concept"])
+            return {
+                "value": float(noncurrent["val"]),
+                "coverage": "COMPLETE",
+                "methodology": "noncurrent_with_verified_zero_current_maturities",
+                "selected_concepts": selected_names,
+                "period_end": end,
+                "fiscal_year": noncurrent.get("fy"),
+                "filing_date": noncurrent.get("filed"),
+                "currency": noncurrent["unit"],
+                "missing_components": [],
+            }
+
     available = [row for row in (current, noncurrent) if row is not None]
     return {
         "value": None,
@@ -217,13 +361,244 @@ def _select_debt(facts: dict) -> dict:
         "period_end": available[0]["end"] if available else None,
         "fiscal_year": available[0].get("fy") if available else None,
         "filing_date": available[0].get("filed") if available else None,
-        "currency": available[0]["unit"] if available else "USD",
+        "currency": available[0]["unit"] if available else unit,
         "missing_components": [
             name
             for name, row in (("current debt", current), ("noncurrent debt", noncurrent))
             if row is None
         ] + (["aligned reporting period"] if current and noncurrent and not aligned else []),
     }
+
+
+def _working_capital_sign(concept: str) -> int | None:
+    """Map an XBRL working-capital flow concept to its cash-flow effect sign (+1 inflow, -1 outflow)."""
+    if concept in SKIP_WORKING_CAPITAL_CONCEPTS or "FinancingActivities" in concept or "InvestingActivities" in concept:
+        return None
+    if concept.startswith(("AdjustmentsForDecreaseIncreaseIn", "AdjustmentsForIncreaseDecreaseIn")):
+        return 1
+    if not concept.startswith("IncreaseDecreaseIn"):
+        return None
+    lower = concept.lower()
+    if "otheroperatingcapitalnet" in lower or "operatingcapital" in lower:
+        return -1
+    if any(token in lower for token in ("payable", "liability", "liabilities", "deferredrevenue", "accrued", "obligation", "incometaxes")):
+        if "receivable" in lower or "prepaid" in lower:
+            return -1
+        return 1
+    if any(token in lower for token in ("receivable", "inventor", "prepaid", "asset", "deferredcharges", "duefrom")):
+        return -1
+    return None
+
+
+def _working_capital_cash_effect(
+    facts: dict,
+    period_end: str,
+    unit: str,
+    *,
+    taxonomy: str,
+    forms: tuple[str, ...],
+) -> tuple[float | None, list[str]]:
+    """Aggregate operating working-capital cash-flow effects for ``period_end`` without double counting."""
+    if taxonomy == "us-gaap":
+        aggregate = _flow_fact_at_end(facts, ("IncreaseDecreaseInOperatingCapital",), period_end, unit, taxonomy=taxonomy, forms=forms)
+        if aggregate is not None:
+            return -float(aggregate["val"]), [aggregate["concept"]]
+    taxonomy_facts = facts.get("facts", {}).get(taxonomy, {})
+    matched: dict[str, float] = {}
+    for concept in sorted(taxonomy_facts):
+        sign = _working_capital_sign(concept)
+        if sign is None:
+            continue
+        row = _flow_fact_at_end(facts, (concept,), period_end, unit, taxonomy=taxonomy, forms=forms)
+        if row is not None:
+            matched[concept] = sign * float(row["val"])
+    if not matched:
+        return None, []
+    # Overlap guards when a filer tags both a combined row and one of its sub-rows.
+    if "IncreaseDecreaseInAccountsPayableAndAccruedLiabilities" in matched:
+        for child in ("IncreaseDecreaseInAccountsPayable", "IncreaseDecreaseInAccountsPayableTrade", "IncreaseDecreaseInAccruedLiabilities"):
+            matched.pop(child, None)
+    if "IncreaseDecreaseInAccountsAndOtherReceivables" in matched or "IncreaseDecreaseInReceivables" in matched:
+        matched.pop("IncreaseDecreaseInAccountsReceivable", None)
+    if "IncreaseDecreaseInContractWithCustomerLiability" in matched:
+        matched.pop("IncreaseDecreaseInDeferredRevenue", None)
+    return sum(matched.values()), sorted(matched)
+
+
+def _reconciliation_inputs(
+    facts: dict,
+    *,
+    taxonomy: str,
+    unit: str,
+    forms: tuple[str, ...],
+    period_end: str | None,
+    latest_debt: float | None,
+) -> dict:
+    """Extract period-aligned D&A, tax, interest, working capital and non-cash rows (solution plan C1b)."""
+    empty = {
+        "depreciation_amortization": None,
+        "working_capital_change": None,
+        "tax_rate": 0.21,
+        "interest_expense": None,
+        "after_tax_interest": None,
+        "other_non_cash_adjustments": None,
+        "sources": {},
+    }
+    if not period_end or taxonomy not in {"us-gaap", "ifrs-full"}:
+        return empty
+
+    sources: dict[str, str] = {}
+    if taxonomy == "us-gaap":
+        da_row = _flow_fact_at_end(
+            facts,
+            ("DepreciationAndAmortization", "DepreciationDepletionAndAmortization", "DepreciationAmortizationAndAccretionNet"),
+            period_end, unit, taxonomy=taxonomy, forms=forms,
+        )
+        if da_row is not None:
+            da = float(da_row["val"])
+            sources["depreciation_amortization"] = f"SEC 10-K {da_row['concept']} ({period_end})"
+        else:
+            dep = _flow_fact_at_end(facts, ("OtherDepreciationAndAmortization", "Depreciation"), period_end, unit, taxonomy=taxonomy, forms=forms)
+            amo = _flow_fact_at_end(facts, ("AdjustmentForAmortization", "AmortizationOfIntangibleAssets"), period_end, unit, taxonomy=taxonomy, forms=forms)
+            parts = [row for row in (dep, amo) if row is not None]
+            da = sum(float(row["val"]) for row in parts) if parts else None
+            if parts:
+                sources["depreciation_amortization"] = f"SEC 10-K {' + '.join(row['concept'] for row in parts)} ({period_end})"
+
+        tax_row = _flow_fact_at_end(facts, ("IncomeTaxExpenseBenefit",), period_end, unit, taxonomy=taxonomy, forms=forms)
+        pretax_row = _flow_fact_at_end(
+            facts,
+            (
+                "IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinaryItemsNoncontrollingInterest",
+                "IncomeLossFromContinuingOperationsBeforeIncomeTaxesMinorityInterestAndIncomeLossFromEquityMethodInvestments",
+            ),
+            period_end, unit, taxonomy=taxonomy, forms=forms,
+        )
+        int_row = _flow_fact_at_end(
+            facts,
+            ("InterestExpense", "InterestExpenseNonoperating", "InterestExpenseDebt", "InterestAndDebtExpense"),
+            period_end, unit, taxonomy=taxonomy, forms=forms,
+        )
+        interest_expense = abs(float(int_row["val"])) if int_row is not None else None
+        if int_row is not None:
+            sources["interest_expense"] = f"SEC 10-K {int_row['concept']} ({period_end})"
+
+        def_tax_row = _flow_fact_at_end(
+            facts, ("DeferredIncomeTaxExpenseBenefit", "DeferredIncomeTaxesAndTaxCredits"),
+            period_end, unit, taxonomy=taxonomy, forms=forms,
+        )
+        def_tax = float(def_tax_row["val"]) if def_tax_row is not None else None
+        def_label = def_tax_row["concept"] if def_tax_row is not None else None
+        if def_tax is None:
+            id_def = _flow_fact_at_end(facts, ("IncreaseDecreaseInDeferredIncomeTaxes",), period_end, unit, taxonomy=taxonomy, forms=forms)
+            if id_def is not None:
+                def_tax = -float(id_def["val"])
+                def_label = f"-{id_def['concept']}"
+        other_nc = _flow_fact_at_end(facts, ("OtherNoncashIncomeExpense",), period_end, unit, taxonomy=taxonomy, forms=forms)
+        other_op = _flow_fact_at_end(facts, ("OtherOperatingActivitiesCashFlowStatement",), period_end, unit, taxonomy=taxonomy, forms=forms)
+        other_non_cash = (
+            (def_tax or 0.0)
+            + (-float(other_nc["val"]) if other_nc is not None else 0.0)
+            + (float(other_op["val"]) if other_op is not None else 0.0)
+        )
+        adj_labels = [item for item in (def_label, f"-{other_nc['concept']}" if other_nc else None, other_op["concept"] if other_op else None) if item]
+        sources["other_non_cash_adjustments"] = (
+            f"SEC 10-K {' + '.join(adj_labels)} ({period_end})"
+            if adj_labels
+            else f"SEC 10-K operating cash flow ({period_end}); no separate deferred-tax or other non-cash line filed"
+        )
+    else:
+        da_row = _flow_fact_at_end(
+            facts,
+            ("AdjustmentsForDepreciationAndAmortisationExpense", "DepreciationAndAmortisationExpense"),
+            period_end, unit, taxonomy=taxonomy, forms=forms,
+        )
+        if da_row is not None:
+            da = float(da_row["val"])
+            sources["depreciation_amortization"] = f"SEC 20-F {da_row['concept']} ({period_end})"
+        else:
+            dep = _flow_fact_at_end(facts, ("DepreciationExpense",), period_end, unit, taxonomy=taxonomy, forms=forms)
+            amo = _flow_fact_at_end(facts, ("AmortisationExpense",), period_end, unit, taxonomy=taxonomy, forms=forms)
+            parts = [row for row in (dep, amo) if row is not None]
+            da = sum(float(row["val"]) for row in parts) if parts else None
+            if parts:
+                sources["depreciation_amortization"] = f"SEC 20-F {' + '.join(row['concept'] for row in parts)} ({period_end})"
+
+        tax_row = _flow_fact_at_end(facts, ("IncomeTaxExpenseContinuingOperations",), period_end, unit, taxonomy=taxonomy, forms=forms)
+        pretax_row = _flow_fact_at_end(facts, ("ProfitLossBeforeTax",), period_end, unit, taxonomy=taxonomy, forms=forms)
+        int_row = _flow_fact_at_end(facts, ("FinanceCosts", "InterestExpense"), period_end, unit, taxonomy=taxonomy, forms=forms)
+        if int_row is not None:
+            interest_expense = abs(float(int_row["val"]))
+            sources["interest_expense"] = f"SEC 20-F {int_row['concept']} ({period_end})"
+        else:
+            int_parts = [
+                row
+                for concept in (
+                    "InterestExpenseOnBonds",
+                    "InterestExpenseOnBorrowings",
+                    "InterestExpenseOnLeaseLiabilities",
+                    "InterestExpenseOnOtherFinancialLiabilities",
+                )
+                if (row := _flow_fact_at_end(facts, (concept,), period_end, unit, taxonomy=taxonomy, forms=forms)) is not None
+            ]
+            interest_expense = sum(abs(float(row["val"])) for row in int_parts) if int_parts else None
+            if int_parts:
+                sources["interest_expense"] = f"SEC 20-F {' + '.join(row['concept'] for row in int_parts)} ({period_end})"
+
+        def_tax_row = _flow_fact_at_end(
+            facts, ("DeferredTaxExpenseIncome", "DeferredTaxExpenseIncomeRecognisedInProfitOrLoss"),
+            period_end, unit, taxonomy=taxonomy, forms=forms,
+        )
+        other_non_cash = float(def_tax_row["val"]) if def_tax_row is not None else 0.0
+        sources["other_non_cash_adjustments"] = (
+            f"SEC 20-F {def_tax_row['concept']} ({period_end})"
+            if def_tax_row is not None
+            else f"SEC 20-F operating cash flow ({period_end}); no separate deferred-tax line filed"
+        )
+
+    if interest_expense is None and latest_debt is not None and latest_debt == 0:
+        interest_expense = 0.0
+        sources["interest_expense"] = f"Verified zero total debt ({period_end})"
+
+    if tax_row is not None and pretax_row is not None and float(pretax_row["val"]) > 0:
+        tax_rate = max(0.0, min(0.35, float(tax_row["val"]) / float(pretax_row["val"])))
+    else:
+        tax_rate = 0.21
+
+    wc_value, wc_concepts = _working_capital_cash_effect(facts, period_end, unit, taxonomy=taxonomy, forms=forms)
+    if wc_concepts:
+        form_label = "20-F" if taxonomy == "ifrs-full" else "10-K"
+        sources["working_capital_change"] = f"SEC {form_label} ({len(wc_concepts)} working-capital rows, {period_end})"
+
+    after_tax_interest = interest_expense * (1 - tax_rate) if interest_expense is not None else None
+    return {
+        "depreciation_amortization": da,
+        "working_capital_change": wc_value,
+        "tax_rate": tax_rate,
+        "interest_expense": interest_expense,
+        "after_tax_interest": after_tax_interest,
+        "other_non_cash_adjustments": other_non_cash,
+        "sources": sources,
+    }
+
+
+def _growth_inputs_from_facts(facts: dict, revenue: list[float]) -> dict:
+    """Compute trailing-12-month or annual growth directly from already-loaded SEC facts."""
+    fiscal = revenue[0] / revenue[1] - 1 if len(revenue) >= 2 and revenue[1] > 0 else None
+    try:
+        from growth_inputs import quarterly_revenue, ttm_growth
+
+        quarters, concept = quarterly_revenue(facts)
+        ttm = {**ttm_growth(quarters), "source": "SEC company facts (10-Q/10-K)", "concept": concept}
+    except Exception as exc:  # noqa: BLE001
+        ttm = {"state": "UNAVAILABLE", "reason": f"{type(exc).__name__}: {exc}"}
+    if ttm.get("state") == "AVAILABLE":
+        selected, basis = ttm["growth"], f"trailing twelve months to {ttm['latest_quarter_end']} vs the twelve months before (SEC filings)"
+    elif fiscal is not None:
+        selected, basis = fiscal, "latest filed fiscal year vs the year before (trailing twelve months unavailable)"
+    else:
+        selected, basis = None, "no filed growth available"
+    return {"selected_growth": selected, "basis": basis, "ttm": ttm, "fiscal_year_growth": fiscal, "latest_quarter_yoy": None}
 
 
 def collect_sec_company_data(ticker: str) -> dict:
@@ -260,6 +635,7 @@ def collect_sec_company_data(ticker: str) -> dict:
         series["shares"] = []
     values = {metric: [float(row["val"]) for row in rows] for metric, rows in series.items()}
     revenue = values.get("revenue", [])
+    gross_profit = values.get("gross_profit", [])
     operating = values.get("operating_income", [])
     net_income = values.get("net_income", [])
     assets = values.get("assets", [])
@@ -271,7 +647,7 @@ def collect_sec_company_data(ticker: str) -> dict:
     shares = values.get("shares", [])
 
     if taxonomy == "us-gaap":
-        debt_selection = _select_debt(facts)
+        debt_selection = _select_debt(facts, currency or "USD")
     elif taxonomy == "ifrs-full":
         current = _annual_series(facts, ("CurrentPortionOfLongtermBorrowings", "ShorttermBorrowings"), currency or "USD", taxonomy=taxonomy, forms=forms)
         noncurrent = _annual_series(facts, ("LongtermBorrowings",), currency or "USD", taxonomy=taxonomy, forms=forms)
@@ -295,9 +671,29 @@ def collect_sec_company_data(ticker: str) -> dict:
     latest_ocf = float(ocf_by_end[cashflow_period]["val"]) if cashflow_period else None
     latest_capex = abs(float(capex_by_end[cashflow_period]["val"])) if cashflow_period else None
     latest_fcf = latest_ocf - latest_capex if latest_ocf is not None and latest_capex is not None else None
+
+    revenue_period = series.get("revenue", [{}])[0].get("end") if series.get("revenue") else None
+    operating_period = series.get("operating_income", [{}])[0].get("end") if series.get("operating_income") else None
+    reconciled_period = (
+        cashflow_period
+        if cashflow_period and cashflow_period == revenue_period == operating_period
+        else None
+    )
+    recon = _reconciliation_inputs(
+        facts,
+        taxonomy=taxonomy,
+        unit=currency or "USD",
+        forms=forms,
+        period_end=reconciled_period,
+        latest_debt=debt_selection["value"],
+    )
+
     name = str(submissions.get("name") or record.get("title") or symbol)
     industry = str(submissions.get("sicDescription") or "")
     lower = f"{name} {industry}".lower()
+    annual_growth = revenue[0] / revenue[1] - 1 if len(revenue) >= 2 and revenue[1] > 0 else None
+    op_margin = operating[0] / revenue[0] if operating and revenue and revenue[0] > 0 else None
+    gross_margin = gross_profit[0] / revenue[0] if gross_profit and revenue and revenue[0] > 0 else None
     if " etf" in lower or "exchange traded fund" in lower or ("spdr" in lower and "trust" in lower):
         security_type = "ETF_OR_FUND"
     elif "real estate investment trust" in lower or " reit" in lower:
@@ -306,8 +702,25 @@ def collect_sec_company_data(ticker: str) -> dict:
         security_type = "SPAC_OR_SHELL"
     elif "bank" in lower or "financial institution" in lower:
         security_type = "FINANCIAL_INSTITUTION"
+    elif not revenue:
+        security_type = "INSUFFICIENT_DATA"
+    elif symbol == "MU" or any(term in lower for term in ("memory", "steel", "copper", "aluminum", "oil & gas", "petroleum", "commodity", "mining", "semiconductor equipment")):
+        security_type = "CYCLICAL_COMPANY"
+    elif (
+        "software" in lower
+        and (gross_margin is None or gross_margin >= 0.45)
+        and annual_growth is not None
+        and annual_growth >= 0.15
+        and latest_fcf is not None
+        and latest_fcf > 0
+        and (op_margin is None or op_margin < 0.30)
+    ):
+        security_type = "GROWTH_SOFTWARE_COMPANY"
+    elif (op_margin is not None and op_margin < 0) or (latest_fcf is not None and latest_fcf < 0):
+        security_type = "PRE_PROFIT_COMPANY"
     else:
-        security_type = "MATURE_OPERATING_COMPANY" if revenue else "INSUFFICIENT_DATA"
+        security_type = "MATURE_OPERATING_COMPANY"
+
     exchanges = submissions.get("exchanges") or []
     facts_diagnostic = _FETCH_DIAGNOSTICS.get(facts_url, {})
     retrieved_at = facts_diagnostic.get("retrieved_at") or dt.datetime.now(dt.timezone.utc).isoformat()
@@ -342,7 +755,16 @@ def collect_sec_company_data(ticker: str) -> dict:
             staleness_status=StalenessStatus.HISTORICAL, limitation="Calculated from aligned annual SEC facts; not issuer-defined free cash flow.",
             entity_identifier=cik_key, source_status=SourceStatus.CALCULATED,
         ).to_dict()
-    return {
+
+    growth_inputs = _growth_inputs_from_facts(facts, revenue)
+    shares_row = series.get("shares", [None])[0] if series.get("shares") else None
+    shares_period = (
+        f"SEC annual diluted/basic shares ({shares_row['concept']}, {shares_row['end']})"
+        if shares_row and shares_row["concept"] in FLOW_SHARE_CONCEPTS
+        else (f"SEC annual shares ({shares_row['end']})" if shares_row else "Unavailable")
+    )
+    cash_end = series.get("cash", [{}])[0].get("end") if series.get("cash") else None
+    result = {
         "ticker": symbol,
         "company": name,
         "provider": "SEC submissions and Company Facts",
@@ -350,12 +772,18 @@ def collect_sec_company_data(ticker: str) -> dict:
         "reporting_framework": framework,
         "reporting_taxonomy": taxonomy or None,
         "security_type": security_type,
+        "routing_evidence": [
+            f"SEC reporting framework: {framework}",
+            f"SIC industry: {industry or 'unavailable'}",
+            f"annual revenue periods: {len(revenue)}",
+        ],
         "info": {
             "quoteType": "EQUITY",
             "longName": name,
             "exchange": exchanges[0] if exchanges else "",
             "fullExchangeName": exchanges[0] if exchanges else "",
             "currency": currency,
+            "financialCurrency": currency,
             "country": "SEC registrant; domicile not inferred from filing venue",
             "sector": "",
             "industry": industry,
@@ -363,6 +791,10 @@ def collect_sec_company_data(ticker: str) -> dict:
             "totalRevenue": revenue[0] if revenue else None,
             "totalAssets": assets[0] if assets else None,
             "inventory": inventory[0] if inventory else None,
+            "revenueGrowth": growth_inputs.get("selected_growth"),
+            "grossMargins": gross_margin,
+            "operatingMargins": op_margin,
+            "freeCashflow": latest_fcf,
         },
         "income": None,
         "cashflow": None,
@@ -375,7 +807,15 @@ def collect_sec_company_data(ticker: str) -> dict:
         "latest_fcf": latest_fcf,
         "latest_fcff": latest_fcf,
         "sbc": sbc[0] if sbc else None,
-        "cash": cash[0] if cash else None,
+        "depreciation_amortization": recon["depreciation_amortization"],
+        "working_capital_change": recon["working_capital_change"],
+        "other_non_cash_adjustments": recon["other_non_cash_adjustments"],
+        "interest_expense": recon["interest_expense"],
+        "after_tax_interest": recon["after_tax_interest"],
+        "tax_rate": recon["tax_rate"],
+        "input_sources": dict(recon["sources"]),
+        "growth_inputs": growth_inputs,
+        "cash": cash[0] if cash else 0,
         "debt": debt_selection["value"],
         "debt_coverage": debt_selection["coverage"],
         "debt_provenance": debt_selection,
@@ -386,10 +826,14 @@ def collect_sec_company_data(ticker: str) -> dict:
         "currency": currency,
         "revenue_history": revenue,
         "operating_income_history": operating,
+        "gross_profit_history": gross_profit,
         "periods": {
-            "revenue": series.get("revenue", [{}])[0].get("end") if series.get("revenue") else "Unavailable",
-            "operating_income": series.get("operating_income", [{}])[0].get("end") if series.get("operating_income") else "Unavailable",
+            "revenue": revenue_period or "Unavailable",
+            "operating_income": operating_period or "Unavailable",
+            "fcff": reconciled_period or cashflow_period or "Unavailable",
             "free_cash_flow": cashflow_period or "Unavailable",
+            "cash_and_debt": debt_selection.get("period_end") or cash_end or "Unavailable",
+            "shares": shares_period,
             "market_price": "Unavailable from SEC Company Facts",
         },
         "as_of": retrieved_at,
@@ -398,7 +842,10 @@ def collect_sec_company_data(ticker: str) -> dict:
         "financial_period_alignment": {
             "cashflow_period": cashflow_period,
             "status": "VALID" if cashflow_period else "PERIOD_MISMATCH" if ocf or capex else "MISSING",
-            "revenue_period": series.get("revenue", [{}])[0].get("end") if series.get("revenue") else None,
-            "operating_income_period": series.get("operating_income", [{}])[0].get("end") if series.get("operating_income") else None,
+            "revenue_period": revenue_period,
+            "operating_income_period": operating_period,
         },
     }
+    from data_sources.sec_filings import enrich_sec_filing_metadata
+
+    return enrich_sec_filing_metadata(result, submissions, cik)

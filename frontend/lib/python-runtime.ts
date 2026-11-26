@@ -34,7 +34,9 @@ export function createPythonRuntime(run: Executor = execute as Executor) {
     const verdictCall = script === "company_verdict.py" && (((action === "--summary" || action === "--drivers" || action === "--fx" || action === "--events") && args.length === 3) || (/^[A-Z0-9.^=-]{1,12}$/.test(action ?? "") && args.length === 4 && args[3] === "--json"));
     // Checklists 15-17: the market story runs only as `market_story.py --json`.
     const storyCall = script === "market_story.py" && action === "--json" && args.length === 3;
-    if (args[0] !== "-B" || !(allowed.includes(action) || verdictCall || storyCall)) throw new PythonRuntimeError("UNSUPPORTED_ACTION", "Unsupported research action.");
+    // P20 item 6: the daily background refresh can only be started or asked for its status.
+    const refreshCall = script === "daily_refresh.py" && (action === "--status" || action === "--start") && args.length === 3;
+    if (args[0] !== "-B" || !(allowed.includes(action) || verdictCall || storyCall || refreshCall)) throw new PythonRuntimeError("UNSUPPORTED_ACTION", "Unsupported research action.");
     const executable = process.env.CHAINSTOX_PYTHON_EXECUTABLE?.trim() || "python3";
     if (!checked.has(executable)) checked.set(executable, call(executable, ["--version"], 10_000).then(({ stdout, stderr }) => {
       const version = /^Python (\d+)\.(\d+)/.exec(`${stdout}${stderr}`.trim());

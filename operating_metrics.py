@@ -114,15 +114,38 @@ def annual_pair(rows: list[dict]) -> tuple[str, float, float] | None:
     return None
 
 
-def quarter_sales_growth(rows: list[dict], around: str) -> float | None:
-    """Sales in the quarter ending near `around` against the same quarter a year earlier (fiscal quarters of
-    12 to 16 weeks)."""
+def quarter_sales_pair(rows: list[dict], around: str) -> tuple[float, float] | None:
+    """(sales_now, sales_year_ago) for the quarter ending near `around`."""
     quarters = _latest_by_period([r for r in rows if r.get("start") and 80 <= _days(r["start"], r["end"]) <= 120], lambda r: r["end"])
     def near(day: dt.date):
         hits = [end for end in quarters if abs((dt.date.fromisoformat(end) - day).days) <= 20]
         return float(quarters[hits[0]]["val"]) if hits else None
     now, ago = near(dt.date.fromisoformat(around)), near(dt.date.fromisoformat(around) - dt.timedelta(days=365))
-    return now / ago - 1 if now and ago and ago > 0 else None
+    return (now, ago) if now and ago and ago > 0 else None
+
+
+def quarter_sales_growth(rows: list[dict], around: str) -> float | None:
+    """Sales in the quarter ending near `around` against the same quarter a year earlier (fiscal quarters of
+    12 to 16 weeks)."""
+    pair = quarter_sales_pair(rows, around)
+    return pair[0] / pair[1] - 1 if pair else None
+
+
+def ttm_flow_pair(rows: list[dict]) -> tuple[str, float, float] | None:
+    """Trailing 4 quarters vs the 4 quarters a year earlier when clean quarterly rows exist."""
+    quarters = _latest_by_period([r for r in rows if r.get("start") and 80 <= _days(r["start"], r["end"]) <= 105], lambda r: r["end"])
+    ends = sorted(quarters)
+    if len(ends) < 8:
+        return None
+    recent = ends[-4:]
+    prior = ends[-8:-4]
+    if _days(recent[0], recent[-1]) > 300 or _days(prior[0], prior[-1]) > 300:
+        return None
+    if abs(_days(prior[-1], recent[-1]) - 365) > YEAR_TOLERANCE:
+        return None
+    now_sum = sum(float(quarters[d]["val"]) for d in recent)
+    ago_sum = sum(float(quarters[d]["val"]) for d in prior)
+    return (recent[-1], now_sum, ago_sum) if ago_sum > 0 else None
 
 
 def annual_sales_growth(rows: list[dict], year_end: str) -> float | None:
@@ -146,7 +169,10 @@ def operating_signals(facts: dict, archetype: str | None, today: dt.date | None 
     for key in keys:
         label, concepts, kind, direction = METRICS[key]
         rows, concept = _rows(facts, concepts)
-        pair = (instant_pair(rows) if kind == "instant" else annual_pair(rows)) if rows else None
+        ttm = ttm_flow_pair(rows) if kind == "annual" and rows else None
+        ann = annual_pair(rows) if kind == "annual" and rows else None
+        use_ttm = bool(ttm and (ann is None or ttm[0] > ann[0]))
+        pair = (instant_pair(rows) if kind == "instant" else (ttm if use_ttm else ann)) if rows else None
         if pair is None or pair[2] <= 0:
             missing.append(label)
             continue
@@ -155,15 +181,25 @@ def operating_signals(facts: dict, archetype: str | None, today: dt.date | None 
             continue
         day, now, ago = pair
         growth = now / ago - 1
-        sales = (quarter_sales_growth(revenue, day) if kind == "instant" else annual_sales_growth(revenue, day)) if revenue else None
+        q_sales_pair = quarter_sales_pair(revenue, day) if kind == "instant" and revenue else None
+        if use_ttm and revenue:
+            rev_ttm = ttm_flow_pair(revenue)
+            sales = (rev_ttm[1] / rev_ttm[2] - 1) if rev_ttm and abs(_days(rev_ttm[0], day)) <= 20 else quarter_sales_growth(revenue, day)
+        else:
+            sales = (q_sales_pair[0] / q_sales_pair[1] - 1 if q_sales_pair else None) if kind == "instant" else (annual_sales_growth(revenue, day) if revenue else None)
         if sales is None and kind == "instant" and revenue:
             sales = annual_sales_growth(revenue, day)   # a fiscal year-end balance: the fourth quarter is often filed only in the 10-K
         if key in ("deposits", "loans"):
             sales = None                     # banks: compared with each other below, not with sales
         gap = growth - sales if sales is not None else None
         text, tone = reading(direction, gap) if gap is not None else ("No sales comparison", "unknown")
+        days_now = round((now / q_sales_pair[0]) * 91.25) if q_sales_pair and direction == "strain" and q_sales_pair[0] > 0 else None
+        days_ago = round((ago / q_sales_pair[1]) * 91.25) if q_sales_pair and direction == "strain" and q_sales_pair[1] > 0 else None
+        days_change = (days_now - days_ago) if days_now is not None and days_ago is not None else None
         signals.append({"key": key, "label": label, "value": now, "change": growth, "sales_change": sales, "gap": gap,
-                        "reading": text, "tone": tone, "as_of": day, "concept": concept, "basis": "fiscal year" if kind == "annual" else "balance"})
+                        "days_now": days_now, "days_ago": days_ago, "days_change": days_change,
+                        "reading": text, "tone": tone, "as_of": day, "concept": concept,
+                        "basis": "trailing 4 quarters" if use_ttm else ("fiscal year" if kind == "annual" else "balance")})
     bank = {item["key"]: item for item in signals if item["key"] in ("deposits", "loans")}
     if len(bank) == 2:
         gap = bank["loans"]["change"] - bank["deposits"]["change"]
@@ -172,8 +208,11 @@ def operating_signals(facts: dict, archetype: str | None, today: dt.date | None 
         bank["deposits"].update({"reading": "Deposits growing" if bank["deposits"]["change"] > 0 else "Deposits shrinking", "tone": "supportive" if bank["deposits"]["change"] > 0 else "against"})
     strains = [item for item in signals if item["tone"] == "against" and item.get("gap") is not None]
     constraint = max(strains, key=lambda item: abs(item["gap"])) if strains else None
+    def _spct(val: float) -> str:
+        pts = round(val * 100)
+        return "0%" if pts == 0 else f"{pts:+d}%"
     if constraint:
-        summary = (f"{constraint['label']}: {constraint['reading'].lower()} ({constraint['change']:+.0%} vs sales {constraint['sales_change']:+.0%} a year earlier)"
+        summary = (f"{constraint['label']}: {constraint['reading'].lower()} ({_spct(constraint['change'])} vs sales {_spct(constraint['sales_change'])} a year earlier)"
                    if constraint.get("sales_change") is not None else f"{constraint['label']}: {constraint['reading'].lower()}")
     elif signals:
         summary = "No operating strain in the filed figures."

@@ -1,0 +1,5 @@
+signal_id,observation_date,value,label,source,source_state,recorded_at
+cftc.jpy.leveraged_long,2026-11-17,93108.0,,CFTC Traders in Financial Futures (FinFutWk.txt),LIVE,2026-11-22T15:48:17+08:00
+cftc.jpy.leveraged_net,2026-11-17,-23790.0,,CFTC Traders in Financial Futures (FinFutWk.txt),LIVE,2026-11-22T15:48:17+08:00
+cftc.jpy.leveraged_short,2026-11-17,116898.0,,CFTC Traders in Financial Futures (FinFutWk.txt),LIVE,2026-11-22T15:48:17+08:00
+cftc.jpy.open_interest,2026-11-17,390361.0,,CFTC Traders in Financial Futures (FinFutWk.txt),LIVE,2026-11-22T15:48:17+08:00

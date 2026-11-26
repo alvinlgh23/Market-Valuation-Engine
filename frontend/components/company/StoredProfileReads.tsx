@@ -36,7 +36,7 @@ export function useLiveValuation(ticker: string): { axis: CardAxis | null; loadi
 }
 
 // Checklist 18.22: operating signals from the filings, read with the live judgment card.
-export type OperatingSignal = { key: string; label: string; change: number; sales_change: number | null; gap: number | null; reading: string; tone: string; as_of: string; basis: string };
+export type OperatingSignal = { key: string; label: string; change: number; sales_change: number | null; gap: number | null; days_now?: number | null; days_ago?: number | null; days_change?: number | null; reading: string; tone: string; as_of: string; basis: string };
 export type Operating = { status: string; signals: OperatingSignal[]; missing?: string[]; constraint?: OperatingSignal | null; summary: string; rule?: string; source?: string };
 
 export function useOperating(ticker: string): Operating | null {
@@ -49,16 +49,30 @@ export function useOperating(ticker: string): Operating | null {
   return state;
 }
 
-function signed(value: number | null | undefined) { return typeof value === "number" ? `${value >= 0 ? "+" : "−"}${Math.abs(value * 100).toFixed(0)}%` : "—"; }
+function signed(value: number | null | undefined) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return "—";
+  const rounded = Math.round(value * 100);
+  if (rounded === 0) return "0%";
+  return `${rounded > 0 ? "+" : "−"}${Math.abs(rounded)}%`;
+}
 
 export function OperatingSignals({ operating }: { operating: Operating | null | undefined }) {
   if (!operating || operating.status !== "AVAILABLE") return null;
   return <section className="jc-operating" aria-label="Operating signals from filings">
     <header><h3>Operating signals</h3><small title={operating.rule}>From SEC filings · vs sales growth</small></header>
     <p className={operating.constraint ? "tone-against" : ""}>{operating.summary}</p>
-    <ul>{operating.signals.map((item) => <li key={item.key} title={`${item.basis === "fiscal year" ? "Fiscal year to" : "Balance at"} ${item.as_of}`}>
-      <span>{item.label}</span><b>{signed(item.change)}</b><small>sales {signed(item.sales_change)}</small><em className={`tone-${item.tone}`}>{item.reading}</em>
-    </li>)}</ul>
+    <ul>{operating.signals.map((item) => {
+      const daysNote = item.days_now != null && item.days_change != null
+        ? ` · ${item.days_now}d of sales (${item.days_change >= 0 ? "+" : "−"}${Math.abs(item.days_change)}d)`
+        : "";
+      const periodTitle = item.basis === "trailing 4 quarters" ? `Trailing 4 quarters to ${item.as_of}` : item.basis === "fiscal year" ? `Fiscal year to ${item.as_of}` : `Quarter-end balance at ${item.as_of}`;
+      return <li key={item.key} title={periodTitle}>
+        <span>{item.label}{item.basis === "trailing 4 quarters" ? <small className="jc-op-basis"> TTM</small> : item.basis === "fiscal year" ? <small className="jc-op-basis"> FY</small> : null}</span>
+        <b>{signed(item.change)}</b>
+        <small>sales {signed(item.sales_change)}</small>
+        <em className={`tone-${item.tone}`}>{item.reading}{daysNote ? <small className="jc-op-days">{daysNote}</small> : null}</em>
+      </li>;
+    })}</ul>
     {operating.missing?.length ? <small className="jc-operating-missing">Not in the filings: {operating.missing.join(", ")}</small> : null}
   </section>;
 }

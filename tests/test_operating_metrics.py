@@ -64,3 +64,46 @@ def test_banks_compare_lending_with_deposits():
                                   "BANK", TODAY)
     loans = next(item for item in result["signals"] if item["key"] == "loans")
     assert loans["reading"] == "Lending faster than deposits grow" and result["constraint"]["key"] == "loans"
+
+
+def test_inventory_days_and_ttm_flow_context():
+    quarters_rev = [
+        fact("2024-12-31", 90.0, "2024-10-01"),
+        fact("2025-03-31", 95.0, "2025-01-01"),
+        fact("2025-06-30", 100.0, "2025-04-01"),
+        fact("2025-09-30", 100.0, "2025-07-01"),
+        fact("2025-12-31", 105.0, "2025-10-01"),
+        fact("2026-03-31", 108.0, "2026-01-01"),
+        fact("2026-06-30", 110.0, "2026-04-01"),
+        fact("2026-09-30", 110.0, "2026-07-01"),
+    ]
+    quarters_capex = [
+        fact("2024-12-31", 10.0, "2024-10-01"),
+        fact("2025-03-31", 10.0, "2025-01-01"),
+        fact("2025-06-30", 10.0, "2025-04-01"),
+        fact("2025-09-30", 10.0, "2025-07-01"),
+        fact("2025-12-31", 15.0, "2025-10-01"),
+        fact("2026-03-31", 15.0, "2026-01-01"),
+        fact("2026-06-30", 15.0, "2026-04-01"),
+        fact("2026-09-30", 15.0, "2026-07-01"),
+    ]
+    result = om.operating_signals(
+        facts(
+            Revenues=quarters_rev,
+            InventoryNet=[fact("2025-09-30", 50.0), fact("2026-09-30", 70.0)],
+            PaymentsToAcquirePropertyPlantAndEquipment=quarters_capex,
+        ),
+        "HARDWARE_MANUFACTURER",
+        TODAY,
+    )
+    inv = next(item for item in result["signals"] if item["key"] == "inventory")
+    capex = next(item for item in result["signals"] if item["key"] == "capex")
+    assert inv["days_now"] is not None and inv["days_change"] > 0
+    assert capex["basis"] == "trailing 4 quarters" and abs(capex["change"] - 0.5) < 1e-6
+
+
+def test_quarterly_read_signed_pct_never_emits_minus_zero():
+    import quarterly_read as qr
+    assert qr._signed_pct(-0.002) == "0%"
+    assert qr._signed_pct(0.002) == "0%"
+    assert qr._signed_pct(-0.04) == "-4%"

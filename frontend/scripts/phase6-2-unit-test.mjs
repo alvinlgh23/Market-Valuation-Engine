@@ -29,6 +29,12 @@ assert.equal((await run(["-B", "company_verdict.py", "--summary"])).ok, true);
 for (const bad of [["-B", "company_verdict.py", "--watchlist"], ["-B", "company_verdict.py", "NVDA", "--home-currency"], ["-B", "company_verdict.py", "nvda;rm", "--json"], ["-B", "company_verdict.py", "NVDA", "MSFT", "--json"]]) {
   await assert.rejects(() => run(bad), e => e.code === "UNSUPPORTED_ACTION");
 }
+// P20 item 6: the daily refresh can only be started or asked for status; `--run` stays out of the web bridge.
+assert.equal((await run(["-B", "daily_refresh.py", "--status"])).ok, true);
+assert.equal((await run(["-B", "daily_refresh.py", "--start"])).ok, true);
+for (const bad of [["-B", "daily_refresh.py", "--run"], ["-B", "daily_refresh.py", "--start", "x"]]) {
+  await assert.rejects(() => run(bad), e => e.code === "UNSUPPORTED_ACTION");
+}
 delete process.env.CHAINSTOX_PYTHON_EXECUTABLE;
 const get = (rows, state) => integrateSectorEngineRows(rows, state).find(s => s.ticker === "SMH");
 assert.equal(get([]).rel6m, null);

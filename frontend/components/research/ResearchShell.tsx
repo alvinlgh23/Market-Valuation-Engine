@@ -8,14 +8,18 @@ import { recentCompanyResearch, type RecentCompanyResearch } from "../../lib/com
 import { sectors } from "../../lib/market-research";
 import { ChainstoxBrand } from "./ChainstoxBrand";
 
+const GICS_SEARCH: Array<[string, string]> = [["Technology", "technology"], ["Communication services", "xlc"], ["Consumer discretionary", "xly"], ["Consumer staples", "xlp"],
+  ["Health care", "healthcare"], ["Financials", "financials"], ["Energy", "energy"], ["Industrials", "industrials"], ["Materials", "xlb"], ["Utilities", "utilities"], ["Real estate", "xlre"]];
+const GICS_SLUGS = new Set(GICS_SEARCH.map(([, slug]) => slug));
+
 export type ResearchDataState = "LIVE" | "CACHED" | "DEMO" | "FIXTURE" | "STALE" | "PARTIAL" | "UNKNOWN" | "INSUFFICIENT" | "INSUFFICIENT_EVIDENCE" | "AVAILABLE" | "FRAMEWORK_REQUIRED" | "NOT_ANALYZED" | "ANALYZING" | "UNSUPPORTED" | "FAILED" | "INSUFFICIENT_DATA";
 
 // Checklist 8.2: three questions instead of one tab per engine. Valuation is reached from each
 // company; Labs stays reachable by URL but is not in the top bar. /demo and /brief were deleted (checklist 10.10).
 const PRIMARY = [
-  ["dashboard", "Today", "/"],
-  ["companies", "Watchlist", "/companies"],
-  ["markets", "Market context", "/markets"]
+  ["dashboard", "Today", "Today", "/"],
+  ["companies", "Watchlist", "Watchlist", "/companies"],
+  ["markets", "Market context", "Markets", "/markets"]
 ] as const;
 const TOP_LEVEL: Record<string, string> = { dashboard: "dashboard", overview: "dashboard", company: "companies", companies: "companies", valuation: "companies", macro: "markets", markets: "markets", labs: "markets" };
 
@@ -45,7 +49,14 @@ const STATE_HELP: Record<string, string> = {
 
 function companyContext(ticker: string) {
   const root = `/company/${ticker}`;
-  return [["Overview", root], ["Economics", `${root}?view=economics`], ["Positioning", `${root}?view=positioning`], ["Valuation", `/valuation/${ticker}?view=overview&from=company`], ["Evidence", `${root}?view=evidence`]] as const;
+  return [
+    ["Overview", root],
+    ["Economics", `${root}?view=economics`],
+    ["Positioning", `${root}?view=positioning`],
+    ["Financials", `${root}?view=financials`],
+    ["Valuation", `/valuation/${ticker}?view=overview&from=company`],
+    ["Evidence", `${root}?view=evidence`],
+  ] as const;
 }
 
 function valuationContext(ticker: string) {
@@ -85,30 +96,66 @@ export function ResearchShell({
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [recentCompanies, setRecentCompanies] = useState<RecentCompanyResearch[]>([]);
+  const [tickerMatches, setTickerMatches] = useState<Array<{ ticker: string; name: string }>>([]);
+  const [tickerFetchedFor, setTickerFetchedFor] = useState("");
   const routeDemoMode = demoMode;
   const shellState = routeDemoMode ? "DEMO" : dataState;
   const topActive = TOP_LEVEL[active] ?? active;
   const contextual = ticker && active === "valuation" ? valuationContext(ticker) : ticker ? companyContext(ticker) : CONTEXT[active === "valuation" ? "valuation" : topActive] ?? [];
   const moduleResults = useMemo(() => {
     const q = query.trim().toLowerCase();
+    const themes = q.length >= 2
+      ? sectors.filter((s) => !GICS_SLUGS.has(s.slug) && !GICS_SLUGS.has(s.ticker.toLowerCase())).map((s) => ["THEME", `${s.name} (${s.ticker})`, `/markets?sector=${s.slug}`] as const)
+      : [];
     const index = [
-      ["MODULE", "Dashboard", "/"], ["MODULE", "Macro", "/macro"], ["MODULE", "Inflation", "/macro/inflation"], ["MODULE", "Rates", "/macro/rates"], ["MODULE", "Risk Regime", "/macro/risk"], ["MODULE", "Liquidity", "/macro/liquidity"], ["MODULE", "Valuation", "/valuation"],
+      ["MODULE", "Today dashboard", "/"], ["MODULE", "Macro · Market story", "/macro"], ["MODULE", "Inflation", "/macro/inflation"], ["MODULE", "Rates", "/macro/rates"], ["MODULE", "Risk Regime", "/macro/risk"], ["MODULE", "Liquidity", "/macro/liquidity"], ["MODULE", "Valuation", "/valuation"],
       ["REGION", "Japan", "/macro/world?region=JP"], ["REGION", "South Korea", "/macro/world?region=KR"], ["REGION", "United States", "/macro/world?region=US"], ["REGION", "Euro Area", "/macro/world?region=EURO_AREA"],
-      ...sectors.map((sector) => ["SECTOR", sector.name, `/markets?sector=${sector.slug}`] as const),
-      ["PRIORITY", "Japan growth pressure", "/macro/world?region=JP"], ["PRIORITY", "Semiconductors", "/markets?sector=semiconductors"], ["PRIORITY", "Risk coverage", "/macro/risk"]
+      // Checklist 19.3: the 11 GICS sectors first; theme ETFs also match when explicitly searched.
+      ...GICS_SEARCH.map(([name, slug]) => ["SECTOR", name, `/markets?sector=${slug}`] as const),
+      ...themes,
+      ["PRIORITY", "Japan growth pressure", "/macro/world?region=JP"], ["PRIORITY", "All sectors", "/markets"], ["PRIORITY", "Risk coverage", "/macro/risk"]
     ] as const;
     return q ? index.filter(([, label]) => label.toLowerCase().includes(q)) : [];
   }, [query]);
-  const tickerQuery = moduleResults.length === 0 && /^[A-Za-z][A-Za-z0-9.\-]{0,4}$/.test(query.trim()) ? query.trim().toUpperCase() : null;
+
+  useEffect(() => {
+    const trimmed = query.trim();
+    if (!searchOpen || !trimmed) return;
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      fetch(`/api/research?action=ticker-search&q=${encodeURIComponent(trimmed)}`, { cache: "no-store" })
+        .then((r) => r.json())
+        .then((body) => {
+          if (cancelled) return;
+          setTickerMatches(Array.isArray(body.results) ? body.results.slice(0, 6) : []);
+          setTickerFetchedFor(trimmed);
+        })
+        .catch(() => {
+          if (cancelled) return;
+          setTickerMatches([]);
+          setTickerFetchedFor(trimmed);
+        });
+    }, 60);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [searchOpen, query]);
+
+  const trimmedQuery = query.trim();
+  const upperQuery = trimmedQuery.toUpperCase();
+  const activeTickerMatches = searchOpen && trimmedQuery ? tickerMatches : [];
+  const activeFetchedFor = searchOpen && trimmedQuery ? tickerFetchedFor : "";
+  const exactCompany = activeTickerMatches.find((item) => item.ticker === upperQuery);
+  const rawTickerFallback = activeTickerMatches.length === 0
+    && (activeFetchedFor !== trimmedQuery ? moduleResults.length === 0 && /^[A-Za-z][A-Za-z0-9.\-]{0,4}$/.test(trimmedQuery) : /^[A-Z][A-Z0-9.\-]{0,4}$/.test(trimmedQuery))
+    ? upperQuery : null;
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") { event.preventDefault(); setSearchOpen(true); }
-      if (event.key === "/" && !(event.target instanceof HTMLInputElement)) { event.preventDefault(); setSearchOpen(true); }
+      if (event.key === "/" && !(event.target instanceof HTMLInputElement) && !(event.target instanceof HTMLTextAreaElement)) { event.preventDefault(); setSearchOpen(true); }
       if (event.key === "Escape") { setSearchOpen(false); setMobileNavOpen(false); }
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
   }, []);
 
   useEffect(() => {
@@ -118,28 +165,40 @@ export function ResearchShell({
 
   function submit(event: FormEvent) {
     event.preventDefault();
-    if (tickerQuery) { setSearchOpen(false); router.push(`/company/${tickerQuery}`); return; }
+    if (exactCompany) { setSearchOpen(false); router.push(`/company/${exactCompany.ticker}`); return; }
+    if (activeTickerMatches[0] && trimmedQuery.length <= 5 && moduleResults.length === 0) { setSearchOpen(false); router.push(`/company/${activeTickerMatches[0].ticker}`); return; }
+    if (activeTickerMatches[0] && activeTickerMatches[0].ticker.startsWith(upperQuery) && upperQuery.length <= 4) { setSearchOpen(false); router.push(`/company/${activeTickerMatches[0].ticker}`); return; }
+    if (rawTickerFallback) { setSearchOpen(false); router.push(`/company/${rawTickerFallback}`); return; }
     const first = moduleResults[0];
-    if (first) { setSearchOpen(false); router.push(first[2]); }
+    if (first) { setSearchOpen(false); router.push(first[2]); return; }
+    if (activeTickerMatches[0]) { setSearchOpen(false); router.push(`/company/${activeTickerMatches[0].ticker}`); }
   }
 
   const currentUrl = `${pathname}${searchParams.size ? `?${searchParams.toString()}` : ""}`;
   return (
     <div className="research-app-shell object-driven-shell rail-shell">
-      {/* Checklist 14.1: a quiet icon sidebar instead of the top bar; labels appear on hover. */}
+      {/* Primary navigation rail with visible micro-labels for zero-guesswork clarity */}
       <aside className="app-rail" aria-label="Primary">
         <ChainstoxBrand compact />
         <nav className={`app-rail-nav${mobileNavOpen ? " open" : ""}`} aria-label="Primary research objects">
-          {PRIMARY.map(([key, label, href]) => <Link key={key} className={topActive === key ? "active" : ""} href={href} aria-label={label} data-label={label} onClick={() => setMobileNavOpen(false)}><RailIcon name={key} /></Link>)}
-          <button type="button" onClick={() => setSearchOpen(true)} aria-label="Search (⌘K)" data-label="Search  ⌘K"><RailIcon name="search" /></button>
+          {PRIMARY.map(([key, label, shortLabel, href]) => (
+            <Link key={key} className={topActive === key ? "active" : ""} href={href} aria-label={label} title={label} onClick={() => setMobileNavOpen(false)}>
+              <RailIcon name={key} />
+              <small className="app-rail-label">{shortLabel}</small>
+            </Link>
+          ))}
+          <button type="button" onClick={() => setSearchOpen(true)} aria-label="Search (⌘K)" title="Search (⌘K)">
+            <RailIcon name="search" />
+            <small className="app-rail-label">Search</small>
+          </button>
         </nav>
         <div className={`app-rail-state data-state-${shellState.toLowerCase().replaceAll("_", "-")}`} title={`${shellState === "DEMO" || shellState === "FIXTURE" ? displayStatus(shellState) : statusWord(shellState) ?? displayStatus(shellState)}: ${STATE_HELP[shellState] ?? "Current research data state"}`}><i /></div>
       </aside>
       <div className={`research-app-body${contextual.length ? " has-context-nav" : ""}`}>
-        {contextual.length ? <aside className="context-research-nav"><div><span>{ticker ? `${ticker} / ${active === "valuation" ? "VALUATION" : "COMPANY"}` : `${active === "macro" ? "MACRO" : active === "labs" ? "INTERNAL" : topActive.toUpperCase()} / RESEARCH`}</span><strong>{ticker ? topActive === "valuation" ? "Valuation object" : "Company workspace" : "Investigation"}</strong></div><nav aria-label={`${topActive} research views`}>{contextual.map(([label, href]) => { const hrefUrl = href.split("?"); const queryView = new URLSearchParams(hrefUrl[1] ?? "").get("view"); const selected = queryView ? pathname === hrefUrl[0] && searchParams.get("view") === queryView : currentUrl === href || (href === pathname && !searchParams.get("view")); return <Link className={selected ? "active" : ""} href={href} key={label}>{label}{label.startsWith("←") ? null : <span>→</span>}</Link>; })}</nav></aside> : null}
+        {contextual.length ? <aside className="context-research-nav"><div><span>{ticker ? `${ticker} / ${active === "valuation" ? "VALUATION" : "COMPANY"}` : `${active === "macro" ? "MACRO" : active === "labs" ? "INTERNAL" : topActive.toUpperCase()} / RESEARCH`}</span><strong>{ticker ? active === "valuation" ? "Valuation object" : "Company workspace" : "Investigation"}</strong></div><nav aria-label={`${topActive} research views`}>{contextual.map(([label, href]) => { const hrefUrl = href.split("?"); const queryView = new URLSearchParams(hrefUrl[1] ?? "").get("view"); const viewParam = searchParams.get("view"); const selected = queryView ? pathname === hrefUrl[0] && viewParam === queryView : currentUrl === href || (href === pathname && (!viewParam || viewParam === "overview")); return <Link className={selected ? "active" : ""} href={href} key={label}>{label}{label.startsWith("←") ? null : <span>→</span>}</Link>; })}</nav></aside> : null}
         <main className="research-app-main">{children}</main>
       </div>
-      {searchOpen ? <div className="command-surface-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setSearchOpen(false)}><section className="command-surface" role="dialog" aria-modal="true" aria-label="Global research search"><header><span>GLOBAL SEARCH / RESEARCH COMMAND</span><button type="button" onClick={() => setSearchOpen(false)}>ESC</button></header><form onSubmit={submit}><span>›</span><input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="PLTR, Japan, Semiconductors, Inflation, Valuation" aria-label="Search research" /></form><div className="command-results">{moduleResults.map(([kind, label, href]) => <button key={`${kind}-${label}-${href}`} type="button" onClick={() => { setSearchOpen(false); router.push(href); }}><strong>{kind}</strong><span>{label}</span><small>Open research object</small></button>)}{tickerQuery ? <><button type="button" data-company-resolve={tickerQuery} onClick={() => { setSearchOpen(false); router.push(`/company/${tickerQuery}`); }}><strong>COMPANY</strong><span>{tickerQuery} structured company metadata</span><small>Resolve company research state</small></button><button type="button" data-valuation-resolve={tickerQuery} onClick={() => { setSearchOpen(false); router.push(`/valuation/${tickerQuery}`); }}><strong>VALUATION</strong><span>{tickerQuery} economics, DCF, reverse DCF, sensitivity</span><small>Open valuation object if fixture coverage exists</small></button></> : null}{!query.trim() ? <><div className="command-result-heading"><span>RESEARCH PRIORITY</span><small>Direct investigation routes</small></div>{[["PRIORITY", "Market story", "/macro"], ["PRIORITY", "Japan growth pressure", "/macro/world?region=JP"], ["PRIORITY", "Semiconductors", "/markets?sector=semiconductors"], ["PRIORITY", "Risk coverage", "/macro/risk"]].map(([kind, label, href]) => <button key={`${kind}-${label}-${href}`} type="button" onClick={() => { setSearchOpen(false); router.push(href); }}><strong>{kind}</strong><span>{label}</span><small>Open priority route</small></button>)}<div className="command-result-heading"><span>RECENT COMPANY RESEARCH</span><small>Previously analyzed - not the supported universe</small></div>{recentCompanies.map((item) => <button key={item.ticker} type="button" onClick={() => { setSearchOpen(false); router.push(`/company/${item.ticker}`); }}><strong>COMPANY · {item.ticker}</strong><span>{item.name}</span><small>{item.research_state.replaceAll("_", " ")}</small></button>)}{!recentCompanies.length ? <p>No on-demand company profiles have been cached yet. Use PLTR, NVDA, MSFT, Japan, or Semiconductors for deterministic coverage.</p> : null}</> : null}{query.trim() && !tickerQuery && !moduleResults.length ? <div className="command-empty-state"><strong>Research coverage unavailable</strong><p>No verified security, sector, macro region, or module matched this query. Try a ticker such as PLTR, NVDA or MSFT, a region such as Japan, a sector such as Semiconductors, or a topic such as Inflation.</p></div> : null}</div></section></div> : null}
+      {searchOpen ? <div className="command-surface-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setSearchOpen(false)}><section className="command-surface" role="dialog" aria-modal="true" aria-label="Global research search"><header><span>GLOBAL SEARCH / RESEARCH COMMAND</span><button type="button" onClick={() => setSearchOpen(false)}>ESC</button></header><form onSubmit={submit}><span>›</span><input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); setSearchOpen(false); } }} placeholder="Ticker or company (NVDA, CAT, Visa, Apple), sector, or macro topic" aria-label="Search research" /></form><div className="command-results">{activeTickerMatches.length ? <><div className="command-result-heading"><span>COMPANIES</span><small>Listed equities</small></div>{activeTickerMatches.map((item) => <button key={`co-${item.ticker}`} type="button" data-company-resolve={item.ticker} onClick={() => { setSearchOpen(false); router.push(`/company/${item.ticker}`); }}><strong>COMPANY · {item.ticker}</strong><span>{item.name}</span><small>Open judgment card</small></button>)}{exactCompany ? <button type="button" data-valuation-resolve={exactCompany.ticker} onClick={() => { setSearchOpen(false); router.push(`/valuation/${exactCompany.ticker}`); }}><strong>VALUATION · {exactCompany.ticker}</strong><span>{exactCompany.name} — DCF, reverse DCF &amp; sandbox</span><small>Open valuation workspace</small></button> : null}</> : null}{rawTickerFallback ? <><button type="button" data-company-resolve={rawTickerFallback} onClick={() => { setSearchOpen(false); router.push(`/company/${rawTickerFallback}`); }}><strong>COMPANY</strong><span>{rawTickerFallback} structured company metadata</span><small>Resolve company research state</small></button><button type="button" data-valuation-resolve={rawTickerFallback} onClick={() => { setSearchOpen(false); router.push(`/valuation/${rawTickerFallback}`); }}><strong>VALUATION</strong><span>{rawTickerFallback} economics, DCF, reverse DCF, sensitivity</span><small>Open valuation workspace</small></button></> : null}{moduleResults.length ? <><div className="command-result-heading"><span>SECTORS, REGIONS &amp; TOPICS</span><small>Market context</small></div>{moduleResults.map(([kind, label, href]) => <button key={`${kind}-${label}-${href}`} type="button" onClick={() => { setSearchOpen(false); router.push(href); }}><strong>{kind}</strong><span>{label}</span><small>Open research view</small></button>)}</> : null}{!trimmedQuery ? <><div className="command-result-heading"><span>RESEARCH PRIORITY</span><small>Direct investigation routes</small></div>{[["PRIORITY", "Market story", "/macro"], ["PRIORITY", "Japan growth pressure", "/macro/world?region=JP"], ["PRIORITY", "All sectors", "/markets"], ["PRIORITY", "Risk coverage", "/macro/risk"]].map(([kind, label, href]) => <button key={`${kind}-${label}-${href}`} type="button" onClick={() => { setSearchOpen(false); router.push(href); }}><strong>{kind}</strong><span>{label}</span><small>Open priority route</small></button>)}<div className="command-result-heading"><span>RECENT COMPANY RESEARCH</span><small>Previously analyzed</small></div>{recentCompanies.map((item) => <button key={item.ticker} type="button" onClick={() => { setSearchOpen(false); router.push(`/company/${item.ticker}`); }}><strong>COMPANY · {item.ticker}</strong><span>{item.name}</span><small>{item.research_state.replaceAll("_", " ")}</small></button>)}{!recentCompanies.length ? <p>No on-demand company profiles have been cached yet. Type any ticker, company name, sector or topic.</p> : null}</> : null}{trimmedQuery && !activeTickerMatches.length && !rawTickerFallback && !moduleResults.length ? <div className="command-empty-state"><strong>Research coverage unavailable</strong><p>No listed security, sector, macro region, or topic matched &ldquo;{trimmedQuery}&rdquo;. Try a ticker or company name (e.g. NVDA, CAT, Apple), a region (Japan, Euro Area), or a sector (Technology, Semiconductors, Energy).</p></div> : null}</div></section></div> : null}
     </div>
   );
 }

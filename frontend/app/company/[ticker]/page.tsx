@@ -16,7 +16,7 @@ export default async function CompanyPage({
   const { ticker } = await params;
   const query = await searchParams;
   const valuationViews = ["valuation", "assumptions", "dcf", "reverse-dcf", "sensitivity", "validation"];
-  const routeWorkspace = query.workspace ?? (query.view === "economics" ? "economics" : query.view === "positioning" ? "thesis" : query.view && valuationViews.includes(query.view) ? "valuation" : query.view === "evidence" ? "evidence" : null);
+  const routeWorkspace = query.workspace ?? (query.view === "economics" ? "economics" : query.view === "positioning" || query.view === "thesis" ? "thesis" : query.view === "financials" ? "financials" : query.view && valuationViews.includes(query.view) ? "valuation" : query.view === "evidence" ? "evidence" : null);
   const initialWorkspace = (["economics", "valuation", "thesis", "financials", "evidence"] as const).find((item) => item === routeWorkspace) ?? null;
   if (query.fixture === "1") {
     const fixture = getCompanyResearchFixture(ticker);

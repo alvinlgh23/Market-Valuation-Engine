@@ -1,5 +1,6 @@
 "use client";
 import { StatusBadge } from "./StatusBadge";
+import { MarketsOverview } from "../markets/MarketsOverview";
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -63,9 +64,9 @@ export function MarketsResearch({ section, system }: { section: string; system: 
   const node = params.get("node");
   const core = system.modules.core_market.payload ?? {};
   const sectorList = integrateSectorEngineRows((core.sectors ?? []) as SectorEngineRow[], system.modules.core_market.state, system.sector_flow);
-  if (section === "rotation") return <MarketsRotationSurface sectorList={sectorList} selectedSector={sectorParam} view={view} selectedNodeId={node} />;
-  // Checklist 10.10 (owner, 2026-11-22): the breadth, fragility and defensive-rotation pages were deleted.
-  return <MarketsRotationSurface sectorList={sectorList} selectedSector="semiconductors" view="positioning" selectedNodeId={null} />;
+  // Checklist 19.2: with no sector chosen, Markets is the whole-market overview.
+  if (!sectorParam) return <MarketsOverview sectorList={sectorList} asOf={sectorList.map((item) => item.lastUpdated).filter((day) => /^\d{4}-/.test(day)).sort().pop()} />;
+  return <MarketsRotationSurface sectorList={sectorList} selectedSector={sectorParam} view={section === "rotation" ? view : "positioning"} selectedNodeId={node} />;
 }
 
 export function SectorResearch({ sector, system }: { sector: string; system: ResearchSystem }) {
@@ -96,18 +97,29 @@ function hasPositioningPoints(sectorList: SectorResearchObject[]) {
 }
 
 function RotationMap({ selected, sectorList }: { selected: SectorResearchObject; sectorList: SectorResearchObject[] }) {
-  const max = Math.max(...sectorList.map((sector) => Math.abs(sector.rel6m ?? 0)), 0.25);
+  const plottedPool = sectorList.filter(
+    (sector) => sector.rel6m != null && sector.crowding !== "Unavailable" && (!sector.tier || sector.tier === "GICS_SECTOR" || sector.slug === selected.slug)
+  );
+  const items = plottedPool.length >= 4 ? plottedPool : sectorList.filter((sector) => sector.rel6m != null && sector.crowding !== "Unavailable");
+  const max = Math.max(...items.map((sector) => Math.abs(sector.rel6m ?? 0)), 0.25);
   const crowdingY = (sector: SectorResearchObject) => ({ crowded: 18, extended: 38, neutral: 58, unloved: 80 } as Record<string, number>)[sector.crowding.toLowerCase()] ?? (sector.crowding.toLowerCase().includes("elevated") ? 24 : sector.crowding.toLowerCase().includes("moderate") ? 50 : 74);
+  const placed: Array<{ x: number; y: number }> = [];
   return <section className="rotation-map-panel">
     <header><div><span>ROTATION MAP</span><h2>Leadership vs positioning risk</h2></div><small>{rotationAxis.x} / {rotationAxis.y}</small></header>
     <div className="rotation-plane" role="img" aria-label="Sector rotation positioning plane">
       <span className="axis axis-x">Leadership / relative strength →</span><span className="axis axis-y">Crowding / extension ↑</span>
-      {sectorList.filter(sector => sector.rel6m != null && sector.crowding !== "Unavailable").map((sector) => {
-        const x = 50 + ((sector.rel6m ?? 0) / max) * 42;
-        return <Link key={sector.slug} className={`sector-dot${sector.slug === selected.slug ? " selected" : ""}`} href={sectorHref(sector, "snapshot")} style={{ left: `${Math.max(8, Math.min(92, x))}%`, top: `${crowdingY(sector)}%` }}><strong>{sector.ticker}</strong><span>{sector.name}</span></Link>;
+      {items.map((sector) => {
+        const rawX = Math.max(10, Math.min(88, 50 + ((sector.rel6m ?? 0) / max) * 40));
+        let y = crowdingY(sector);
+        const nearby = placed.filter((pt) => Math.abs(pt.x - rawX) < 12 && Math.abs(pt.y - y) < 12).length;
+        if (nearby > 0) {
+          y = Math.max(12, Math.min(86, y + (nearby % 2 === 1 ? 11 : -11) * Math.ceil(nearby / 2)));
+        }
+        placed.push({ x: rawX, y });
+        return <Link key={sector.slug} title={`${sector.ticker} · ${sector.name} (${percent(sector.rel6m)} 6M vs SPY)`} className={`sector-dot${sector.slug === selected.slug ? " selected" : ""}`} href={sectorHref(sector, "snapshot")} style={{ left: `${rawX}%`, top: `${y}%` }}><strong>{sector.ticker}</strong><span>{sector.name}</span></Link>;
       })}
     </div>
-    <p>{rotationAxis.reason} Sectors without both measurements are omitted from the plane; available relative strength and structural links remain in the table.</p>
+    <p>{rotationAxis.reason} Primary GICS sectors (plus the active selection) are plotted on the plane; all industry and theme ETFs appear in the ranked table.</p>
   </section>;
 }
 
@@ -232,12 +244,22 @@ function reportPayload(sector: SectorResearchObject, heading: string) {
   return sector.reportNotes;
 }
 
+const SECTOR_SLUG_ALIASES: Record<string, string> = {
+  "information-technology": "technology",
+  "health-care": "healthcare",
+  "communication": "communication-services",
+  "financial": "financials",
+  "industrial": "industrials",
+};
+
 function MarketsRotationSurface({ sectorList, selectedSector, view, selectedNodeId }: { sectorList: SectorResearchObject[]; selectedSector?: string | null; view?: string | null; selectedNodeId?: string | null }) {
-  const normalized = (selectedSector || "semiconductors").toLowerCase().replaceAll("_", "-");
+  const rawSlug = (selectedSector || "").toLowerCase().replaceAll("_", "-");
+  const normalized = SECTOR_SLUG_ALIASES[rawSlug] ?? rawSlug;
   const selected = sectorList.find((sector) => sector.slug === normalized || sector.name.toLowerCase() === normalized || sector.ticker.toLowerCase() === normalized);
-  if (!selected) return <section className="valuation-framework-state"><h1>Sector unavailable</h1><p>No structural research object matches {selectedSector}.</p><Link href="/markets">Return to sector overview →</Link></section>;
+  if (!selected) return <section className="valuation-framework-state"><h1>Sector unavailable</h1><p>No structural research object matches {selectedSector}.</p><Link href="/markets">Back to all sectors →</Link></section>;
   if (view === "report") return <div className="engine-module"><SectorReport sector={selected} /></div>;
   return <div className="engine-module markets-research-surface">
+    <div className="markets-crumb-row"><Link className="markets-back-link" href="/markets">← All sectors</Link></div>
     <ObjectHeader eyebrow="MARKETS / SECTOR ROTATION" title="Where leadership is moving" summary="Relative strength of sector and theme ETFs against SPY over one, three and six months." state={selected.sourceState} />
     <div className={`markets-topology${hasPositioningPoints(sectorList) ? "" : " markets-topology-table-only"}`}>
       {hasPositioningPoints(sectorList) ? <RotationMap selected={selected} sectorList={sectorList} /> : null}

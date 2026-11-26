@@ -382,9 +382,13 @@ class CompanyEconomicsProfile:
     evidence_registry: dict[str, dict[str, Any]] = field(default_factory=dict)
     classification_version: str = "phase8.1-evidence-authority-v2"
     operational_research: dict[str, Any] = field(default_factory=dict)
+    segments: list[dict[str, Any]] = field(default_factory=list)
 
     def to_dict(self):
-        return {"company_economics": _jsonable(self)}
+        payload = _jsonable(self)
+        if not payload.get("segments"):
+            payload.pop("segments", None)
+        return {"company_economics": payload}
 
 
 class StructuredFinancialEvidenceProvider(ABC):
@@ -406,13 +410,66 @@ class QualitativeEvidenceProvider(ABC):
 
 
 class QualitativeCompanyEconomicsExtractor(QualitativeEvidenceProvider):
-    """Version 1 no-op boundary for future filing/transcript extraction."""
+    """Gemini-backed filing extraction boundary; strictly optional and human-reviewed."""
+
+    def __init__(self, candidate_store_path: Path | None = None):
+        from qualitative_evidence import CANDIDATE_REGISTRY
+
+        self.candidate_store_path = candidate_store_path or CANDIDATE_REGISTRY
 
     def collect(self, snapshot: CompanySnapshot) -> list[EvidenceItem]:
-        return []
+        if any("fixture" in str(src).lower() for src in snapshot.sources.values()):
+            return []
+        if not self.candidate_store_path.exists():
+            return []
+        try:
+            payload = json.loads(self.candidate_store_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return []
+        items: list[EvidenceItem] = []
+        for idx, row in enumerate(payload.get("candidates") or [], start=1):
+            if str(row.get("issuer", "")).upper() != snapshot.ticker.upper():
+                continue
+            if row.get("review_state") != "PENDING_REVIEW":
+                continue
+            items.append(
+                EvidenceItem(
+                    id=f"QE{idx}",
+                    type=EvidenceType.FACT,
+                    tier=EvidenceTier.QUALITATIVE,
+                    metric=str(row.get("metric") or "unknown"),
+                    statement=f"Machine-extracted {row.get('metric')} is {row.get('value')} ({row.get('unit')}); awaits documentary review.",
+                    value=row.get("value"),
+                    unit=str(row.get("unit") or ""),
+                    period=str(row.get("reporting_period") or "Unavailable"),
+                    source=str(row.get("source_title") or "SEC filing"),
+                    source_type=str(row.get("source_type") or "issuer_sec_filing"),
+                    source_nature=SourceNature.REPORTED,
+                    confidence=Confidence.LOW,
+                    source_id=str(row.get("id") or f"QE{idx}"),
+                    source_url=row.get("source_url"),
+                    observation_date=row.get("observation_date"),
+                    fiscal_period_end=row.get("observation_date"),
+                    filing_date=row.get("publication_date"),
+                    validation_status="UNVERIFIED",
+                    staleness_status="HISTORICAL",
+                    limitation=row.get("limitation"),
+                    entity_identifier=snapshot.ticker,
+                    source_status="HISTORICAL_REPORTED",
+                    source_locator=row.get("locator"),
+                    extraction_method=row.get("extraction_method"),
+                )
+            )
+        return items
 
-    def extract(self, *_args, **_kwargs):
-        return {"status": "UNAVAILABLE", "reason": "Qualitative extraction is not live in Version 1."}
+    def extract(self, ticker: str | None = None, **kwargs):
+        from qualitative_evidence import api_key_from_env, extract_live_for_ticker
+
+        if not ticker:
+            return {"status": "UNAVAILABLE", "reason": "A ticker symbol is required for filing extraction."}
+        if not api_key_from_env():
+            return {"status": "API_KEY_MISSING", "reason": "Set GEMINI_API_KEY (or GOOGLE_API_KEY) to run live Gemini filing extraction."}
+        return extract_live_for_ticker(ticker, **kwargs)
 
 
 class ExistingStructuredFinancialProvider(StructuredFinancialEvidenceProvider):
@@ -513,6 +570,7 @@ def snapshot_from_valuation_data(data: dict) -> CompanySnapshot:
             "operating_margin": SourceNature.REPORTED if _number(provider_margin) else SourceNature.CALCULATED,
             "fcf_margin": SourceNature.CALCULATED,
         },
+        segments=list(data.get("segments") or []),
         evidence_envelopes=data.get("evidence_envelopes") or {},
     )
 
@@ -729,6 +787,40 @@ def collect_base_evidence(snapshot: CompanySnapshot, ledger: EvidenceLedger):
             limitation=envelope.get("limitation"), entity_identifier=envelope.get("entity_identifier") or snapshot.ticker,
             source_status=envelope.get("source_status", "FIXTURE" if "fixture" in snapshot.sources.get(name, "") else "HISTORICAL_REPORTED"),
         )
+    for seg in snapshot.segments or []:
+        seg_id = seg.get("segment_id") or "segment"
+        seg_name = seg.get("segment_name") or seg_id
+        rev = seg.get("revenue")
+        if _number(rev):
+            growth = seg.get("revenue_growth")
+            ledger.add(
+                type=EvidenceType.FACT,
+                tier=EvidenceTier.DIRECT,
+                metric=f"segment:{seg_id}:revenue",
+                statement=f"Segment '{seg_name}' revenue is reported as {rev}.",
+                value=rev,
+                unit="currency",
+                period=str(seg.get("period_end") or snapshot.periods.get("revenue", "Latest available period")),
+                source=f"SEC {seg.get('form', '10-K')} XBRL segment disclosure",
+                source_type="structured_regulatory_data",
+                source_nature=SourceNature.REPORTED,
+                direction=_metric_direction("revenue_growth", growth) if _number(growth) else Direction.UNKNOWN,
+                confidence=Confidence.HIGH,
+                source_id=f"sec-seg:{snapshot.ticker}:{seg.get('accession_number', '')}:{seg_id}:revenue",
+                source_url=seg.get("source_url"),
+                observation_date=seg.get("period_end"),
+                fiscal_period_start=seg.get("period_start"),
+                fiscal_period_end=seg.get("period_end"),
+                filing_date=seg.get("filing_date"),
+                currency=seg.get("currency") or snapshot.currency or None,
+                raw_concept=seg.get("revenue_concept"),
+                normalized_concept=f"segment_revenue:{seg_id}",
+                transformation="Single-axis StatementBusinessSegmentsAxis/SegmentsAxis annual fact",
+                entity_identifier=snapshot.ticker,
+                source_status="HISTORICAL_REPORTED",
+                source_locator=seg.get("xbrl_member"),
+                extraction_method="deterministic_xbrl_segment_axis",
+            )
 
 
 class GrowthArchitectureBuilder:
@@ -866,6 +958,7 @@ class ConstraintDiagnosisEngine:
             direct_items = [next(item for item in ledger.items if item.id == evidence_id) for evidence_id in direct_ids]
             proxy_items = [next(item for item in ledger.items if item.id == evidence_id) for evidence_id in proxy_ids]
             evidence_current = not any(item.staleness_status == "STALE" for item in direct_items + proxy_items)
+            direct_verified = any(item.validation_status == "VALID" for item in direct_items) if direct_items else True
             direct_direction = None
             proxy_direction = None
             claim = assess_constraint_claim(
@@ -873,6 +966,7 @@ class ConstraintDiagnosisEngine:
                 mechanism=CONSTRAINT_REGISTRY[constraint].display_name, direct_ids=direct_ids, proxy_ids=proxy_ids,
                 counter_ids=evidence.contrary_evidence_ids, direct_direction=direct_direction,
                 proxy_direction=proxy_direction, evidence_current=evidence_current,
+                direct_verified=direct_verified,
             )
             if direct_ids:
                 inference = f"{constraint.value.replace('_', ' ').title()} has direct measurements, but binding status is {claim.constraint_status.value.lower().replace('_', ' ')} and direction is {claim.direction_status.value.lower().replace('_', ' ')}."
@@ -1136,6 +1230,7 @@ def build_company_economics(snapshot: CompanySnapshot, valuation_report: dict | 
         architecture, constraints, scaling, sustainability, falsification, translation, valuation_review, market,
         _deduplicate_gaps(gaps), ledger.items, graph, ValidationResult("PENDING", {}, []), data_quality,
         qualitative_needed, qualitative_reason,
+        segments=list(snapshot.segments or []),
     )
     all_diagnoses = [constraints.primary_constraint, *constraints.secondary_constraints, *constraints.candidate_assessments]
     profile.research_claims = [

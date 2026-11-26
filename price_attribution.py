@@ -123,6 +123,45 @@ def attribute(stock, spy, sector, factors: dict[str, Any], fit_weeks: int = FIT_
     }
 
 
+def _recent_daily_move(stock_frame, spy_frame, as_of: str | None) -> dict[str, Any] | None:
+    """Live daily bridge after the last completed Friday week, plus 5-trading-day move."""
+    import numpy as np
+    import pandas as pd
+    if stock_frame is None or spy_frame is None:
+        return None
+    s = stock_frame["Close"].dropna()
+    m = spy_frame["Close"].dropna()
+    if len(s) < 6 or len(m) < 6:
+        return None
+    s.index = s.index.tz_localize(None) if getattr(s.index, "tz", None) else s.index
+    m.index = m.index.tz_localize(None) if getattr(m.index, "tz", None) else m.index
+    latest_date = str(s.index[-1].date())
+    stock_5d = float(s.iloc[-1] / s.iloc[-6] - 1)
+    spy_5d = float(m.iloc[-1] / m.iloc[-6] - 1)
+    daily_rets = np.log(s.iloc[-130:]).diff().dropna()
+    sd_daily = float(daily_rets.std(ddof=1)) if len(daily_rets) >= 20 else None
+    z_5d = float(math.log(1 + stock_5d) / (sd_daily * math.sqrt(5))) if sd_daily and sd_daily > 0 and stock_5d > -1 else None
+    since = None
+    if as_of and latest_date > as_of:
+        upto = s.loc[:as_of]
+        upto_m = m.loc[:as_of]
+        if len(upto) and len(upto_m):
+            days_after = int((s.index > pd.Timestamp(as_of)).sum())
+            since = {
+                "from": as_of,
+                "to": latest_date,
+                "trading_days": days_after,
+                "stock_change": float(s.iloc[-1] / upto.iloc[-1] - 1),
+                "spy_change": float(m.iloc[-1] / upto_m.iloc[-1] - 1),
+            }
+    return {
+        "latest_date": latest_date,
+        "latest_price": float(s.iloc[-1]),
+        "since_window_end": since,
+        "last_5d": {"stock_change": stock_5d, "spy_change": spy_5d, "vs_spy": stock_5d - spy_5d, "z_5d": z_5d},
+    }
+
+
 def build_attribution(ticker: str, archetype: str, sector_etf: str | None,
                       fetch: Callable[[str, str], Any] | None = None) -> dict[str, Any]:
     """Fetch weekly histories and attribute. `fetch(ticker, period)` returns a frame with a Close column."""
@@ -156,11 +195,16 @@ def build_attribution(ticker: str, archetype: str, sector_etf: str | None,
             factors[item["factor"]] = series
     sector = _weekly_close(histories[benchmark]) if benchmark and benchmark in histories else None
     result = attribute(_weekly_close(histories[ticker]), _weekly_close(histories["SPY"]), sector, factors)
+    recent = None
+    try:
+        recent = _recent_daily_move(histories[ticker], histories["SPY"], result.get("as_of"))
+    except Exception:  # noqa: BLE001
+        recent = None
     result.update({
         "ticker": ticker, "archetype": archetype, "sector_etf": sector_etf if sector is not None else None,
         "sector_benchmark": benchmark if sector is not None else None, "method_version": METHOD_VERSION,
         "factor_labels": {fid: FACTORS[fid].label for fid in factors},
-        "factors_dropped": dropped, "missing_histories": missing,
+        "factors_dropped": dropped, "missing_histories": missing, "recent_move": recent,
         "method": "Weekly log returns of completed weeks; sensitivities from the 104 weeks before the window; market and an equal-weight sector benchmark cleaned of macro factors; the VIX is not a cause; company = remainder.",
     })
     return result
