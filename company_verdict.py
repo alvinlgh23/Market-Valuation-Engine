@@ -1031,8 +1031,38 @@ def company_conclusion(card: dict[str, Any]) -> dict[str, Any]:
         sentences.append("What the price assumes depends on which of two cash-flow measures is used, so there is no single valuation reading.")
     elif state == "Fair value withheld":
         sentences.append("There is no valuation reading for this company yet.")
-    return {"sentences": sentences, "business": direction, "agreement": agreement,
+    return {"sentences": sentences, "business": direction, "agreement": agreement, "short": _short_lines(direction, reading, valuation),
             "note": "Built from the readings below by fixed rules. A description of the data, not a forecast or a recommendation."}
+
+
+def _short_lines(direction: str, reading: dict[str, Any], valuation: dict[str, Any]) -> dict[str, str | None]:
+    """P20 item 11: the same conclusion in three short pieces, for the Today page's one line per holding."""
+    business = {"BETTER": "Business getting better", "WORSE": "Business getting weaker", "MIXED": "Business mixed",
+                "UNKNOWN": None}[direction]
+    change, kind = _num(reading.get("price_change")), reading.get("kind")
+    price = None
+    if change is not None:
+        company = _num((reading.get("parts") or {}).get("company"))
+        if kind in ("company", "fundamentals", "watch") and company is not None:
+            price = f"price {_signed(change)} in 3 months, company's own part {_signed(company)}"
+        elif kind == "noise":
+            price = f"price {_signed(change)} in 3 months, mostly with outside forces"
+        else:
+            price = f"price {_signed(change)} in 3 months"
+    detail = valuation.get("detail") or {}
+    implied, band, state = _num(detail.get("implied_5y_revenue_cagr")), detail.get("growth_band") or {}, valuation.get("state") or ""
+    refs = sorted(v for v in (band.get("consensus_2y_faded"), band.get("history_3y_faded")) if v is not None)
+    value = None
+    if implied is not None and state in BAND_STATES and refs:
+        span = f"{_signed(refs[0])} to {_signed(refs[-1])}" if abs(refs[-1] - refs[0]) >= 0.005 else _signed(refs[0])
+        value = f"prices in {_signed(implied)}/yr against {span} shown"
+    elif state == "Price implies growth above what the model can reach" and _num(detail.get("price_to_max_case")) is not None:
+        value = f"price {detail['price_to_max_case']:.1f}x the model's best case"
+    elif detail.get("bank_implied_roe"):
+        bank = detail["bank_implied_roe"]
+        if _num(bank.get("implied_roe")) is not None and _num(bank.get("latest_roe")) is not None:
+            value = f"prices in {bank['implied_roe'] * 100:.1f}% return on equity; earns {bank['latest_roe'] * 100:.1f}%"
+    return {"business": business, "price": price, "value": value}
 
 
 def load_environment() -> tuple[dict[str, Any], dict[str, Any]]:
@@ -1135,7 +1165,7 @@ def _cached_watchlist_enrichment(tickers: list[str]) -> dict[str, dict[str, Any]
         except (OSError, json.JSONDecodeError, AttributeError):
             pass
         name = _clean_company_name(name or sec_names.get(key))
-        val_detail = None
+        val_detail, conclusion = None, None
         op_constraint = None
         try:
             vd = json.loads((VERDICT_CACHE / f"{key}.json").read_text())
@@ -1158,6 +1188,11 @@ def _cached_watchlist_enrichment(tickers: list[str]) -> dict[str, dict[str, Any]
                     "reference_low": _num(min((v for v in (band.get("consensus_2y_faded"), band.get("history_3y_faded")) if _num(v) is not None), default=None)),
                     "reference_high": _num(max((v for v in (band.get("consensus_2y_faded"), band.get("history_3y_faded")) if _num(v) is not None), default=None)),
                 }
+            found = vd.get("conclusion") if isinstance(vd.get("conclusion"), dict) else None
+            if found:
+                conclusion = {"agreement": found.get("agreement"), "business": found.get("business"), "short": found.get("short") or _short_lines(found.get("business") or "UNKNOWN", vd.get("price_reading") or {},
+                                                                                          (vd.get("axes") or {}).get("valuation") or {}),
+                              "card_date": vd.get("generated_on")}
             op = vd.get("operating") or {}
             if isinstance(op, dict) and op.get("constraint"):
                 c = op["constraint"]
@@ -1172,6 +1207,7 @@ def _cached_watchlist_enrichment(tickers: list[str]) -> dict[str, dict[str, Any]
             pass
         info[sym] = {
             "name": name,
+            "conclusion": conclusion,
             "latest_price": (val_detail or {}).get("price") or attr_price,
             "valuation_detail": val_detail,
             "operating_constraint": op_constraint,
@@ -1211,6 +1247,7 @@ def watchlist_summary(store: SignalStore | None = None) -> list[dict[str, Any]]:
             "latest_price": extra.get("latest_price"),
             "valuation_detail": val_det,
             "operating_constraint": extra.get("operating_constraint"),
+            "conclusion": extra.get("conclusion"),
         })
     output.sort(key=lambda item: (-len(item["changed"]), item["last_card"] is None, item["ticker"]))
     return output

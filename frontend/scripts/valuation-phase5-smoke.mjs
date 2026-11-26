@@ -53,7 +53,7 @@ try {
   await shot(page, "12-scenario-comparison.png", ".scenario-table");
   await goto(page, "/valuation/MSFT?view=reverse-dcf&fixture=1", /Converged/i);
   await shot(page, "13-reverse-dcf.png", ".reverse-dcf-workspace");
-  await goto(page, "/valuation/PLTR?view=reverse-dcf&fixture=1", /Market price cannot be reconciled/i);
+  await goto(page, "/valuation/PLTR?view=reverse-dcf&fixture=1", /above what even 50% first-year sales growth can justify/i);
   await shot(page, "14-reverse-dcf-no-solution.png", ".reverse-dcf-workspace");
   await goto(page, "/valuation/MSFT?view=sensitivity&fixture=1", /WACC × Terminal Growth/i);
   await shot(page, "15-sensitivity-matrix.png", ".sensitivity-workspace");
@@ -66,8 +66,9 @@ try {
   await goto(page, "/valuation/GOOG?fixture=1", /Alphabet/i);
   await shot(page, "19-goog-valuation.png");
   await goto(page, "/company/PLTR?fixture=1", "Palantir Technologies");
-  await page.getByRole("button", { name: /^Open Valuation/i }).click();
-  await page.getByRole("heading", { name: "Palantir", exact: true }).waitFor();
+  await page.getByRole("button", { name: /Valuation & sandbox/i }).first().click();   // the company page opens valuation from this button
+  await page.waitForURL(/\/valuation\/PLTR/);
+  await page.getByRole("heading", { name: /Palantir/ }).first().waitFor();
   await shot(page, "20-pltr-valuation-from-company-economics.png");
   await goto(page, "/valuation/JPM?fixture=1", /JPMorgan/i);
   await shot(page, "21-framework-required-state.png", ".valuation-framework-state");
@@ -84,7 +85,7 @@ try {
   const mobileOverflow = await mobile.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
   if (mobileOverflow) throw new Error("Valuation mobile snapshot has horizontal page overflow.");
   await mobile.screenshot({ path: path.join(output, "23-mobile-valuation-snapshot.png"), fullPage: false });
-  await goto(mobile, "/valuation/PLTR?view=reverse-dcf&fixture=1", /Market price cannot be reconciled/i);
+  await goto(mobile, "/valuation/PLTR?view=reverse-dcf&fixture=1", /above what even 50% first-year sales growth can justify/i);
   await mobile.screenshot({ path: path.join(output, "24-mobile-reverse-dcf.png"), fullPage: false });
   await mobile.close();
 } finally {

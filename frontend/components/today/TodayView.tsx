@@ -53,6 +53,39 @@ function compactCellText(label: string) {
   return label.replace(/^Beyond model · /, ">").replace(/^Beyond model$/, "Beyond");
 }
 
+
+// P20 item 11: the product's core answer first - for each holding, does the price agree with the business?
+const AGREEMENT: Record<string, { label: string; order: number; tone: string }> = {
+  OPPOSED: { label: "Price and business disagree", order: 0, tone: "opposed" },
+  ALIGNED: { label: "Price and business agree", order: 1, tone: "aligned" },
+  OUTSIDE: { label: "Moved with outside forces", order: 2, tone: "outside" },
+  UNCLEAR: { label: "No clear reading", order: 3, tone: "unclear" },
+};
+
+function HoldingVerdicts({ summary }: { summary: SummaryRow[] | null }) {
+  if (!summary) return <section className="tdy-card tdy-verdicts" aria-label="Your holdings"><header><h2>Your holdings</h2></header><p className="tdy-muted">Reading your holdings…</p></section>;
+  const rows = summary.filter((row) => row.conclusion?.agreement)
+    .sort((a, b) => (AGREEMENT[a.conclusion!.agreement]?.order ?? 9) - (AGREEMENT[b.conclusion!.agreement]?.order ?? 9) || a.ticker.localeCompare(b.ticker));
+  if (!rows.length) return null;
+  const opposed = rows.filter((row) => row.conclusion!.agreement === "OPPOSED").length;
+  const outside = rows.filter((row) => row.conclusion!.agreement === "OUTSIDE").length;
+  return <section className="tdy-card tdy-verdicts" aria-label="Your holdings: price against business">
+    <header>
+      <h2>Your holdings: price against business</h2>
+      <small>{opposed ? `${opposed} where the price and the filings point opposite ways` : "No holding where price and business disagree"}{outside ? ` · ${outside} moved mostly with outside forces` : ""}</small>
+    </header>
+    <ul>{rows.map((row) => {
+      const c = row.conclusion!, meta = AGREEMENT[c.agreement] ?? AGREEMENT.UNCLEAR, short = c.short ?? null;
+      return <li key={row.ticker}><Link href={`/company/${row.ticker}`}>
+        <b>{row.ticker}</b>
+        <span className={`tdy-agree is-${meta.tone}`}>{meta.label}</span>
+        <span className="tdy-verdict-line">{[short?.business, short?.price, short?.value].filter(Boolean).join(" · ") || "Open the card for the full reading"}</span>
+      </Link></li>;
+    })}</ul>
+    <p className="tdy-muted">Fixed rules on the filings, analysts&apos; estimates and what moved the price. A description, not a forecast or a recommendation.</p>
+  </section>;
+}
+
 export function TodayView({ system, status }: { system: ResearchSystem; status?: ReactNode }) {
   const [drivers, setDrivers] = useState<DriverRow[] | null>(null);
   const [summary, setSummary] = useState<SummaryRow[] | null>(null);
@@ -97,6 +130,8 @@ export function TodayView({ system, status }: { system: ResearchSystem; status?:
       <i aria-hidden="true" />Data is from {environment?.as_of ?? "an unknown date"}{age.days != null ? `, ${age.days} business days ago` : ""}. Alerts describe that date, not today.
     </div> : null}
 
+
+    <HoldingVerdicts summary={summary} />
 
     <div className="tdy-grid tdy-grid-top">
       <Card className="tdy-read">

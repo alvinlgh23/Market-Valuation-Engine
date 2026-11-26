@@ -22,6 +22,8 @@ export type SummaryRow = {
   latest_price?: number | null;
   valuation_detail?: WatchlistValuationDetail | null;
   operating_constraint?: string | null;
+  conclusion?: { agreement: "OPPOSED" | "ALIGNED" | "OUTSIDE" | "UNCLEAR"; business: string; card_date?: string | null;
+                 short?: { business: string | null; price: string | null; value: string | null } | null } | null;
   changed: Array<{ axis: string; from: string; to: string; on: string; origin?: "COMPANY" | "RULES" | "UNKNOWN" }>;
 };
 

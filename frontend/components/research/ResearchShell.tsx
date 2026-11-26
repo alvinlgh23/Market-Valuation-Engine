@@ -61,7 +61,7 @@ function companyContext(ticker: string) {
 
 function valuationContext(ticker: string) {
   const root = `/valuation/${ticker}`;
-  return [[`← ${ticker} company page`, `/company/${ticker}`], ["Overview", root], ["Economics vs Model", `${root}?view=economics-model`], ["DCF", `${root}?view=dcf`], ["Assumptions", `${root}?view=assumptions`], ["Reverse DCF", `${root}?view=reverse-dcf`], ["Sensitivity", `${root}?view=sensitivity`], ["Validation", `${root}?view=validation`], ["Evidence", `${root}?view=evidence`]] as const;
+  return [[`← ${ticker} company page`, `/company/${ticker}`], ["Overview", root], ["What the price assumes", `${root}?view=reverse-dcf`], ["Business vs model", `${root}?view=economics-model`], ["Cash-flow model", `${root}?view=dcf`], ["Assumptions", `${root}?view=assumptions`], ["What-if table", `${root}?view=sensitivity`], ["Checks", `${root}?view=validation`], ["Evidence", `${root}?view=evidence`]] as const;
 }
 
 /** Thin outline icons for the sidebar (1.5px stroke, 20px box). */
