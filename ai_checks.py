@@ -89,3 +89,69 @@ def parse_json_reply(text: str | None) -> Any | None:
         return json.loads(cleaned)
     except ValueError:
         return None
+
+
+def checkable(digest: dict[str, Any]) -> dict[str, Any]:
+    """The digest without its glossary, whose example numbers must not count as data the model was given."""
+    return {key: value for key, value in (digest or {}).items() if key != "glossary"}
+
+
+def display_numbers(*sources: Any) -> list[float]:
+    """Numbers as the card already writes them in its own sentences (strings only, no unit conversion)."""
+    out: set[float] = set()
+
+    def walk(value: Any) -> None:
+        if isinstance(value, str):
+            for match in NUMBER.finditer(value):
+                parsed = _parse(match.group(0))
+                if parsed:
+                    out.add(abs(parsed[0]))
+        elif isinstance(value, dict):
+            for item in value.values():
+                walk(item)
+        elif isinstance(value, (list, tuple)):
+            for item in value:
+                walk(item)
+    for source in sources:
+        walk(source)
+    return sorted(out)
+
+
+def calculated_numbers(text: str, display: list[float], exempt: list[float] | None = None) -> list[str]:
+    """First live run 2026-11-27: "outperformed by 5 percentage points (+9% vs +4%)" - the 5 was the model's own
+    subtraction and only passed because an unrelated 5 was on the card. A number that is the sum, difference or ratio of
+    two other numbers in the same sentence, and that the card does not itself write, is treated as calculated.
+    `exempt` holds card values that add up by design (the price split's parts and total), so quoting them is not arithmetic."""
+    flagged = []
+    for sentence in re.split(r"(?<=[.;!?])\s+", text or ""):
+        tokens = [(m.group(0).strip(), _parse(m.group(0))) for m in NUMBER.finditer(sentence)]
+        values = [(token, parsed) for token, parsed in tokens if parsed]
+        for index, (token, (value, decimals, unit)) in enumerate(values):
+            if not unit and decimals == 0 and (abs(value) <= 12 and len(values) < 3 or 1900 <= value <= 2100):
+                continue
+            tolerance = 0.5 * 10 ** (-decimals) + 1e-9
+            if any(abs(abs(value) - shown) <= tolerance for shown in list(display) + list(exempt or [])):
+                continue
+            others = [abs(parsed[0]) for j, (_, parsed) in enumerate(values) if j != index]
+            derived = any(abs(abs(value) - candidate) <= tolerance
+                          for a in others for b in others if a is not b
+                          for candidate in (abs(a - b), a + b, (a / b if b else math.inf)))
+            if derived:
+                flagged.append(token)
+    return flagged
+
+
+CAPEX = re.compile(r"capital (?:expenditure|spending)|capex", re.I)
+FCF = re.compile(r"free cash flow", re.I)
+COMPARE = re.compile(r"exceed|outstrip|more than|greater than|larger than|surpass|burn|short ?fall|gap|cover", re.I)
+
+
+def compares_capex_with_fcf(text: str) -> bool:
+    """Free cash flow is already after capital spending, so setting the two against each other is a misreading."""
+    return any(CAPEX.search(sentence) and FCF.search(sentence) and COMPARE.search(sentence)
+               for sentence in re.split(r"(?<=[.;!?])\s+", text or ""))
+
+
+def raw_fractions(text: str) -> list[str]:
+    """Numbers written with three or more decimals (e.g. 0.2010495193572855): copied raw from the data, unreadable."""
+    return [m.group(0).strip() for m in NUMBER.finditer(text or "") if (_parse(m.group(0)) or (0, 0, ""))[1] >= 3]

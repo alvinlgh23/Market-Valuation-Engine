@@ -36,7 +36,9 @@ SYSTEM = (
     "about the outlook, each with a word-for-word quote from the filing text in 'quote'; and optionally 'scenario': one "
     "alternative set of assumptions (five-year 'growth' for year one, long-run cash-flow 'margin', 'discount_rate', all "
     "as decimals) with a one-sentence 'reason'. Use only numbers given to you, copied exactly as they appear: do not "
-    "calculate new numbers (no differences, ratios, sums or conversions) and do not round them differently. If a point needs "
+    "calculate new numbers (no differences, ratios, sums or conversions) and do not round them differently. Read the "
+    "'glossary' in the card for what each number means (free cash flow is already after capital spending). Write "
+    "fractions as percentages with at most one decimal (0.201 -> 20.1%), never as raw fractions. If a point needs "
     "a number you were not given, make it without the number. Reply with JSON only: "
     '{"business": "", "price": "", "macro": "", "management": [{"point": "", "quote": ""}], '
     '"scenario": {"growth": 0.0, "margin": 0.0, "discount_rate": 0.0, "reason": ""} or null}'
@@ -48,18 +50,29 @@ def check_writeup(reply: Any, *, digest: dict[str, Any], notes: list[dict[str, A
     """Apply every check. Returns {"status": "OK"|"REJECTED", ...} with what was kept and what was dropped."""
     if not isinstance(reply, dict) or not all(isinstance(reply.get(part), str) and reply[part].strip() for part in TEXT_PARTS):
         return {"status": "REJECTED", "reason": "reply was not the expected JSON"}
-    allowed = ai_checks.allowed_numbers(digest, notes)
+    data = ai_checks.checkable(digest)
+    allowed = ai_checks.allowed_numbers(data, notes)
+    display = ai_checks.display_numbers(data, notes)
+    exempt = ai_checks.allowed_numbers(data.get("price_drivers"))
     for part in TEXT_PARTS:
+        raw = ai_checks.raw_fractions(reply[part])
+        if raw:
+            return {"status": "REJECTED", "reason": f"'{part}' copied raw fractions instead of percentages: {', '.join(raw[:3])}"}
         bad = ai_checks.unchecked_numbers(reply[part], allowed)
         if bad:
             return {"status": "REJECTED", "reason": f"'{part}' used numbers not in the card: {', '.join(bad)}"}
+        calculated = ai_checks.calculated_numbers(reply[part], display, exempt)
+        if calculated:
+            return {"status": "REJECTED", "reason": f"'{part}' used numbers the model calculated itself: {', '.join(calculated)}"}
+        if ai_checks.compares_capex_with_fcf(reply[part]):
+            return {"status": "REJECTED", "reason": f"'{part}' compares capital spending with free cash flow, which is already after capital spending"}
     management, dropped = [], []
     for item in (reply.get("management") or [])[:3]:
         if not isinstance(item, dict) or not isinstance(item.get("point"), str) or not isinstance(item.get("quote"), str):
             dropped.append("management point missing text or quote")
         elif not ai_checks.quote_in_text(item["quote"], source_text):
             dropped.append("management quote not found in the filing")
-        elif ai_checks.unchecked_numbers(item["point"], ai_checks.allowed_numbers(digest, item["quote"])):
+        elif ai_checks.unchecked_numbers(item["point"], ai_checks.allowed_numbers(data, item["quote"])):
             dropped.append("management point used numbers not in the card or the quote")
         else:
             management.append({"point": item["point"].strip(), "quote": item["quote"].strip()})
@@ -75,7 +88,7 @@ def check_writeup(reply: Any, *, digest: dict[str, Any], notes: list[dict[str, A
             scenario = value_scenario(what_if_inputs, values, str(raw.get("reason") or "").strip())
             if scenario is None:
                 dropped.append("scenario could not be valued")
-            elif ai_checks.unchecked_numbers(scenario["reason"], ai_checks.allowed_numbers(digest, values)):
+            elif ai_checks.unchecked_numbers(scenario["reason"], ai_checks.allowed_numbers(data, values)):
                 dropped.append("scenario reason used numbers not in the card")
                 scenario = None
     return {"status": "OK", "business": reply["business"].strip(), "price": reply["price"].strip(), "macro": reply["macro"].strip(),
@@ -111,12 +124,28 @@ def write(card: dict[str, Any], *, gateway: Gateway | None = None, review: dict[
                          response_format={"type": "json_object"})
     if reply["status"] != "OK":
         return {"status": "UNAVAILABLE", "ticker": ticker, "reason": reply.get("reason"), "date": today.isoformat()}
+    messages = [{"role": "system", "content": SYSTEM}, {"role": "user", "content": json.dumps(payload, default=str)}]
     checked = check_writeup(ai_checks.parse_json_reply(reply["text"]), digest=digest, notes=notes, source_text=source.get("text", ""),
                             what_if_inputs=card.get("what_if_inputs"))
+    attempts = 1
+    # First live runs 2026-11-27: one retry with the reason fixes most rejections. It uses one more call from the daily
+    # limit; when the limit is spent the gateway says so and the card keeps its rule-built sentences.
+    if checked["status"] != "OK":
+        retry = gateway.chat("explain", messages + [{"role": "assistant", "content": reply.get("text") or ""},
+                                                    {"role": "user", "content": f"Your reply was rejected: {checked['reason']}. Rewrite it following "
+                                                                                "the rules exactly. Reply with JSON only."}],
+                             response_format={"type": "json_object"})
+        if retry["status"] == "OK":
+            attempts = 2
+            first_reason = checked["reason"]
+            checked = check_writeup(ai_checks.parse_json_reply(retry["text"]), digest=digest, notes=notes, source_text=source.get("text", ""),
+                                    what_if_inputs=card.get("what_if_inputs"))
+            checked["first_attempt_rejected"] = first_reason
+            reply = retry
     # A rejected reply is kept for diagnosis only (never shown on the page).
     if checked["status"] != "OK":
         checked = {**checked, "rejected_reply": (reply.get("text") or "")[:6000]}
-    result = {**checked, "ticker": ticker, "date": today.isoformat(), "model": reply["model"], "provider": reply["provider"],
+    result = {**checked, "attempts": attempts, "ticker": ticker, "date": today.isoformat(), "model": reply["model"], "provider": reply["provider"],
               "card_date": card.get("generated_on"), "source": {k: source.get(k) for k in ("form", "filing_date", "period", "url")}}
     directory.mkdir(parents=True, exist_ok=True)
     target = directory / f"{ticker}.json"

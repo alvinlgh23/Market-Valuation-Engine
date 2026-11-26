@@ -63,7 +63,27 @@ def card_digest(card: dict[str, Any]) -> dict[str, Any]:
             "quarter": ((axes.get("fundamentals") or {}).get("detail") or {}).get("quarterly"),
             "valuation": {k: v for k, v in ((axes.get("valuation") or {}).get("detail") or {}).items()
                           if k in ("price", "implied_5y_revenue_cagr", "growth_band", "fair_value", "price_to_max_case", "observed_growth")},
-            "price_drivers": {k: (card.get("price_reading") or {}).get(k) for k in ("price_change", "parts", "kind", "top_macro")}}
+            "price_drivers": {k: (card.get("price_reading") or {}).get(k) for k in ("price_change", "parts", "kind", "top_macro")},
+            "glossary": GLOSSARY}
+
+
+# First live run 2026-11-27: the review compared capital spending with free cash flow and called it "cash burn", but free
+# cash flow is already after capital spending. Telling the model what each number is prevents that kind of misreading.
+GLOSSARY = {
+    "quarter.fcf_ttm": "free cash flow over the last four quarters, ALREADY AFTER capital spending (cash from operations minus capital spending)",
+    "quarter.fcf_quarter": "free cash flow in the latest quarter, already after capital spending",
+    "quarter.net_debt": "total debt minus cash; negative means more cash than debt",
+    "quarter.ebitda_ttm": "operating profit before depreciation and amortisation, last four quarters",
+    "quarter.revenue_yoy": "sales growth against the same quarter a year earlier, as a fraction (0.26 = 26%)",
+    "quarter.margin_change": "operating margin against the same quarter a year earlier, as a fraction (-0.2 = 20 points lower)",
+    "quarter.eps_surprise": "earnings per share against the analysts' forecast, as a fraction",
+    "valuation.implied_5y_revenue_cagr": "yearly sales growth for five years that today's price assumes",
+    "valuation.growth_band": "analysts' two-year growth and past three-year growth; the *_faded values fade to 2.5% by year five and are what the card compares with",
+    "valuation.fair_value": "model values under low, middle and high assumptions; not a price target",
+    "price_drivers.parts": "the three-month price change split into macro, market, sector and company parts, as fractions that add up to price_change",
+    "readings.macro": "'No confirmed exposure has a current reading' means our tests have not confirmed a link between this business and the macro factors - not that the company is unaffected by the economy",
+    "number format": "fractions in the card are shares of one (0.201 = 20.1%); write them as percentages with at most one decimal, never as raw fractions",
+}
 
 
 def check_notes(reply: Any, source: str, digest: dict[str, Any]) -> tuple[list[dict[str, Any]], list[dict[str, str]]]:
@@ -79,9 +99,18 @@ def check_notes(reply: Any, source: str, digest: dict[str, Any]) -> tuple[list[d
         if not ai_checks.quote_in_text(item["quote"], source):
             dropped.append({"reason": "quote not found in the filing", "note": item["note"][:120]})
             continue
-        bad = ai_checks.unchecked_numbers(item["note"], ai_checks.allowed_numbers(digest, item["quote"]))
+        data = ai_checks.checkable(digest)
+        bad = ai_checks.unchecked_numbers(item["note"], ai_checks.allowed_numbers(data, item["quote"]))
         if bad:
             dropped.append({"reason": f"numbers not in the card or the quote: {', '.join(bad)}", "note": item["note"][:120]})
+            continue
+        calculated = ai_checks.calculated_numbers(item["note"], ai_checks.display_numbers(data, item["quote"]),
+                                                  ai_checks.allowed_numbers(data.get("price_drivers")))
+        if calculated:
+            dropped.append({"reason": f"numbers the model calculated itself: {', '.join(calculated)}", "note": item["note"][:120]})
+            continue
+        if ai_checks.compares_capex_with_fcf(item["note"]):
+            dropped.append({"reason": "compares capital spending with free cash flow, which is already after capital spending", "note": item["note"][:120]})
             continue
         kept.append({"axis": item.get("axis") if item.get("axis") in AXES else None, "note": item["note"].strip(), "quote": item["quote"].strip()})
     return kept, dropped

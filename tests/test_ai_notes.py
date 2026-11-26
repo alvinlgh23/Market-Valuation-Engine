@@ -127,3 +127,55 @@ def test_daily_refresh_runs_the_ai_step_per_card_only_when_switched_on(tmp_path)
 def test_json_replies_in_code_fences_are_read_and_anything_else_is_rejected():
     assert ai_checks.parse_json_reply('```json\n{"notes": []}\n```') == {"notes": []}
     assert ai_checks.parse_json_reply("Sure! Here are the notes.") is None
+
+
+def test_calculated_numbers_and_capex_versus_free_cash_flow_are_caught(tmp_path):
+    """First live run 2026-11-27: a subtraction passed by coincidence, and a note set capital spending against free cash flow."""
+    card = copy.deepcopy(CARD)
+    card["conclusion"]["sentences"].append("Since 20 Nov the price has moved +9% against the S&P 500's +4%.")
+    card["axes"]["fundamentals"]["detail"]["quarterly"]["fcf_ttm"] = 28.6e9
+    reply = good_writeup(price="The price has outperformed the S&P 500 by 5 percentage points (+9% vs +4%).")
+    result = cw.write(card, gateway=FakeGateway(reply), source=SOURCE, today=TODAY, directory=tmp_path / "w")
+    assert result["status"] == "REJECTED" and "calculated itself: 5" in result["reason"]
+    split = good_writeup(price="The price rose 2.1% in three months: the company's own part was +21.2% and macro was -18.5%.")
+    assert cw.write(card, gateway=FakeGateway(split), source=SOURCE, today=TODAY, directory=tmp_path / "w2")["status"] == "OK"
+    notes = {"notes": [{"axis": "fundamentals", "note": "Capital expenditures of $135 billion far exceed free cash flow of $28.6 billion, implying cash burn.",
+                        "quote": "We expect capital expenditures to remain elevated through next year as we expand data center capacity."}]}
+    reviewed = fr.review(card, gateway=FakeGateway(notes), source=SOURCE, today=TODAY, directory=tmp_path / "r")
+    assert reviewed["notes"] == [] and reviewed["dropped"]
+    capex_note = {"notes": [{"axis": "fundamentals", "note": "Heavy capital spending is not covered by free cash flow, so cash is burning.",
+                             "quote": "We expect capital expenditures to remain elevated through next year as we expand data center capacity."}]}
+    reviewed = fr.review(card, gateway=FakeGateway(capex_note), source=SOURCE, today=TODAY, directory=tmp_path / "r2")
+    assert reviewed["notes"] == [] and reviewed["dropped"][0]["reason"].startswith("compares capital spending with free cash flow")
+    assert ai_checks.compares_capex_with_fcf("Capex far exceeds free cash flow.") and not ai_checks.compares_capex_with_fcf("Free cash flow rose 10%.")
+
+
+def test_glossary_examples_do_not_count_as_card_numbers():
+    digest = fr.card_digest(copy.deepcopy(CARD))
+    assert "glossary" in digest
+    assert ai_checks.unchecked_numbers("Sales grew 0.26 = 99%", ai_checks.allowed_numbers(ai_checks.checkable(digest))) == ["99%"]
+
+
+class SequenceGateway(FakeGateway):
+    def __init__(self, replies):
+        super().__init__(None)
+        self.replies = list(replies)
+
+    def chat(self, role, messages, **kwargs):
+        self.calls.append((role, len(messages)))
+        reply = self.replies.pop(0)
+        if reply is None:
+            return {"status": "UNAVAILABLE", "reason": "daily limit reached"}
+        return {"status": "OK", "text": json.dumps(reply), "model": "nemotron-test", "provider": "openrouter"}
+
+
+def test_a_rejected_writeup_gets_one_retry_with_the_reason(tmp_path):
+    bad = good_writeup(business="Operating margin was 0.2010495193572855 against 0.4007454822216151 a year earlier.")
+    gw = SequenceGateway([bad, good_writeup()])
+    result = cw.write(copy.deepcopy(CARD), gateway=gw, source=SOURCE, today=TODAY, directory=tmp_path)
+    assert result["status"] == "OK" and result["attempts"] == 2 and "raw fractions" in result["first_attempt_rejected"]
+    assert gw.calls[1][1] == 4                                   # the retry carries the first reply and the reason
+
+    gw = SequenceGateway([bad, None])                           # no calls left today: the card keeps its rule-built sentences
+    result = cw.write(copy.deepcopy(CARD), gateway=gw, source=SOURCE, today=TODAY, directory=tmp_path / "x")
+    assert result["status"] == "REJECTED" and result["attempts"] == 1
