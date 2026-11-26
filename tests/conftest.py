@@ -9,3 +9,5 @@ os.environ["CHAINSTOX_HISTORY_DIR"] = _HISTORY_DIR
 os.environ["CHAINSTOX_DERIVE_MARKET_INPUTS"] = "0"
 # Tests must never fetch live SEC HTML/XBRL filing documents unless a fetcher is injected (Stage 2).
 os.environ["CHAINSTOX_FETCH_SEC_FILINGS"] = "0"
+# Tests must never read a developer's real `.env` API key unless explicitly passed.
+os.environ["CHAINSTOX_IGNORE_DOTENV"] = "1"

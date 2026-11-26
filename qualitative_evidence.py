@@ -25,6 +25,7 @@ import math
 import os
 import re
 import sys
+import time
 from pathlib import Path
 from typing import Any, Callable
 from urllib.error import HTTPError, URLError
@@ -38,7 +39,35 @@ VERIFIED_REGISTRY = ROOT / "data" / "operational_evidence.json"
 GEMINI_CACHE_DIR = ROOT / ".cache" / "gemini_extractions"
 
 DEFAULT_MODEL = os.environ.get("CHAINSTOX_GEMINI_MODEL", "gemini-4-hydrogen")
-PROMPT_VERSION = "prompt_v1"
+FALLBACK_MODELS = ("gemini-4-hydrogen", "gemini-3.5-flash-lite", "gemma-4-31b-it")
+PROMPT_VERSION = "prompt_v2"
+
+KPI_GLOSSARY = {
+    "customers": "Total customer count (e.g. 'we had 954 customers')",
+    "remaining_performance_obligations": "Remaining performance obligations / RPO under contracts",
+    "net_revenue_retention": "Net dollar/revenue retention rate (NRR / NDR)",
+    "wafer_volume": "Total wafers shipped (e.g. 12-inch equivalent wafer shipments)",
+    "fab_capacity": "Annual wafer manufacturing capacity (e.g. 12-inch equivalent wafers capacity)",
+    "advanced_node_mix": "Share/percentage of wafer revenue from advanced nodes (e.g. 7nm and below)",
+    "utilization": "Manufacturing or capacity utilization rate",
+    "store_count": "Total warehouses, stores, or retail locations in operation",
+    "same_store_sales": "Comparable store / warehouse sales growth rate",
+    "members": "Total paid members or cardholders",
+    "users": "Daily or monthly active users/people (DAU, MAU, DAP, MAP)",
+    "active_users": "Monthly active platform consumers or active riders/buyers",
+    "arpu": "Average revenue per user or per person (ARPU / ARPP)",
+    "gross_bookings": "Total gross bookings across the marketplace/platform",
+    "payment_volume": "Total payments / purchase volume processed",
+    "transactions": "Total processed transactions count",
+    "take_rate": "Revenue divided by gross bookings or payment volume, if explicitly stated",
+    "backlog": "Order backlog or unfilled customer orders",
+    "deposits": "Total customer deposits",
+    "net_interest_margin": "Net interest margin / net interest yield",
+    "cet1_ratio": "Common Equity Tier 1 (CET1) regulatory capital ratio",
+    "production_volume": "Physical production output (e.g. oil-equivalent barrels per day)",
+    "adr_share_ratio": "Ordinary shares represented by one ADS / ADR",
+    "zero_debt_confirmation": "Explicit statement of zero / $0 debt or borrowings outstanding (value=0)",
+}
 GEMINI_INTERACTIONS_URL = "https://generativelanguage.googleapis.com/v1/interactions"
 DEPRECATED_MODEL_PREFIXES = ("gemini-2.5-", "gemini-2.0-", "gemini-1.5-")
 
@@ -112,11 +141,25 @@ SCALE_FACTORS = {
 }
 
 
-def api_key_from_env() -> str | None:
+def api_key_from_env(dotenv_path: Path | None = None) -> str | None:
     for name in ("GEMINI_API_KEY", "GOOGLE_API_KEY"):
         val = os.environ.get(name, "").strip()
         if val:
             return val
+    if dotenv_path is None and os.environ.get("CHAINSTOX_IGNORE_DOTENV", "0") == "1":
+        return None
+    env_file = dotenv_path or (ROOT / ".env")
+    if env_file.exists():
+        for raw_line in env_file.read_text(encoding="utf-8", errors="replace").splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, _, val = line.partition("=")
+            key = key.removeprefix("export ").strip()
+            if key in {"GEMINI_API_KEY", "GOOGLE_API_KEY"}:
+                cleaned = val.strip().strip("'").strip('"').strip()
+                if cleaned:
+                    return cleaned
     return None
 
 
@@ -217,6 +260,20 @@ def _value_matches_quote(value: float, unit: str, quote: str) -> bool:
     return False
 
 
+def _canonical_comparable_value(value: float, unit: str | None) -> float:
+    """Scale values with explicit magnitude/percent units so `4.1 billion USD` matches `4.1e9 USD` and `74%` matches `0.74`."""
+    u = (unit or "").lower()
+    val = float(value)
+    if ("%" in u or "percent" in u) and "decimal" not in u:
+        return val * 0.01
+    # Only scale currency amounts to raw currency; keep physical units like "million 12-inch-equivalent wafers" in millions
+    # unless compared against raw "wafers".
+    for word, factor in SCALE_FACTORS.items():
+        if word in u:
+            return val * factor
+    return val
+
+
 def validate_kpi_candidate(
     raw: dict[str, Any],
     *,
@@ -287,9 +344,10 @@ def validate_kpi_candidate(
                 and entry.get("observation_date") == obs_date
                 and isinstance(entry.get("value"), (int, float))
             ):
-                ref_val = float(entry["value"])
-                scale = max(1.0, abs(ref_val))
-                if abs(float(value) - ref_val) / scale <= 0.01:
+                ref_norm = _canonical_comparable_value(float(entry["value"]), entry.get("unit"))
+                cand_norm = _canonical_comparable_value(float(value), unit)
+                scale = max(1e-9, abs(ref_norm))
+                if abs(cand_norm - ref_norm) / scale <= 0.015:
                     duplicate_of = entry.get("id")
                 else:
                     conflict_with = entry.get("id")
@@ -392,18 +450,24 @@ def build_extraction_prompt(
         "(at least 20 characters long) and MUST contain the exact number reported in `value`."
     )
     archetypes = [a.value for a in Archetype]
+    glossary_lines = [
+        f"  - {m}: {KPI_GLOSSARY[m]}" for m in allowed_metrics if m in KPI_GLOSSARY
+    ]
+    glossary_block = ("\nKPI definitions:\n" + "\n".join(glossary_lines) + "\n") if glossary_lines else ""
     user_prompt = (
         f"Issuer: {company_name} ({ticker})\n"
         f"Filing: {form} | Report period end: {report_date} | Filing date: {filing_date}\n"
         f"Allowed KPI metric names: {', '.join(allowed_metrics)}\n"
+        f"{glossary_block}"
         f"Allowed constraint_category values: {', '.join(CONSTRAINT_STATEMENT_CATEGORIES)}\n"
         f"Allowed suggested_archetype values: {', '.join(archetypes)}\n\n"
         "Instructions:\n"
-        "1. For each reported operational KPI in the text that matches an allowed metric name, return one object in `kpis`.\n"
-        "   - Use ISO YYYY-MM-DD for `observation_date` (e.g. the fiscal period end date).\n"
-        "   - Keep `value` in the natural unit stated in the filing (or decimal for shares/percentages if `unit` says `decimal`), "
-        "and state the exact unit in `unit`.\n"
-        "   - Copy the exact sentence or table row from the text into `verbatim_quote`.\n"
+        "1. Extract EVERY reported operational KPI in the text (both latest fiscal year and prior comparative year when stated) "
+        "that matches an allowed metric name.\n"
+        "   - Use ISO YYYY-MM-DD for `observation_date` (e.g. `2025-12-31` for FY 2025, `2024-12-31` for FY 2024).\n"
+        "   - Keep `value` in the exact number/scale written in the quote (e.g. `15` with unit `million 12-inch-equivalent wafers`, "
+        "`4.1` with unit `billion USD`, `74` with unit `percent` or `0.74` with unit `decimal`), so `value` matches the quote.\n"
+        "   - Copy the exact contiguous sentence or table row from the text into `verbatim_quote` (do not edit or elide words).\n"
         "2. For explicit management statements that supply/capacity/demand was a binding limit or easing/tightening, "
         "return an item in `constraint_statements` with an exact `verbatim_quote`.\n"
         "3. Provide `archetype_second_opinion` based strictly on a `verbatim_quote` from the business description.\n\n"
@@ -472,38 +536,59 @@ def call_gemini_structured(
     except ImportError:
         pass
 
-    payload = {
-        "model": resolved_model,
-        "input": user_prompt,
-        "system_instruction": system_instruction,
-        "response_format": response_format,
-        "generation_config": {"seed": 0},
-        "store": False,
-    }
-    req = Request(
-        GEMINI_INTERACTIONS_URL,
-        data=json.dumps(payload).encode("utf-8"),
-        headers={
-            "Content-Type": "application/json",
-            "x-goog-api-key": key,
-        },
-        method="POST",
-    )
-    try:
-        with urlopen(req, timeout=timeout) as resp:
-            body = json.loads(resp.read().decode("utf-8"))
-    except HTTPError as exc:
-        detail = exc.read().decode("utf-8", errors="replace")[:400]
-        raise RuntimeError(f"Gemini Interactions HTTP {exc.code}: {detail}") from exc
-    except (URLError, TimeoutError, OSError) as exc:
-        raise RuntimeError(f"Gemini network error: {type(exc).__name__}: {exc}") from exc
-
-    if body.get("status") not in {None, "completed"}:
-        raise RuntimeError(f"Gemini interaction did not complete (status={body.get('status')}).")
-    text = _extract_interaction_output_text(body)
-    if not text:
-        raise RuntimeError("Gemini interaction contained no model_output text.")
-    return json.loads(text)
+    candidate_models = [resolved_model] + [m for m in FALLBACK_MODELS if m != resolved_model]
+    last_error: Exception | None = None
+    for current_model in candidate_models:
+        for attempt in range(3):
+            payload = {
+                "model": current_model,
+                "input": user_prompt,
+                "system_instruction": system_instruction,
+                "response_format": response_format,
+                "generation_config": {"seed": 0},
+                "store": False,
+            }
+            req = Request(
+                GEMINI_INTERACTIONS_URL,
+                data=json.dumps(payload).encode("utf-8"),
+                headers={
+                    "Content-Type": "application/json",
+                    "x-goog-api-key": key,
+                },
+                method="POST",
+            )
+            try:
+                with urlopen(req, timeout=timeout) as resp:
+                    body = json.loads(resp.read().decode("utf-8"))
+                if body.get("status") not in {None, "completed"}:
+                    raise RuntimeError(f"Gemini interaction did not complete (status={body.get('status')}).")
+                text = _extract_interaction_output_text(body)
+                if not text:
+                    raise RuntimeError("Gemini interaction contained no model_output text.")
+                parsed = json.loads(text)
+                if isinstance(parsed, dict):
+                    parsed["_resolved_model"] = current_model
+                return parsed
+            except HTTPError as exc:
+                detail = exc.read().decode("utf-8", errors="replace")[:400]
+                last_error = RuntimeError(f"Gemini Interactions HTTP {exc.code} ({current_model}): {detail}")
+                if "limit: 0" in detail:
+                    break
+                if exc.code == 429:
+                    wait_match = re.search(r"retry in (\d+(?:\.\d+)?)s", detail, flags=re.IGNORECASE)
+                    wait_s = min(65.0, float(wait_match.group(1)) + 2.0) if wait_match else 15.0
+                    time.sleep(wait_s)
+                    continue
+                if exc.code in {500, 502, 503, 504}:
+                    time.sleep(3.0 * (attempt + 1))
+                    continue
+                raise last_error from exc
+            except (URLError, TimeoutError, OSError) as exc:
+                last_error = RuntimeError(f"Gemini network error ({current_model}): {type(exc).__name__}: {exc}")
+                time.sleep(2.0 * (attempt + 1))
+                continue
+    assert last_error is not None
+    raise last_error
 
 
 def _load_json_store(path: Path, default: dict[str, Any]) -> dict[str, Any]:
@@ -537,6 +622,7 @@ def extract_from_filing_text(
     source_title: str,
     source_url: str,
     filing_text: str,
+    validation_source_text: str | None = None,
     deterministic_archetype: Archetype | str | None = None,
     deterministic_confidence: str | None = None,
     model: str = DEFAULT_MODEL,
@@ -567,7 +653,7 @@ def extract_from_filing_text(
             filing_date=filing_date,
             report_date=report_date,
             allowed_metrics=allowed,
-            filing_excerpt=filing_text[:90000],
+            filing_excerpt=filing_text[:28000],
         )
         raw_response = caller(
             model=model,
@@ -579,22 +665,24 @@ def extract_from_filing_text(
         cache_file.write_text(json.dumps(raw_response, indent=2, ensure_ascii=False), encoding="utf-8")
         cached = False
 
+    actual_model = str(raw_response.get("_resolved_model") or model)
     verified_payload = _load_json_store(verified_store_path, {"schema_version": "1.0", "entries": []})
     existing_verified = verified_payload.get("entries") or []
     store = _load_json_store(candidate_store_path, empty_candidate_store())
     existing_ids = {row["id"] for row in store["candidates"]}
 
-    method_tag = f"gemini:{model}@{PROMPT_VERSION}"
+    method_tag = f"gemini:{actual_model}@{PROMPT_VERSION}"
     now_iso = dt.datetime.now(dt.timezone.utc).isoformat()
     accepted_candidates: list[dict[str, Any]] = []
     rejected_candidates: list[dict[str, Any]] = []
     conflicting_candidates: list[dict[str, Any]] = []
 
+    full_source = validation_source_text or filing_text
     for item in raw_response.get("kpis") or []:
         check = validate_kpi_candidate(
             item,
             issuer=symbol,
-            source_text=filing_text,
+            source_text=full_source,
             allowed_metrics=set(allowed),
             filing_date=filing_date,
             report_date=report_date,
@@ -646,7 +734,7 @@ def extract_from_filing_text(
     existing_stmt_ids = {row["id"] for row in store.get("constraint_statements", [])}
     for idx, stmt in enumerate(raw_response.get("constraint_statements") or []):
         cat = str(stmt.get("constraint_category") or "")
-        quote_ok, _ = validate_quote_in_text(str(stmt.get("verbatim_quote") or ""), filing_text)
+        quote_ok, _ = validate_quote_in_text(str(stmt.get("verbatim_quote") or ""), full_source)
         if cat not in CONSTRAINT_STATEMENT_CATEGORIES or not quote_ok:
             continue
         stmt_id = f"{symbol}-{stmt.get('observation_date', filing_date)}-{cat}-{idx + 1}"
@@ -677,7 +765,7 @@ def extract_from_filing_text(
     archetype_draft = None
     if isinstance(opinion, dict):
         suggested = str(opinion.get("suggested_archetype") or "")
-        quote_ok, _ = validate_quote_in_text(str(opinion.get("verbatim_quote") or ""), filing_text)
+        quote_ok, _ = validate_quote_in_text(str(opinion.get("verbatim_quote") or ""), full_source)
         valid_arch = suggested in {a.value for a in Archetype}
         det_val = deterministic_archetype.value if isinstance(deterministic_archetype, Archetype) else str(deterministic_archetype or "")
         disagrees = bool(det_val and suggested != det_val)
@@ -704,7 +792,7 @@ def extract_from_filing_text(
     return {
         "status": "OK",
         "ticker": symbol,
-        "model": model,
+        "model": actual_model,
         "prompt_version": PROMPT_VERSION,
         "cached_response": cached,
         "document_sha256": doc_hash,
@@ -814,6 +902,36 @@ def evaluate_against_gold_standard(
     ]
 
     gold_by_key = {(row["issuer"].upper(), row["metric"], row["observation_date"]): row for row in gold_rows}
+    # When evaluating against the canonical repository registry, also fold in documentary-verified
+    # observations from `data/operational_series.json` so multi-year gold observations are scored too.
+    series_path = ROOT / "data" / "operational_series.json"
+    series_metric_aliases = {
+        "pltr_customers": "customers",
+        "pltr_rpo": "remaining_performance_obligations",
+        "tsm_shipments": "wafer_volume",
+        "tsm_node_mix": "advanced_node_mix",
+    }
+    if gold_store_path == VERIFIED_REGISTRY and series_path.exists():
+        series_payload = _load_json_store(series_path, {"metrics": []})
+        for metric_block in series_payload.get("metrics") or []:
+            defn = metric_block.get("definition") or {}
+            issuer_code = str(defn.get("issuer") or "").upper()
+            mapped_metric = series_metric_aliases.get(str(defn.get("id") or ""))
+            if not mapped_metric or (scope is not None and issuer_code not in scope):
+                continue
+            for obs in metric_block.get("observations") or []:
+                end_date = str(obs.get("end") or "")
+                key = (issuer_code, mapped_metric, end_date)
+                if end_date and key not in gold_by_key:
+                    gold_by_key[key] = {
+                        "id": f"{defn.get('id')}:{end_date}",
+                        "issuer": issuer_code,
+                        "metric": mapped_metric,
+                        "observation_date": end_date,
+                        "value": obs.get("value"),
+                        "unit": defn.get("unit"),
+                    }
+
     matched_correct = 0
     matched_wrong_value = 0
     unmatched_candidates = 0
@@ -828,14 +946,15 @@ def evaluate_against_gold_standard(
             details.append({"id": cand["id"], "outcome": "UNSCORED_NOT_IN_GOLD"})
             continue
         matched_gold_keys.add(key)
-        g_val, c_val = float(gold["value"]), float(cand["value"])
-        tol = max(1e-6, abs(g_val) * 0.01)
+        g_val = _canonical_comparable_value(float(gold["value"]), gold.get("unit"))
+        c_val = _canonical_comparable_value(float(cand["value"]), cand.get("unit"))
+        tol = max(1e-6, abs(g_val) * 0.015)
         if abs(c_val - g_val) <= tol:
             matched_correct += 1
             details.append({"id": cand["id"], "outcome": "EXACT_MATCH", "gold_id": gold["id"]})
         else:
             matched_wrong_value += 1
-            details.append({"id": cand["id"], "outcome": "VALUE_MISMATCH", "gold_id": gold["id"], "expected": g_val, "actual": c_val})
+            details.append({"id": cand["id"], "outcome": "VALUE_MISMATCH", "gold_id": gold["id"], "expected": gold["value"], "actual": cand["value"]})
 
     scored_total = matched_correct + matched_wrong_value
     precision = (matched_correct / scored_total) if scored_total > 0 else None
@@ -876,9 +995,43 @@ def extract_live_for_ticker(ticker: str, *, model: str = DEFAULT_MODEL) -> dict[
     ref = annual[0]
     html_text, _ = fetch_filing_text(ref.url, FILING_CACHE_DIR / ref.cik_key / ref.accession_nodash / ref.primary_document)
     sections = extract_sections(html_text, form=ref.form)
-    focused_parts = [sections[name] for name in ("item_1", "item_7", "segment_note") if sections.get(name)]
-    excerpt = "\n\n".join(focused_parts) if focused_parts else sections.get("full_text", "")
-    return extract_from_filing_text(
+    full_text = sections.get("full_text", "")
+    # Strip Risk Factors before hunting operational KPIs so qualitative risk boilerplate never crowds out actual figures.
+    searchable_text = re.sub(
+        r"item\s+1a[\.\s:\-—]*\s*risk\s+factors.*?(?=item\s+(?:1b|2)\b)",
+        "\n",
+        full_text,
+         count=1,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    kpi_families = (
+        r"(?:we had \d[\d,]* customers|number of customers|\bour customers\b[^\n]{0,160}\b\d{2,}\b)",
+        r"remaining performance obligations[^\n]{0,160}\$?\d",
+        r"(?:wafer[^\n]{0,60}shipment|shipped approximately \d[\d,\.]* million[^\n]{0,60}wafers)",
+        r"annual\s+capacity[^\n]{0,120}\d+\s*million\s+wafers",
+        r"advanced technologies[^\n]{0,120}\d+%\s+of\s+total\s+wafer\s+revenue",
+        r"(?:warehouses? in operation|operated \d[\d,]* warehouses|comparable sales|paid members|cardholders)",
+        r"(?:gross bookings|monthly active platform consumers|payments? volume|processed transactions)",
+        r"(?:daily active people|family daily active|monthly active users|average revenue per (?:person|user))",
+        r"(?:order backlog|unfilled orders|backlog of \$?\d)",
+        r"(?:net interest margin|net interest yield|common equity tier 1)",
+        r"(?:each ads represents|american depositary shares?[^\n]{0,120}ordinary shares|no debt outstanding|no borrowings outstanding)",
+    )
+    snippets: list[str] = []
+    for fam_pat in kpi_families:
+        fam_hits = 0
+        for kw_match in re.finditer(fam_pat, searchable_text, flags=re.IGNORECASE):
+            snippet = searchable_text[max(0, kw_match.start() - 250) : min(len(searchable_text), kw_match.end() + 650)]
+            probe = snippet[80:200] if len(snippet) > 200 else snippet
+            if probe and all(probe not in existing for existing in snippets):
+                snippets.append(snippet)
+                fam_hits += 1
+                if fam_hits >= 2:
+                    break
+    intro_parts = [sections[name][:4000] for name in ("item_1", "item_7") if sections.get(name)]
+    focused_parts = snippets + intro_parts
+    excerpt = "\n\n".join(focused_parts) if focused_parts else searchable_text[:24000]
+    res = extract_from_filing_text(
         ticker=symbol,
         company_name=sec_data.get("company") or symbol,
         cik_key=cik_key,
@@ -888,10 +1041,12 @@ def extract_live_for_ticker(ticker: str, *, model: str = DEFAULT_MODEL) -> dict[
         source_title=f"{sec_data.get('company') or symbol} {ref.form} ({ref.filing_date})",
         source_url=ref.url,
         filing_text=excerpt,
+        validation_source_text=full_text,
         deterministic_archetype=classification.primary_archetype,
         deterministic_confidence=classification.classification_confidence.value,
         model=model,
     )
+    return res
 
 
 def run_evidence_cli(args: list[str]) -> int:

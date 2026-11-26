@@ -12,6 +12,7 @@ from evidence_contracts import ConstraintStatus, DirectionStatus, ValidationStat
 from qualitative_evidence import (
     _extract_interaction_output_text,
     accept_candidate,
+    api_key_from_env,
     empty_candidate_store,
     evaluate_against_gold_standard,
     extract_from_filing_text,
@@ -330,4 +331,13 @@ def test_interactions_api_envelope_and_model_normalization():
         ],
     }
     assert json.loads(_extract_interaction_output_text(envelope)) == {"kpis": [], "constraint_statements": []}
+
+
+def test_dotenv_key_reader(monkeypatch, tmp_path: Path):
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    env_file = tmp_path / ".env"
+    env_file.write_text("# comment\nGEMINI_API_KEY=\"test-secret-key\"\n", encoding="utf-8")
+    assert api_key_from_env(env_file) == "test-secret-key"
+
 

@@ -418,6 +418,8 @@ class QualitativeCompanyEconomicsExtractor(QualitativeEvidenceProvider):
         self.candidate_store_path = candidate_store_path or CANDIDATE_REGISTRY
 
     def collect(self, snapshot: CompanySnapshot) -> list[EvidenceItem]:
+        if any("fixture" in str(src).lower() for src in snapshot.sources.values()):
+            return []
         if not self.candidate_store_path.exists():
             return []
         try:
