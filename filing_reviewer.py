@@ -28,7 +28,7 @@ SYSTEM = (
     "the card's readings may have missed or that would change how a reader should take them (for example a one-off charge, "
     "an acquisition, a change in accounting, customer concentration, a guidance change). Do not give buy or sell views and "
     "do not forecast prices. Every note must quote the filing word for word (at least one full sentence) in 'quote'. Use "
-    "only numbers that appear in the card or in your quote. Reply with JSON only: "
+    "only numbers that appear in the card or in your quote, copied exactly; do not calculate new ones. Reply with JSON only: "
     '{"notes": [{"axis": one of ' + json.dumps(list(AXES)) + ', "note": "one or two plain sentences", "quote": "exact words from the filing"}]}'
 )
 

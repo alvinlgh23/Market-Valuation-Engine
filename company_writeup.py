@@ -35,7 +35,9 @@ SYSTEM = (
     "macro background and how it touches this company), each two or three sentences; 'management': up to three points "
     "about the outlook, each with a word-for-word quote from the filing text in 'quote'; and optionally 'scenario': one "
     "alternative set of assumptions (five-year 'growth' for year one, long-run cash-flow 'margin', 'discount_rate', all "
-    "as decimals) with a one-sentence 'reason'. Use only numbers given to you. Reply with JSON only: "
+    "as decimals) with a one-sentence 'reason'. Use only numbers given to you, copied exactly as they appear: do not "
+    "calculate new numbers (no differences, ratios, sums or conversions) and do not round them differently. If a point needs "
+    "a number you were not given, make it without the number. Reply with JSON only: "
     '{"business": "", "price": "", "macro": "", "management": [{"point": "", "quote": ""}], '
     '"scenario": {"growth": 0.0, "margin": 0.0, "discount_rate": 0.0, "reason": ""} or null}'
 )
@@ -111,6 +113,9 @@ def write(card: dict[str, Any], *, gateway: Gateway | None = None, review: dict[
         return {"status": "UNAVAILABLE", "ticker": ticker, "reason": reply.get("reason"), "date": today.isoformat()}
     checked = check_writeup(ai_checks.parse_json_reply(reply["text"]), digest=digest, notes=notes, source_text=source.get("text", ""),
                             what_if_inputs=card.get("what_if_inputs"))
+    # A rejected reply is kept for diagnosis only (never shown on the page).
+    if checked["status"] != "OK":
+        checked = {**checked, "rejected_reply": (reply.get("text") or "")[:6000]}
     result = {**checked, "ticker": ticker, "date": today.isoformat(), "model": reply["model"], "provider": reply["provider"],
               "card_date": card.get("generated_on"), "source": {k: source.get(k) for k in ("form", "filing_date", "period", "url")}}
     directory.mkdir(parents=True, exist_ok=True)
