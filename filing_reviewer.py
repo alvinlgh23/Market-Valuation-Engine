@@ -1,0 +1,134 @@
+"""AI model plan, phase B: filing review notes (role "review", Nemotron via OpenRouter).
+
+The model reads a company's card and the management discussion in its latest 10-Q or 10-K, and points out what the
+fixed rules may have missed - a one-off charge behind a margin drop, a customer concentration, an accounting change.
+Each note must carry a word-for-word quote from the filing; notes whose quote is not in the filing, or whose own
+numbers are not in the card or the quote, are dropped. Notes never change a reading: they are shown next to the card.
+
+Nothing here runs unless the "review" role is switched on with a model and a key (config/llm_models.json).
+"""
+from __future__ import annotations
+
+import datetime as dt
+import json
+from pathlib import Path
+from typing import Any, Callable
+
+import ai_checks
+from llm_gateway import Gateway
+
+ROOT = Path(__file__).resolve().parent
+REVIEW_DIR = ROOT / ".cache" / "reviews"
+MAX_NOTES = 5
+MAX_SOURCE_CHARS = 60_000          # the management discussion is cut here; a long 10-K section is still mostly covered
+AXES = ("fundamentals", "expectations", "valuation", "macro", "flow", "crowding", "price")
+
+SYSTEM = (
+    "You review a stock research card against the company's own filing. Point out at most five things in the filing that "
+    "the card's readings may have missed or that would change how a reader should take them (for example a one-off charge, "
+    "an acquisition, a change in accounting, customer concentration, a guidance change). Do not give buy or sell views and "
+    "do not forecast prices. Every note must quote the filing word for word (at least one full sentence) in 'quote'. Use "
+    "only numbers that appear in the card or in your quote. Reply with JSON only: "
+    '{"notes": [{"axis": one of ' + json.dumps(list(AXES)) + ', "note": "one or two plain sentences", "quote": "exact words from the filing"}]}'
+)
+
+
+def latest_mdna(ticker: str) -> dict[str, Any] | None:
+    """The management discussion of the newest 10-Q, 10-K or 20-F, from the SEC (cached). None when unavailable."""
+    from data_sources.sec_company import CACHE_DIR as SEC_CACHE_DIR, _company_record, _fetch
+    from data_sources.sec_filings import CACHE_DIR as FILING_CACHE_DIR, extract_sections, fetch_filing_text, list_filings
+
+    record = _company_record(ticker.upper())
+    cik = int(record["cik_str"])
+    key = f"CIK{cik:010d}"
+    submissions = _fetch(f"https://data.sec.gov/submissions/{key}.json", SEC_CACHE_DIR / f"{key}-submissions.json")
+    refs = list_filings(submissions, cik, forms=("10-Q", "10-K", "20-F"), limit=1)
+    if not refs:
+        return None
+    ref = refs[0]
+    html, meta = fetch_filing_text(ref.url, FILING_CACHE_DIR / ref.cik_key / ref.accession_nodash / ref.primary_document)
+    text = extract_sections(html, form=ref.form).get("item_7") or ""
+    if len(text) < 500:
+        return None
+    return {"text": text[:MAX_SOURCE_CHARS], "form": ref.form, "filing_date": ref.filing_date, "period": ref.report_date,
+            "url": ref.url, "accession": ref.accession_number, "sha256": meta.get("sha256")}
+
+
+def card_digest(card: dict[str, Any]) -> dict[str, Any]:
+    """The public numbers and readings of a card that a model may see (no positions, no watchlist list)."""
+    axes = card.get("axes") or {}
+    return {"ticker": card.get("ticker"), "name": card.get("name"), "generated_on": card.get("generated_on"),
+            "readings": {key: (axes.get(key) or {}).get("state") for key in axes},
+            "conclusion": (card.get("conclusion") or {}).get("sentences"),
+            "quarter": ((axes.get("fundamentals") or {}).get("detail") or {}).get("quarterly"),
+            "valuation": {k: v for k, v in ((axes.get("valuation") or {}).get("detail") or {}).items()
+                          if k in ("price", "implied_5y_revenue_cagr", "growth_band", "fair_value", "price_to_max_case", "observed_growth")},
+            "price_drivers": {k: (card.get("price_reading") or {}).get(k) for k in ("price_change", "parts", "kind", "top_macro")}}
+
+
+def check_notes(reply: Any, source: str, digest: dict[str, Any]) -> tuple[list[dict[str, Any]], list[dict[str, str]]]:
+    """Keep notes that pass the quote and number checks; report the others with the reason."""
+    kept, dropped = [], []
+    notes = reply.get("notes") if isinstance(reply, dict) else None
+    if not isinstance(notes, list):
+        return [], [{"reason": "reply was not the expected JSON"}]
+    for item in notes[:MAX_NOTES]:
+        if not isinstance(item, dict) or not isinstance(item.get("note"), str) or not isinstance(item.get("quote"), str):
+            dropped.append({"reason": "note missing text or quote"})
+            continue
+        if not ai_checks.quote_in_text(item["quote"], source):
+            dropped.append({"reason": "quote not found in the filing", "note": item["note"][:120]})
+            continue
+        bad = ai_checks.unchecked_numbers(item["note"], ai_checks.allowed_numbers(digest, item["quote"]))
+        if bad:
+            dropped.append({"reason": f"numbers not in the card or the quote: {', '.join(bad)}", "note": item["note"][:120]})
+            continue
+        kept.append({"axis": item.get("axis") if item.get("axis") in AXES else None, "note": item["note"].strip(), "quote": item["quote"].strip()})
+    return kept, dropped
+
+
+def review(card: dict[str, Any], *, gateway: Gateway | None = None, source: dict[str, Any] | None = None,
+           load_source: Callable[[str], dict[str, Any] | None] = latest_mdna, today: dt.date | None = None,
+           directory: Path = REVIEW_DIR) -> dict[str, Any]:
+    """Run the review for one card and save it. Returns the saved result (status OK, UNAVAILABLE or NO_SOURCE)."""
+    today = today or dt.date.today()
+    gateway = gateway or Gateway()
+    ticker = str(card.get("ticker") or "").upper()
+    ready = gateway.role_status("review")
+    if not ready["ready"]:
+        return {"status": "UNAVAILABLE", "ticker": ticker, "reason": ready["reason"], "date": today.isoformat()}
+    source = source or load_source(ticker)
+    if not source:
+        result = {"status": "NO_SOURCE", "ticker": ticker, "reason": "no management discussion found in the latest SEC filing", "date": today.isoformat()}
+        _save(directory, ticker, result)
+        return result
+    digest = card_digest(card)
+    reply = gateway.chat("review", [{"role": "system", "content": SYSTEM},
+                                    {"role": "user", "content": json.dumps({"card": digest, "filing": {"form": source["form"], "period": source.get("period"),
+                                                                                                         "text": source["text"]}})}],
+                         response_format={"type": "json_object"})
+    if reply["status"] != "OK":
+        return {"status": "UNAVAILABLE", "ticker": ticker, "reason": reply.get("reason"), "date": today.isoformat()}
+    kept, dropped = check_notes(ai_checks.parse_json_reply(reply["text"]), source["text"], digest)
+    result = {"status": "OK", "ticker": ticker, "date": today.isoformat(), "notes": kept, "dropped": dropped,
+              "model": reply["model"], "provider": reply["provider"], "card_date": card.get("generated_on"),
+              "source": {k: source.get(k) for k in ("form", "filing_date", "period", "url", "accession", "sha256")}}
+    _save(directory, ticker, result)
+    return result
+
+
+def _save(directory: Path, ticker: str, result: dict[str, Any]) -> None:
+    directory.mkdir(parents=True, exist_ok=True)
+    target = directory / f"{ticker}.json"
+    temporary = target.with_suffix(".json.tmp")
+    temporary.write_text(json.dumps(result, indent=2, default=str))
+    temporary.replace(target)
+
+
+def load_review(ticker: str, today: dt.date | None = None, directory: Path = REVIEW_DIR) -> dict[str, Any] | None:
+    """Today's saved review for the card, or None."""
+    try:
+        result = json.loads((directory / f"{ticker.upper()}.json").read_text())
+    except (OSError, ValueError):
+        return None
+    return result if result.get("date") == (today or dt.date.today()).isoformat() else None

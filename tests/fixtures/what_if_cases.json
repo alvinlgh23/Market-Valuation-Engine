@@ -1,0 +1,121 @@
+[
+ {
+  "input": {
+   "revenue": 37900,
+   "currentMargin": 0.36,
+   "cash": 14000,
+   "debt": 44300,
+   "shares": 970,
+   "growth0": 0.108,
+   "targetMargin": 0.38,
+   "wacc": 0.097,
+   "terminalGrowth": 0.025,
+   "dilution": 0.001,
+   "extendedWeight": 0,
+   "unitFactor": 1
+  },
+  "expected": 225.32104114056136
+ },
+ {
+  "input": {
+   "revenue": 37900,
+   "currentMargin": 0.36,
+   "cash": 14000,
+   "debt": 44300,
+   "shares": 970,
+   "growth0": -0.039,
+   "targetMargin": 0.38,
+   "wacc": 0.097,
+   "terminalGrowth": 0.025,
+   "dilution": 0.001,
+   "extendedWeight": 0,
+   "unitFactor": 1
+  },
+  "expected": 152.46880342341083
+ },
+ {
+  "input": {
+   "revenue": 37900,
+   "currentMargin": 0.36,
+   "cash": 14000,
+   "debt": 44300,
+   "shares": 970,
+   "growth0": 0.108,
+   "targetMargin": 0.3,
+   "wacc": 0.087,
+   "terminalGrowth": 0.025,
+   "dilution": 0.001,
+   "extendedWeight": 0,
+   "unitFactor": 1
+  },
+  "expected": 210.6233738225317
+ },
+ {
+  "input": {
+   "revenue": 130000,
+   "currentMargin": 0.446,
+   "cash": 60000,
+   "debt": 10000,
+   "shares": 24400,
+   "growth0": 0.5,
+   "targetMargin": 0.4,
+   "wacc": 0.139,
+   "terminalGrowth": 0.025,
+   "dilution": 0.002,
+   "extendedWeight": 0.95,
+   "unitFactor": 1
+  },
+  "expected": 102.289670935114
+ },
+ {
+  "input": {
+   "revenue": 37900,
+   "currentMargin": 0.36,
+   "cash": 14000,
+   "debt": 44300,
+   "shares": 970,
+   "growth0": 0.108,
+   "targetMargin": 0.38,
+   "wacc": 0.097,
+   "terminalGrowth": 0.025,
+   "dilution": 0.001,
+   "extendedWeight": 0,
+   "unitFactor": 1.37
+  },
+  "expected": 308.6898263625691
+ },
+ {
+  "input": {
+   "revenue": 37900,
+   "currentMargin": 0.36,
+   "cash": 14000,
+   "debt": 44300,
+   "shares": 970,
+   "growth0": 0.108,
+   "targetMargin": 0.38,
+   "wacc": 0.029,
+   "terminalGrowth": 0.025,
+   "dilution": 0.001,
+   "extendedWeight": 0,
+   "unitFactor": 1
+  },
+  "expected": null
+ },
+ {
+  "input": {
+   "revenue": 37900,
+   "currentMargin": 0.36,
+   "cash": 14000,
+   "debt": 44300,
+   "shares": 0,
+   "growth0": 0.108,
+   "targetMargin": 0.38,
+   "wacc": 0.097,
+   "terminalGrowth": 0.025,
+   "dilution": 0.001,
+   "extendedWeight": 0,
+   "unitFactor": 1
+  },
+  "expected": null
+ }
+]
