@@ -918,6 +918,9 @@ def build_card(ticker: str, environment: dict[str, Any], core: dict[str, Any], s
     }
     link_macro_axis_to_drivers(card)
     card["conclusion"] = company_conclusion(card)
+    # AI model plan, phase B: inputs the what-if formula needs, so a model's scenario can be valued later without refetching.
+    card["what_if_inputs"] = what_if_inputs(report, ((axes["valuation"].get("detail") or {}).get("fair_value") or {}).get("base"))
+    attach_ai(card, today)
     card["falsification"] = what_would_change(card) + card["falsification"]
     # P20 item 5: how readings like this one have done since, or that they are not tested yet. No network here.
     import track_record
@@ -1002,6 +1005,32 @@ def _day(value: str) -> str:
     except ValueError:
         return str(value)
     return f"{day.day} {day:%b}"
+
+
+WHAT_IF_ASSUMPTIONS = ("year_1_revenue_growth", "year_5_fcff_margin", "wacc", "terminal_growth", "annual_dilution")
+
+
+def what_if_inputs(report: dict[str, Any] | None, headline_base: Any) -> dict[str, Any] | None:
+    """The few report fields valuation_what_if.py reads, plus the base value the valuation page shows."""
+    if not report or _num(headline_base) is None:
+        return None
+    hb = report.get("historical_base") or {}
+    fair = report.get("fair_value") or {}
+    return {"headline_base": _num(headline_base),
+            "report": {"assumptions": [{"name": item.get("name"), "value": item.get("value")} for item in report.get("assumptions") or []
+                                       if isinstance(item, dict) and item.get("name") in WHAT_IF_ASSUMPTIONS],
+                       "historical_base": {k: hb.get(k) for k in ("latest_annual_revenue", "fcff_margin", "cash", "debt", "diluted_shares")},
+                       "fair_value": {k: fair.get(k) for k in ("extended_weight", "observed_growth")}}}
+
+
+def attach_ai(card: dict[str, Any], today: dt.date) -> None:
+    """Today's AI review notes and write-up, if the daily refresh produced them. They never change a reading."""
+    from company_writeup import load_writeup
+    from filing_reviewer import load_review
+    review, writeup = load_review(card["ticker"], today), load_writeup(card["ticker"], today)
+    card["ai"] = {"review": review if review and review.get("status") == "OK" else None, "writeup": writeup,
+                  "label": "AI notes and write-up: not counted in any reading. Quotes are checked word for word against the filing; "
+                           "numbers are checked against this card; scenario values come from the valuation page's formula."}
 
 
 def link_macro_axis_to_drivers(card: dict[str, Any]) -> None:

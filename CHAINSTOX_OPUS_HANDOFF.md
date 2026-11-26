@@ -365,6 +365,7 @@ D 组其余（D 组其余（、GICS 行业映射、VIX 移出归因、宏观暴�
   - 搜索：公司名只在词首匹配（"XLE" 不再找到 Oxley）；行业可用基金代码找到（XLE → 能源）；查询符合行业时行业排在前面；名称去掉大写和后缀；同名只留一行，副类和场外股排后。
   - 卡片读数规则未变（估值、基本面、预期的判断规则相同），规则版本不变；结论的一致性分类新增两个"倾向"状态。
 - [x] **20.15** AI 模型分工计划（`CHAINSTOX_AI_MODELS_PLAN.md`）阶段 A：新增 `llm_gateway.py` 和 `config/llm_models.json`。一个 OpenAI 兼容的调用入口给"复核"和"问答"两个角色用；所有角色默认关闭，owner 选定模型后才打开；密钥只从环境变量或 `.env` 读取；超时、429、服务器错误、当天额度用完、没有密钥都返回 `UNAVAILABLE`，不抛异常；只有"问答"允许备用模型，"复核"失败就说不可用；调用记录在 `.cache/llm/calls.jsonl`，不记提示内容和密钥。用户看不到任何变化；`python3 llm_gateway.py --status` 查看每个角色是否就绪。阶段 B、C 等 owner 决定计划第 7 节的五件事。
+- [x] **20.16** AI 模型分工阶段 B：沙盒公式移到 `frontend/lib/what-if.mjs` 并移植为 `valuation_what_if.py`（两边用同一组用例核对）；`ai_checks.py`（引用、数字、JSON 核对）；`filing_reviewer.py`（复核提醒）；`company_writeup.py`（解读、管理层原话、模型情景由 Python 估值）；卡片新增 `what_if_inputs` 和 `ai`；每日更新在角色打开时多一步"AI notes"；判断卡显示"AI write-up · Not counted in any reading"。所有角色仍关闭，页面没有变化，直到 owner 在 `config/llm_models.json` 填入模型 ID、在 `.env` 放入密钥。
 - [x] **20.9** 估值读数的检验记录（`track_record.py`，P20 第 5 项）。每家公司每段连续相同的读数只在第一天计一次；满 1、3、6、12 个月交易日后，比较它的涨跌和标普 500（SPY）。分三组："股价假设的比生意已有的多" / "大致相符" / "少"。至少 20 段、来自 10 家公司才称"已检验"，否则判断卡写"尚未检验"和第一次检验的大约日期。没有回填历史：Yahoo 没有当时的分析师预期，倒推旧读数会用到事后信息。现有 20 段（11-21 起），第一次 1 个月检验约在 12-22。结果写在 `data/history/track_record.json`。
 - [x] **20.10** 每日后台更新（`daily_refresh.py`，P20 第 6 项）。当天第一次打开今日页或自选股页时启动；依次生成全部自选股判断卡，预先算好价格驱动、事件和汇率，最后算检验记录；进度写在 `.cache/daily/status.json`。页面显示"正在更新今天的公司数据 · 第 x/y 步"，完成后显示"公司数据为某日"并重新读取。`--drivers/--events/--fx` 先读当天预先算好的结果；自选股名单改过后按原路实时计算。不调用研究刷新（`refresh=1` / `--refresh`），宏观数据日期仍以缓存为准，页面上分开标注。
 

@@ -12,7 +12,7 @@ type Card = {
   ticker: string; name: string; archetype: string; sector_etf: string | null; generated_on: string;
   axes: Record<string, Axis>;
   horizons: Record<string, { window: string; context?: string; axes: string[] }>;
-  contradictions: string[]; changes: Array<{ axis: string; from: string; to: string; since: string; origin?: string }>; falsification: string[]; operating?: unknown; conclusion?: unknown; valuation_record?: unknown;
+  contradictions: string[]; changes: Array<{ axis: string; from: string; to: string; since: string; origin?: string }>; falsification: string[]; operating?: unknown; conclusion?: unknown; valuation_record?: unknown; ai?: unknown;
   next_catalysts: { earnings: string | null; last_earnings?: string | null; fomc: string | null };
   disclaimer: string;
   attribution?: Attribution; price_reading?: PriceReading;
@@ -251,6 +251,36 @@ function DataConclusion({ conclusion, record }: { conclusion?: Conclusion; recor
   </section>;
 }
 
+
+// AI model plan, phase B: the model's write-up and filing review notes. Never a reading; quotes and numbers are checked
+// before they are saved, and a scenario's value comes from the valuation page's own formula.
+type AiNote = { axis: string | null; note: string; quote: string };
+type AiScenario = { assumptions: { growth: number; margin: number; discount_rate: number }; reason: string; value: number; base_value: number; base_assumptions: { growth: number; margin: number; wacc: number } };
+type AiWriteup = { business: string; price: string; macro: string; management: Array<{ point: string; quote: string }>; scenario: AiScenario | null; model: string; date: string; source?: { form?: string | null; period?: string | null; url?: string | null } };
+type AiBlock = { review: { notes: AiNote[]; model: string; source?: { form?: string; period?: string; url?: string } } | null; writeup: AiWriteup | null; label: string };
+
+function pctText(value: number) { return `${(value * 100).toFixed(1)}%`; }
+
+function AiReading({ ai, currency }: { ai?: AiBlock | null; currency?: string }) {
+  if (!ai || (!ai.writeup && !ai.review?.notes?.length)) return null;
+  const w = ai.writeup;
+  const money = (value: number) => `${currency && currency !== "USD" ? `${currency} ` : "$"}${value.toFixed(2)}`;
+  return <section className="jc-ai" aria-label="AI write-up">
+    <header><h3>AI write-up</h3><span className="jc-ai-badge">Not counted in any reading</span></header>
+    {w ? <>
+      <p><b>Business.</b> {w.business}</p>
+      <p><b>Price.</b> {w.price}</p>
+      <p><b>Macro.</b> {w.macro}</p>
+      {w.management.length ? <div className="jc-ai-quotes"><b>What management says</b>{w.management.map((item) => <figure key={item.quote}><p>{item.point}</p><blockquote>“{item.quote}”</blockquote></figure>)}</div> : null}
+      {w.scenario ? <div className="jc-ai-scenario"><b>A scenario the model proposes</b>
+        <p>First-year growth {pctText(w.scenario.assumptions.growth)}, cash-flow margin {pctText(w.scenario.assumptions.margin)}, discount rate {pctText(w.scenario.assumptions.discount_rate)}: model value {money(w.scenario.value)}, against {money(w.scenario.base_value)} with the model&apos;s own assumptions.</p>
+        <small>{w.scenario.reason} Values from the valuation page&apos;s formula; the model only chose the assumptions.</small></div> : null}
+    </> : null}
+    {ai.review?.notes?.length ? <div className="jc-ai-quotes"><b>Filing review notes</b>{ai.review.notes.map((item) => <figure key={item.quote}><p>{item.note}</p><blockquote>“{item.quote}”</blockquote></figure>)}</div> : null}
+    <small className="jc-ai-source">{[w ? `Write-up: ${w.model}` : null, ai.review ? `Review: ${ai.review.model}` : null, (w?.source ?? ai.review?.source)?.form ? `quotes from ${(w?.source ?? ai.review?.source)?.form} for ${(w?.source ?? ai.review?.source)?.period}` : null].filter(Boolean).join(" · ")}. {ai.label}</small>
+  </section>;
+}
+
 export function JudgmentCard({ ticker }: { ticker: string }) {
   return <JudgmentCardBody key={ticker} ticker={ticker} />;
 }
@@ -291,6 +321,7 @@ function JudgmentCardBody({ ticker }: { ticker: string }) {
       <Legend />
     </div>
     <DataConclusion conclusion={card.conclusion as Conclusion | undefined} record={card.valuation_record as ValuationRecord | null | undefined} />
+    <AiReading ai={card.ai as AiBlock | null | undefined} currency={typeof card.axes.valuation?.detail?.currency === "string" ? card.axes.valuation.detail.currency : undefined} />
     <PriceDriversPanel attribution={card.attribution} reading={card.price_reading} lastEarnings={card.next_catalysts.last_earnings} />
     {hasHeadlineNumbers || !refreshing ? (
       <div className="jc-headline">

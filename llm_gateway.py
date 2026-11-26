@@ -8,7 +8,7 @@ This module is the single door to the models used for "review" and "qa":
 * keys only from environment variables or the git-ignored .env, never from the config file;
 * every call returns a result with its provider, model and status; a timeout, 429, server error, spent daily
   limit, missing key or disabled role is "UNAVAILABLE" - never an exception, never a quiet substitute;
-* a fallback model is used only where the role lists one (the plan allows it for "qa", not for "review");
+* a fallback model is used only where the role lists one, and the result says which model answered;
 * a call log in .cache/llm/calls.jsonl records role, provider, model, status, latency and sizes - not prompts.
 
 Extraction (qualitative_evidence.py) keeps its own native Gemini path and is not routed through here.
@@ -28,7 +28,9 @@ from urllib.request import Request, urlopen
 ROOT = Path(__file__).resolve().parent
 CONFIG_PATH = ROOT / "config" / "llm_models.json"
 LOG_DIR = ROOT / ".cache" / "llm"
-ROLES_WITH_FALLBACK = {"qa"}          # the plan: review must say "unavailable" rather than use another model
+# Owner 2026-11-27: review and explain may fall back too (e.g. to Qwen when Nemotron's free limit is reached). Every
+# result names the model that actually answered, and fallback replies pass the same quote and number checks.
+ROLES_WITH_FALLBACK = {"qa", "review", "explain", "reader"}
 
 # transport(url, headers, body, timeout) -> (http_status, parsed_json_or_None). Injected in tests.
 Transport = Callable[[str, dict[str, str], dict[str, Any], float], tuple[int, Any]]
@@ -114,7 +116,7 @@ class Gateway:
                 row = json.loads(line)
             except ValueError:
                 continue
-            if row.get("role") == role and str(row.get("called_at", "")).startswith(day) and row.get("counted"):
+            if row.get("role") == role and (row.get("day") or str(row.get("called_at", ""))[:10]) == day and row.get("counted"):
                 count += 1
         return count
 
@@ -181,7 +183,7 @@ class Gateway:
             ok = status == 200 and (message.get("content") or message.get("tool_calls"))
             reason = None if ok else ("timeout or network error" if status == 0 else "rate limited (429)" if status == 429
                                       else "invalid response" if status in (-1, 200) else f"HTTP {status}")
-            self._log({"called_at": _now(), "role": role, "provider": provider_name, "model": model, "status": "OK" if ok else "UNAVAILABLE",
+            self._log({"called_at": _now(), "day": self.today().isoformat(), "role": role, "provider": provider_name, "model": model, "status": "OK" if ok else "UNAVAILABLE",
                        "reason": reason, "latency_ms": latency, "prompt_chars": sum(len(str(m.get("content") or "")) for m in messages),
                        "answer_chars": len(message.get("content") or "") if ok else 0, "counted": True})
             if ok:

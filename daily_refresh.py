@@ -85,7 +85,8 @@ def precomputed(name: str, today: dt.date | None = None, directory: Path = DAILY
 
 def run(today: dt.date | None = None, *, directory: Path = DAILY, tickers: list[str] | None = None,
         build: Callable[[str], dict[str, Any]] | None = None, steps: dict[str, Callable[[], Any]] | None = None,
-        score: Callable[[], Any] | None = None) -> dict[str, Any]:
+        score: Callable[[], Any] | None = None, ai: Callable[[dict[str, Any]], Any] | None = None,
+        ai_ready: bool | None = None) -> dict[str, Any]:
     """Do the refresh. The callables are injectable for tests; by default they are the real engines."""
     today = today or dt.date.today()
     import company_verdict as cv
@@ -101,8 +102,15 @@ def run(today: dt.date | None = None, *, directory: Path = DAILY, tickers: list[
     if score is None:
         import track_record
         score = track_record.run
+    # AI model plan, phase B: review notes and the write-up, only when those roles are switched on.
+    if ai_ready is None:
+        from llm_gateway import Gateway
+        gateway = Gateway()
+        ai_ready = any(gateway.role_status(role)["ready"] for role in ("review", "explain"))
+    if ai is None:
+        ai = lambda card: ai_for_card(card, today)   # noqa: E731
     status: dict[str, Any] = {"state": "RUNNING", "pid": os.getpid(), "data_date": today.isoformat(), "started_at": _now(),
-                              "total": len(tickers) + len(steps) + 1, "done": 0, "current": None, "companies": len(tickers),
+                              "total": len(tickers) * (2 if ai_ready else 1) + len(steps) + 1, "done": 0, "current": None, "companies": len(tickers),
                               "cards_done": [], "errors": []}
 
     def advance(label: str, action: Callable[[], Any]) -> Any:
@@ -116,10 +124,18 @@ def run(today: dt.date | None = None, *, directory: Path = DAILY, tickers: list[
         finally:
             status["done"] += 1
 
+    cards = {}
     for ticker in tickers:
         card = advance(ticker, lambda t=ticker: build(t))
         if card is not None:
             status["cards_done"].append(ticker)
+            cards[ticker] = card
+    if ai_ready:
+        for ticker in tickers:
+            if ticker in cards:
+                advance(f"AI notes {ticker}", lambda c=cards[ticker]: ai(c))
+            else:
+                status["done"] += 1
     for name, action in steps.items():
         data = advance(name, action)
         if data is not None:
@@ -128,6 +144,18 @@ def run(today: dt.date | None = None, *, directory: Path = DAILY, tickers: list[
     status.update(state="DONE", current=None, finished_at=_now())
     _write(directory / STATUS.name, status)
     return status
+
+
+def ai_for_card(card: dict[str, Any], today: dt.date) -> dict[str, Any]:
+    """Review, then write-up, then attach both to the card and save it. A failure leaves the card as it was."""
+    import company_verdict as cv
+    from company_writeup import write
+    from filing_reviewer import review
+    notes = review(card, today=today)
+    writeup = write(card, review=notes if notes.get("status") == "OK" else None, today=today)
+    cv.attach_ai(card, today)
+    cv.save_verdict_cache(card["ticker"], card)
+    return {"review": notes.get("status"), "writeup": writeup.get("status")}
 
 
 def start(today: dt.date | None = None, directory: Path = DAILY) -> dict[str, Any]:
