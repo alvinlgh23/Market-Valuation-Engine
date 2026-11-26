@@ -917,6 +917,10 @@ def build_card(ticker: str, environment: dict[str, Any], core: dict[str, Any], s
         "disclaimer": "Research map, not a recommendation. Axes are shown separately and never combined into a score.",
     }
     card["conclusion"] = company_conclusion(card)
+    # P20 item 5: how readings like this one have done since, or that they are not tested yet. No network here.
+    import track_record
+    results = track_record.load_results(store.directory) or track_record.score(track_record.spells(store), None, today)
+    card["valuation_record"] = track_record.for_label(axes["valuation"].get("state"), results)
     save_attribution(ticker, {"date": today.isoformat(), "archetype": archetype, "sector_etf": etf, "archetype_source": "judgment card",
                               "attribution": attribution, "reading": card["price_reading"]})
     if record:
@@ -1340,15 +1344,16 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--fx", action="store_true", help="Print three-month USD moves against common home currencies as JSON.")
     parser.add_argument("--events", action="store_true", help="Print the watchlist's next earnings dates and the next FOMC decision as JSON.")
     args = parser.parse_args(argv)
-    if args.fx:
-        print(json.dumps(fx_moves()))
-        return 0
-    if args.drivers:
-        print(json.dumps(watchlist_drivers(), default=str))
-        return 0
-    if args.events:
-        print(json.dumps(watchlist_events(), default=str))
-        return 0
+    # P20 item 6: today's background refresh (daily_refresh.py) already computed these; compute live only without it.
+    # A watchlist edited since the refresh makes the per-company results out of date, so they are recomputed.
+    from daily_refresh import precomputed
+    listed = json.loads(WATCHLIST_PATH.read_text()).get("tickers", []) if WATCHLIST_PATH.exists() else []
+    for flag, name, compute, per_company in ((args.fx, "fx", fx_moves, False), (args.drivers, "drivers", watchlist_drivers, True),
+                                             (args.events, "events", watchlist_events, True)):
+        if flag:
+            ready = precomputed(name, tickers=listed if per_company else None)
+            print(json.dumps(ready if ready is not None else compute(), default=str))
+            return 0
     if args.summary:
         print(json.dumps(watchlist_summary(), indent=2))
         return 0

@@ -150,6 +150,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ status: "FAILED", runtime_error: runtimeError(error), error: runtimeError(error).message }, { status: 502 });
     }
   }
+  if (action === "daily-refresh") {
+    // P20 item 6: `start=1` starts today's background refresh if it has not run; otherwise this only reports progress.
+    const start = request.nextUrl.searchParams.get("start") === "1";
+    try {
+      return NextResponse.json({ status: "OK", refresh: await runPythonJson<Record<string, unknown>>(["-B", "daily_refresh.py", start ? "--start" : "--status"], 30_000) });
+    } catch (error) {
+      return NextResponse.json({ status: "FAILED", runtime_error: runtimeError(error), error: runtimeError(error).message }, { status: 502 });
+    }
+  }
   if (action === "company-verdict-cached") {
     const ticker = request.nextUrl.searchParams.get("ticker")?.trim() ?? "";
     return NextResponse.json(await readCachedVerdict(ticker));

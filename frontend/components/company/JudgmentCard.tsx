@@ -12,7 +12,7 @@ type Card = {
   ticker: string; name: string; archetype: string; sector_etf: string | null; generated_on: string;
   axes: Record<string, Axis>;
   horizons: Record<string, { window: string; context?: string; axes: string[] }>;
-  contradictions: string[]; changes: Array<{ axis: string; from: string; to: string; since: string; origin?: string }>; falsification: string[]; operating?: unknown; conclusion?: unknown;
+  contradictions: string[]; changes: Array<{ axis: string; from: string; to: string; since: string; origin?: string }>; falsification: string[]; operating?: unknown; conclusion?: unknown; valuation_record?: unknown;
   next_catalysts: { earnings: string | null; last_earnings?: string | null; fomc: string | null };
   disclaimer: string;
   attribution?: Attribution; price_reading?: PriceReading;
@@ -236,12 +236,15 @@ function Legend() {
 // Checklist 20.1: what the data says, in plain sentences, before the detail.
 type Conclusion = { sentences: string[]; business: string; agreement: string; note: string };
 const AGREEMENT_LABEL: Record<string, string> = { OPPOSED: "Price and business disagree", ALIGNED: "Price and business agree", OUTSIDE: "Moved with outside forces", UNCLEAR: "" };
-function DataConclusion({ conclusion }: { conclusion?: Conclusion }) {
+// P20 item 5: whether readings like this one have been followed by better or worse returns - or that it is not tested yet.
+type ValuationRecord = { status: "TESTED" | "NOT_TESTED"; group: string; meaning: string; text: string; as_of?: string };
+function DataConclusion({ conclusion, record }: { conclusion?: Conclusion; record?: ValuationRecord | null }) {
   if (!conclusion?.sentences?.length) return null;
   const label = AGREEMENT_LABEL[conclusion.agreement] ?? "";
   return <section className={`jc-conclusion agree-${conclusion.agreement.toLowerCase()}`} aria-label="What the data says">
     <header><h3>What the data says</h3>{label ? <span className="jc-agreement">{label}</span> : null}</header>
     <p>{conclusion.sentences.join(" ")}</p>
+    {record ? <p className={`jc-record is-${record.status.toLowerCase()}`} title={`Group: ${record.meaning}`}><b>{record.status === "TESTED" ? "Track record" : "Not tested yet"}</b>{" "}{record.text.replace(/^Not tested yet\. /, "")}</p> : null}
     <small>{conclusion.note}</small>
   </section>;
 }
@@ -285,7 +288,7 @@ function JudgmentCardBody({ ticker }: { ticker: string }) {
       </span>
       <Legend />
     </div>
-    <DataConclusion conclusion={card.conclusion as Conclusion | undefined} />
+    <DataConclusion conclusion={card.conclusion as Conclusion | undefined} record={card.valuation_record as ValuationRecord | null | undefined} />
     <PriceDriversPanel attribution={card.attribution} reading={card.price_reading} lastEarnings={card.next_catalysts.last_earnings} />
     {hasHeadlineNumbers || !refreshing ? (
       <div className="jc-headline">

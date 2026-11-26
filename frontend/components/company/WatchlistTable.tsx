@@ -1,8 +1,9 @@
 "use client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { loadCompanyCard } from "../../lib/company-card";
+import { refreshLine, useDailyRefresh } from "../../lib/daily-refresh";
 import { CARD_AXES, cellLabel, resetWatchlistLoaders, type SummaryRow } from "../../lib/watchlist-summary";
 import { axisTone, shortState, TONE_GLYPH, TONE_LABEL } from "../../lib/judgment-tone.mjs";
 import { DriverBar, factorBreakdown, PriceDriversLegend, ReadingTag, type Attribution, type PriceReading } from "./PriceDrivers";
@@ -162,7 +163,6 @@ export function WatchlistTable() {
   const [weights, setWeights] = useState<Record<string, WeightTier>>(() => (typeof window === "undefined" ? {} : savedWeights()));
   const [mode, setMode] = useState<WatchlistMode>("overview");
   const [toast, setToast] = useState<{ text: string; undo?: () => void } | null>(null);
-  const autoHydratedRef = useRef<Set<string>>(new Set());
 
   const fetchSummaryAndDrivers = useCallback(() => {
     fetch("/api/research?action=watchlist-summary", { cache: "no-store" })
@@ -180,34 +180,10 @@ export function WatchlistTable() {
       .finally(() => { setHydrating((prev) => { const copy = { ...prev }; delete copy[ticker]; return copy; }); });
   }, [fetchSummaryAndDrivers]);
 
-  // Quiet sequential background hydration for any watchlist stock missing its cached fair-value range
-  useEffect(() => {
-    if (!rows || !rows.length) return;
-    const missing = rows
-      .filter((r) => !r.valuation_detail && !autoHydratedRef.current.has(r.ticker))
-      .map((r) => r.ticker);
-    if (!missing.length) return;
-    let cancelled = false;
-    (async () => {
-      for (const ticker of missing) {
-        if (cancelled) break;
-        autoHydratedRef.current.add(ticker);
-        setHydrating((prev) => ({ ...prev, [ticker]: true }));
-        try {
-          await loadCompanyCard(ticker);
-          if (!cancelled) {
-            const resp = await fetch("/api/research?action=watchlist-summary", { cache: "no-store" });
-            const body = await resp.json();
-            if (!cancelled && Array.isArray(body.rows)) setRows(body.rows as SummaryRow[]);
-          }
-        } catch { /* ignore individual failure */ }
-        if (!cancelled) {
-          setHydrating((prev) => { const copy = { ...prev }; delete copy[ticker]; return copy; });
-        }
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [rows]);
+  // P20 item 6: missing cards are built by the daily background refresh, not one by one from this page.
+  const refresh = useDailyRefresh(fetchSummaryAndDrivers);
+  const refreshNote = refreshLine(refresh);
+  const refreshing = refresh?.state === "RUNNING";
 
   const saveList = async (tickers: string[], previous: SummaryRow[]) => {
     try {
@@ -308,7 +284,7 @@ export function WatchlistTable() {
 
   const renderOverviewRow = (row: SummaryRow) => {
     const starred = weights[row.ticker] === "core";
-    const isHydrating = Boolean(hydrating[row.ticker]);
+    const isHydrating = Boolean(hydrating[row.ticker]) || (refreshing && !row.valuation_detail);
     const drv = drivers?.[row.ticker];
     const move3m = drv?.attribution?.windows?.["3M"]?.price_change;
     const recentBridge = drv?.attribution?.recent_move?.since_window_end;
@@ -382,8 +358,9 @@ export function WatchlistTable() {
           <p className="wl-digest">
             {rows.length} {rows.length === 1 ? "company" : "companies"}
             {drivers ? ` · ${grouped.focus.length} need a closer look · ${grouped.steady.length} with no company-specific change` : driversError ? ` · drivers unavailable` : " · checking price drivers…"}
-            {hydratingCount > 0 ? <span className="wl-sync-inline"> · syncing {hydratingCount} fair {hydratingCount === 1 ? "value" : "values"}…</span> : null}
+            {hydratingCount > 0 ? <span className="wl-sync-inline"> · building {hydratingCount} {hydratingCount === 1 ? "card" : "cards"}…</span> : null}
           </p>
+          {refreshNote ? <p className={`data-refresh tone-${refreshNote.tone}`} role="status"><i aria-hidden="true" />{refreshNote.text}</p> : null}
         </div>
 
         <div className="wl-toolbar">
@@ -456,7 +433,7 @@ export function WatchlistTable() {
           <div className="wl-table" role="table">
             <div className="wl-row wl-head" role="row"><span role="columnheader">Company</span><span role="columnheader">What moved the price (3M)</span>{AXES.map(([, label]) => <span role="columnheader" key={label}>{label}</span>)}<span role="columnheader">Card</span></div>
             {[...rows].map((row) => {
-              const isHydrating = Boolean(hydrating[row.ticker]);
+              const isHydrating = Boolean(hydrating[row.ticker]) || (refreshing && !row.valuation_detail);
               const hasAnyReading = Object.keys(row.axes).length > 0;
               return <Link href={`/company/${row.ticker}`} className="wl-row" role="row" key={row.ticker}>
                 <span role="cell" className="wl-ticker"><b>{row.ticker}</b></span>

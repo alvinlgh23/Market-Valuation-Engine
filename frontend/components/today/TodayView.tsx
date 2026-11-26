@@ -1,12 +1,13 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { attentionItems, buildAlerts, dataAge, marketRead, pct, type Alert } from "../../lib/alerts.mjs";
 import { axisTone, shortState } from "../../lib/judgment-tone.mjs";
 import { sectorLeadershipBars } from "../../lib/dashboard-orchestration";
 import type { ResearchSystem } from "../../lib/research-system-types";
 import { loadWatchlistDrivers, type DriverRow } from "../../lib/watchlist-drivers";
-import { CARD_AXES, cellLabel, loadWatchlistSummary, type SummaryRow } from "../../lib/watchlist-summary";
+import { CARD_AXES, cellLabel, loadWatchlistSummary, resetWatchlistLoaders, type SummaryRow } from "../../lib/watchlist-summary";
+import { refreshLine, useDailyRefresh } from "../../lib/daily-refresh";
 import { loadWatchlistEvents, type WatchlistEvents } from "../../lib/watchlist-events";
 import { Criteria } from "./Criteria";
 import { StoryDigest } from "../story/MarketStoryView";
@@ -57,6 +58,10 @@ export function TodayView({ system, status }: { system: ResearchSystem; status?:
   const [summary, setSummary] = useState<SummaryRow[] | null>(null);
   const [events, setEvents] = useState<WatchlistEvents | null>(null);
   const [showAll, setShowAll] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
+  // P20 item 6: when today's background refresh finishes, read its precomputed results again.
+  const refresh = useDailyRefresh(useCallback(() => { resetWatchlistLoaders(); setReloadKey((key) => key + 1); }, []));
+  const refreshNote = refreshLine(refresh);
 
   useEffect(() => {
     let active = true;
@@ -64,7 +69,7 @@ export function TodayView({ system, status }: { system: ResearchSystem; status?:
     loadWatchlistDrivers().then((rows) => { if (active) setDrivers(rows); });
     loadWatchlistSummary().then((rows) => { if (active) setSummary(rows); });
     return () => { active = false; };
-  }, []);
+  }, [reloadKey]);
 
   const environment = system.environment;
   const now = useMemo(() => new Date(), []);
@@ -85,6 +90,8 @@ export function TodayView({ system, status }: { system: ResearchSystem; status?:
       </div>
       <div className="tdy-top-right">{status}</div>
     </header>
+
+    {refreshNote ? <div className={`data-refresh tone-${refreshNote.tone}`} role="status"><i aria-hidden="true" />{refreshNote.text}</div> : null}
 
     {age.stale ? <div className="tdy-stale" role="status" suppressHydrationWarning>
       <i aria-hidden="true" />Data is from {environment?.as_of ?? "an unknown date"}{age.days != null ? `, ${age.days} business days ago` : ""}. Alerts describe that date, not today.

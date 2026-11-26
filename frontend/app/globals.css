@@ -4305,8 +4305,21 @@ html, body { background: var(--research-bg); font-family: var(--font-research); 
 .jc-conclusion header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
 .jc-conclusion h3 { margin: 0; color: var(--research-muted); font-size: 12px; font-weight: 500; letter-spacing: .02em; }
 .jc-conclusion p { margin: 0; max-width: 860px; color: var(--research-text); font-size: 15px; line-height: 1.6; }
+.jc-conclusion p.jc-record { margin-top: 10px; color: var(--research-muted); font-size: 12.5px; line-height: 1.5; }
+.jc-record b { margin-right: 8px; color: var(--research-text); font-weight: 500; }
+.jc-record.is-not_tested b { color: var(--research-caution); }
 .jc-conclusion small { display: block; margin-top: 10px; color: var(--research-faint); font-size: 12px; }
 .jc-agreement { padding: 2px 10px; border-radius: 999px; font-size: 12px; background: rgba(255, 255, 255, .07); color: #c3c6cc; }
 .jc-conclusion.agree-opposed { border-color: rgba(229, 165, 75, .35); }
 .jc-conclusion.agree-opposed .jc-agreement { color: var(--research-caution); background: rgba(229, 165, 75, .12); }
 .jc-conclusion.agree-aligned .jc-agreement { color: var(--research-positive); background: rgba(62, 207, 142, .1); }
+
+/* P20 item 6: one data date per page, and today's background update while it runs */
+.data-refresh { display: flex; align-items: center; gap: 9px; margin: 0 0 14px; color: var(--research-muted); font-size: 12.5px; line-height: 1.45; }
+.data-refresh i { flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--research-positive); }
+.data-refresh.tone-running i { background: var(--research-caution); animation: data-refresh-pulse 1.4s ease-in-out infinite; }
+.data-refresh.tone-failed { color: #e8c48d; }
+.data-refresh.tone-failed i { background: var(--research-caution); }
+.wl-title-group .data-refresh { margin: 6px 0 0; }
+@keyframes data-refresh-pulse { 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .data-refresh.tone-running i { animation: none; } }
