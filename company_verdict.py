@@ -1126,6 +1126,7 @@ def _cached_watchlist_enrichment(tickers: list[str]) -> dict[str, dict[str, Any]
             if isinstance(det, dict):
                 fv = det.get("fair_value") if isinstance(det.get("fair_value"), dict) else {}
                 bank = det.get("bank_implied_roe") if isinstance(det.get("bank_implied_roe"), dict) else {}
+                band = det.get("growth_band") if isinstance(det.get("growth_band"), dict) else {}
                 val_detail = {
                     "price": _num(det.get("price")),
                     "bear": _num(fv.get("bear") if fv else det.get("bear")),
@@ -1135,6 +1136,10 @@ def _cached_watchlist_enrichment(tickers: list[str]) -> dict[str, dict[str, Any]
                     "implied_roe": _num(bank.get("implied_roe")),
                     "latest_roe": _num(bank.get("latest_roe")),
                     "currency": det.get("currency") or "USD",
+                    # Growth the price assumes, and the faded references it is read against (no target-price gap).
+                    "implied_growth": _num(det.get("implied_5y_revenue_cagr")),
+                    "reference_low": _num(min((v for v in (band.get("consensus_2y_faded"), band.get("history_3y_faded")) if _num(v) is not None), default=None)),
+                    "reference_high": _num(max((v for v in (band.get("consensus_2y_faded"), band.get("history_3y_faded")) if _num(v) is not None), default=None)),
                 }
             op = vd.get("operating") or {}
             if isinstance(op, dict) and op.get("constraint"):

@@ -8,6 +8,9 @@ export type WatchlistValuationDetail = {
   implied_roe?: number | null;
   latest_roe?: number | null;
   currency?: string;
+  implied_growth?: number | null;
+  reference_low?: number | null;
+  reference_high?: number | null;
 };
 
 export type SummaryRow = {

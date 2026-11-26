@@ -92,11 +92,14 @@ function buildTakeaway(row: SummaryRow): { headline: string; pills: Array<{ text
   return { headline: `${fundPart} · ${estPart}`, pills: pills.slice(0, 2) };
 }
 
+function growthPct(value: number) {
+  const rounded = Math.round(value * 100);
+  return rounded === 0 ? "0%" : `${rounded > 0 ? "+" : "−"}${Math.abs(rounded)}%`;
+}
+
 function PriceVsValueCell({ row, livePrice, hydrating }: { row: SummaryRow; livePrice: number | null; hydrating: boolean }) {
   const det = row.valuation_detail;
   const price = det?.price ?? row.latest_price ?? livePrice;
-  const bear = det?.bear ?? null;
-  const base = det?.base ?? null;
   const bull = det?.bull ?? null;
   const currency = det?.currency ?? "USD";
   const valAxis = row.axes.valuation ?? "";
@@ -106,28 +109,21 @@ function PriceVsValueCell({ row, livePrice, hydrating }: { row: SummaryRow; live
     return <div className="wl-val-box"><strong className="wl-price-num">Syncing…</strong><small className="wl-val-sub">Reading filings &amp; DCF</small></div>;
   }
 
-  if (base != null && bear != null && bull != null && bull > bear && price != null) {
-    const gapPct = ((price - base) / base) * 100;
-    const isStretched = stretch != null && stretch > 1.15;
-    const rawPos = ((price - bear) / (bull - bear)) * 100;
-    const clampedPos = Math.max(4, Math.min(96, rawPos));
-    const basePos = Math.max(8, Math.min(92, ((base - bear) / (bull - bear)) * 100));
-    const subText = isStretched
-      ? `Base ${fmtMoney(base, currency)} · ${stretch.toFixed(1)}× bull`
-      : Math.abs(gapPct) < 5
-        ? `Near base (${fmtMoney(base, currency)})`
-        : `${gapPct > 0 ? "+" : "−"}${Math.round(Math.abs(gapPct))}% vs base ${fmtMoney(base, currency)}`;
-
+  // Owner 2026-11-26: no "±X% vs base" target-price gap. Show what the card reads: the growth the price
+  // assumes against what the business has shown (analysts' and past growth, both faded to year 5).
+  const implied = det?.implied_growth ?? null;
+  const low = det?.reference_low ?? null;
+  const high = det?.reference_high ?? null;
+  if (implied != null && low != null && high != null && price != null) {
+    const tone = valAxis.startsWith("Price implies more") ? "rich" : valAxis.startsWith("Price implies less") ? "cheap" : "fair";
+    const reference = Math.round(low * 100) === Math.round(high * 100) ? growthPct(low) : `${growthPct(low)} to ${growthPct(high)}`;
     return (
-      <div className="wl-val-box" title={`Model range: Bear ${fmtMoney(bear, currency)} · Base ${fmtMoney(base, currency)} · Bull ${fmtMoney(bull, currency)}`}>
+      <div className="wl-val-box" title={`${valAxis}. Five-year sales growth the price assumes, against analysts' and past growth faded to year 5.`}>
         <div className="wl-val-top">
           <strong className="wl-price-num">{fmtMoney(price, currency)}</strong>
-          <span className={`wl-val-delta ${isStretched ? "stretched" : gapPct < -8 ? "cheap" : gapPct > 15 ? "rich" : "fair"}`}>{subText}</span>
+          <span className={`wl-val-delta ${tone}`}>Prices in {growthPct(implied)}/yr</span>
         </div>
-        <div className="wl-mini-range" aria-hidden="true">
-          <i className="wl-mini-base" style={{ left: `${basePos}%` }} />
-          <b className={`wl-mini-pin${rawPos > 100 || rawPos < 0 ? " off" : ""}`} style={{ left: `${clampedPos}%` }} />
-        </div>
+        <small className="wl-val-sub">Business shows {reference}/yr</small>
       </div>
     );
   }
@@ -137,7 +133,7 @@ function PriceVsValueCell({ row, livePrice, hydrating }: { row: SummaryRow; live
     : valAxis.toLowerCase().includes("withheld")
       ? "Specialized / DCF withheld"
       : stretch != null && stretch > 1
-        ? `${stretch.toFixed(1)}× bull ceiling`
+        ? `${stretch.toFixed(1)}× the model's best case`
         : hydrating
           ? "Calculating fair value…"
           : shortState(valAxis) !== "—"
