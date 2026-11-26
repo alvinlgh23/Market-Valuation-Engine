@@ -1,5 +1,5 @@
 {
-  "_note": "AI model plan, phase A (CHAINSTOX_AI_MODELS_PLAN.md). Every role is off until the owner picks a model. Keys come only from environment variables or the git-ignored .env; never put a key in this file. Extraction keeps its own Gemini path in qualitative_evidence.py and is not configured here. Owner 2026-11-26: free models only; review and explain on Nemotron 3 Ultra via OpenRouter, Q&A on Qwen via Groq with a Gemini fallback. Fill in the exact model IDs from each provider's model page.",
+  "_note": "AI model plan, phase A (CHAINSTOX_AI_MODELS_PLAN.md). Every role is off until the owner picks a model. Keys come only from environment variables or the git-ignored .env; never put a key in this file. Extraction keeps its own Gemini path in qualitative_evidence.py and is not configured here. Owner 2026-11-26: free models only; review and explain on Nemotron 3 Ultra via OpenRouter, Q&A on Qwen via Groq with a Gemini fallback. Fill in the exact model IDs from each provider's model page. Owner 2026-11-27: Q&A on GPT-OSS 120B via Groq; Qwen on Groq is the fallback for review and explain, and the reader role for images and Chinese reports.",
   "providers": {
     "google": {
       "base_url": "https://generativelanguage.googleapis.com/v1beta/openai",
@@ -23,25 +23,35 @@
   },
   "roles": {
     "review": {
-      "enabled": false,
+      "enabled": true,
       "provider": "openrouter",
-      "model": "",
+      "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
       "timeout_seconds": 90,
       "daily_limit": 12,
-      "fallback": []
+      "fallback": [
+        {
+          "provider": "groq",
+          "model": ""
+        }
+      ]
     },
     "explain": {
-      "enabled": false,
+      "enabled": true,
       "provider": "openrouter",
-      "model": "",
+      "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
       "timeout_seconds": 120,
       "daily_limit": 12,
-      "fallback": []
+      "fallback": [
+        {
+          "provider": "groq",
+          "model": ""
+        }
+      ]
     },
     "qa": {
-      "enabled": false,
+      "enabled": true,
       "provider": "groq",
-      "model": "",
+      "model": "openai/gpt-oss-120b",
       "timeout_seconds": 20,
       "daily_limit": 50,
       "fallback": [
@@ -50,6 +60,15 @@
           "model": ""
         }
       ]
+    },
+    "reader": {
+      "enabled": false,
+      "provider": "groq",
+      "model": "",
+      "timeout_seconds": 90,
+      "daily_limit": 20,
+      "fallback": [],
+      "_note": "Qwen on Groq for images and Chinese-language reports. Off until a source of images or Chinese filings is connected."
     }
   }
 }

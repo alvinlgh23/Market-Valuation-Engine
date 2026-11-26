@@ -50,20 +50,23 @@ def test_a_successful_call_names_the_provider_and_model(tmp_path, monkeypatch):
 
 def test_timeouts_rate_limits_and_bad_replies_become_unavailable_never_an_exception(tmp_path, monkeypatch):
     for reply in [(0, None), (429, None), (500, None), (-1, None), (200, {"choices": []})]:
-        gw, _ = gateway(tmp_path / str(reply[0]), monkeypatch, [reply], cfg=config(review={}))
+        gw, _ = gateway(tmp_path / str(reply[0]), monkeypatch, [reply], cfg=config(review={"fallback": []}))
         result = gw.chat("review", [{"role": "user", "content": "x"}])
         assert result["status"] == "UNAVAILABLE" and result["text"] is None
 
 
-def test_review_never_falls_back_but_qa_may(tmp_path, monkeypatch):
-    gw, seen = gateway(tmp_path, monkeypatch, [(429, None)])
+def test_review_falls_back_when_its_main_model_is_rate_limited_and_says_so(tmp_path, monkeypatch):
+    """Owner 2026-11-27: Qwen picks up review and explain when Nemotron's free limit is reached."""
+    gw, seen = gateway(tmp_path, monkeypatch, [(429, None), ok("from qwen")])
     review = gw.chat("review", [{"role": "user", "content": "x"}])
-    assert review["status"] == "UNAVAILABLE" and len(seen) == 1          # no quiet substitute for a reading-adjacent role
+    assert review["status"] == "OK" and review["model"] == "flash-1" and review["fell_back"] is True
+    assert [call["model"] for call in seen] == ["think-1", "flash-1"]
 
-    gw, seen = gateway(tmp_path / "qa", monkeypatch, [(429, None), ok("from flash")])
-    qa = gw.chat("qa", [{"role": "user", "content": "x"}])
-    assert qa["status"] == "OK" and qa["provider"] == "google" and qa["model"] == "flash-1" and qa["fell_back"] is True
-    assert [call["model"] for call in seen] == ["fast-1", "flash-1"]
+    gw, seen = gateway(tmp_path / "none", monkeypatch, [(429, None)], cfg=config(review={"fallback": []}))
+    assert gw.chat("review", [{"role": "user", "content": "x"}])["status"] == "UNAVAILABLE" and len(seen) == 1
+
+    gw, seen = gateway(tmp_path / "empty", monkeypatch, [(429, None)], cfg=config(review={"fallback": [{"provider": "google", "model": ""}]}))
+    assert gw.chat("review", [{"role": "user", "content": "x"}])["status"] == "UNAVAILABLE" and len(seen) == 1   # no model named: skipped
 
 
 def test_roles_are_off_without_a_model_a_key_or_the_switch(tmp_path, monkeypatch):
@@ -77,11 +80,11 @@ def test_roles_are_off_without_a_model_a_key_or_the_switch(tmp_path, monkeypatch
     assert seen == []
 
 
-def test_the_shipped_config_has_every_role_off_and_no_keys():
+def test_the_shipped_config_holds_no_keys_and_every_enabled_role_names_a_model():
     shipped = lg.load_config()
-    assert shipped["roles"] and all(spec["enabled"] is False for spec in shipped["roles"].values())
+    assert shipped["roles"] and all(spec["model"] for spec in shipped["roles"].values() if spec["enabled"])
     text = lg.CONFIG_PATH.read_text()
-    assert "sk-" not in text and "AIza" not in text and "Bearer" not in text
+    assert "sk-" not in text and "gsk_" not in text and "AIza" not in text and "Bearer" not in text
 
 
 def test_the_daily_limit_stops_calls_and_the_log_holds_no_prompt_text(tmp_path, monkeypatch):
