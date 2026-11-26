@@ -156,6 +156,7 @@ def _recent_daily_move(stock_frame, spy_frame, as_of: str | None) -> dict[str, A
             }
     return {
         "latest_date": latest_date,
+        "latest_price": float(s.iloc[-1]),
         "since_window_end": since,
         "last_5d": {"stock_change": stock_5d, "spy_change": spy_5d, "vs_spy": stock_5d - spy_5d, "z_5d": z_5d},
     }

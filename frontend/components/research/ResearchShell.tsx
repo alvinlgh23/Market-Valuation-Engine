@@ -49,7 +49,14 @@ const STATE_HELP: Record<string, string> = {
 
 function companyContext(ticker: string) {
   const root = `/company/${ticker}`;
-  return [["Overview", root], ["Economics", `${root}?view=economics`], ["Positioning", `${root}?view=positioning`], ["Valuation", `/valuation/${ticker}?view=overview&from=company`], ["Evidence", `${root}?view=evidence`]] as const;
+  return [
+    ["Overview", root],
+    ["Economics", `${root}?view=economics`],
+    ["Positioning", `${root}?view=positioning`],
+    ["Financials", `${root}?view=financials`],
+    ["Valuation", `/valuation/${ticker}?view=overview&from=company`],
+    ["Evidence", `${root}?view=evidence`],
+  ] as const;
 }
 
 function valuationContext(ticker: string) {

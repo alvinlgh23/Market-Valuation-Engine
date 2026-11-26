@@ -64,7 +64,7 @@ try {
   await page.getByText("Current economic read").waitFor();
   await shot(page, "09-company-snapshot.png", true);
   await page.getByRole("button", { name: /^Economic map$/ }).click();
-  await page.getByRole("dialog", { name: /Economic Map workspace/i }).waitFor();
+  await page.locator(".economic-map-legend").waitFor();   // the workspace now opens inline, not as a dialog
   await shot(page, "10-economic-map.png");
 
   const api = await page.request.get(`${baseUrl}/api/research?scope=dashboard`);

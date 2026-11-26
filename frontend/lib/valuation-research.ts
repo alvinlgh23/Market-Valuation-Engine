@@ -124,15 +124,25 @@ export function assumption(report: ValuationReport, name: string): ValuationAssu
 }
 
 export function hasScenarios(report: ValuationReport): boolean {
-  return report.validation.status !== "FAILED" && Boolean((report.scenarios as Record<string, unknown>).base);
+  const scenarios = report.scenarios as Record<string, ScenarioResult | undefined> | undefined;
+  return (
+    report.validation.status !== "FAILED" &&
+    Boolean(scenarios?.bear && scenarios?.base && scenarios?.bull)
+  );
 }
 
 /** Headline bear/base/bull: the phased values when the engine supplies them, otherwise the five-year scenarios. */
 export function headlineFairValues(report: ValuationReport): Record<"bear" | "base" | "bull", number> {
   const phased = report.fair_value?.fair_value;
-  if (phased && phased.bear != null && phased.base != null && phased.bull != null) return { bear: phased.bear, base: phased.base, bull: phased.bull };
-  const scenarios = report.scenarios as Record<"bear" | "base" | "bull", ScenarioResult>;
-  return { bear: scenarios.bear.fair_value_per_share, base: scenarios.base.fair_value_per_share, bull: scenarios.bull.fair_value_per_share };
+  if (phased && phased.bear != null && phased.base != null && phased.bull != null) {
+    return { bear: phased.bear, base: phased.base, bull: phased.bull };
+  }
+  const scenarios = (report.scenarios ?? {}) as Partial<Record<"bear" | "base" | "bull", ScenarioResult>>;
+  return {
+    bear: scenarios.bear?.fair_value_per_share ?? Number.NaN,
+    base: scenarios.base?.fair_value_per_share ?? Number.NaN,
+    bull: scenarios.bull?.fair_value_per_share ?? Number.NaN,
+  };
 }
 
 export function valuationState(report: ValuationReport) {

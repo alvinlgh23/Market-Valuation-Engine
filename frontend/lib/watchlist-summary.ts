@@ -1,5 +1,26 @@
 // One shared request for the watchlist's last recorded card states (history only, no network).
-export type SummaryRow = { ticker: string; last_card: string | null; axes: Record<string, string>; price_to_max_case?: number | null; changed: Array<{ axis: string; from: string; to: string; on: string; origin?: "COMPANY" | "RULES" | "UNKNOWN" }> };
+export type WatchlistValuationDetail = {
+  price: number | null;
+  bear: number | null;
+  base: number | null;
+  bull: number | null;
+  price_to_max_case?: number | null;
+  implied_roe?: number | null;
+  latest_roe?: number | null;
+  currency?: string;
+};
+
+export type SummaryRow = {
+  ticker: string;
+  name?: string | null;
+  last_card: string | null;
+  axes: Record<string, string>;
+  price_to_max_case?: number | null;
+  latest_price?: number | null;
+  valuation_detail?: WatchlistValuationDetail | null;
+  operating_constraint?: string | null;
+  changed: Array<{ axis: string; from: string; to: string; on: string; origin?: "COMPANY" | "RULES" | "UNKNOWN" }>;
+};
 
 let shared: Promise<SummaryRow[]> | null = null;
 export function loadWatchlistSummary(): Promise<SummaryRow[]> {

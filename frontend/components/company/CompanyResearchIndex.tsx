@@ -21,10 +21,10 @@ export function CompanyResearchIndex({ showBenchmarks, lead }: { showBenchmarks:
   }
   return (
     <ResearchShell active="companies" dataState="CACHED">
-      <div className="company-index-surface">
+      <div className={`company-index-surface${lead ? " has-watchlist-lead" : ""}`}>
         {lead}
-        <form className="company-open" onSubmit={submit}><label htmlFor="company-index-ticker">Open a company</label><div><input id="company-index-ticker" autoFocus={!lead} value={ticker} onChange={(event) => setTicker(event.target.value)} placeholder="Ticker, e.g. AMD" /><button type="submit">Open →</button></div></form>
-        {recent.length ? <section className="company-recent" aria-label="Recently analysed"><span>Recent</span>{recent.map((item) => <Link key={item.ticker} href={`/company/${item.ticker}`} title={`${item.name} · ${humanize(item.archetype)}`}>{item.ticker}</Link>)}</section> : null}
+        {!lead ? <form className="company-open" onSubmit={submit}><label htmlFor="company-index-ticker">Open a company</label><div><input id="company-index-ticker" autoFocus value={ticker} onChange={(event) => setTicker(event.target.value)} placeholder="Ticker, e.g. AMD" /><button type="submit">Open →</button></div></form> : null}
+        {!lead && recent.length ? <section className="company-recent" aria-label="Recently analysed"><span>Recent</span>{recent.map((item) => <Link key={item.ticker} href={`/company/${item.ticker}`} title={`${item.name} · ${humanize(item.archetype)}`}>{item.ticker}</Link>)}</section> : null}
         {showBenchmarks ? <details className="company-dev-benchmarks"><summary>DEV / REGRESSION BENCHMARKS</summary><p>Fixture-only architecture examples. These are not the production company universe.</p><div>{BENCHMARKS.map((symbol) => <Link key={symbol} href={`/company/${symbol}?fixture=1`}>{symbol}</Link>)}</div></details> : null}
       </div>
     </ResearchShell>

@@ -1079,10 +1079,85 @@ def run_watchlist(tickers: list[str], *, home_currency: str | None = None, as_js
     return 0
 
 
+def _clean_company_name(raw: str | None) -> str | None:
+    if not raw or not isinstance(raw, str):
+        return None
+    cleaned = re.sub(r"\s*/[A-Z]+\s*$", "", raw.strip())
+    cleaned = re.sub(r",?\s*\b(INC\.?|CORP\.?|CORPORATION|CO\.?|LTD\.?|PLC|N\.V\.|HOLDINGS?)\s*$", "", cleaned, flags=re.IGNORECASE).strip(" ,.")
+    if cleaned.isupper() and len(cleaned) > 4:
+        cleaned = cleaned.title()
+        for acr in ("Nvidia", "Amd", "Ibm", "Jpmorgan", "Tsmc", "Asml", "Sap"):
+            if acr == "Nvidia":
+                cleaned = re.sub(r"\bNvidia\b", "NVIDIA", cleaned)
+            elif acr == "Amd":
+                cleaned = re.sub(r"\bAmd\b", "AMD", cleaned)
+            elif acr == "Jpmorgan":
+                cleaned = re.sub(r"\bJpmorgan\b", "JPMorgan", cleaned)
+    return cleaned or raw.strip()
+
+
+def _cached_watchlist_enrichment(tickers: list[str]) -> dict[str, dict[str, Any]]:
+    """Read company names and any saved verdict fair-value details from disk caches only (zero network)."""
+    sec_names: dict[str, str] = {}
+    try:
+        sec_raw = json.loads((ROOT / ".cache" / "sec_company" / "company_tickers.json").read_text())
+        sec_names = {str(v.get("ticker", "")).upper(): str(v.get("title", "")) for v in sec_raw.values() if v.get("ticker")}
+    except (OSError, json.JSONDecodeError, AttributeError):
+        pass
+    info: dict[str, dict[str, Any]] = {}
+    for sym in tickers:
+        key = sym.upper()
+        name = None
+        try:
+            ce = json.loads((ROOT / ".cache" / "company_economics" / f"{key}.json").read_text())
+            name = (ce.get("normalized_snapshot") or {}).get("company_name")
+        except (OSError, json.JSONDecodeError, AttributeError):
+            pass
+        name = _clean_company_name(name or sec_names.get(key))
+        val_detail = None
+        op_constraint = None
+        try:
+            vd = json.loads((VERDICT_CACHE / f"{key}.json").read_text())
+            det = ((vd.get("axes") or {}).get("valuation") or {}).get("detail")
+            if isinstance(det, dict):
+                fv = det.get("fair_value") if isinstance(det.get("fair_value"), dict) else {}
+                bank = det.get("bank_implied_roe") if isinstance(det.get("bank_implied_roe"), dict) else {}
+                val_detail = {
+                    "price": _num(det.get("price")),
+                    "bear": _num(fv.get("bear") if fv else det.get("bear")),
+                    "base": _num(fv.get("base") if fv else det.get("base")),
+                    "bull": _num(fv.get("bull") if fv else det.get("bull")),
+                    "price_to_max_case": _num(det.get("price_to_max_case")),
+                    "implied_roe": _num(bank.get("implied_roe")),
+                    "latest_roe": _num(bank.get("latest_roe")),
+                    "currency": det.get("currency") or "USD",
+                }
+            op = vd.get("operating") or {}
+            if isinstance(op, dict) and op.get("constraint"):
+                c = op["constraint"]
+                op_constraint = f"{c.get('label')}: {str(c.get('reading', '')).lower()}"
+        except (OSError, json.JSONDecodeError, AttributeError):
+            pass
+        attr_price = None
+        try:
+            attr = load_attribution(key) or {}
+            attr_price = _num((((attr.get("attribution") or {}).get("recent_move") or {}).get("latest_price")))
+        except Exception:  # noqa: BLE001
+            pass
+        info[sym] = {
+            "name": name,
+            "latest_price": (val_detail or {}).get("price") or attr_price,
+            "valuation_detail": val_detail,
+            "operating_constraint": op_constraint,
+        }
+    return info
+
+
 def watchlist_summary(store: SignalStore | None = None) -> list[dict[str, Any]]:
     """Last recorded card states per watchlist company, read from history only (no network)."""
     store = store or SignalStore()
     tickers = json.loads(WATCHLIST_PATH.read_text()).get("tickers", []) if WATCHLIST_PATH.exists() else []
+    enrichment = _cached_watchlist_enrichment(tickers)
     output, stretch = [], {}
     for ticker in tickers:
         axes, last_date, changed = {}, None, []
@@ -1097,7 +1172,20 @@ def watchlist_summary(store: SignalStore | None = None) -> list[dict[str, Any]]:
             if len(rows) >= 2 and rows[-2]["label"] != rows[-1]["label"]:
                 changed.append({"axis": key, "from": rows[-2]["label"], "to": rows[-1]["label"], "on": rows[-1]["observation_date"],
                                 "origin": change_origin(rows[-2].get("source"), rows[-1].get("source"))})
-        output.append({"ticker": ticker, "last_card": last_date, "axes": axes, "changed": changed, "price_to_max_case": stretch.get(ticker)})
+        extra = enrichment.get(ticker, {})
+        val_det = extra.get("valuation_detail")
+        p2max = stretch.get(ticker) or (val_det or {}).get("price_to_max_case")
+        output.append({
+            "ticker": ticker,
+            "name": extra.get("name"),
+            "last_card": last_date,
+            "axes": axes,
+            "changed": changed,
+            "price_to_max_case": p2max,
+            "latest_price": extra.get("latest_price"),
+            "valuation_detail": val_det,
+            "operating_constraint": extra.get("operating_constraint"),
+        })
     output.sort(key=lambda item: (-len(item["changed"]), item["last_card"] is None, item["ticker"]))
     return output
 

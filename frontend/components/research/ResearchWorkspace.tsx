@@ -9,7 +9,8 @@ export function ResearchWorkspace({
   children,
   inspector,
   onClose,
-  depth = 1
+  depth = 1,
+  inline = false
 }: {
   code: string;
   title: string;
@@ -18,7 +19,27 @@ export function ResearchWorkspace({
   inspector?: ReactNode;
   onClose: () => void;
   depth?: number;
+  inline?: boolean;
 }) {
+  if (inline && depth === 1) {
+    return (
+      <div className="research-workspace-layer workspace-inline" role="region" aria-label={`${title} workspace`}>
+        <section className="research-workspace">
+          <header className="workspace-header">
+            <div><span>{code}</span><h2>{title}</h2></div>
+            <div>
+              <button type="button" onClick={onClose} aria-label={`Close ${title} workspace`}>← Overview</button>
+            </div>
+          </header>
+          <div className={`workspace-body${inspector ? " workspace-with-inspector" : ""}`}>
+            <div className="workspace-canvas">{children}</div>
+            {inspector ? <aside className="workspace-inspector">{inspector}</aside> : null}
+          </div>
+        </section>
+      </div>
+    );
+  }
+
   return (
     <div className={`research-workspace-layer workspace-depth-${depth}`} role="dialog" aria-modal="true" aria-label={`${title} workspace`}>
       <section className="research-workspace">

@@ -133,13 +133,14 @@ export function InteractiveValuationSandbox({ report }: { report: ValuationRepor
   const canSnapToPrice = Number.isFinite(revSolved) && revSolved >= -0.15 && revSolved <= 0.55;
 
   // Calibrate unit factor so default sliders match report's exact base value (handles ADR / rounding seamlessly).
-  const headlineBase = headlineFairValues(report).base;
+  const scenariosAvailable = hasScenarios(report);
+  const headlineBase = scenariosAvailable ? headlineFairValues(report).base : null;
   const rawDefault = useMemo(() => computeInteractiveFairValue({
     revenue, currentMargin, cash, debt, shares,
     growth0: defaultGrowth, targetMargin: defaultMargin, wacc: defaultWacc,
     terminalGrowth: terminal, dilution, extendedWeight: extWeight, unitFactor: 1
   }), [revenue, currentMargin, cash, debt, shares, defaultGrowth, defaultMargin, defaultWacc, terminal, dilution, extWeight]);
-  const unitFactor = rawDefault && headlineBase && Math.abs(rawDefault) > 1e-6 ? headlineBase / rawDefault : 1;
+  const unitFactor = rawDefault && headlineBase && Number.isFinite(headlineBase) && Math.abs(rawDefault) > 1e-6 ? headlineBase / rawDefault : 1;
 
   const simulated = computeInteractiveFairValue({
     revenue, currentMargin, cash, debt, shares,
@@ -147,7 +148,7 @@ export function InteractiveValuationSandbox({ report }: { report: ValuationRepor
     terminalGrowth: terminal, dilution, extendedWeight: extWeight, unitFactor
   });
 
-  if (!hasScenarios(report) || !(revenue > 0) || !(shares > 0)) return null;
+  if (!scenariosAvailable || !(revenue > 0) || !(shares > 0)) return null;
   const isModified = Math.abs(growth - defaultGrowth) > 0.001 || Math.abs(margin - defaultMargin) > 0.001 || Math.abs(wacc - defaultWacc) > 0.001;
   const deltaVsPrice = simulated != null && price && price > 0 ? simulated / price - 1 : null;
 

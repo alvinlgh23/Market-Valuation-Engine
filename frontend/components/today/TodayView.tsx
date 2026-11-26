@@ -57,23 +57,12 @@ export function TodayView({ system, status }: { system: ResearchSystem; status?:
   const [summary, setSummary] = useState<SummaryRow[] | null>(null);
   const [events, setEvents] = useState<WatchlistEvents | null>(null);
   const [showAll, setShowAll] = useState(false);
-  const [lastCheckDate, setLastCheckDate] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
-    let prevCheck: string | null = null;
-    try {
-      prevCheck = window.localStorage.getItem("chainstox.lastTodayCheck");
-      window.localStorage.setItem("chainstox.lastTodayCheck", new Date().toLocaleDateString("en-CA"));
-    } catch { /* ignore */ }
     loadWatchlistEvents().then((value) => { if (active) setEvents(value); });
     loadWatchlistDrivers().then((rows) => { if (active) setDrivers(rows); });
-    loadWatchlistSummary().then((rows) => {
-      if (active) {
-        setLastCheckDate(prevCheck);
-        setSummary(rows);
-      }
-    });
+    loadWatchlistSummary().then((rows) => { if (active) setSummary(rows); });
     return () => { active = false; };
   }, []);
 
@@ -88,21 +77,6 @@ export function TodayView({ system, status }: { system: ResearchSystem; status?:
   const shown = showAll ? alerts : alerts.slice(0, VISIBLE_ALERTS);
   const sectors = sectorLeadershipBars(system, 4);
 
-  const calmSummary = useMemo(() => {
-    if (!summary || !summary.length) return null;
-    const changedCompanies = summary.filter((row) => row.changed.some((c) => c.origin === "COMPANY"));
-    if (!changedCompanies.length) {
-      return {
-        calm: true,
-        text: `All ${summary.length} watchlist holdings kept the same fundamental & analyst-estimate readings${lastCheckDate ? ` since ${lastCheckDate}` : ""}. Short-term price swings without estimate changes are market noise.`
-      };
-    }
-    return {
-      calm: false,
-      text: `${changedCompanies.length} of ${summary.length} holdings had a genuine reading shift (${changedCompanies.map((r) => r.ticker).join(", ")}); the other ${summary.length - changedCompanies.length} are unchanged.`
-    };
-  }, [summary, lastCheckDate]);
-
   return <div className="tdy">
     <header className="tdy-top">
       <div>
@@ -116,12 +90,6 @@ export function TodayView({ system, status }: { system: ResearchSystem; status?:
       <i aria-hidden="true" />Data is from {environment?.as_of ?? "an unknown date"}{age.days != null ? `, ${age.days} business days ago` : ""}. Alerts describe that date, not today.
     </div> : null}
 
-    {calmSummary ? (
-      <div className={`tdy-peace ${calmSummary.calm ? "is-calm" : "has-shift"}`} role="status">
-        <i aria-hidden="true" />
-        <span>{calmSummary.text}</span>
-      </div>
-    ) : null}
 
     <div className="tdy-grid tdy-grid-top">
       <Card className="tdy-read">
