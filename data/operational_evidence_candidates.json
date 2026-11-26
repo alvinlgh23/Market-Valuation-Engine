@@ -196,10 +196,12 @@
       "document_sha256": "76564b9c14aa1b6f4ba2acfa802ab58c5bff1114670a0de9ae71a5a7305663ba",
       "extraction_method": "gemini:gemini-4-hydrogen@prompt_v2",
       "verification_status": "MACHINE_EXTRACTED",
-      "review_state": "PENDING_REVIEW",
+      "review_state": "REJECTED",
       "duplicate_of": null,
       "conflict_with": null,
-      "created_at": "2026-11-26T00:57:41.314224+00:00"
+      "created_at": "2026-11-26T00:57:41.314224+00:00",
+      "rejection_note": "Quote truncated mid-number; capex already covered in XBRL.",
+      "reviewed_at": "2026-11-26T01:14:35.949777+00:00"
     },
     {
       "id": "TSM-2025-12-31-ADVANCED-NODE-MIX-CAND",
@@ -295,11 +297,13 @@
       "verbatim_quote": "Costco operated 939, 914, and 890 warehouses worldwide at August 30, 2026, August 31, 2025, and September 1, 2024.",
       "document_sha256": "75896801be74eddc2efebdf87549ef02d8a0eb1e84cb0a2cf3f13bf5ba0fbb67",
       "extraction_method": "gemini:gemini-4-hydrogen@prompt_v2",
-      "verification_status": "MACHINE_EXTRACTED",
-      "review_state": "PENDING_REVIEW",
+      "verification_status": "DOCUMENTARY_VERIFIED",
+      "review_state": "ACCEPTED",
       "duplicate_of": null,
       "conflict_with": null,
-      "created_at": "2026-11-26T00:59:19.718974+00:00"
+      "created_at": "2026-11-26T00:59:19.718974+00:00",
+      "promoted_id": "COST-2026-08-30-STORE-COUNT",
+      "reviewed_at": "2026-11-26T01:14:35.935529+00:00"
     },
     {
       "id": "COST-2025-08-31-STORE-COUNT-CAND",
@@ -320,11 +324,13 @@
       "verbatim_quote": "Costco operated 939, 914, and 890 warehouses worldwide at August 30, 2026, August 31, 2025, and September 1, 2024.",
       "document_sha256": "75896801be74eddc2efebdf87549ef02d8a0eb1e84cb0a2cf3f13bf5ba0fbb67",
       "extraction_method": "gemini:gemini-4-hydrogen@prompt_v2",
-      "verification_status": "MACHINE_EXTRACTED",
-      "review_state": "PENDING_REVIEW",
+      "verification_status": "DOCUMENTARY_VERIFIED",
+      "review_state": "ACCEPTED",
       "duplicate_of": null,
       "conflict_with": null,
-      "created_at": "2026-11-26T00:59:19.718974+00:00"
+      "created_at": "2026-11-26T00:59:19.718974+00:00",
+      "promoted_id": "COST-2025-08-31-STORE-COUNT",
+      "reviewed_at": "2026-11-26T01:14:35.934684+00:00"
     },
     {
       "id": "COST-2024-09-01-STORE-COUNT-CAND",
@@ -345,11 +351,13 @@
       "verbatim_quote": "Costco operated 939, 914, and 890 warehouses worldwide at August 30, 2026, August 31, 2025, and September 1, 2024.",
       "document_sha256": "75896801be74eddc2efebdf87549ef02d8a0eb1e84cb0a2cf3f13bf5ba0fbb67",
       "extraction_method": "gemini:gemini-4-hydrogen@prompt_v2",
-      "verification_status": "MACHINE_EXTRACTED",
-      "review_state": "PENDING_REVIEW",
+      "verification_status": "DOCUMENTARY_VERIFIED",
+      "review_state": "ACCEPTED",
       "duplicate_of": null,
       "conflict_with": null,
-      "created_at": "2026-11-26T00:59:19.718974+00:00"
+      "created_at": "2026-11-26T00:59:19.718974+00:00",
+      "promoted_id": "COST-2024-09-01-STORE-COUNT",
+      "reviewed_at": "2026-11-26T01:14:35.932677+00:00"
     },
     {
       "id": "MSFT-2026-06-30-REMAINING-PERFORMANCE-OBLIGATIONS-CAND",
@@ -370,11 +378,13 @@
       "verbatim_quote": "Revenue allocated to remaining performance obligations related to the commercial portion of revenue was $678 billion as of June 30, 2026, with a weighted average duration of approximately 2.3 years.",
       "document_sha256": "4a52efe05fb6428b1c728c8f345acbaada867b5f98291923c0fa4278b204687d",
       "extraction_method": "gemini:gemini-4-hydrogen@prompt_v2",
-      "verification_status": "MACHINE_EXTRACTED",
-      "review_state": "PENDING_REVIEW",
+      "verification_status": "DOCUMENTARY_VERIFIED",
+      "review_state": "ACCEPTED",
       "duplicate_of": null,
       "conflict_with": null,
-      "created_at": "2026-11-26T00:59:47.028864+00:00"
+      "created_at": "2026-11-26T00:59:47.028864+00:00",
+      "promoted_id": "MSFT-2026-06-30-REMAINING-PERFORMANCE-OBLIGATIONS",
+      "reviewed_at": "2026-11-26T01:14:35.936359+00:00"
     },
     {
       "id": "MSFT-2026-06-30-CLOUD-GROWTH-CAND",
@@ -396,10 +406,12 @@
       "document_sha256": "4a52efe05fb6428b1c728c8f345acbaada867b5f98291923c0fa4278b204687d",
       "extraction_method": "gemini:gemini-4-hydrogen@prompt_v2",
       "verification_status": "MACHINE_EXTRACTED",
-      "review_state": "PENDING_REVIEW",
+      "review_state": "REJECTED",
       "duplicate_of": null,
       "conflict_with": null,
-      "created_at": "2026-11-26T00:59:47.028864+00:00"
+      "created_at": "2026-11-26T00:59:47.028864+00:00",
+      "rejection_note": "Sub-segment scope only (M365 Consumer cloud, not Azure/total cloud).",
+      "reviewed_at": "2026-11-26T01:14:35.950472+00:00"
     },
     {
       "id": "META-2025-12-31-USERS-CAND",
@@ -420,11 +432,13 @@
       "verbatim_quote": "Family daily active people (DAP) was 3.58 billion on average for December 2025, an increase of 7% year-over-year.",
       "document_sha256": "a44f299b62a68875bc4f441c0360db2add60052f0c83a7333a12d34912150338",
       "extraction_method": "gemini:gemini-4-hydrogen@prompt_v2",
-      "verification_status": "MACHINE_EXTRACTED",
-      "review_state": "PENDING_REVIEW",
+      "verification_status": "DOCUMENTARY_VERIFIED",
+      "review_state": "ACCEPTED",
       "duplicate_of": null,
       "conflict_with": null,
-      "created_at": "2026-11-26T01:00:38.603962+00:00"
+      "created_at": "2026-11-26T01:00:38.603962+00:00",
+      "promoted_id": "META-2025-12-31-USERS",
+      "reviewed_at": "2026-11-26T01:14:35.937698+00:00"
     },
     {
       "id": "META-2025-12-31-USER-GROWTH-CAND",
@@ -445,11 +459,13 @@
       "verbatim_quote": "Family daily active people (DAP) was 3.58 billion on average for December 2025, an increase of 7% year-over-year.",
       "document_sha256": "a44f299b62a68875bc4f441c0360db2add60052f0c83a7333a12d34912150338",
       "extraction_method": "gemini:gemini-4-hydrogen@prompt_v2",
-      "verification_status": "MACHINE_EXTRACTED",
-      "review_state": "PENDING_REVIEW",
+      "verification_status": "DOCUMENTARY_VERIFIED",
+      "review_state": "ACCEPTED",
       "duplicate_of": null,
       "conflict_with": null,
-      "created_at": "2026-11-26T01:00:38.603962+00:00"
+      "created_at": "2026-11-26T01:00:38.603962+00:00",
+      "promoted_id": "META-2025-12-31-USER-GROWTH",
+      "reviewed_at": "2026-11-26T01:14:35.938499+00:00"
     },
     {
       "id": "META-2025-12-31-ENGAGEMENT-CAND",
@@ -470,11 +486,13 @@
       "verbatim_quote": "Ad impressions delivered across our Family of Apps increased by 12% year-over-year in 2025.",
       "document_sha256": "a44f299b62a68875bc4f441c0360db2add60052f0c83a7333a12d34912150338",
       "extraction_method": "gemini:gemini-4-hydrogen@prompt_v2",
-      "verification_status": "MACHINE_EXTRACTED",
-      "review_state": "PENDING_REVIEW",
+      "verification_status": "DOCUMENTARY_VERIFIED",
+      "review_state": "ACCEPTED",
       "duplicate_of": null,
       "conflict_with": null,
-      "created_at": "2026-11-26T01:00:38.603962+00:00"
+      "created_at": "2026-11-26T01:00:38.603962+00:00",
+      "promoted_id": "META-2025-12-31-ENGAGEMENT",
+      "reviewed_at": "2026-11-26T01:14:35.939251+00:00"
     },
     {
       "id": "META-2025-12-31-PRICING-CAND",
@@ -495,11 +513,13 @@
       "verbatim_quote": "Average price per ad increased by 9% year-over-year in 2025.",
       "document_sha256": "a44f299b62a68875bc4f441c0360db2add60052f0c83a7333a12d34912150338",
       "extraction_method": "gemini:gemini-4-hydrogen@prompt_v2",
-      "verification_status": "MACHINE_EXTRACTED",
-      "review_state": "PENDING_REVIEW",
+      "verification_status": "DOCUMENTARY_VERIFIED",
+      "review_state": "ACCEPTED",
       "duplicate_of": null,
       "conflict_with": null,
-      "created_at": "2026-11-26T01:00:38.603962+00:00"
+      "created_at": "2026-11-26T01:00:38.603962+00:00",
+      "promoted_id": "META-2025-12-31-PRICING",
+      "reviewed_at": "2026-11-26T01:14:35.939987+00:00"
     },
     {
       "id": "WMT-2026-01-31-CUSTOMERS-CAND",
@@ -520,11 +540,13 @@
       "verbatim_quote": "Each week, we serve approximately 280 million customers who visit more than 10,900 stores in 19 countries and through our numerous eCommerce websites and mobile applications.",
       "document_sha256": "dd43cfcd2bc6f379f9862047dc7d5533bf6760d29b209b202e8fc217ec432a25",
       "extraction_method": "gemini:gemini-4-hydrogen@prompt_v2",
-      "verification_status": "MACHINE_EXTRACTED",
-      "review_state": "PENDING_REVIEW",
+      "verification_status": "DOCUMENTARY_VERIFIED",
+      "review_state": "ACCEPTED",
       "duplicate_of": null,
       "conflict_with": null,
-      "created_at": "2026-11-26T01:01:20.248269+00:00"
+      "created_at": "2026-11-26T01:01:20.248269+00:00",
+      "promoted_id": "WMT-2026-01-31-CUSTOMERS",
+      "reviewed_at": "2026-11-26T01:14:35.940665+00:00"
     },
     {
       "id": "WMT-2026-01-31-STORE-COUNT-CAND",
@@ -545,11 +567,13 @@
       "verbatim_quote": "Each week, we serve approximately 280 million customers who visit more than 10,900 stores in 19 countries and through our numerous eCommerce websites and mobile applications.",
       "document_sha256": "dd43cfcd2bc6f379f9862047dc7d5533bf6760d29b209b202e8fc217ec432a25",
       "extraction_method": "gemini:gemini-4-hydrogen@prompt_v2",
-      "verification_status": "MACHINE_EXTRACTED",
-      "review_state": "PENDING_REVIEW",
+      "verification_status": "DOCUMENTARY_VERIFIED",
+      "review_state": "ACCEPTED",
       "duplicate_of": null,
       "conflict_with": null,
-      "created_at": "2026-11-26T01:01:20.248269+00:00"
+      "created_at": "2026-11-26T01:01:20.248269+00:00",
+      "promoted_id": "WMT-2026-01-31-STORE-COUNT",
+      "reviewed_at": "2026-11-26T01:14:35.941348+00:00"
     },
     {
       "id": "WMT-2026-01-31-DISTRIBUTION-CAPACITY-CAND",
@@ -571,10 +595,12 @@
       "document_sha256": "dd43cfcd2bc6f379f9862047dc7d5533bf6760d29b209b202e8fc217ec432a25",
       "extraction_method": "gemini:gemini-4-hydrogen@prompt_v2",
       "verification_status": "MACHINE_EXTRACTED",
-      "review_state": "PENDING_REVIEW",
+      "review_state": "REJECTED",
       "duplicate_of": null,
       "conflict_with": null,
-      "created_at": "2026-11-26T01:01:20.248269+00:00"
+      "created_at": "2026-11-26T01:01:20.248269+00:00",
+      "rejection_note": "International facilities outside the U.S. only, not global total.",
+      "reviewed_at": "2026-11-26T01:14:35.950943+00:00"
     },
     {
       "id": "V-2026-09-30-PAYMENT-VOLUME-CAND",
@@ -595,11 +621,13 @@
       "verbatim_quote": "During fiscal 2026, Visa’s total payments and cash volume was $18 trillion, and we had over 5 billion payment credentials, which are issued Visa card accounts, that were available to be used at more than 400 million(1) seller locations worldwide.",
       "document_sha256": "5e03e1ef46ed0ac7d8f85a36159521066b5fc1d39234ef2a1678f9d5295e0430",
       "extraction_method": "gemini:gemini-3.5-flash-lite@prompt_v2",
-      "verification_status": "MACHINE_EXTRACTED",
-      "review_state": "PENDING_REVIEW",
+      "verification_status": "DOCUMENTARY_VERIFIED",
+      "review_state": "ACCEPTED",
       "duplicate_of": null,
       "conflict_with": null,
-      "created_at": "2026-11-26T01:03:30.287523+00:00"
+      "created_at": "2026-11-26T01:03:30.287523+00:00",
+      "promoted_id": "V-2026-09-30-PAYMENT-VOLUME",
+      "reviewed_at": "2026-11-26T01:14:35.942047+00:00"
     },
     {
       "id": "V-2026-09-30-TRANSACTIONS-CAND",
@@ -620,11 +648,13 @@
       "verbatim_quote": "During fiscal 2026, 355 billion payments and cash transactions with Visa’s brand were processed by Visa or other networks, equating to an average of 973 million transactions per day. Of the 355 billion total transactions, 281 billion were processed by Visa.",
       "document_sha256": "5e03e1ef46ed0ac7d8f85a36159521066b5fc1d39234ef2a1678f9d5295e0430",
       "extraction_method": "gemini:gemini-3.5-flash-lite@prompt_v2",
-      "verification_status": "MACHINE_EXTRACTED",
-      "review_state": "PENDING_REVIEW",
+      "verification_status": "DOCUMENTARY_VERIFIED",
+      "review_state": "ACCEPTED",
       "duplicate_of": null,
       "conflict_with": null,
-      "created_at": "2026-11-26T01:03:30.287523+00:00"
+      "created_at": "2026-11-26T01:03:30.287523+00:00",
+      "promoted_id": "V-2026-09-30-TRANSACTIONS",
+      "reviewed_at": "2026-11-26T01:14:35.942842+00:00"
     },
     {
       "id": "V-2026-09-30-REMAINING-PERFORMANCE-OBLIGATIONS-CAND",
@@ -645,11 +675,13 @@
       "verbatim_quote": "As of September 30, 2026, the remaining performance obligations were $5.6 billion.",
       "document_sha256": "5e03e1ef46ed0ac7d8f85a36159521066b5fc1d39234ef2a1678f9d5295e0430",
       "extraction_method": "gemini:gemini-3.5-flash-lite@prompt_v2",
-      "verification_status": "MACHINE_EXTRACTED",
-      "review_state": "PENDING_REVIEW",
+      "verification_status": "DOCUMENTARY_VERIFIED",
+      "review_state": "ACCEPTED",
       "duplicate_of": null,
       "conflict_with": null,
-      "created_at": "2026-11-26T01:03:30.287523+00:00"
+      "created_at": "2026-11-26T01:03:30.287523+00:00",
+      "promoted_id": "V-2026-09-30-REMAINING-PERFORMANCE-OBLIGATIONS",
+      "reviewed_at": "2026-11-26T01:14:35.943526+00:00"
     },
     {
       "id": "V-2026-09-30-CUSTOMERS-CAND",
@@ -670,11 +702,13 @@
       "verbatim_quote": "We offer a wide range of Visa-branded payment products that our clients, including over 14,000 financial institutions, use to develop and offer payment solutions or services, including credit, debit, prepaid and cash access programs for individual, business and government account holders.",
       "document_sha256": "5e03e1ef46ed0ac7d8f85a36159521066b5fc1d39234ef2a1678f9d5295e0430",
       "extraction_method": "gemini:gemini-3.5-flash-lite@prompt_v2",
-      "verification_status": "MACHINE_EXTRACTED",
-      "review_state": "PENDING_REVIEW",
+      "verification_status": "DOCUMENTARY_VERIFIED",
+      "review_state": "ACCEPTED",
       "duplicate_of": null,
       "conflict_with": null,
-      "created_at": "2026-11-26T01:03:30.287523+00:00"
+      "created_at": "2026-11-26T01:03:30.287523+00:00",
+      "promoted_id": "V-2026-09-30-CUSTOMERS",
+      "reviewed_at": "2026-11-26T01:14:35.944211+00:00"
     },
     {
       "id": "CAT-2025-12-31-BACKLOG-CAND",
@@ -695,11 +729,13 @@
       "verbatim_quote": "The dollar amount of backlog believed to be firm was approximately $51.2 billion at December 31, 2025 and $30.0 billion at December 31, 2024.",
       "document_sha256": "57fe17264c3065e82da099b9fd0a9285018e8d3a4ff843f8f29834dab677456d",
       "extraction_method": "gemini:gemini-3.5-flash-lite@prompt_v2",
-      "verification_status": "MACHINE_EXTRACTED",
-      "review_state": "PENDING_REVIEW",
+      "verification_status": "DOCUMENTARY_VERIFIED",
+      "review_state": "ACCEPTED",
       "duplicate_of": null,
       "conflict_with": null,
-      "created_at": "2026-11-26T01:05:46.581957+00:00"
+      "created_at": "2026-11-26T01:05:46.581957+00:00",
+      "promoted_id": "CAT-2025-12-31-BACKLOG",
+      "reviewed_at": "2026-11-26T01:14:35.945621+00:00"
     },
     {
       "id": "CAT-2024-12-31-BACKLOG-CAND",
@@ -720,11 +756,13 @@
       "verbatim_quote": "The dollar amount of backlog believed to be firm was approximately $51.2 billion at December 31, 2025 and $30.0 billion at December 31, 2024.",
       "document_sha256": "57fe17264c3065e82da099b9fd0a9285018e8d3a4ff843f8f29834dab677456d",
       "extraction_method": "gemini:gemini-3.5-flash-lite@prompt_v2",
-      "verification_status": "MACHINE_EXTRACTED",
-      "review_state": "PENDING_REVIEW",
+      "verification_status": "DOCUMENTARY_VERIFIED",
+      "review_state": "ACCEPTED",
       "duplicate_of": null,
       "conflict_with": null,
-      "created_at": "2026-11-26T01:05:46.581957+00:00"
+      "created_at": "2026-11-26T01:05:46.581957+00:00",
+      "promoted_id": "CAT-2024-12-31-BACKLOG",
+      "reviewed_at": "2026-11-26T01:14:35.944937+00:00"
     },
     {
       "id": "BAC-2025-12-31-STORE-COUNT-CAND",
@@ -745,11 +783,13 @@
       "verbatim_quote": "As of December 31, 2025, our network includes approximately 3,600 financial centers, approximately 15,000 ATMs, nationwide call centers and leading digital banking platforms with approximately 49 million active users, including approximately 41 million active mobile users.",
       "document_sha256": "1a376406e327f5f7a552e6d2f578f6578cb41b5ab78e74207ea201eadf66d20c",
       "extraction_method": "gemini:gemini-3.5-flash-lite@prompt_v2",
-      "verification_status": "MACHINE_EXTRACTED",
-      "review_state": "PENDING_REVIEW",
+      "verification_status": "DOCUMENTARY_VERIFIED",
+      "review_state": "ACCEPTED",
       "duplicate_of": null,
       "conflict_with": null,
-      "created_at": "2026-11-26T01:06:45.606142+00:00"
+      "created_at": "2026-11-26T01:06:45.606142+00:00",
+      "promoted_id": "BAC-2025-12-31-STORE-COUNT",
+      "reviewed_at": "2026-11-26T01:14:35.946312+00:00"
     },
     {
       "id": "BAC-2025-12-31-USERS-CAND",
@@ -770,11 +810,13 @@
       "verbatim_quote": "As of December 31, 2025, our network includes approximately 3,600 financial centers, approximately 15,000 ATMs, nationwide call centers and leading digital banking platforms with approximately 49 million active users, including approximately 41 million active mobile users.",
       "document_sha256": "1a376406e327f5f7a552e6d2f578f6578cb41b5ab78e74207ea201eadf66d20c",
       "extraction_method": "gemini:gemini-3.5-flash-lite@prompt_v2",
-      "verification_status": "MACHINE_EXTRACTED",
-      "review_state": "PENDING_REVIEW",
+      "verification_status": "DOCUMENTARY_VERIFIED",
+      "review_state": "ACCEPTED",
       "duplicate_of": null,
       "conflict_with": null,
-      "created_at": "2026-11-26T01:06:45.606142+00:00"
+      "created_at": "2026-11-26T01:06:45.606142+00:00",
+      "promoted_id": "BAC-2025-12-31-USERS",
+      "reviewed_at": "2026-11-26T01:14:35.947131+00:00"
     },
     {
       "id": "BAC-2025-12-31-NET-INTEREST-MARGIN-CAND",
@@ -795,11 +837,13 @@
       "verbatim_quote": "Net interest yield on a fully taxable-equivalent (FTE) basis increased six basis points (bps) to 2.01 percent for 2025.",
       "document_sha256": "1a376406e327f5f7a552e6d2f578f6578cb41b5ab78e74207ea201eadf66d20c",
       "extraction_method": "gemini:gemini-3.5-flash-lite@prompt_v2",
-      "verification_status": "MACHINE_EXTRACTED",
-      "review_state": "PENDING_REVIEW",
+      "verification_status": "DOCUMENTARY_VERIFIED",
+      "review_state": "ACCEPTED",
       "duplicate_of": null,
       "conflict_with": null,
-      "created_at": "2026-11-26T01:06:45.606142+00:00"
+      "created_at": "2026-11-26T01:06:45.606142+00:00",
+      "promoted_id": "BAC-2025-12-31-NET-INTEREST-MARGIN",
+      "reviewed_at": "2026-11-26T01:14:35.947845+00:00"
     },
     {
       "id": "AMD-2025-12-27-REMAINING-PERFORMANCE-OBLIGATIONS-CAND",
@@ -820,11 +864,13 @@
       "verbatim_quote": "As of December 27, 2025, the aggregate transaction price allocated to remaining performance obligations under contracts with an original expected duration of more than one year was $315 million, of which $201 million is expected to be recognized in the next 12 months.",
       "document_sha256": "9c34cc2a06c5573c0e73c3659029d15daae08fd2aec68e1f53cbe1fd1aca4661",
       "extraction_method": "gemini:gemini-3.5-flash-lite@prompt_v2",
-      "verification_status": "MACHINE_EXTRACTED",
-      "review_state": "PENDING_REVIEW",
+      "verification_status": "DOCUMENTARY_VERIFIED",
+      "review_state": "ACCEPTED",
       "duplicate_of": null,
       "conflict_with": null,
-      "created_at": "2026-11-26T01:07:40.146348+00:00"
+      "created_at": "2026-11-26T01:07:40.146348+00:00",
+      "promoted_id": "AMD-2025-12-27-REMAINING-PERFORMANCE-OBLIGATIONS",
+      "reviewed_at": "2026-11-26T01:14:35.948553+00:00"
     },
     {
       "id": "NVDA-2026-01-25-REMAINING-PERFORMANCE-OBLIGATIONS-CAND",
@@ -845,11 +891,13 @@
       "verbatim_quote": "As of January 25, 2026, revenue related to remaining performance obligations from contracts greater than one year in length was $2.3 billion, which includes $1.9 billion from deferred revenue and $390 million which has not yet been billed nor recognized as revenue.",
       "document_sha256": "15cf97ffba4104e1901d8c8beb5805466f5eec8a0d7293748364e66508e866d4",
       "extraction_method": "gemini:gemini-3.5-flash-lite@prompt_v2",
-      "verification_status": "MACHINE_EXTRACTED",
-      "review_state": "PENDING_REVIEW",
+      "verification_status": "DOCUMENTARY_VERIFIED",
+      "review_state": "ACCEPTED",
       "duplicate_of": null,
       "conflict_with": null,
-      "created_at": "2026-11-26T01:08:34.269551+00:00"
+      "created_at": "2026-11-26T01:08:34.269551+00:00",
+      "promoted_id": "NVDA-2026-01-25-REMAINING-PERFORMANCE-OBLIGATIONS",
+      "reviewed_at": "2026-11-26T01:14:35.949287+00:00"
     }
   ],
   "constraint_statements": [

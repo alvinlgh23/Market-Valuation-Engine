@@ -93,7 +93,7 @@ def load_operational_evidence(ticker: str, path: Path = DEFAULT_REGISTRY) -> lis
 
 def enrich_snapshot(snapshot: Any, path: Path = DEFAULT_REGISTRY):
     """Mutate the normalized snapshot boundary, not downstream claim logic."""
-    entries = load_operational_evidence(snapshot.ticker, path)
+    entries = sorted(load_operational_evidence(snapshot.ticker, path), key=lambda item: item.observation_date)
     envelopes = dict(getattr(snapshot, "evidence_envelopes", {}) or {})
     for entry in entries:
         snapshot.operational_metrics[entry.metric] = entry.value
