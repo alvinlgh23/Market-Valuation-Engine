@@ -374,13 +374,40 @@ def _reverse_of(report: dict[str, Any]) -> dict[str, Any]:
 BAND_MARGIN = 0.05
 
 
+# Checklist 20.3 (owner-approved 2026-11-26): fast growth rarely lasts five years, so each near-term
+# reference is turned into a five-year figure that fades in a straight line from today's rate to the
+# model's long-run growth (2.5%) by year five. The price's five-year growth is compared with those.
+FADE_TO = 0.025
+FADE_YEARS = 5
+
+
+def faded_five_year(rate: float | None) -> float | None:
+    if rate is None or rate <= -1:
+        return None
+    level = 1.0
+    for year in range(FADE_YEARS):
+        level *= 1 + rate + (FADE_TO - rate) * year / (FADE_YEARS - 1)
+    return level ** (1 / FADE_YEARS) - 1
+
+
 def growth_band_from(expectations: dict[str, Any] | None) -> dict[str, Any] | None:
     band = {"consensus_2y": _num((expectations or {}).get("revenue_cagr_2y_consensus")), "history_3y": _num((expectations or {}).get("revenue_cagr_3y_history"))}
-    return band if any(value is not None for value in band.values()) else None
+    if not any(value is not None for value in band.values()):
+        return None
+    band["consensus_2y_faded"] = faded_five_year(band["consensus_2y"])
+    band["history_3y_faded"] = faded_five_year(band["history_3y"])
+    return band
+
+
+def _references(band: dict[str, Any]) -> list[float]:
+    faded = [band.get("consensus_2y_faded"), band.get("history_3y_faded")]
+    if any(value is not None for value in faded):
+        return [value for value in faded if value is not None]
+    return [value for value in (band.get("consensus_2y"), band.get("history_3y")) if value is not None]
 
 
 def band_reading(implied: float, band: dict[str, Any]) -> str:
-    references = [value for value in (band.get("consensus_2y"), band.get("history_3y")) if value is not None]
+    references = _references(band)
     if implied > max(references) + BAND_MARGIN:
         return "Price implies more growth than observed/consensus"
     if implied < min(references) - BAND_MARGIN:
@@ -388,13 +415,43 @@ def band_reading(implied: float, band: dict[str, Any]) -> str:
     return "Price roughly matches observed/consensus growth"
 
 
+# Checklist 20.2: a reading should not flip on a small move. Within 3 points of a line, the previous
+# reading under the same rules is kept; just above the model's ceiling, the card says it is close.
+HOLD_PP = 0.03
+NEAR_CEILING = 1.10
+BAND_STATES = ("Price implies more growth than observed/consensus", "Price roughly matches observed/consensus growth",
+               "Price implies less growth than observed/consensus")
+
+
+def steady_reading(valuation: dict[str, Any], prior_label: str | None) -> dict[str, Any]:
+    detail = valuation.get("detail") or {}
+    stretch = _num(detail.get("price_to_max_case"))
+    if valuation.get("state") == "Price implies growth above what the model can reach" and stretch is not None and stretch < NEAR_CEILING:
+        return {**valuation, "evidence": (valuation.get("evidence") or [])[:1] + [f"Only just above the model's reach ({stretch:.2f}x): a small change in price or inputs can change this reading."],
+                "detail": {**detail, "near_line": True}}
+    implied, band = _num(detail.get("implied_5y_revenue_cagr")), detail.get("growth_band")
+    if implied is None or not band or valuation.get("state") not in BAND_STATES or prior_label not in BAND_STATES or prior_label == valuation["state"]:
+        return valuation
+    references = _references(band)
+    if not references:
+        return valuation
+    edges = (max(references) + BAND_MARGIN, min(references) - BAND_MARGIN)
+    if min(abs(implied - edge) for edge in edges) >= HOLD_PP:
+        return valuation
+    return {**valuation, "state": prior_label,
+            "evidence": (valuation.get("evidence") or [])[:1] + [f"Held at the previous reading: the price's growth is within {HOLD_PP * 100:.0f} points of the line, so the change is not yet clear."],
+            "detail": {**detail, "near_line": True, "unheld_state": valuation["state"]}}
+
+
 def reference_text(observed: float | None, consensus: float | None, band: dict[str, Any] | None) -> str:
     if band:
         parts = []
         if band.get("consensus_2y") is not None:
-            parts.append(f"analysts expect {_pct(band['consensus_2y'])} a year over the next two years")
+            parts.append(f"analysts expect {_pct(band['consensus_2y'])} a year over the next two years"
+                         + (f" (about {_pct(band['consensus_2y_faded'])} a year over five if it fades as fast growth usually does)" if band.get("consensus_2y_faded") is not None else ""))
         if band.get("history_3y") is not None:
-            parts.append(f"the last three years grew {_pct(band['history_3y'])} a year")
+            parts.append(f"the last three years grew {_pct(band['history_3y'])} a year"
+                         + (f" ({_pct(band['history_3y_faded'])} faded)" if band.get("history_3y_faded") is not None else ""))
         return " and ".join(parts)
     return f"observed {_pct(observed)}, consensus next year {_pct(consensus)}"
 
@@ -610,7 +667,7 @@ def falsification(economics: dict[str, Any] | None) -> list[str]:
 
 # Checklist 18.13: every recorded card carries the version of the rules that produced it. Raise this
 # whenever a card rule changes, so a reading that moved because the rules moved is not shown as news.
-VERDICT_RULES_VERSION = "2026-11-24c"   # b: GICS sector mapping (18.18); c: exposures re-validated (18.20), relative growth rule (18.21)
+VERDICT_RULES_VERSION = "2026-11-26"   # history: 24b GICS sectors (18.18); 24c exposures, growth rule (18.20-21); 26 faded references, steady readings (20.2-20.3) and the 25-26 Nov valuation-input changes
 VERDICT_SOURCE = f"company_verdict@{VERDICT_RULES_VERSION}"
 
 
@@ -825,6 +882,9 @@ def build_card(ticker: str, environment: dict[str, Any], core: dict[str, Any], s
         "expectations": expectations_axis(expectations),
         "fundamentals": fundamentals_axis(economics, relative, quarterly),
     }
+    # Checklist 20.2: a reading that only just crossed a line keeps its previous label.
+    prior = [row for row in store.rows(f"verdict.{ticker}.valuation") if row["observation_date"] < today.isoformat() and row["label"]]
+    axes["valuation"] = steady_reading(axes["valuation"], prior[-1]["label"] if prior and prior[-1].get("source") == VERDICT_SOURCE else None)
     risk = environment.get("risk_regime") or {}
     tactical_env = f"Market regime (context only, not predictive): {risk.get('regime') or 'unavailable'}"
     from exposure_map import exposures_for
@@ -856,6 +916,7 @@ def build_card(ticker: str, environment: dict[str, Any], core: dict[str, Any], s
         "errors": errors,
         "disclaimer": "Research map, not a recommendation. Axes are shown separately and never combined into a score.",
     }
+    card["conclusion"] = company_conclusion(card)
     save_attribution(ticker, {"date": today.isoformat(), "archetype": archetype, "sector_etf": etf, "archetype_source": "judgment card",
                               "attribution": attribution, "reading": card["price_reading"]})
     if record:
@@ -865,6 +926,94 @@ def build_card(ticker: str, environment: dict[str, Any], core: dict[str, Any], s
                                                       source="price_attribution", source_state="LIVE")])
         save_verdict_cache(ticker, card)
     return card
+
+
+# ---- Checklist 20.1: what the data says, in plain sentences ----------------------------------
+def _signed(value: float | None, digits: int = 0) -> str:
+    if value is None:
+        return "n/a"
+    text = f"{abs(value) * 100:.{digits}f}"
+    return f"{text}%" if float(text) == 0 else f"{'+' if value >= 0 else '−'}{text}%"
+
+
+def business_direction(fundamentals: str | None, expectations: str | None) -> str:
+    up, down = expectations == "Estimates rising", expectations == "Estimates falling"
+    if (fundamentals == "Improving" and not down) or (fundamentals in ("No change", "Mixed") and up):
+        return "BETTER"
+    if (fundamentals == "Deteriorating" and not up) or (fundamentals in ("No change", "Mixed") and down):
+        return "WORSE"
+    if fundamentals in (None, "", "Trajectory not established", "Company economics unavailable") and expectations in (None, "", "Consensus data unavailable", "Revisions unavailable"):
+        return "UNKNOWN"
+    return "MIXED"
+
+
+def company_conclusion(card: dict[str, Any]) -> dict[str, Any]:
+    """Four sentences built by fixed rules from the card's own readings: the business, the price, whether
+    they agree, and what the price assumes. A description, not a forecast or a recommendation."""
+    axes = card.get("axes") or {}
+    fundamentals, expectations, valuation = axes.get("fundamentals") or {}, axes.get("expectations") or {}, axes.get("valuation") or {}
+    reading = card.get("price_reading") or {}
+    sentences = []
+    direction = business_direction(fundamentals.get("state"), expectations.get("state"))
+    quarter = (fundamentals.get("detail") or {}).get("quarterly") or {}
+    edetail = expectations.get("detail") or {}
+    facts = []
+    if _num(quarter.get("revenue_yoy")) is not None:
+        facts.append(f"sales {_signed(quarter['revenue_yoy'])} from a year earlier")
+    if _num(quarter.get("margin_change")) is not None and abs(quarter["margin_change"]) >= 0.01:
+        facts.append(f"operating margin {'up' if quarter['margin_change'] > 0 else 'down'} {abs(quarter['margin_change']) * 100:.1f} points")
+    up, down = edetail.get("revisions_up_30d"), edetail.get("revisions_down_30d")
+    if expectations.get("state") in ("Estimates rising", "Estimates falling", "Estimates stable or mixed") and up is not None and down is not None:
+        verb = {"Estimates rising": "raised", "Estimates falling": "cut", "Estimates stable or mixed": "held"}[expectations["state"]]
+        facts.append(f"analysts {verb} next year's estimates ({up} up, {down} down in 30 days)")
+    lead = {"BETTER": "The business is getting better", "WORSE": "The business is getting weaker",
+            "MIXED": "The business signals are mixed", "UNKNOWN": "There is not enough business data for a reading"}[direction]
+    sentences.append(f"{lead}: {', '.join(facts)}." if facts else f"{lead}.")
+    change, kind, parts = _num(reading.get("price_change")), reading.get("kind"), reading.get("parts") or {}
+    agreement = "UNCLEAR"
+    if change is not None:
+        moved = f"The share price {'rose' if change >= 0 else 'fell'} {abs(change) * 100:.0f}% over three months"
+        if kind in ("company", "fundamentals", "watch"):
+            company = _num(parts.get("company"))
+            share = "most of it" if kind != "watch" else "part of it"
+            sentences.append(f"{moved}; {share} was specific to the company ({_signed(company)}), not the market, its sector or macro conditions.")
+            price_dir = 1 if (company or 0) > 0 else -1
+            if direction in ("BETTER", "WORSE"):
+                business_dir = 1 if direction == "BETTER" else -1
+                if business_dir != price_dir:
+                    agreement = "OPPOSED"
+                    sentences.append("The price and the business point in opposite directions: the filings and analysts' estimates do not explain this move.")
+                else:
+                    agreement = "ALIGNED"
+                    sentences.append("The price move is in line with the business data.")
+        elif kind == "noise":
+            outside = (reading.get("outside_driver") or "market").replace("_", " ")
+            sentences.append(f"{moved}, mostly with outside forces ({'macro conditions' if outside == 'macro' else 'its sector' if outside == 'sector' else 'the broad market'}); the company's own part was within its normal range.")
+            agreement = "OUTSIDE"
+            sentences.append("So the move says little about the business itself.")
+        else:
+            sentences.append(f"{moved}.")
+    vdetail = valuation.get("detail") or {}
+    price, implied, band = _num(vdetail.get("price")), _num(vdetail.get("implied_5y_revenue_cagr")), vdetail.get("growth_band") or {}
+    state = valuation.get("state") or ""
+    refs = sorted(value for value in (band.get("consensus_2y_faded"), band.get("history_3y_faded")) if value is not None)
+    span = (f"{_signed(refs[0])} to {_signed(refs[-1])}" if len(refs) > 1 and abs(refs[-1] - refs[0]) >= 0.005 else _signed(refs[0])) if refs else None
+    at = f"At ${price:,.2f}" if price is not None else "At today's price"
+    if implied is not None and state in BAND_STATES and span:
+        compare = {"Price implies more growth than observed/consensus": "more than", "Price roughly matches observed/consensus growth": "about in line with",
+                   "Price implies less growth than observed/consensus": "less than"}[state]
+        sentences.append(f"{at} the price assumes sales grow {_signed(implied)} a year for five years, {compare} what analysts' and past growth imply once they fade ({span}).")
+    elif state == "Price implies growth above what the model can reach" and _num(vdetail.get("price_to_max_case")) is not None:
+        sentences.append(f"{at} the price is {vdetail['price_to_max_case']:.1f}x what even 50% first-year sales growth would justify.")
+    elif vdetail.get("bank_implied_roe"):
+        bank = vdetail["bank_implied_roe"]
+        sentences.append(f"{at} the price assumes a {_num(bank.get('implied_roe')) * 100:.1f}% return on equity; the bank earns {_num(bank.get('latest_roe')) * 100:.1f}%.")
+    elif state == "Depends on which cash-flow measure":
+        sentences.append("What the price assumes depends on which of two cash-flow measures is used, so there is no single valuation reading.")
+    elif state == "Fair value withheld":
+        sentences.append("There is no valuation reading for this company yet.")
+    return {"sentences": sentences, "business": direction, "agreement": agreement,
+            "note": "Built from the readings below by fixed rules. A description of the data, not a forecast or a recommendation."}
 
 
 def load_environment() -> tuple[dict[str, Any], dict[str, Any]]:

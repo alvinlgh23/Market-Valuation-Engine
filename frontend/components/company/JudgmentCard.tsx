@@ -12,7 +12,7 @@ type Card = {
   ticker: string; name: string; archetype: string; sector_etf: string | null; generated_on: string;
   axes: Record<string, Axis>;
   horizons: Record<string, { window: string; context?: string; axes: string[] }>;
-  contradictions: string[]; changes: Array<{ axis: string; from: string; to: string; since: string; origin?: string }>; falsification: string[]; operating?: unknown;
+  contradictions: string[]; changes: Array<{ axis: string; from: string; to: string; since: string; origin?: string }>; falsification: string[]; operating?: unknown; conclusion?: unknown;
   next_catalysts: { earnings: string | null; last_earnings?: string | null; fomc: string | null };
   disclaimer: string;
   attribution?: Attribution; price_reading?: PriceReading;
@@ -146,11 +146,14 @@ function AxisVisual({ name, axis }: { name: string; axis: Axis }) {
     }
     const band = obj(detail.growth_band);
     const rows: Array<[string, number | null]> = band.consensus_2y != null || band.history_3y != null
-      ? [["Priced in, 5 yrs", implied], ["Analysts, 2 yrs", num(band.consensus_2y)], ["Last 3 yrs", num(band.history_3y)]]
+      ? band.consensus_2y_faded != null || band.history_3y_faded != null
+        // Checklist 20.3: the references the reading actually uses, faded to five years.
+        ? [["Priced in, 5 yrs", implied], ["Analysts, faded to 5 yrs", num(band.consensus_2y_faded)], ["Past growth, faded", num(band.history_3y_faded)]]
+        : [["Priced in, 5 yrs", implied], ["Analysts, 2 yrs", num(band.consensus_2y)], ["Last 3 yrs", num(band.history_3y)]]
       : [["Priced in", implied], ["Consensus", num(detail.consensus_next_year_growth) ?? num(detail.observed_growth)]];
     if (implied == null || rows.slice(1).every(([, value]) => value == null)) return null;
     const top = Math.max(...rows.map(([, value]) => value ?? 0), 0.01);
-    return <div className="jc-compare" title="Yearly sales growth the share price assumes for five years, against analysts' two-year forecast and the last three years. More than 5 points above both reads priced high; more than 5 points below both, priced low.">
+    return <div className="jc-compare" title="Yearly sales growth the share price assumes for five years, against analysts' two-year forecast and the last three years, each faded in a straight line to 2.5% by year five. More than 5 points above both reads priced high; more than 5 points below both, priced low.">
       {rows.filter(([, value]) => value != null).map(([label, value]) => <div key={label}><span>{label}</span><i style={{ width: `${Math.max(2, (Math.max(value as number, 0) / top) * 100)}%` }} /><b>{pct(value, 0)}</b></div>)}
     </div>;
   }
@@ -230,6 +233,19 @@ function Legend() {
   return <div className="jc-legend" aria-label="Legend">{(["supportive", "against", "mixed", "unknown"] as const).map((tone) => <span key={tone} className={`tone-${tone}`}><em aria-hidden>{TONE_GLYPH[tone]}</em>{TONE_LABEL[tone]}</span>)}<span className="jc-legend-dots"><i className="jc-dots"><b className="on" /><b className="on" /><b /></i>confidence</span></div>;
 }
 
+// Checklist 20.1: what the data says, in plain sentences, before the detail.
+type Conclusion = { sentences: string[]; business: string; agreement: string; note: string };
+const AGREEMENT_LABEL: Record<string, string> = { OPPOSED: "Price and business disagree", ALIGNED: "Price and business agree", OUTSIDE: "Moved with outside forces", UNCLEAR: "" };
+function DataConclusion({ conclusion }: { conclusion?: Conclusion }) {
+  if (!conclusion?.sentences?.length) return null;
+  const label = AGREEMENT_LABEL[conclusion.agreement] ?? "";
+  return <section className={`jc-conclusion agree-${conclusion.agreement.toLowerCase()}`} aria-label="What the data says">
+    <header><h3>What the data says</h3>{label ? <span className="jc-agreement">{label}</span> : null}</header>
+    <p>{conclusion.sentences.join(" ")}</p>
+    <small>{conclusion.note}</small>
+  </section>;
+}
+
 export function JudgmentCard({ ticker }: { ticker: string }) {
   return <JudgmentCardBody key={ticker} ticker={ticker} />;
 }
@@ -269,6 +285,7 @@ function JudgmentCardBody({ ticker }: { ticker: string }) {
       </span>
       <Legend />
     </div>
+    <DataConclusion conclusion={card.conclusion as Conclusion | undefined} />
     <PriceDriversPanel attribution={card.attribution} reading={card.price_reading} lastEarnings={card.next_catalysts.last_earnings} />
     {hasHeadlineNumbers || !refreshing ? (
       <div className="jc-headline">
