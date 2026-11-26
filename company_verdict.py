@@ -916,7 +916,9 @@ def build_card(ticker: str, environment: dict[str, Any], core: dict[str, Any], s
         "errors": errors,
         "disclaimer": "Research map, not a recommendation. Axes are shown separately and never combined into a score.",
     }
+    link_macro_axis_to_drivers(card)
     card["conclusion"] = company_conclusion(card)
+    card["falsification"] = what_would_change(card) + card["falsification"]
     # P20 item 5: how readings like this one have done since, or that they are not tested yet. No network here.
     import track_record
     results = track_record.load_results(store.directory) or track_record.score(track_record.spells(store), None, today)
@@ -949,6 +951,89 @@ def business_direction(fundamentals: str | None, expectations: str | None) -> st
     if fundamentals in (None, "", "Trajectory not established", "Company economics unavailable") and expectations in (None, "", "Consensus data unavailable", "Revisions unavailable"):
         return "UNKNOWN"
     return "MIXED"
+
+
+def what_would_change(card: dict[str, Any]) -> list[str]:
+    """Walkthrough 2026-11-26: the card only listed generic lines for the business type. These come from the card's
+    own numbers and the existing rules, so a reader knows what would flip each reading."""
+    axes, out = card.get("axes") or {}, []
+    valuation = axes.get("valuation") or {}
+    detail = valuation.get("detail") or {}
+    implied = _num(detail.get("implied_5y_revenue_cagr"))
+    refs = _references(detail.get("growth_band") or {}) if detail.get("growth_band") else []
+    if implied is not None and refs and valuation.get("state") in BAND_STATES:
+        high, low = max(refs) + BAND_MARGIN, min(refs) - BAND_MARGIN
+        out.append(f"Valuation: the price assumes {_signed(implied)} a year. It reads as roughly in line between {_signed(low)} and "
+                   f"{_signed(high)}, so a lower price, or analysts and results lifting growth, would move it there.")
+    quarter = ((axes.get("fundamentals") or {}).get("detail") or {}).get("quarterly") or {}
+    margin = _num(quarter.get("margin_change"))
+    state = (axes.get("fundamentals") or {}).get("state")
+    if state == "Deteriorating" and margin is not None and margin < -0.01:
+        out.append(f"Fundamentals: the operating margin is down {abs(margin) * 100:.1f} points on a year earlier; a quarter with it no "
+                   f"more than 1 point lower, and sales growth not slowing, would end the weakening reading.")
+    elif state == "Improving":
+        out.append("Fundamentals: a quarter with sales growth slowing by more than the threshold, or the operating margin more than "
+                   "1 point lower than a year earlier, would end the improving reading.")
+    agreement = (card.get("conclusion") or {}).get("agreement")
+    if agreement in ("OPPOSED", "LEANS_OPPOSED"):
+        business = (card.get("conclusion") or {}).get("business")
+        follow = "analysts cutting estimates" if business == "BETTER" else "analysts raising estimates"
+        out.append(f"Price against business: {follow}, or the company's own price move fading back into its normal range, would end the disagreement.")
+    earnings = ((card.get("next_catalysts") or {}).get("earnings"))
+    if earnings:
+        out.append(f"Next test: earnings on {earnings}.")
+    return out
+
+
+SINCE_MIN = 0.05     # a move of 5% or more after the weekly window is worth saying next to the conclusion
+
+
+def recent_since(card: dict[str, Any]) -> dict[str, Any] | None:
+    since = (((card.get("attribution") or {}).get("recent_move") or {}).get("since_window_end")) or {}
+    stock, spy = _num(since.get("stock_change")), _num(since.get("spy_change"))
+    if stock is None or spy is None or abs(stock) < SINCE_MIN or not since.get("from"):
+        return None
+    return {"from": since["from"], "to": since.get("to"), "stock_change": stock, "spy_change": spy}
+
+
+def _day(value: str) -> str:
+    try:
+        day = dt.date.fromisoformat(str(value)[:10])
+    except ValueError:
+        return str(value)
+    return f"{day.day} {day:%b}"
+
+
+def link_macro_axis_to_drivers(card: dict[str, Any]) -> None:
+    """Walkthrough 2026-11-26: META's macro axis said "no confirmed exposure" while its price drivers put -18.5% on
+    credit. They answer different questions (what is confirmed to matter ahead vs what the price moved with), so the
+    axis now says so when the two would otherwise look contradictory."""
+    macro, reading = (card.get("axes") or {}).get("macro") or {}, card.get("price_reading") or {}
+    part = _num((reading.get("parts") or {}).get("macro"))
+    if part is None or abs(part) < 0.05 or macro.get("state") in ("Tailwind", "Headwind"):
+        return
+    factor = str(reading.get("top_macro") or "macro conditions").lower()
+    note = (f"Over the last 3 months the price moved with {factor} ({_signed(part)}), but that link is not confirmed for this "
+            f"type of business in our tests, so it is not counted as a tailwind or headwind ahead.")
+    macro.setdefault("evidence", []).append(note)
+    macro["driver_note"] = note
+
+
+OUTSIDE_WORDS = {"macro": "macro conditions", "market": "the broad market", "sector": "its sector"}
+
+
+def _company_part_sentence(moved: str, change: float, company: float | None, parts: dict[str, Any], reading: dict[str, Any], kind: str) -> str:
+    """Walkthrough 2026-11-26: META rose 2% while its own part was +21% - "part of it was +21%" was wrong. When the
+    company part is larger than the whole move or points the other way, say what offset it."""
+    if company is None:
+        return f"{moved}."
+    outside = max(("macro", "market", "sector"), key=lambda key: abs(_num(parts.get(key)) or 0.0))
+    other = _num(parts.get(outside)) or 0.0
+    words = OUTSIDE_WORDS[outside] + (f" (mainly {str(reading.get('top_macro')).lower()})" if outside == "macro" and reading.get("top_macro") else "")
+    if (company > 0) != (change > 0) or abs(company) > abs(change) + 0.03:
+        return (f"{moved}. The company's own part was {_signed(company)}; {words} pulled the other way ({_signed(other)}).")
+    share = "most of it" if kind != "watch" else "part of it"
+    return f"{moved}; {share} came from the company itself ({_signed(company)}), not the market, its sector or macro conditions."
 
 
 def _mixed_lead(fundamentals: str | None, expectations: str | None) -> str:
@@ -990,20 +1075,25 @@ def company_conclusion(card: dict[str, Any]) -> dict[str, Any]:
         moved = f"The share price {'rose' if change >= 0 else 'fell'} {abs(change) * 100:.0f}% over three months"
         if kind in ("company", "fundamentals", "watch"):
             company = _num(parts.get("company"))
-            share = "most of it" if kind != "watch" else "part of it"
-            sentences.append(f"{moved}; {share} was specific to the company ({_signed(company)}), not the market, its sector or macro conditions.")
+            sentences.append(_company_part_sentence(moved, change, company, parts, reading, kind))
             price_dir = 1 if (company or 0) > 0 else -1
             if direction in ("BETTER", "WORSE"):
                 business_dir = 1 if direction == "BETTER" else -1
+                # Walkthrough 2026-11-26: a move only somewhat outside its normal range (kind "watch") leans; it does not disagree.
                 if business_dir != price_dir:
-                    agreement = "OPPOSED"
-                    sentences.append("The price and the business point in opposite directions: the filings and analysts' estimates do not explain this move.")
+                    agreement = "OPPOSED" if kind != "watch" else "LEANS_OPPOSED"
+                    sentences.append("The price and the business point in opposite directions: the filings and analysts' estimates do not explain this move."
+                                     if kind != "watch" else
+                                     "The company's own move leans against the business data, but it is only somewhat outside its normal range, so this is a lean, not a clear disagreement.")
                 else:
-                    agreement = "ALIGNED"
-                    sentences.append("The price move is in line with the business data.")
+                    agreement = "ALIGNED" if kind != "watch" else "LEANS_ALIGNED"
+                    sentences.append("The price move is in line with the business data." if kind != "watch"
+                                     else "The company's own move leans the same way as the business data, though it is only somewhat outside its normal range.")
         elif kind == "noise":
             outside = (reading.get("outside_driver") or "market").replace("_", " ")
-            sentences.append(f"{moved}, mostly with outside forces ({'macro conditions' if outside == 'macro' else 'its sector' if outside == 'sector' else 'the broad market'}); the company's own part was within its normal range.")
+            unconfirmed = outside == "macro" and bool(((axes.get("macro") or {}).get("driver_note")))
+            sentences.append(f"{moved}, mostly with outside forces ({'macro conditions' if outside == 'macro' else 'its sector' if outside == 'sector' else 'the broad market'}"
+                             f"{', a link not confirmed for this type of business' if unconfirmed else ''}); the company's own part was within its normal range.")
             agreement = "OUTSIDE"
             sentences.append("If that split holds, the move says little about the business itself." if reading.get("confidence") == "LOW"
                              else "So the move says little about the business itself.")
@@ -1012,6 +1102,11 @@ def company_conclusion(card: dict[str, Any]) -> dict[str, Any]:
         # Walkthrough 2026-11-26: the price split's own caveat belongs next to the conclusion drawn from it.
         if kind in ("company", "fundamentals", "watch", "noise") and reading.get("confidence") == "LOW" and reading.get("low_fit_note"):
             sentences.append(f"Read that split with care: {reading['low_fit_note'][0].lower()}{reading['low_fit_note'][1:]}")
+        # Walkthrough 2026-11-26 (item 10): the split runs to the last weekly close; say how far the price has moved since.
+        since = recent_since(card)
+        if since:
+            sentences.append(f"Since {_day(since['from'])}, when that window ends, the price has moved {_signed(since['stock_change'])} against "
+                             f"the S&P 500's {_signed(since['spy_change'])}; this is not yet in the split.")
     vdetail = valuation.get("detail") or {}
     price, implied, band = _num(vdetail.get("price")), _num(vdetail.get("implied_5y_revenue_cagr")), vdetail.get("growth_band") or {}
     state = valuation.get("state") or ""
@@ -1031,11 +1126,11 @@ def company_conclusion(card: dict[str, Any]) -> dict[str, Any]:
         sentences.append("What the price assumes depends on which of two cash-flow measures is used, so there is no single valuation reading.")
     elif state == "Fair value withheld":
         sentences.append("There is no valuation reading for this company yet.")
-    return {"sentences": sentences, "business": direction, "agreement": agreement, "short": _short_lines(direction, reading, valuation),
+    return {"sentences": sentences, "business": direction, "agreement": agreement, "short": _short_lines(direction, reading, valuation, recent_since(card)),
             "note": "Built from the readings below by fixed rules. A description of the data, not a forecast or a recommendation."}
 
 
-def _short_lines(direction: str, reading: dict[str, Any], valuation: dict[str, Any]) -> dict[str, str | None]:
+def _short_lines(direction: str, reading: dict[str, Any], valuation: dict[str, Any], since: dict[str, Any] | None = None) -> dict[str, str | None]:
     """P20 item 11: the same conclusion in three short pieces, for the Today page's one line per holding."""
     business = {"BETTER": "Business getting better", "WORSE": "Business getting weaker", "MIXED": "Business mixed",
                 "UNKNOWN": None}[direction]
@@ -1049,6 +1144,8 @@ def _short_lines(direction: str, reading: dict[str, Any], valuation: dict[str, A
             price = f"price {_signed(change)} in 3 months, mostly with outside forces"
         else:
             price = f"price {_signed(change)} in 3 months"
+        if since:
+            price += f"; then {_signed(since['stock_change'])} since {_day(since['from'])}"
     detail = valuation.get("detail") or {}
     implied, band, state = _num(detail.get("implied_5y_revenue_cagr")), detail.get("growth_band") or {}, valuation.get("state") or ""
     refs = sorted(v for v in (band.get("consensus_2y_faded"), band.get("history_3y_faded")) if v is not None)
@@ -1191,7 +1288,7 @@ def _cached_watchlist_enrichment(tickers: list[str]) -> dict[str, dict[str, Any]
             found = vd.get("conclusion") if isinstance(vd.get("conclusion"), dict) else None
             if found:
                 conclusion = {"agreement": found.get("agreement"), "business": found.get("business"), "short": found.get("short") or _short_lines(found.get("business") or "UNKNOWN", vd.get("price_reading") or {},
-                                                                                          (vd.get("axes") or {}).get("valuation") or {}),
+                                                                                          (vd.get("axes") or {}).get("valuation") or {}, recent_since(vd)),
                               "card_date": vd.get("generated_on")}
             op = vd.get("operating") or {}
             if isinstance(op, dict) and op.get("constraint"):

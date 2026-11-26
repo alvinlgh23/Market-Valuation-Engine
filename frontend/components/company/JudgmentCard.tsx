@@ -7,7 +7,7 @@ import { OperatingSignals, type Operating } from "./StoredProfileReads";
 import { axisTone, confidenceDots, percentileWidth, TONE_GLYPH, TONE_LABEL, type Tone } from "../../lib/judgment-tone.mjs";
 import { PriceDriversPanel, type Attribution, type PriceReading } from "./PriceDrivers";
 
-type Axis = { state: string; direction: string | null; confidence: string; evidence: string[]; missing: string[]; families: string[]; detail: Record<string, unknown> };
+type Axis = { state: string; direction: string | null; confidence: string; evidence: string[]; missing: string[]; families: string[]; detail: Record<string, unknown>; driver_note?: string };
 type Card = {
   ticker: string; name: string; archetype: string; sector_etf: string | null; generated_on: string;
   axes: Record<string, Axis>;
@@ -171,7 +171,8 @@ function AxisTile({ name, axis }: { name: string; axis: Axis }) {
     </header>
     <strong><em aria-hidden>{TONE_GLYPH[tone]}</em>{axis.state}</strong>
     <AxisVisual name={name} axis={axis} />
-    {axis.evidence.length ? <details><summary>Why</summary>{axis.evidence.map((line) => <p key={line}>{line}</p>)}</details> : null}
+    {typeof axis.driver_note === "string" ? <p className="jc-axis-note">{axis.driver_note}</p> : null}
+    {axis.evidence.length ? <details><summary>Why</summary>{axis.evidence.filter((line) => line !== axis.driver_note).map((line) => <p key={line}>{line}</p>)}</details> : null}
   </div>;
 }
 
@@ -236,7 +237,7 @@ function Legend() {
 
 // Checklist 20.1: what the data says, in plain sentences, before the detail.
 type Conclusion = { sentences: string[]; business: string; agreement: string; note: string };
-const AGREEMENT_LABEL: Record<string, string> = { OPPOSED: "Price and business disagree", ALIGNED: "Price and business agree", OUTSIDE: "Moved with outside forces", UNCLEAR: "" };
+const AGREEMENT_LABEL: Record<string, string> = { OPPOSED: "Price and business disagree", LEANS_OPPOSED: "Leans against business", LEANS_ALIGNED: "Leans with business", ALIGNED: "Price and business agree", OUTSIDE: "Moved with outside forces", UNCLEAR: "" };
 // P20 item 5: whether readings like this one have been followed by better or worse returns - or that it is not tested yet.
 type ValuationRecord = { status: "TESTED" | "NOT_TESTED"; group: string; meaning: string; text: string; as_of?: string };
 function DataConclusion({ conclusion, record }: { conclusion?: Conclusion; record?: ValuationRecord | null }) {
@@ -310,7 +311,7 @@ function JudgmentCardBody({ ticker }: { ticker: string }) {
     </div> : null}
     <footer className="judgment-footer">
       <div className="jc-dates"><span><small>Next earnings</small><b>{earnings}</b></span><span><small>Next FOMC</small><b>{card.next_catalysts.fomc ?? "—"}</b></span></div>
-      {card.falsification.length ? <details><summary>What would change the view</summary><ul>{card.falsification.map((item) => <li key={item}>{item}</li>)}</ul></details> : null}
+      {card.falsification.length ? <details open className="jc-change"><summary>What would change the view</summary><ul>{card.falsification.map((item) => <li key={item}>{item}</li>)}</ul></details> : null}
       <details><summary>Missing inputs</summary><ul>{Object.entries(card.axes).flatMap(([name, axis]) => axis.missing.map((item) => <li key={`${name}-${item}`}>{AXIS_LABEL[name] ?? name}: {item}</li>))}</ul></details>
       <small>{card.disclaimer} Card generated {card.generated_on}.</small>
     </footer>

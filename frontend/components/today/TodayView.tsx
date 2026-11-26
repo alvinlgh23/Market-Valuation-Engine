@@ -57,9 +57,11 @@ function compactCellText(label: string) {
 // P20 item 11: the product's core answer first - for each holding, does the price agree with the business?
 const AGREEMENT: Record<string, { label: string; order: number; tone: string }> = {
   OPPOSED: { label: "Price and business disagree", order: 0, tone: "opposed" },
-  ALIGNED: { label: "Price and business agree", order: 1, tone: "aligned" },
-  OUTSIDE: { label: "Moved with outside forces", order: 2, tone: "outside" },
-  UNCLEAR: { label: "No clear reading", order: 3, tone: "unclear" },
+  LEANS_OPPOSED: { label: "Leans against business", order: 1, tone: "leans" },
+  ALIGNED: { label: "Price and business agree", order: 2, tone: "aligned" },
+  LEANS_ALIGNED: { label: "Leans with business", order: 3, tone: "leans" },
+  OUTSIDE: { label: "Moved with outside forces", order: 4, tone: "outside" },
+  UNCLEAR: { label: "No clear reading", order: 5, tone: "unclear" },
 };
 
 function HoldingVerdicts({ summary }: { summary: SummaryRow[] | null }) {
