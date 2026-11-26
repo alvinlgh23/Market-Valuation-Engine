@@ -65,7 +65,9 @@ try {
   await shot(page, "18-data-quality-fallback-inspector.png", ".valuation-workspace-page");
   await goto(page, "/valuation/GOOG?fixture=1", /Alphabet/i);
   await shot(page, "19-goog-valuation.png");
-  await goto(page, "/company/PLTR?fixture=1", "Palantir Technologies");
+  // The company page keeps loading its judgment card, so wait for the page, not for a quiet network.
+  await page.goto(`${baseUrl}/company/PLTR?fixture=1`, { waitUntil: "load", timeout: 60000 });
+  await page.getByRole("heading", { name: "Palantir Technologies", exact: true }).first().waitFor();
   await page.getByRole("button", { name: /Valuation & sandbox/i }).first().click();   // the company page opens valuation from this button
   await page.waitForURL(/\/valuation\/PLTR/);
   await page.getByRole("heading", { name: /Palantir/ }).first().waitFor();

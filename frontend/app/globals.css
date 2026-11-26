@@ -4345,3 +4345,9 @@ html, body { background: var(--research-bg); font-family: var(--font-research); 
 .sandbox-result p.neutral { margin: 0; color: var(--research-muted); font-size: 13px; line-height: 1.5; }
 .valuation-range-words { color: var(--research-muted); font-size: 12.5px; }
 .valuation-object-header aside small { max-width: 260px; text-align: right; line-height: 1.4; }
+.jc-conclusion.agree-leans_opposed .jc-agreement, .jc-conclusion.agree-leans_aligned .jc-agreement { color: var(--research-text); background: rgba(255, 255, 255, .06); }
+.tdy-agree.is-leans { color: var(--research-text); border-style: dashed; }
+.jc-axis-note { margin: 8px 0 0; color: var(--research-muted); font-size: 12px; line-height: 1.45; }
+/* Walkthrough 2026-11-26: search groups can be reordered (sectors first when the query names one) */
+.command-results { display: flex; flex-direction: column; }
+.command-group { display: flex; flex-direction: column; }

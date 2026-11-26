@@ -124,7 +124,8 @@ async function runMarketStory() {
 }
 
 // Checklist 19.1: ticker suggestions for adding to the watchlist, from the cached SEC company list.
-let tickerIndex: Array<{ ticker: string; name: string }> | null = null;
+type TickerRow = { ticker: string; name: string };
+let tickerIndex: TickerRow[] | null = null;
 async function searchTickers(query: string) {
   if (!tickerIndex) {
     try {
@@ -134,10 +135,30 @@ async function searchTickers(query: string) {
   }
   const q = query.trim().toUpperCase();
   if (!q) return [];
+  // Walkthrough 2026-11-26: names match at the start of a word only ("XLE" no longer finds "Oxley"); share-class,
+  // warrant and foreign over-the-counter listings rank after primary listings; one row per company name.
+  const word = new RegExp(`(^|[^A-Z0-9])${q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`);
+  const secondary = (ticker: string) => /[-.]/.test(ticker) || (ticker.length === 5 && /[FYWUR]$/.test(ticker));
   const exact = tickerIndex.filter((row) => row.ticker === q);
   const prefix = tickerIndex.filter((row) => row.ticker !== q && row.ticker.startsWith(q));
-  const named = q.length >= 2 ? tickerIndex.filter((row) => !row.ticker.startsWith(q) && row.name.toUpperCase().includes(q)) : [];
-  return [...exact, ...prefix, ...named].slice(0, 8);
+  const named = q.length >= 2 ? tickerIndex.filter((row) => !row.ticker.startsWith(q) && word.test(row.name.toUpperCase())) : [];
+  const rank = (rows: TickerRow[]) => [...rows].sort((a, b) => Number(secondary(a.ticker)) - Number(secondary(b.ticker)) || a.ticker.length - b.ticker.length);
+  const seen = new Set<string>();
+  return [...exact, ...rank(prefix), ...rank(named)]
+    .filter((row) => { const key = row.name.toUpperCase(); if (seen.has(key)) return false; seen.add(key); return true; })
+    .slice(0, 8)
+    .map((row) => ({ ticker: row.ticker, name: cleanCompanyName(row.name) }));
+}
+
+/** SEC titles are often upper case with suffixes ("COSTCO WHOLESALE CORP /NEW"); show them as people write them. */
+function cleanCompanyName(raw: string) {
+  let name = raw.replace(/\s*\/[A-Z]{2,}\/?\s*$/i, "").replace(/,?\s*\b(INC|CORP|CORPORATION|CO|LTD|PLC|N\.V|HOLDINGS?)\.?\s*$/i, "").trim();
+  if (name === name.toUpperCase() && name.length > 4) {
+    name = name.toLowerCase().replace(/\b[a-z]/g, (c) => c.toUpperCase());
+    name = name.replace(/\bAdr\b/g, "ADR").replace(/\bAb\b/g, "AB").replace(/\bNv\b/g, "NV")
+      .replace(/\bJpmorgan\b/g, "JPMorgan").replace(/\bNvidia\b/g, "NVIDIA").replace(/\bAmd\b/g, "AMD").replace(/\bIbm\b/g, "IBM");
+  }
+  return name.replace(/\s*&$/, " & Co.");
 }
 
 export async function GET(request: NextRequest) {

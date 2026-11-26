@@ -337,7 +337,7 @@ def test_conclusion_says_when_price_and_business_disagree():
     result = cv.company_conclusion(card)
     assert result["business"] == "BETTER" and result["agreement"] == "OPPOSED"
     assert result["sentences"][0].startswith("The business is getting better: sales +106% from a year earlier")
-    assert "fell 42% over three months; most of it was specific to the company (−24%)" in result["sentences"][1]
+    assert "fell 42% over three months; most of it came from the company itself (−24%)" in result["sentences"][1]
     assert result["sentences"][2].startswith("The price and the business point in opposite directions")
     assert "about in line with what analysts' and past growth imply once they fade (+40% to +47%)" in result["sentences"][3]
     outside = cv.company_conclusion({**card, "price_reading": {"kind": "noise", "outside_driver": "macro", "price_change": -0.13, "parts": {}}})
@@ -357,3 +357,39 @@ def test_walkthrough_conclusion_names_both_halves_and_carries_the_fit_caveat():
     assert text.startswith("The filings weakened but analysts are raising estimates:")
     assert "If that split holds, the move says little about the business itself." in text
     assert "Read that split with care: the model explains only 25% of weekly moves" in text
+
+
+def test_a_company_part_larger_than_the_move_names_what_offset_it_and_a_watch_move_only_leans():
+    """Walkthrough 2026-11-26: META rose 2% with its own part +21% and macro -18.5%; a 1-2x move is a lean."""
+    card = {"axes": {"fundamentals": {"state": "Deteriorating", "detail": {"quarterly": {"revenue_yoy": 0.26, "margin_change": -0.2}}},
+                     "expectations": {"state": "Estimates stable or mixed", "detail": {"revisions_up_30d": 22, "revisions_down_30d": 22}},
+                     "valuation": {"state": "Fair value withheld", "detail": {}}},
+            "price_reading": {"kind": "watch", "price_change": 0.021, "confidence": "MODERATE", "top_macro": "Credit risk appetite",
+                              "parts": {"macro": -0.185, "market": -0.009, "sector": 0.003, "company": 0.212}}}
+    result = cv.company_conclusion(card)
+    text = " ".join(result["sentences"])
+    assert "The company's own part was +21%; macro conditions (mainly credit risk appetite) pulled the other way (−18%)." in text
+    assert "part of it" not in text
+    assert result["agreement"] == "LEANS_OPPOSED" and "a lean, not a clear disagreement" in text
+
+
+def test_macro_axis_explains_a_large_unconfirmed_macro_part_in_the_price():
+    card = {"axes": {"macro": {"state": "No confirmed exposure has a current reading", "evidence": []}},
+            "price_reading": {"parts": {"macro": -0.185}, "top_macro": "Credit risk appetite"}}
+    cv.link_macro_axis_to_drivers(card)
+    assert card["axes"]["macro"]["evidence"][-1].startswith("Over the last 3 months the price moved with credit risk appetite (−18%)")
+    small = {"axes": {"macro": {"state": "Mixed", "evidence": []}}, "price_reading": {"parts": {"macro": -0.02}}}
+    cv.link_macro_axis_to_drivers(small)
+    assert small["axes"]["macro"]["evidence"] == []
+
+
+def test_a_large_move_after_the_weekly_window_is_stated():
+    card = {"axes": {"fundamentals": {"state": "Improving", "detail": {}}, "expectations": {"state": "Estimates rising", "detail": {}},
+                     "valuation": {"state": "Fair value withheld", "detail": {}}},
+            "price_reading": {"kind": "company", "price_change": -0.41, "confidence": "MODERATE", "parts": {"company": -0.24, "macro": -0.1, "market": -0.05, "sector": -0.02}},
+            "attribution": {"recent_move": {"since_window_end": {"from": "2026-11-20", "to": "2026-11-25", "stock_change": 0.189, "spy_change": 0.039}}}}
+    result = cv.company_conclusion(card)
+    assert "Since 20 Nov, when that window ends, the price has moved +19% against the S&P 500's +4%; this is not yet in the split." in result["sentences"]
+    assert result["short"]["price"].endswith("; then +19% since 20 Nov")
+    card["attribution"]["recent_move"]["since_window_end"]["stock_change"] = 0.02
+    assert "since" not in cv.company_conclusion(card)["short"]["price"]
