@@ -8,6 +8,7 @@ export type RefreshStatus = {
   data_date?: string; started_at?: string; finished_at?: string;
   total?: number | null; done?: number; current?: string | null; companies?: number;
   errors?: Array<{ step: string; error: string }>; fresh?: boolean; error?: string;
+  market?: { state?: string; as_of?: string | null; sector_rows?: number } | null;
 };
 
 const POLL_MS = 4000;
@@ -68,11 +69,12 @@ export function refreshLine(status: RefreshStatus | null): { text: string; tone:
   if (status.state === "RUNNING") {
     const progress = status.total ? ` · ${status.done ?? 0} of ${status.total} steps` : "";
     const current = status.current && status.current !== "starting" ? ` (${status.current})` : "";
-    return { text: `Updating today's company data${progress}${current}. Showing the last saved data until it finishes.`, tone: "running" };
+    return { text: `Updating today's market and company data${progress}${current}. Showing the last saved data until it finishes.`, tone: "running" };
   }
   if (status.state === "DONE") {
     const errors = status.errors?.length ? ` · ${status.errors.length} could not be updated (${status.errors.map((item) => item.step).join(", ")})` : "";
-    return { text: `Company data for ${day(status.data_date)}${status.finished_at ? `, updated ${clock(status.finished_at)}` : ""}${errors}`, tone: errors ? "failed" : "done" };
+    const market = status.market?.as_of ? ` · market prices to ${day(status.market.as_of)}${status.market.state === "STALE" ? " (refresh kept the last valid prices)" : ""}` : "";
+    return { text: `Company data for ${day(status.data_date)}${status.finished_at ? `, updated ${clock(status.finished_at)}` : ""}${market}${errors}`, tone: errors ? "failed" : "done" };
   }
   if (status.state === "FAILED") return { text: `Today's company update did not finish; showing data from ${day(status.data_date)} or earlier.`, tone: "failed" };
   return null;

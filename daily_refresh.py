@@ -3,13 +3,16 @@
 `--start` starts the refresh in the background if today's has not run (or is not running) and prints the status.
 `--status` only prints the status. `--run` does the work in this process:
 
+0. refreshes market prices only (sector and theme ETFs, yields, the dollar, VIX, credit spreads; owner-approved
+   2026-11-27), so the cards and Today read the same day's market data;
 1. builds the judgment card for every watchlist company (this records card history and the card cache, the same
    as opening each company page);
 2. precomputes what moved each price, the next events and FX moves, each stamped with its data date;
 3. scores the valuation track record (track_record.py).
 
 The status file says how far it has got, so the pages can show "updating 4 of 12" and one data date.
-Nothing here calls the research refresh (`refresh=1` / `--refresh`); macro inputs are read cache-first.
+Nothing here calls the company research refresh (`refresh=1` / `--refresh`); inflation, KOSPI and the macro series are
+read cache-first.
 """
 from __future__ import annotations
 
@@ -86,17 +89,15 @@ def precomputed(name: str, today: dt.date | None = None, directory: Path = DAILY
 def run(today: dt.date | None = None, *, directory: Path = DAILY, tickers: list[str] | None = None,
         build: Callable[[str], dict[str, Any]] | None = None, steps: dict[str, Callable[[], Any]] | None = None,
         score: Callable[[], Any] | None = None, ai: Callable[[dict[str, Any]], Any] | None = None,
-        ai_ready: bool | None = None) -> dict[str, Any]:
+        ai_ready: bool | None = None, market: Callable[[], Any] | None = None) -> dict[str, Any]:
     """Do the refresh. The callables are injectable for tests; by default they are the real engines."""
     today = today or dt.date.today()
     import company_verdict as cv
     if tickers is None:
         tickers = json.loads(cv.WATCHLIST_PATH.read_text()).get("tickers", [])
-    if build is None:
-        environment, core = cv.load_environment()
-        store = cv.SignalStore()
-        fomc = cv.next_fomc(today)
-        build = lambda ticker: cv.build_card(ticker, environment, core, store, fomc=fomc)   # noqa: E731
+    if market is None:
+        import research_system
+        market = lambda: research_system.refresh_market(today)   # noqa: E731
     if steps is None:
         steps = {"drivers": cv.watchlist_drivers, "events": cv.watchlist_events, "fx": cv.fx_moves}
     if score is None:
@@ -110,7 +111,7 @@ def run(today: dt.date | None = None, *, directory: Path = DAILY, tickers: list[
     if ai is None:
         ai = lambda card: ai_for_card(card, today)   # noqa: E731
     status: dict[str, Any] = {"state": "RUNNING", "pid": os.getpid(), "data_date": today.isoformat(), "started_at": _now(),
-                              "total": len(tickers) * (2 if ai_ready else 1) + len(steps) + 1, "done": 0, "current": None, "companies": len(tickers),
+                              "total": 1 + len(tickers) * (2 if ai_ready else 1) + len(steps) + 1, "done": 0, "current": None, "companies": len(tickers),
                               "cards_done": [], "errors": []}
 
     def advance(label: str, action: Callable[[], Any]) -> Any:
@@ -123,6 +124,14 @@ def run(today: dt.date | None = None, *, directory: Path = DAILY, tickers: list[
             return None
         finally:
             status["done"] += 1
+
+    # Market prices first, so every card below is built on the same, fresh market snapshot.
+    status["market"] = advance("market prices", market)
+    if build is None:
+        environment, core = cv.load_environment()
+        store = cv.SignalStore()
+        fomc = cv.next_fomc(today)
+        build = lambda ticker: cv.build_card(ticker, environment, core, store, fomc=fomc)   # noqa: E731
 
     cards = {}
     for ticker in tickers:

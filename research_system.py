@@ -7,7 +7,7 @@ import contextlib
 import io
 import json
 import os
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 import subprocess
 import sys
@@ -89,6 +89,26 @@ def isolated(name: str, loader: Callable[[], Any], refresh: bool) -> dict[str, A
             return {"state": "UNAVAILABLE", "payload": None, "error": f"{type(exc).__name__}: {exc}"}
     cached = load_cache(name)
     return {"state": "CACHED" if cached is not None else "UNAVAILABLE", "payload": cached, "error": None if cached is not None else "No last-valid research cache."}
+
+
+def refresh_market(today: date | None = None, backup_dir: Path | None = None) -> dict[str, Any]:
+    """Daily market prices only (owner-approved 2026-11-27): re-download the core-market module - sector and theme
+    ETFs, Treasury yields, the dollar, VIX and credit spreads - and nothing else (inflation, KOSPI and the macro
+    series stay cache-first). The day's first refresh keeps a copy of the previous snapshot; a refresh that returns
+    no sector rows, or fails, keeps the last valid snapshot (see `isolated`)."""
+    today = today or date.today()
+    backup_dir = backup_dir or ROOT / ".cache" / "backups"
+    previous = cache_path("core-market")
+    if previous.exists():
+        backup = backup_dir / f"research-core-market-{today.isoformat()}.json"
+        if not backup.exists():
+            backup_dir.mkdir(parents=True, exist_ok=True)
+            backup.write_bytes(previous.read_bytes())
+    result = isolated("core-market", build_core_market, refresh=True)
+    payload = result.get("payload") or {}
+    dates = sorted({str(row.get("as_of")) for row in payload.get("sectors") or [] if row.get("as_of")})
+    return {"state": result["state"], "error": result["error"], "sector_rows": len(payload.get("sectors") or []),
+            "as_of": dates[-1] if dates else None}
 
 
 def build_inflation() -> dict[str, Any]:

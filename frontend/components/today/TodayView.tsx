@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { attentionItems, buildAlerts, dataAge, marketRead, type Alert } from "../../lib/alerts.mjs";
 import type { ResearchSystem } from "../../lib/research-system-types";
@@ -180,7 +181,9 @@ export function TodayView({ system, status }: { system: ResearchSystem; status?:
   const [core, setCore] = useState<Set<string>>(new Set());
   const [reloadKey, setReloadKey] = useState(0);
   // P20 item 6: when today's background refresh finishes, read its precomputed results again.
-  const refresh = useDailyRefresh(useCallback(() => { resetWatchlistLoaders(); todayShared = null; setReloadKey((key) => key + 1); }, []));
+  const router = useRouter();
+  // When it finishes, re-read the client data and the server's market snapshot (new market date and band).
+  const refresh = useDailyRefresh(useCallback(() => { resetWatchlistLoaders(); todayShared = null; setReloadKey((key) => key + 1); router.refresh(); }, [router]));
   const refreshNote = refreshLine(refresh);
 
   useEffect(() => {
