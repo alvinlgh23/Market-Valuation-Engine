@@ -40,8 +40,10 @@ function Step({ step, index, last }: { step: StoryStep; index: number; last: boo
       <Criteria block criteria={{ rule: step.criteria?.rule ?? "", now: evidence || null, asOf: step.evidence.find((item) => item.as_of)?.as_of ?? null, notes: step.evidence.map((item) => item.source).filter(Boolean).slice(0, 1).map((source) => `Source: ${source}`) }}>
         <h3>{step.title}<Tag tag={step.tag} /></h3>
       </Criteria>
-      <p>{step.text}</p>
-      {step.notes?.map((note) => <p key={note.text} className="story-note"><Tag tag={note.tag} label={note.label} />{note.text}</p>)}
+      <details className="story-more"><summary>Details</summary>
+        <p>{step.text}</p>
+        {step.notes?.map((note) => <p key={note.text} className="story-note"><Tag tag={note.tag} label={note.label} />{note.text}</p>)}
+      </details>
     </div>
     {step.link?.kind === "because" && step.link.text ? <span className="story-because">{step.link.text}</span> : null}
   </li>;

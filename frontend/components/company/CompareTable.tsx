@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { COLUMNS, sortHoldings, type Tone } from "../../lib/compare-model";
 import { loadTodayHoldings } from "../../lib/today-client";
+import { GapBar, gapMode } from "../ui/GapBar";
 import type { TodayHolding } from "../../lib/today-model";
 
 // Watchlist Compare: every holding side by side by number. Click a heading to sort (again to reverse).
@@ -45,6 +46,11 @@ export function CompareTable({ reloadKey, core }: { reloadKey: number; core: Rec
             // Colour by sign only where there is no reading dot; otherwise the dot alone carries the tone.
             const signClass = cell.tone || cell.sign == null ? "" : cell.sign < -0.0005 ? " down" : cell.sign > 0.0005 ? " up" : "";
             if (cell.text === "—") return <td key={c.key}><span className="cmp-val cmp-na">—</span>{cell.sub ? <small>{cell.sub}</small> : null}</td>;
+            if (c.key === "price") return <td key={c.key} className="cmp-price" title={c.label}>
+              <span className="cmp-val">{cell.tone && cell.tone !== "unknown" ? <i className={`cmp-dot tone-${cell.tone}`} aria-hidden /> : null}{cell.text}</span>
+              {cell.sub ? <small>{cell.sub}</small> : null}
+              {gapMode({ ...h.compare, valuationState: h.compare.states.valuation }) !== "none" && gapMode({ ...h.compare, valuationState: h.compare.states.valuation }) !== "beyond" ? <GapBar gap={{ ...h.compare, valuationState: h.compare.states.valuation }} compact label={false} /> : null}
+            </td>;
             return <td key={c.key} title={cell.tone ? `${c.label}: ${TONE_WORD[cell.tone]}${c.axis && h.compare.states[c.axis] ? ` (${h.compare.states[c.axis]})` : ""}` : c.label}>
               <span className={`cmp-val${signClass}`}>{cell.tone && cell.tone !== "unknown" ? <i className={`cmp-dot tone-${cell.tone}`} aria-hidden /> : null}{cell.text}</span>
               {cell.sub ? <small>{cell.sub}</small> : null}

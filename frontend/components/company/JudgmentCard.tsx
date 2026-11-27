@@ -6,6 +6,8 @@ import { historyLabel, versusHistory } from "../../lib/plain-words.mjs";
 import { OperatingSignals, type Operating } from "./StoredProfileReads";
 import { axisTone, confidenceDots, percentileWidth, TONE_GLYPH, TONE_LABEL, type Tone } from "../../lib/judgment-tone.mjs";
 import { PriceDriversPanel, type Attribution, type PriceReading } from "./PriceDrivers";
+import { GapBar } from "../ui/GapBar";
+import { factHeadline, gapFromCard } from "../../lib/headline";
 
 type Axis = { state: string; direction: string | null; confidence: string; evidence: string[]; missing: string[]; families: string[]; detail: Record<string, unknown>; driver_note?: string };
 type Card = {
@@ -281,6 +283,47 @@ function AiReading({ ai, currency }: { ai?: AiBlock | null; currency?: string })
   </section>;
 }
 
+const AGREE: Record<string, { label: string; tone: string }> = {
+  OPPOSED: { label: "Price and business disagree", tone: "opposed" }, LEANS_OPPOSED: { label: "Leans against business", tone: "leans" },
+  ALIGNED: { label: "Price and business agree", tone: "aligned" }, LEANS_ALIGNED: { label: "Leans with business", tone: "aligned" },
+  OUTSIDE: { label: "Moved with outside forces", tone: "outside" }, UNCLEAR: { label: "No clear reading", tone: "unclear" },
+};
+function bigPct(v: number | null) {
+  if (v == null) return "—";
+  const r = Math.round(v * 100);
+  return r === 0 ? "0%" : `${r < 0 ? "−" : "+"}${Math.abs(r)}%`;
+}
+function shortDate(day: string | undefined) {
+  if (!day) return "";
+  const d = new Date(`${day}T12:00:00Z`);
+  return Number.isNaN(d.getTime()) ? day : d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+}
+
+/** Design system v2 hero: one plain-fact headline, the agreement, three big numbers and the gap bar. */
+function CompanyHero({ card }: { card: Card }) {
+  const conclusion = (card.conclusion ?? {}) as { agreement?: string; short?: { business?: string | null } | null };
+  const w3 = card.attribution?.windows?.["3M"];
+  const since = card.attribution?.recent_move?.since_window_end ?? null;
+  const quarter = (card.axes.fundamentals?.detail?.quarterly ?? {}) as Record<string, unknown>;
+  const trend = (card.axes.expectations?.detail?.eps_trend_next_year ?? {}) as Record<string, unknown>;
+  const qSales = num(quarter.revenue_yoy);
+  const eps = num(trend.current) != null && num(trend["90daysAgo"]) ? num(trend.current)! / num(trend["90daysAgo"])! - 1 : null;
+  const meta = AGREE[conclusion.agreement ?? ""] ?? null;
+  const third = qSales != null ? { label: "Quarter sales y/y", value: qSales } : { label: "EPS estimate, 90 days", value: eps };
+  return <section className="jc-hero glow-card" aria-label="The reading in one line">
+    <h2 className="display-h jc-hero-head">{factHeadline(conclusion.short?.business, w3?.price_change ?? null)}</h2>
+    {meta ? <span className={`tdy-agree is-${meta.tone}`}>{meta.label}</span> : null}
+    <div className="jc-hero-body">
+      <div className="jc-hero-nums">
+        <div><small>3 months</small><b className={(w3?.price_change ?? 0) < 0 ? "down" : "up"}>{bigPct(w3?.price_change ?? null)}</b></div>
+        {since ? <div><small>Since {shortDate(since.from)}</small><b className={since.stock_change < 0 ? "down" : "up"}>{bigPct(since.stock_change)}</b><em>S&amp;P {bigPct(since.spy_change)}</em></div> : null}
+        <div><small>{third.label}</small><b className={(third.value ?? 0) < 0 ? "down" : "up"}>{bigPct(third.value)}</b></div>
+      </div>
+      <GapBar gap={gapFromCard(card as unknown as Record<string, unknown>)} />
+    </div>
+  </section>;
+}
+
 export function JudgmentCard({ ticker }: { ticker: string }) {
   return <JudgmentCardBody key={ticker} ticker={ticker} />;
 }
@@ -320,9 +363,16 @@ function JudgmentCardBody({ ticker }: { ticker: string }) {
       </span>
       <Legend />
     </div>
-    <DataConclusion conclusion={card.conclusion as Conclusion | undefined} record={card.valuation_record as ValuationRecord | null | undefined} />
-    <AiReading ai={card.ai as AiBlock | null | undefined} currency={typeof card.axes.valuation?.detail?.currency === "string" ? card.axes.valuation.detail.currency : undefined} />
-    <PriceDriversPanel attribution={card.attribution} reading={card.price_reading} lastEarnings={card.next_catalysts.last_earnings} />
+    <CompanyHero card={card} />
+    <details className="jc-fold"><summary>The full reading <small>fixed rules</small></summary>
+      <DataConclusion conclusion={card.conclusion as Conclusion | undefined} record={card.valuation_record as ValuationRecord | null | undefined} />
+    </details>
+    {card.ai ? <details className="jc-fold"><summary>AI write-up <small>not counted in any reading</small></summary>
+      <AiReading ai={card.ai as AiBlock | null | undefined} currency={typeof card.axes.valuation?.detail?.currency === "string" ? card.axes.valuation.detail.currency : undefined} />
+    </details> : null}
+    <details className="jc-fold"><summary>What moved the price <small>macro, market, sector, company</small></summary>
+      <PriceDriversPanel attribution={card.attribution} reading={card.price_reading} lastEarnings={card.next_catalysts.last_earnings} />
+    </details>
     {hasHeadlineNumbers || !refreshing ? (
       <div className="jc-headline">
         <NumberStrip card={card} />
@@ -342,7 +392,7 @@ function JudgmentCardBody({ ticker }: { ticker: string }) {
     </div> : null}
     <footer className="judgment-footer">
       <div className="jc-dates"><span><small>Next earnings</small><b>{earnings}</b></span><span><small>Next FOMC</small><b>{card.next_catalysts.fomc ?? "—"}</b></span></div>
-      {card.falsification.length ? <details open className="jc-change"><summary>What would change the view</summary><ul>{card.falsification.map((item) => <li key={item}>{item}</li>)}</ul></details> : null}
+      {card.falsification.length ? <details className="jc-change"><summary>What would change the view</summary><ul>{card.falsification.map((item) => <li key={item}>{item}</li>)}</ul></details> : null}
       <details><summary>Missing inputs</summary><ul>{Object.entries(card.axes).flatMap(([name, axis]) => axis.missing.map((item) => <li key={`${name}-${item}`}>{AXIS_LABEL[name] ?? name}: {item}</li>))}</ul></details>
       <small>{card.disclaimer} Card generated {card.generated_on}.</small>
     </footer>
