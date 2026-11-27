@@ -667,7 +667,7 @@ def falsification(economics: dict[str, Any] | None) -> list[str]:
 
 # Checklist 18.13: every recorded card carries the version of the rules that produced it. Raise this
 # whenever a card rule changes, so a reading that moved because the rules moved is not shown as news.
-VERDICT_RULES_VERSION = "2026-11-26"   # history: 24b GICS sectors (18.18); 24c exposures, growth rule (18.20-21); 26 faded references, steady readings (20.2-20.3) and the 25-26 Nov valuation-input changes
+VERDICT_RULES_VERSION = "2026-11-27"   # history: 24b GICS sectors (18.18); 24c exposures, growth rule (18.20-21); 26 faded references, steady readings (20.2-20.3) and the 25-26 Nov valuation-input changes; 27 lease-only debt counts as zero interest (PLTR)
 VERDICT_SOURCE = f"company_verdict@{VERDICT_RULES_VERSION}"
 
 

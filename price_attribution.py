@@ -256,7 +256,10 @@ def price_reading(attribution: dict[str, Any] | None, expectations_state: str | 
         kind, label = "company", f"Company-specific {direction}; estimates not following: sentiment or flows"
     short = {"noise": f"{PART_LABEL[outside]}-driven" if abs(parts[outside]) >= 0.05 else "Normal range",
              "watch": f"Some company {direction}", "fundamentals": "Fundamentals changing",
-             "company": f"Company {direction}" + ("" if "unavailable" in label else ", estimates flat")}.get(kind, "Unscored")
+             # The short tag names what estimates actually did; "flat" only when they were flat (2026-11-27 fix:
+             # NVDA read "Company drop, estimates flat" while estimates were rising).
+             "company": f"Company {direction}" + ("" if "unavailable" in label else ", estimates rising" if estimates_up
+                                                    else ", estimates falling" if estimates_down else ", estimates flat")}.get(kind, "Unscored")
     detail = (f"{window} price {change:+.1%}: macro {shown['macro']:+.1%}, market {shown['market']:+.1%}, sector {shown['sector']:+.1%}, "
               f"company {shown['company']:+.1%} ({'z unavailable' if z is None else f'{z:+.1f}x normal range'}).")
     if fundamentals_change:

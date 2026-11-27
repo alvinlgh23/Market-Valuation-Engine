@@ -616,3 +616,19 @@ class BankAndAdrTests(unittest.TestCase):
         self.assertAlmostEqual(bridged["_unit_bridge"]["quote_per_model_share"], 307.7 / bridged["price"])
         self.assertIsNone(_company_level_bridge(data, fx_loader=lambda base, quote: (None, None)))
         self.assertIsNone(_company_level_bridge({**data, "info": {"financialCurrency": "USD", "currency": "USD"}}))
+
+
+def test_lease_only_debt_counts_as_zero_interest_and_anything_else_stays_missing():
+    """Gap scan 2026-11-27 (owner approval, PLTR): the reported debt is operating leases and there are no borrowings."""
+    import intrinsic_valuation as iv
+
+    def facts(**concepts):
+        return lambda symbol: {"facts": {"us-gaap": {name: {"units": {"USD": [{"end": "2025-12-31", "val": value, "form": "10-K", "filed": "2026-02-01"}]}}
+                                                    for name, value in concepts.items()}}}
+
+    reason = iv.lease_only_debt("X", 229.0, "2025-12-31", facts_loader=facts(OperatingLeaseLiability=229.0))
+    assert reason and "operating lease liabilities" in reason
+    assert iv.lease_only_debt("X", 229.0, "2025-12-31", facts_loader=facts(OperatingLeaseLiability=229.0, LongTermDebt=500.0)) is None
+    assert iv.lease_only_debt("X", 900.0, "2025-12-31", facts_loader=facts(OperatingLeaseLiability=229.0)) is None   # debt is more than leases
+    assert iv.lease_only_debt("X", 229.0, "2025-12-31", facts_loader=facts()) is None                                 # no lease figure: stays missing
+    assert iv.lease_only_debt("X", 229.0, None, facts_loader=facts(OperatingLeaseLiability=229.0)) is None

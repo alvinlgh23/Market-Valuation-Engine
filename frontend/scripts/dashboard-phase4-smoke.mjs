@@ -43,28 +43,34 @@ try {
   observe(page);
 
   await page.goto(baseUrl, { waitUntil: "load" });
-  // Checklist 14.3: Today is a market read, factor list, ranked alerts, watchlist and sectors.
-  await page.locator(".tdy-headline").waitFor();
+  // Today (2026-11-27 redesign): status band, exceptions only, next three weeks, holdings at a glance.
+  await page.locator(".tdy-band .tdy-band-line").waitFor();
   await pageShot(page, "01-dashboard-desktop.png");
-  // Checklist 16: Today shows the market story's steps; factor readings stay internal.
-  await page.locator(".tdy-story li").first().waitFor({ timeout: 120000 });
-  if ((await page.locator(".tdy-story li").count()) < 3) throw new Error("Today page shows too few market story steps.");
-  await sectionShot(page, ".tdy-story", "02-market-story-digest.png");
-  await sectionShot(page, ".tdy-sectors", "03-sector-leadership.png");
-  await page.locator(".tdy-watch-row b").first().waitFor({ timeout: 30000 });
-  await sectionShot(page, ".tdy-watch", "04-watchlist.png");
-  await page.locator(".tdy-alert, .tdy-alerts .tdy-empty").first().waitFor({ timeout: 120000 });
-  await sectionShot(page, ".tdy-alerts", "05-alerts.png");
-  // Checklist 14.4: every alert opens its criteria (rule and track record) on hover or focus.
-  // Checklist 18.14: forward-looking items first, then why holdings moved; the latter carry a track record.
-  await page.locator(".tdy-attention").waitFor();
-  if (await page.locator(".tdy-moved .tdy-alert").count()) {
-    await page.locator(".tdy-moved .tdy-alert .crit").first().focus();
-    const criteria = page.locator(".tdy-moved .tdy-alert .crit-pop").first();
+  await page.locator(".tdy-focus, .tdy-calm").first().waitFor({ timeout: 120000 });
+  const focusCards = await page.locator(".tdy-focus").count();
+  if (focusCards > 4) throw new Error(`Today shows ${focusCards} focus cards; the rule allows at most 4.`);
+  await page.locator(".tdy-focus-wrap > header .crit").focus();
+  const rule = page.locator(".tdy-focus-wrap > header .crit-pop");
+  await rule.waitFor({ state: "visible" });
+  if (!/A holding is shown here/.test(await rule.innerText())) throw new Error("The focus rule is not shown on hover or focus.");
+  await sectionShot(page, ".tdy-focus-wrap", "02-focus.png");
+  await page.locator(".tdy-timeline li, .tdy-timeline-card .tdy-empty").first().waitFor({ timeout: 120000 });
+  await sectionShot(page, ".tdy-timeline-card", "03-next-three-weeks.png");
+  // The holdings grid places every holding with a card exactly once; the full list stays in Watchlist.
+  await page.locator(".tdy-dot").first().waitFor({ timeout: 60000 });
+  const dots = await page.locator(".tdy-dot").allInnerTexts();
+  if (new Set(dots).size !== dots.length) throw new Error("A holding appears twice in the holdings grid.");
+  if (await page.locator(".tdy-watch-row, .tdy-sectors, .tdy-story").count()) throw new Error("Today still shows the retired watchlist, sectors or story blocks.");
+  await sectionShot(page, ".tdy-glance", "04-holdings-at-a-glance.png");
+  // Checklist 14.4: every condition opens its criteria (rule and track record) on hover or focus.
+  await page.locator(".tdy-shared-bars, .tdy-shared .tdy-empty").first().waitFor({ timeout: 120000 });
+  if (await page.locator(".tdy-shared-bars").count()) {
+    await page.locator(".tdy-shared .crit").first().focus();
+    const criteria = page.locator(".tdy-shared .crit-pop").first();
     await criteria.waitFor({ state: "visible" });
-    if (!/Rule[\s\S]*Track record/.test(await criteria.innerText())) throw new Error("Alert criteria are missing the rule or track record.");
-    await sectionShot(page, ".tdy-alerts", "06-alert-criteria.png");
+    if (!/Rule[\s\S]*Track record/.test(await criteria.innerText())) throw new Error("Condition criteria are missing the rule or track record.");
   }
+  await sectionShot(page, ".tdy-shared", "05-what-holdings-share.png");
 
   // Checklists 15.4 / 16 / 17: Macro is the market story, the profit breakdown and the scenario gate.
   await page.goto(`${baseUrl}/macro`, { waitUntil: "load" });
@@ -101,7 +107,7 @@ try {
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
   observe(mobile);
   await mobile.goto(baseUrl, { waitUntil: "load" });
-  await mobile.locator(".tdy-headline").waitFor();
+  await mobile.locator(".tdy-band .tdy-band-line").waitFor();
   const mobileOverflow = await mobile.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
   if (mobileOverflow) throw new Error("Dashboard mobile has horizontal page overflow.");
   await mobile.screenshot({ path: path.join(output, "17-dashboard-mobile.png"), fullPage: false });

@@ -19,8 +19,17 @@ try {
   const page = await browser.newPage({ viewport: { width: 1500, height: 980 }, deviceScaleFactor: 1 });
   observe(page);
 
+  // Since checklist 19.1 /markets opens on the whole market: the 11 sectors against the S&P 500, nothing preselected.
   await page.goto(`${baseUrl}/markets`, { waitUntil: "networkidle" });
+  const overview = page.getByRole("region", { name: "Sectors against the S&P 500" });
+  await overview.waitFor();
+  const sectorLinks = await overview.getByRole("link").count();
+  if (sectorLinks !== 11) throw new Error(`Expected 11 sector rows on the market overview, found ${sectorLinks}`);
+  await page.getByRole("region", { name: "Themes and assets" }).waitFor();
+  await page.screenshot({ path: path.join(output, "00-market-overview.png") });
+  await overview.getByRole("link", { name: /Technology/ }).click();
   await page.getByRole("heading", { name: /Where leadership is moving/i }).waitFor();
+  await page.getByRole("link", { name: /All sectors/ }).waitFor();
   await page.screenshot({ path: path.join(output, "01-sector-rotation.png") });
 
   await page.screenshot({ path: path.join(output, "02-full-sector-leaderboard.png") });
@@ -49,10 +58,11 @@ try {
   await page.getByRole("heading", { name: /Companies expressing/i }).waitFor();
   await page.screenshot({ path: path.join(output, "06-semiconductor-leadership.png") });
 
-  // Since checklist P5 breadth and crowding are measured; either a measured state or Unavailable is valid.
+  // The sector breadth view was deleted (checklist 10.10); an old link falls back to the sector snapshot.
   await page.goto(`${baseUrl}/markets?sector=semiconductors&view=breadth`, { waitUntil: "networkidle" });
-  await page.getByRole("heading", { name: /^(Unavailable|Broad|Selective|Narrow)$/ }).first().waitFor();
-  await page.screenshot({ path: path.join(output, "07-semiconductor-breadth.png") });
+  await page.getByRole("region", { name: "Semiconductors current market state" }).waitFor();
+
+  // Crowding is measured (checklist P5); either a measured state or Unavailable is valid.
 
   await page.goto(`${baseUrl}/markets?sector=semiconductors&view=positioning`, { waitUntil: "networkidle" });
   await page.getByRole("heading", { name: /^(Unavailable|Crowded|Extended|Neutral|Unloved)$/ }).first().waitFor();
@@ -68,16 +78,13 @@ try {
     await page.screenshot({ path: path.join(output, `${Number(prefix.slice(0, 2)) + 1}-${sector}-structure-map.png`) });
   }
 
-  await page.goto(`${baseUrl}/markets/defensive-rotation`, { waitUntil: "networkidle" });
-  await page.getByRole("heading", { name: /Risk regime in market context/i }).waitFor();
-  await page.screenshot({ path: path.join(output, "14-defensive-rotation.png") });
   await page.close();
 
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
   observe(mobile);
   await mobile.goto(`${baseUrl}/markets`, { waitUntil: "networkidle" });
   const overflow = await mobile.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
-  if (overflow) throw new Error("Markets rotation has horizontal page overflow on mobile.");
+  if (overflow) throw new Error("Markets overview has horizontal page overflow on mobile.");
   await mobile.screenshot({ path: path.join(output, "15-mobile-sector-rotation.png") });
   await mobile.goto(`${baseUrl}/markets?sector=semiconductors&view=structure&node=advanced-packaging`, { waitUntil: "networkidle" });
   await mobile.getByRole("heading", { name: "Advanced Packaging" }).waitFor();

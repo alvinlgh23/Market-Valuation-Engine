@@ -23,9 +23,9 @@ try {
   observe(page);
   let response = await page.goto(baseUrl, { waitUntil: "load" });
   if (!response?.ok()) throw new Error(`Dashboard returned ${response?.status()}`);
-  await page.locator(".tdy-headline").waitFor();
-  await page.locator(".tdy-story li").first().waitFor({ timeout: 120000 });
-  await page.locator(".tdy-alert, .tdy-alerts .tdy-empty").first().waitFor({ timeout: 120000 });
+  await page.locator(".tdy-band .tdy-band-line").waitFor();
+  await page.locator(".tdy-focus, .tdy-calm").first().waitFor({ timeout: 120000 });
+  await page.locator(".tdy-shared-bars, .tdy-shared .tdy-empty").first().waitFor({ timeout: 120000 });
   await shot(page, "01-dashboard.png", true);
 
   response = await page.goto(`${baseUrl}/macro/world`, { waitUntil: "networkidle" });
@@ -64,7 +64,7 @@ try {
   await page.getByText("Current economic read").waitFor();
   await shot(page, "09-company-snapshot.png", true);
   await page.getByRole("button", { name: /^Economic map$/ }).click();
-  await page.locator(".economic-map-legend").waitFor();   // the workspace now opens inline, not as a dialog
+  await page.locator(".eng-chain .eng-step").first().waitFor({ timeout: 60000 });   // the chain from sales to price (2026-11-27)
   await shot(page, "10-economic-map.png");
 
   const api = await page.request.get(`${baseUrl}/api/research?scope=dashboard`);
@@ -75,7 +75,7 @@ try {
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
   observe(mobile);
   await mobile.goto(baseUrl, { waitUntil: "load" });
-  await mobile.locator(".tdy-headline").waitFor();
+  await mobile.locator(".tdy-band .tdy-band-line").waitFor();
   const overflow = await mobile.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
   if (overflow) throw new Error("Mobile dashboard has horizontal overflow");
   await shot(mobile, "11-mobile-dashboard.png", true);

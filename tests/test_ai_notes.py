@@ -116,11 +116,11 @@ def test_ai_results_never_change_a_reading(tmp_path, monkeypatch):
 def test_daily_refresh_runs_the_ai_step_per_card_only_when_switched_on(tmp_path):
     seen = []
     status = dr.run(TODAY, directory=tmp_path, tickers=["AAA", "BBB"], build=lambda t: {"ticker": t}, steps={}, score=lambda: None,
-                    ai=lambda card: seen.append(card["ticker"]), ai_ready=True)
-    assert seen == ["AAA", "BBB"] and status["total"] == 5 and status["done"] == 5
+                    ai=lambda card: seen.append(card["ticker"]), ai_ready=True, market=lambda: None)
+    assert seen == ["AAA", "BBB"] and status["total"] == 6 and status["done"] == 6   # market, 2 cards, 2 AI notes, score
     seen.clear()
     dr.run(TODAY, directory=tmp_path, tickers=["AAA"], build=lambda t: {"ticker": t}, steps={}, score=lambda: None,
-           ai=lambda card: seen.append(card["ticker"]), ai_ready=False)
+           ai=lambda card: seen.append(card["ticker"]), ai_ready=False, market=lambda: None)
     assert seen == []
 
 

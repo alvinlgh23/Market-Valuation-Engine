@@ -1,4 +1,6 @@
 import { createHash } from "node:crypto";
+import { statSync } from "node:fs";
+import path from "node:path";
 import fixture from "./fixtures/research-system.json";
 import { PythonRuntimeError, runPythonJson, runtimeError } from "./python-runtime";
 
@@ -11,10 +13,15 @@ function coreSnapshotId(system: typeof fixture) {
   return createHash("sha256").update(JSON.stringify(system.modules.core_market.payload)).digest("hex").slice(0, 16);
 }
 
+/** When the daily refresh writes a new market snapshot, the in-memory copy is out of date at once. */
+function marketSnapshotTime(): number {
+  try { return statSync(path.resolve(process.cwd(), "..", ".cache", "research", "core-market.json")).mtimeMs; } catch { return 0; }
+}
+
 export async function loadResearchSystem(refresh = false) {
   let full: typeof fixture;
   let source = "BUNDLED_LAST_VALID";
-  if (memoryCache && !refresh && Date.now() - memoryCache.at < CACHE_MS) {
+  if (memoryCache && !refresh && Date.now() - memoryCache.at < CACHE_MS && marketSnapshotTime() <= memoryCache.at) {
     full = memoryCache.value;
     source = "MEMORY_CACHE";
   } else {

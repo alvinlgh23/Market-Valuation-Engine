@@ -72,7 +72,9 @@ try {
   await page.waitForURL(/\/valuation\/PLTR/);
   await page.getByRole("heading", { name: /Palantir/ }).first().waitFor();
   await shot(page, "20-pltr-valuation-from-company-economics.png");
-  await goto(page, "/valuation/JPM?fixture=1", /JPMorgan/i);
+  // Banks load the card's return-on-equity reading, so wait for the page rather than a quiet network.
+  await page.goto(`${baseUrl}/valuation/JPM?fixture=1`, { waitUntil: "load", timeout: 60000 });
+  await page.getByRole("heading", { name: /JPMorgan/i }).first().waitFor({ timeout: 60000 });
   await shot(page, "21-framework-required-state.png", ".valuation-framework-state");
   await goto(page, "/valuation/MSFT?view=report&fixture=1", /MSFT intrinsic valuation/i);
   await shot(page, "22-full-report.png");

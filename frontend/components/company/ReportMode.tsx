@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import type { CompanyResearchViewModel } from "../../lib/company-economics-types";
-import { confidenceLabel, formatValue, humanize } from "../../lib/companyEconomicsAdapter";
+import { confidenceLabel, formatValue, freshnessLabel, humanize } from "../../lib/companyEconomicsAdapter";
 import { EvidenceTypeBadge } from "./ResearchPrimitives";
 import { OperationalResearch } from "./OperationalResearch";
 
@@ -48,7 +48,7 @@ export function ReportMode({ company, onClose }: { company: CompanyResearchViewM
         <ReportSection number={12} title="Market Expectations"><dl className="report-dl"><div><dt>5Y revenue CAGR</dt><dd>{formatValue(market.market_implied_revenue_cagr, "decimal")}</dd></div><div><dt>Year-5 FCFF margin</dt><dd>{formatValue(market.market_implied_fcff_margin, "decimal")}</dd></div><div><dt>Comparison</dt><dd>{humanize(market.state)}</dd></div></dl><p>{market.reason}</p></ReportSection>
         <ReportSection number={13} title="Data Gaps">{company.dataGaps.length ? company.dataGaps.map((gap) => <div className="report-row report-row-copy" key={`${gap.missing_field}-${gap.related_constraint}`}><strong>{gap.label} — Unavailable</strong><p>{gap.why_it_matters} {gap.confidence_impact}</p></div>) : <p>No material structured-data gaps identified.</p>}</ReportSection>
         <ReportSection number={14} title="Final Interpretation"><p>{sustainability.interpretation}</p><p>{market.observed_economics}</p></ReportSection>
-        <ReportSection number={15} title="Evidence Trace">{company.evidence.map((item) => <article className="report-evidence" key={item.id}><header><strong>{item.id} / {item.label}</strong><span>{item.valueLabel}</span></header><p>{item.statement}</p><dl><div><dt>Claim class</dt><dd>{item.typeLabel}</dd></div><div><dt>Source status</dt><dd>{humanize(item.source_status || item.source_nature)}</dd></div><div><dt>Observation / freshness</dt><dd>{item.observation_date || item.period} / {humanize(item.staleness_status || "UNKNOWN")}</dd></div><div><dt>Source</dt><dd>{item.source || "Unavailable"}</dd></div><div><dt>Used in</dt><dd>{item.usedIn.join(", ")}</dd></div><div><dt>Limitation</dt><dd>{item.limitation || "No specific limitation recorded."}</dd></div></dl></article>)}</ReportSection>
+        <ReportSection number={15} title="Evidence Trace">{company.evidence.map((item) => <article className="report-evidence" key={item.id}><header><strong>{item.id} / {item.label}</strong><span>{item.valueLabel}</span></header><p>{item.statement}</p><dl><div><dt>Claim class</dt><dd>{item.typeLabel}</dd></div><div><dt>Source status</dt><dd>{humanize(item.source_status || item.source_nature)}</dd></div><div><dt>Observation / freshness</dt><dd>{item.observation_date || item.period} / {freshnessLabel(item.staleness_status, company.asOf)}</dd></div><div><dt>Source</dt><dd>{item.source || "Unavailable"}</dd></div><div><dt>Used in</dt><dd>{item.usedIn.join(", ")}</dd></div><div><dt>Limitation</dt><dd>{item.limitation || "No specific limitation recorded."}</dd></div></dl></article>)}</ReportSection>
         <OperationalResearch research={company.raw.operational_research} expanded />
       </article>
     </div>

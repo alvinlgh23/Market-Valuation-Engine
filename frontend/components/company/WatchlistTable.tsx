@@ -4,9 +4,11 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { loadCompanyCard } from "../../lib/company-card";
 import { refreshLine, useDailyRefresh } from "../../lib/daily-refresh";
-import { CARD_AXES, cellLabel, resetWatchlistLoaders, type SummaryRow } from "../../lib/watchlist-summary";
-import { axisTone, shortState, TONE_GLYPH, TONE_LABEL } from "../../lib/judgment-tone.mjs";
-import { DriverBar, factorBreakdown, PriceDriversLegend, ReadingTag, type Attribution, type PriceReading } from "./PriceDrivers";
+import { resetWatchlistLoaders, type SummaryRow } from "../../lib/watchlist-summary";
+import { axisTone, shortState } from "../../lib/judgment-tone.mjs";
+import { CompareTable } from "./CompareTable";
+import { resetTodayHoldings } from "../../lib/today-client";
+import { factorBreakdown, type Attribution, type PriceReading } from "./PriceDrivers";
 
 type Drivers = { ticker: string; reading: PriceReading; attribution: Attribution & { recent_move?: { latest_price?: number | null; since_window_end?: { stock_change: number; from: string; to: string } | null } | null }; archetype_source: string | null };
 type WeightTier = "core" | "standard" | "watch";
@@ -14,7 +16,6 @@ type WatchlistMode = "overview" | "matrix";
 
 const CURRENCIES = ["USD", "EUR", "GBP", "JPY", "CHF", "CNY", "HKD", "SGD", "AUD", "CAD", "KRW", "INR", "TWD"];
 const KIND_ORDER = ["fundamentals", "company", "watch", "noise", "unknown"];
-const AXES = CARD_AXES;
 
 function savedCurrency() { try { return window.localStorage.getItem("chainstox.homeCurrency") || "USD"; } catch { return "USD"; } }
 function savedWeights(): Record<string, WeightTier> {
@@ -168,6 +169,7 @@ export function WatchlistTable() {
   const [hydrating, setHydrating] = useState<Record<string, boolean>>({});
   const [weights, setWeights] = useState<Record<string, WeightTier>>(() => (typeof window === "undefined" ? {} : savedWeights()));
   const [mode, setMode] = useState<WatchlistMode>("overview");
+  const [compareKey, setCompareKey] = useState(0);
   const [toast, setToast] = useState<{ text: string; undo?: () => void } | null>(null);
 
   const fetchSummaryAndDrivers = useCallback(() => {
@@ -187,7 +189,7 @@ export function WatchlistTable() {
   }, [fetchSummaryAndDrivers]);
 
   // P20 item 6: missing cards are built by the daily background refresh, not one by one from this page.
-  const refresh = useDailyRefresh(fetchSummaryAndDrivers);
+  const refresh = useDailyRefresh(useCallback(() => { fetchSummaryAndDrivers(); resetTodayHoldings(); setCompareKey((k) => k + 1); }, [fetchSummaryAndDrivers]));
   const refreshNote = refreshLine(refresh);
   const refreshing = refresh?.state === "RUNNING";
 
@@ -285,7 +287,6 @@ export function WatchlistTable() {
   if (error) return <p className="watchlist-note">Watchlist unavailable: {error}</p>;
   if (!rows) return <p className="watchlist-note">Loading the watchlist…</p>;
 
-  const companyChanges = (row: SummaryRow) => row.changed.filter((item) => item.origin === "COMPANY");
   const hydratingCount = Object.keys(hydrating).length;
 
   const renderOverviewRow = (row: SummaryRow) => {
@@ -373,7 +374,7 @@ export function WatchlistTable() {
           <TickerAdd existing={rows.map((row) => row.ticker)} onAdd={addTicker} />
           <div className="wl-mode-switch" role="tablist" aria-label="Watchlist view mode">
             <button type="button" role="tab" aria-selected={mode === "overview"} className={mode === "overview" ? "active" : ""} onClick={() => setMode("overview")}>Overview</button>
-            <button type="button" role="tab" aria-selected={mode === "matrix"} className={mode === "matrix" ? "active" : ""} onClick={() => setMode("matrix")}>6-Axis Matrix</button>
+            <button type="button" role="tab" aria-selected={mode === "matrix"} className={mode === "matrix" ? "active" : ""} onClick={() => setMode("matrix")}>Compare</button>
           </div>
           <label className="wl-currency-compact" title="Display 3-month returns in your home currency">
             <select aria-label="Display currency" value={currency} onChange={(event) => chooseCurrency(event.target.value)}>
@@ -430,42 +431,7 @@ export function WatchlistTable() {
           ) : null}
         </div>
       ) : (
-        <div className="wl-matrix-wrap">
-          <div className="wl-legend">
-            {(["supportive", "against", "mixed", "unknown"] as const).map((tone) => <span key={tone} className={`tone-${tone}`}><em aria-hidden>{TONE_GLYPH[tone]}</em>{TONE_LABEL[tone]}</span>)}
-            <span className="wl-changed-key">changed since last card</span>
-            <PriceDriversLegend />
-          </div>
-          <div className="wl-table" role="table">
-            <div className="wl-row wl-head" role="row"><span role="columnheader">Company</span><span role="columnheader">What moved the price (3M)</span>{AXES.map(([, label]) => <span role="columnheader" key={label}>{label}</span>)}<span role="columnheader">Card</span></div>
-            {[...rows].map((row) => {
-              const isHydrating = Boolean(hydrating[row.ticker]) || (refreshing && !row.valuation_detail);
-              const hasAnyReading = Object.keys(row.axes).length > 0;
-              return <Link href={`/company/${row.ticker}`} className="wl-row" role="row" key={row.ticker}>
-                <span role="cell" className="wl-ticker"><b>{row.ticker}</b></span>
-                <span role="cell" className="wl-drivers">{drivers?.[row.ticker] ? <>
-                  <span className="wl-move">{homeMove(drivers[row.ticker].attribution?.windows?.["3M"]?.price_change)}</span>
-                  <DriverBar parts={drivers[row.ticker].attribution?.windows?.["3M"]?.parts} title={factorBreakdown(drivers[row.ticker].attribution)} />
-                  <ReadingTag reading={drivers[row.ticker].reading} compact />
-                </> : <span className="wl-move">{isHydrating ? "Analyzing…" : drivers || driversError ? "—" : "…"}</span>}</span>
-                {isHydrating && !hasAnyReading ? (
-                  <span role="cell" className="wl-cell wl-hydrating" style={{ gridColumn: "span 6" }}>Building judgment card…</span>
-                ) : AXES.map(([key, label]) => {
-                  const state = row.axes[key];
-                  const tone = state ? axisTone(key, state) : "unknown";
-                  const change = companyChanges(row).find((item) => item.axis === key);
-                  return <span role="cell" key={key} className={`wl-cell tone-${tone}${change ? " changed" : ""}`} title={`${label}: ${state ?? "no card"}${change ? ` (was ${change.from})` : ""}`}>
-                    <em aria-hidden>{TONE_GLYPH[tone]}</em>{cellLabel(shortState(state), key, row)}
-                  </span>;
-                })}
-                <span role="cell" className="wl-date">
-                  {row.last_card ?? "—"}
-                  <button type="button" className="wl-remove" aria-label={`Remove ${row.ticker} from the watchlist`} title={`Remove ${row.ticker}`} onClick={(event) => { event.preventDefault(); event.stopPropagation(); removeTicker(row.ticker); }}>×</button>
-                </span>
-              </Link>;
-            })}
-          </div>
-        </div>
+        <CompareTable reloadKey={compareKey} core={weights} />
       )}
     </section>
   );

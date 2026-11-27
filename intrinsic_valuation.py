@@ -479,6 +479,40 @@ def _sec_fallback(symbol: str, needed: dict[str, str | None], facts_loader=None)
     return found
 
 
+INTEREST_BEARING_DEBT = ("LongTermDebt", "LongTermDebtNoncurrent", "LongTermDebtCurrent", "DebtCurrent", "ShortTermBorrowings",
+                         "ConvertibleNotesPayable", "ConvertibleNotesPayableCurrent", "ConvertibleDebtNoncurrent", "LongTermLineOfCredit",
+                         "LinesOfCreditCurrent", "CommercialPaper", "SeniorNotes", "NotesPayable", "LongTermNotesPayable")
+
+
+def lease_only_debt(symbol: str, total_debt: float, period_end: str | None, facts_loader=None) -> str | None:
+    """Owner approval 2026-11-27 (gap scan, PLTR): when the filings show no interest-bearing borrowings for the latest
+    year and the reported debt is the operating lease liability, there is no interest line to add back - lease cost sits
+    in operating expenses - so after-tax interest is an observed zero. Returns the reason, or None (field stays missing)."""
+    if not period_end:
+        return None
+    try:
+        if facts_loader is None:
+            from growth_inputs import sec_facts as facts_loader
+        gaap = (facts_loader(symbol).get("facts") or {}).get("us-gaap") or {}
+    except Exception:  # noqa: BLE001 - no SEC facts: the field stays missing
+        return None
+    end = dt.date.fromisoformat(str(period_end)[:10])
+
+    def near(concept):
+        rows = [row for row in ((gaap.get(concept) or {}).get("units") or {}).get("USD", [])
+                if row.get("form") in ("10-K", "10-Q", "20-F") and isinstance(row.get("val"), (int, float)) and row.get("end")
+                and abs((dt.date.fromisoformat(row["end"]) - end).days) <= 45]
+        return max(rows, key=lambda row: row.get("filed", ""))["val"] if rows else None
+
+    lease = near("OperatingLeaseLiability")
+    if lease is None or abs(lease - total_debt) > 0.01 * total_debt:
+        return None
+    if any((near(concept) or 0) > 0 for concept in INTEREST_BEARING_DEBT):
+        return None
+    return (f"No interest-bearing debt in the filings for the year ending {end}; the reported debt is operating lease liabilities, "
+            f"whose cost is inside operating expenses, so after-tax interest is zero.")
+
+
 def collect_valuation_data(ticker: str) -> dict:
     symbol = ticker.strip().upper()
     ticker_obj = yf.Ticker(symbol)
@@ -550,6 +584,11 @@ def collect_valuation_data(ticker: str) -> dict:
     if "interest_expense" in filed:
         latest_interest_expense = abs(filed["interest_expense"][1])
         input_sources["interest_expense"] = f"SEC 10-K {filed['interest_expense'][0]} (fiscal year ending {needed['interest_expense']})"
+    elif "interest_expense" in needed and _number(latest_debt) and latest_debt > 0:
+        lease_only = lease_only_debt(symbol, latest_debt, needed["interest_expense"])
+        if lease_only:
+            latest_interest_expense = 0.0
+            input_sources["interest_expense"] = lease_only
     after_tax_interest = (
         latest_interest_expense * (1 - tax_rate)
         if _number(latest_interest_expense)

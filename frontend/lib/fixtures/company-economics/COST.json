@@ -90,7 +90,7 @@
             "related_constraint": "LOGISTICS",
             "why_it_matters": "A direct KPI would distinguish the limiting mechanism from correlated financial outcomes.",
             "confidence_impact": "Constraint confidence cannot be HIGH.",
-            "fallback_proxy_used": null
+            "fallback_proxy_used": "inventory_growth_minus_revenue_growth"
           },
           {
             "missing_field": "direct_market_saturation_kpi",
@@ -122,7 +122,7 @@
             "related_constraint": "INVENTORY",
             "why_it_matters": "A direct KPI would distinguish the limiting mechanism from correlated financial outcomes.",
             "confidence_impact": "Constraint confidence cannot be HIGH.",
-            "fallback_proxy_used": null
+            "fallback_proxy_used": "inventory_growth_minus_revenue_growth"
           }
         ],
         "inference": "Available evidence does not support a primary constraint.",
@@ -183,7 +183,7 @@
               "related_constraint": "LOGISTICS",
               "why_it_matters": "A direct KPI would distinguish the limiting mechanism from correlated financial outcomes.",
               "confidence_impact": "Constraint confidence cannot be HIGH.",
-              "fallback_proxy_used": null
+              "fallback_proxy_used": "inventory_growth_minus_revenue_growth"
             }
           ],
           "inference": "There is insufficient evidence to diagnose logistics.",
@@ -271,7 +271,7 @@
               "related_constraint": "INVENTORY",
               "why_it_matters": "A direct KPI would distinguish the limiting mechanism from correlated financial outcomes.",
               "confidence_impact": "Constraint confidence cannot be HIGH.",
-              "fallback_proxy_used": null
+              "fallback_proxy_used": "inventory_growth_minus_revenue_growth"
             }
           ],
           "inference": "There is insufficient evidence to diagnose inventory.",
@@ -294,12 +294,12 @@
         },
         {
           "name": "inventory_growth_minus_revenue_growth",
-          "value": null,
+          "value": -0.033,
           "unit": "decimal",
           "current_period": "FY2025 vs FY2024",
           "comparison_period": "Prior comparable period",
-          "interpretation": "Inventory Growth Minus Revenue Growth",
-          "evidence_id": null
+          "interpretation": "Inventory growth less revenue growth",
+          "evidence_id": "E18"
         },
         {
           "name": "revenue_per_store",
@@ -321,7 +321,8 @@
       "constraint_direction": "UNKNOWN",
       "scaling_structure": "Synthetic fixture scaling metrics are illustrative, not observed company economics.",
       "supporting_evidence_ids": [
-        "E17"
+        "E17",
+        "E18"
       ],
       "contrary_evidence_ids": [],
       "interpretation": "Growth sustainability remains uncertain because current growth or the primary scaling constraint is not defensibly observed.",
@@ -333,7 +334,8 @@
         "observable_metric": "same_store",
         "rationale": "This would weaken the Revenue \u2248 Store Count \u00d7 Same-Store Sales + Membership growth mechanism or its cash conversion.",
         "evidence_ids": [
-          "E17"
+          "E17",
+          "E18"
         ]
       },
       {
@@ -341,7 +343,8 @@
         "observable_metric": "inventory",
         "rationale": "This would weaken the Revenue \u2248 Store Count \u00d7 Same-Store Sales + Membership growth mechanism or its cash conversion.",
         "evidence_ids": [
-          "E17"
+          "E17",
+          "E18"
         ]
       },
       {
@@ -349,7 +352,8 @@
         "observable_metric": "new",
         "rationale": "This would weaken the Revenue \u2248 Store Count \u00d7 Same-Store Sales + Membership growth mechanism or its cash conversion.",
         "evidence_ids": [
-          "E17"
+          "E17",
+          "E18"
         ]
       }
     ],
@@ -401,7 +405,8 @@
       "observed_economics": "Growth sustainability remains uncertain because current growth or the primary scaling constraint is not defensibly observed.",
       "reason": "A converged reverse DCF and comparable observed growth are required.",
       "evidence_ids": [
-        "E17"
+        "E17",
+        "E18"
       ]
     },
     "data_gaps": [
@@ -430,14 +435,6 @@
         "fallback_proxy_used": "revenue growth"
       },
       {
-        "missing_field": "inventory_growth_minus_revenue_growth",
-        "related_driver": null,
-        "related_constraint": null,
-        "why_it_matters": "Required to evaluate archetype-specific scaling economics.",
-        "confidence_impact": "Scaling confidence is reduced.",
-        "fallback_proxy_used": null
-      },
-      {
         "missing_field": "revenue_per_store",
         "related_driver": null,
         "related_constraint": null,
@@ -459,7 +456,7 @@
         "related_constraint": "LOGISTICS",
         "why_it_matters": "A direct KPI would distinguish the limiting mechanism from correlated financial outcomes.",
         "confidence_impact": "Constraint confidence cannot be HIGH.",
-        "fallback_proxy_used": null
+        "fallback_proxy_used": "inventory_growth_minus_revenue_growth"
       },
       {
         "missing_field": "direct_market_saturation_kpi",
@@ -491,7 +488,7 @@
         "related_constraint": "INVENTORY",
         "why_it_matters": "A direct KPI would distinguish the limiting mechanism from correlated financial outcomes.",
         "confidence_impact": "Constraint confidence cannot be HIGH.",
-        "fallback_proxy_used": null
+        "fallback_proxy_used": "inventory_growth_minus_revenue_growth"
       }
     ],
     "evidence_trace": [
@@ -1198,6 +1195,47 @@
         "extraction_method": null,
         "definition_version": null,
         "revision_status": null
+      },
+      {
+        "id": "E18",
+        "type": "PROXY",
+        "tier": "INDIRECT",
+        "metric": "inventory_growth_minus_revenue_growth",
+        "statement": "Inventory Growth Minus Revenue Growth is -0.0330.",
+        "value": -0.033,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "calculated from normalized company snapshot",
+        "source_type": "calculation",
+        "source_nature": "DERIVED_PROXY",
+        "direction": "IMPROVING",
+        "confidence": "MODERATE",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": [],
+        "source_id": null,
+        "source_url": null,
+        "provider_status": "OK",
+        "retrieved_at": null,
+        "observation_date": null,
+        "fiscal_period_start": null,
+        "fiscal_period_end": null,
+        "fiscal_year": null,
+        "filing_date": null,
+        "currency": null,
+        "raw_concept": null,
+        "normalized_concept": null,
+        "transformation": null,
+        "coverage_status": "COMPLETE",
+        "validation_status": "VALID",
+        "staleness_status": "UNKNOWN",
+        "limitation": "Calculated from synthetic fixture financials; not an observed company fact.",
+        "entity_identifier": null,
+        "source_status": "FIXTURE",
+        "source_locator": null,
+        "extraction_method": null,
+        "definition_version": null,
+        "revision_status": null
       }
     ],
     "economic_graph": {
@@ -1308,9 +1346,9 @@
       "overall": "PARTIAL",
       "evidence_coverage": {
         "facts": 5,
-        "proxies": 1,
+        "proxies": 2,
         "inferences": 1,
-        "gaps": 11
+        "gaps": 10
       }
     },
     "qualitative_research_needed": true,
@@ -1838,6 +1876,31 @@
         "value": 0.07142857142857142,
         "raw_concept": null,
         "normalized_concept": "incremental_operating_margin",
+        "transformation": null,
+        "coverage_status": "COMPLETE",
+        "validation_status": "VALID",
+        "staleness_status": "UNKNOWN",
+        "limitation": "Calculated from synthetic fixture financials; not an observed company fact.",
+        "entity_identifier": "COST",
+        "source_status": "FIXTURE"
+      },
+      "E18": {
+        "source_id": "E18",
+        "source_name": "calculated from normalized company snapshot",
+        "source_url": null,
+        "source_type": "calculation",
+        "provider_status": "OK",
+        "retrieved_at": null,
+        "observation_date": null,
+        "fiscal_period_start": null,
+        "fiscal_period_end": null,
+        "fiscal_year": null,
+        "filing_date": null,
+        "unit": "decimal",
+        "currency": null,
+        "value": -0.033,
+        "raw_concept": null,
+        "normalized_concept": "inventory_growth_minus_revenue_growth",
         "transformation": null,
         "coverage_status": "COMPLETE",
         "validation_status": "VALID",
