@@ -486,6 +486,27 @@ class NoOpOperationalProvider(StructuredOperationalEvidenceProvider):
         return snapshot
 
 
+
+def sec_bank_balances(ticker: str, facts: dict | None = None) -> dict[str, float]:
+    """Deposits, loans and their growth from a year earlier, from SEC company facts (the same reading as the card's
+    operating signals). Returns only what the filings report."""
+    try:
+        import operating_metrics as om
+        if facts is None:
+            from growth_inputs import sec_facts
+            facts = sec_facts(ticker)
+        signals = {item["key"]: item for item in om.operating_signals(facts, "BANK").get("signals") or []}
+        out: dict[str, float] = {}
+        for key in ("deposits", "loans"):
+            rows, _ = om._rows(facts, om.METRICS[key][1])
+            if rows and key in signals:
+                latest = max(rows, key=lambda row: (row["end"], row.get("filed", "")))
+                out[key] = float(latest["val"])
+                out[f"{key[:-1]}_growth"] = float(signals[key]["change"])
+        return out
+    except Exception:  # noqa: BLE001 - missing SEC data stays missing
+        return {}
+
 def snapshot_from_valuation_data(data: dict) -> CompanySnapshot:
     info = data.get("info") or {}
     revenue = data.get("revenue_history") or []
@@ -558,13 +579,21 @@ def snapshot_from_valuation_data(data: dict) -> CompanySnapshot:
         "loans": loan_history,
     }
     source = str(data.get("provider") or "Yahoo Finance financial statement via yfinance")
+    sources = {key: source for key in metrics}
+    # Gap scan 2026-11-27: Yahoo has no deposit or loan rows for banks such as JPM, so loan and deposit growth showed as
+    # unavailable. The SEC figures the judgment card already reads fill them; when the SEC has none either, they stay missing.
+    if data.get("security_type") in ("FINANCIAL_INSTITUTION", "BANK") and not _number(metrics.get("deposits")) and not _number(metrics.get("loans")):
+        sec = sec_bank_balances(str(data.get("ticker") or ""))
+        for key, value in sec.items():
+            metrics[key] = value
+            sources[key] = "SEC company facts (10-K/10-Q)"
     return CompanySnapshot(
         ticker=data.get("ticker", "").upper(), company_name=data.get("company") or data.get("ticker", ""), as_of=data.get("as_of") or dt.datetime.now().astimezone().isoformat(),
         sector=str(info.get("sector") or ""), industry=str(info.get("industry") or ""), business_description=str(info.get("longBusinessSummary") or ""), security_type=data.get("security_type", "OPERATING_COMPANY"),
         exchange=str(info.get("fullExchangeName") or info.get("exchange") or ""), currency=str(data.get("currency") or info.get("currency") or ""),
         country=str(info.get("country") or ""), quote_type=str(info.get("quoteType") or ""),
         metrics=metrics, histories=histories, periods=data.get("periods") or {},
-        sources={key: source for key in metrics},
+        sources=sources,
         source_nature={
             "revenue_growth": SourceNature.REPORTED if _number(provider_growth) else SourceNature.CALCULATED,
             "operating_margin": SourceNature.REPORTED if _number(provider_margin) else SourceNature.CALCULATED,

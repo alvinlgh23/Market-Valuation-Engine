@@ -107,3 +107,14 @@ def test_quarterly_read_signed_pct_never_emits_minus_zero():
     assert qr._signed_pct(-0.002) == "0%"
     assert qr._signed_pct(0.002) == "0%"
     assert qr._signed_pct(-0.04) == "-4%"
+
+
+def test_bank_balances_for_the_company_profile_come_from_sec_and_stay_missing_without_it():
+    """Gap scan 2026-11-27: Yahoo has no deposit or loan rows for JPM; the profile now reads the SEC figures."""
+    import company_economics as ce
+    bank = facts(Deposits=[fact("2025-09-30", 100.0), fact("2026-09-30", 109.0)],
+                 LoansAndLeasesReceivableNetReportedAmount=[fact("2025-09-30", 50.0), fact("2026-09-30", 55.0)])
+    out = ce.sec_bank_balances("BANK", facts=bank)
+    assert out["deposits"] == 109.0 and out["loans"] == 55.0
+    assert abs(out["deposit_growth"] - 0.09) < 1e-9 and abs(out["loan_growth"] - 0.10) < 1e-9
+    assert ce.sec_bank_balances("NONE", facts=facts()) == {}                 # nothing reported: nothing filled in

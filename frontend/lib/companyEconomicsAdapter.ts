@@ -15,8 +15,13 @@ const ontology = ontologyFixture as CompanyEconomicsOntology;
 
 const ACRONYMS: Record<string, string> = { adr: "ADR", ai: "AI", asp: "ASP", dcf: "DCF", eps: "EPS", erp: "ERP", etf: "ETF", ev: "EV", fcf: "FCFF", fcff: "FCFF", kpi: "KPI", ocf: "OCF", roe: "ROE", saas: "SaaS", sbc: "SBC", wacc: "WACC" };
 
+// Gap scan 2026-11-27: engine states such as INSUFFICIENT_EVIDENCE read as jargon on every section. Readers see
+// "Not enough data"; the internal state stays in the data.
+const NOT_ENOUGH = new Set(["INSUFFICIENT", "INSUFFICIENT_EVIDENCE", "EVIDENCE_INSUFFICIENT", "INSUFFICIENT_DATA"]);
+
 export function humanize(value?: string | null): string {
   if (!value) return "Unavailable";
+  if (NOT_ENOUGH.has(value.toUpperCase().replaceAll(" ", "_"))) return "Not enough data";
   return value
     .toLowerCase()
     .split("_")
@@ -25,7 +30,7 @@ export function humanize(value?: string | null): string {
 }
 
 export function confidenceLabel(value: Confidence): string {
-  return value === "INSUFFICIENT" ? "Insufficient Evidence" : humanize(value);
+  return value === "INSUFFICIENT" ? "Not enough data" : humanize(value);
 }
 
 export function directionLabel(value: ConstraintDirection): string {
@@ -143,4 +148,12 @@ export function adaptCompanyEconomics(payload: CompanyEconomicsPayload): Company
     dataGaps: raw.data_gaps.map((gap) => ({ ...gap, label: humanize(gap.missing_field) })),
     availableMetrics: new Set(evidence.map((item) => item.metric))
   };
+}
+
+
+/** Gap scan 2026-11-27: evidence rows carry no freshness status, so the page printed "/ Unknown" on every row. Show the
+ * profile's own data date instead, so the reader sees how old the figures are. */
+export function freshnessLabel(staleness: string | null | undefined, asOf: string | null | undefined): string {
+  if (staleness && staleness !== "UNKNOWN") return humanize(staleness);
+  return asOf ? `data as of ${asOf}` : "date of data not recorded";
 }

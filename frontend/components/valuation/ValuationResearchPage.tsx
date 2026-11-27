@@ -237,7 +237,7 @@ function EconomicsModelMarket({ report, company }: { report: ValuationReport; co
   const rows = [
     { label: "Revenue Growth", observed: report.fair_value?.observed_growth ?? economics?.raw.growth_sustainability.current_revenue_growth, observedPeriod: "Trailing 12M / latest reported", model: modelGrowthVal, modelPeriod: phased ? "Headline 10-year blend Y1" : baseGrowth?.period, implied: reverse.required_5y_revenue_cagr ?? reverse.required_year_1_revenue_growth, impliedPeriod: reverse.status === "NO_ECONOMIC_SOLUTION" ? "Exceeds 50% Y1 cap at base margin" : "Growth the price needs" },
     { label: "FCFF Margin", observed: report.historical_base.fcff_margin, observedPeriod: String(report.historical_base.period_basis && typeof report.historical_base.period_basis === "object" ? (report.historical_base.period_basis as Record<string, unknown>).fcff || "Latest fiscal year" : "Latest fiscal year"), model: baseMargin?.value, modelPeriod: baseMargin?.period, implied: reverse.required_year_5_fcff_margin ?? (reverse.fixed_assumptions as Record<string, unknown> | undefined)?.year_5_fcff_margin, impliedPeriod: "Held at base target in solve" },
-    { label: "Dilution", observed: null, observedPeriod: "Not directly observed in Company Economics", model: assumption(report, "annual_dilution")?.value, modelPeriod: "Annual through forecast", implied: reverse.annual_dilution || (reverse.fixed_assumptions as Record<string, unknown> | undefined)?.annual_dilution, impliedPeriod: "Fixed in reverse DCF" }
+    { label: "Dilution", observed: observedDilution(report.historical_base.diluted_share_history), observedPeriod: dilutionPeriod(report.historical_base.diluted_share_history), model: assumption(report, "annual_dilution")?.value, modelPeriod: "Annual through forecast", implied: reverse.annual_dilution || (reverse.fixed_assumptions as Record<string, unknown> | undefined)?.annual_dilution, impliedPeriod: "Fixed in reverse DCF" }
   ];
   return <section className="valuation-triad">
     <header><span>ECONOMICS / MODEL / MARKET</span><h2>Observed economics vs model assumptions vs market-implied expectations</h2><p>Read-only comparison. Use the Interactive Sandbox above to test custom assumptions.</p></header>
@@ -245,11 +245,26 @@ function EconomicsModelMarket({ report, company }: { report: ValuationReport; co
       const observed = typeof row.observed === "number" ? row.observed : null;
       const model = typeof row.model === "number" ? row.model : null;
       const implied = typeof row.implied === "number" ? row.implied : null;
-      const review = observed == null || model == null ? "Insufficient Evidence" : Math.abs(observed - model) < 0.03 ? "Supported" : observed > model ? "Model Conservative" : "Model Aggressive";
+      const review = observed == null || model == null ? "Not enough data" : Math.abs(observed - model) < 0.03 ? "Supported" : observed > model ? "Model Conservative" : "Model Aggressive";
       const scale = Math.max(Math.abs(observed || 0), Math.abs(model || 0), Math.abs(implied || 0), 0.01);
       return <article key={row.label}><strong>{row.label}</strong><div><b style={{ width: `${Math.max(4, Math.abs((observed || 0) / scale) * 100)}%` }} />{pct(observed)}<small>{row.observedPeriod}</small></div><div><b style={{ width: `${Math.max(4, Math.abs((model || 0) / scale) * 100)}%` }} />{pct(model)}<small>{row.modelPeriod}</small></div><div><b style={{ width: `${Math.max(4, Math.abs((implied || 0) / scale) * 100)}%` }} />{pct(implied)}<small>{row.impliedPeriod}</small></div><ValueBadge value={review} /></article>;
     })}</div>
   </section>;
+}
+
+// Gap scan 2026-11-27: the filings give four years of diluted share counts (newest first); the yearly change in them is
+// the observed dilution (negative = buybacks shrank the share count).
+function shareHistory(raw: unknown): number[] {
+  return Array.isArray(raw) ? raw.filter((value): value is number => typeof value === "number" && Number.isFinite(value) && value > 0) : [];
+}
+function observedDilution(raw: unknown): number | null {
+  const history = shareHistory(raw);
+  if (history.length < 2) return null;
+  return Math.pow(history[0] / history[history.length - 1], 1 / (history.length - 1)) - 1;
+}
+function dilutionPeriod(raw: unknown): string {
+  const years = shareHistory(raw).length - 1;
+  return years >= 1 ? `Yearly change in diluted shares, last ${years} ${years === 1 ? "year" : "years"}` : "Share count history not in the filings";
 }
 
 const PLAIN_ASSUMPTION: Record<string, string> = {
