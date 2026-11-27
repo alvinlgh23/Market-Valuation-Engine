@@ -7,6 +7,7 @@ import { refreshLine, useDailyRefresh } from "../../lib/daily-refresh";
 import { resetWatchlistLoaders, type SummaryRow } from "../../lib/watchlist-summary";
 import { axisTone, shortState } from "../../lib/judgment-tone.mjs";
 import { CompareTable } from "./CompareTable";
+import { GapBar, gapMode, type GapInput } from "../ui/GapBar";
 import { resetTodayHoldings } from "../../lib/today-client";
 import { factorBreakdown, type Attribution, type PriceReading } from "./PriceDrivers";
 
@@ -108,6 +109,14 @@ function growthPct(value: number) {
   return rounded === 0 ? "0%" : `${rounded > 0 ? "+" : "−"}${Math.abs(rounded)}%`;
 }
 
+/** Gap-bar input from the watchlist summary row (the card's valuation detail). */
+function gapOf(row: SummaryRow): GapInput {
+  const det = row.valuation_detail;
+  return { implied: det?.implied_growth ?? null, refLow: det?.reference_low ?? null, refHigh: det?.reference_high ?? null,
+    impliedRoe: det?.implied_roe ?? null, latestRoe: det?.latest_roe ?? null,
+    priceToMax: row.price_to_max_case ?? det?.price_to_max_case ?? null, valuationState: row.axes.valuation ?? null };
+}
+
 function PriceVsValueCell({ row, livePrice, hydrating }: { row: SummaryRow; livePrice: number | null; hydrating: boolean }) {
   const det = row.valuation_detail;
   const price = det?.price ?? row.latest_price ?? livePrice;
@@ -129,12 +138,12 @@ function PriceVsValueCell({ row, livePrice, hydrating }: { row: SummaryRow; live
     const tone = valAxis.startsWith("Price implies more") ? "rich" : valAxis.startsWith("Price implies less") ? "cheap" : "fair";
     const reference = Math.round(low * 100) === Math.round(high * 100) ? growthPct(low) : `${growthPct(low)} to ${growthPct(high)}`;
     return (
-      <div className="wl-val-box" title={`${valAxis}. Five-year sales growth the price assumes, against analysts' and past growth faded to year 5.`}>
+      <div className="wl-val-box" title={`${valAxis}. Prices in ${growthPct(implied)}/yr; business shows ${reference}/yr (five-year sales growth, analysts' and past growth faded to year 5).`}>
         <div className="wl-val-top">
           <strong className="wl-price-num">{fmtMoney(price, currency)}</strong>
-          <span className={`wl-val-delta ${tone}`}>Prices in {growthPct(implied)}/yr</span>
+          <span className={`wl-val-delta ${tone}`}>{growthPct(implied)} vs {reference}</span>
         </div>
-        <small className="wl-val-sub">Business shows {reference}/yr</small>
+        <GapBar gap={gapOf(row)} compact label={false} />
       </div>
     );
   }
@@ -151,12 +160,14 @@ function PriceVsValueCell({ row, livePrice, hydrating }: { row: SummaryRow; live
             ? shortState(valAxis)
             : "DCF pending";
 
+  const gap = gapOf(row);
   return (
-    <div className="wl-val-box">
+    <div className="wl-val-box" title={fallbackNote}>
       <div className="wl-val-top">
         <strong className="wl-price-num">{fmtMoney(price, currency)}</strong>
+        {gapMode(gap) === "roe" ? <span className="wl-val-delta">{fallbackNote.replace("Implied ROE ", "ROE ")}</span> : null}
       </div>
-      <small className="wl-val-sub">{fallbackNote}</small>
+      {gapMode(gap) === "none" ? <small className="wl-val-sub">{fallbackNote}</small> : <GapBar gap={gap} compact label={false} />}
     </div>
   );
 }
@@ -361,7 +372,7 @@ export function WatchlistTable() {
     <section className="watchlist-grid wl-redesigned" aria-label="Watchlist">
       <header className="wl-top-bar">
         <div className="wl-title-group">
-          <h1>Watchlist</h1>
+          <h1 className="display-h">Watchlist</h1>
           <p className="wl-digest">
             {rows.length} {rows.length === 1 ? "company" : "companies"}
             {drivers ? ` · ${grouped.focus.length} need a closer look · ${grouped.steady.length} with no company-specific change` : driversError ? ` · drivers unavailable` : " · checking price drivers…"}

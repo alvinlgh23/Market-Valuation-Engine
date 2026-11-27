@@ -9,9 +9,9 @@ export type GapInput = {
   priceToMax?: number | null; valuationState?: string | null;
 };
 
-function pct(v: number, digits = 0) {
+function pct(v: number, digits = 0, signed = true) {
   const r = Number((v * 100).toFixed(digits));
-  return r === 0 ? "0%" : `${r < 0 ? "−" : "+"}${Math.abs(r).toFixed(digits)}%`;
+  return r === 0 ? "0%" : `${r < 0 ? "−" : signed ? "+" : ""}${Math.abs(r).toFixed(digits)}%`;
 }
 
 export function gapMode(g: GapInput): "growth" | "roe" | "beyond" | "none" {
@@ -41,7 +41,8 @@ export function GapBar({ gap, compact = false, label = true }: { gap: GapInput; 
   const left = Math.min(x(price), x(edge)), width = Math.abs(x(price) - x(edge));
   const tone = price > hi ? "over" : price < lo ? "under" : "inline";
   const unit = mode === "growth" ? "/yr" : "";
-  const shows = Math.abs(hi - lo) >= 0.005 ? `${pct(lo)} to ${pct(hi)}` : pct(lo, mode === "roe" ? 1 : 0);
+  const roe = mode === "roe";
+  const shows = Math.abs(hi - lo) >= 0.005 ? `${pct(lo)} to ${pct(hi)}` : pct(lo, roe ? 1 : 0, !roe);
   return <div className={`gapbar tone-${tone}${compact ? " compact" : ""}`} role="img"
     aria-label={`${mode === "growth" ? "Sales growth" : "Return on equity"} the price assumes ${pct(price, 1)}${unit}; the business shows ${shows}${unit}`}>
     <div className="gapbar-track">
@@ -51,7 +52,7 @@ export function GapBar({ gap, compact = false, label = true }: { gap: GapInput; 
       <i className="gapbar-dot" style={{ left: `${x(price)}%` }} />
     </div>
     {label ? <p className="gapbar-label">
-      <span><b className="gp">{mode === "growth" ? "Price assumes" : "Price assumes ROE"}</b> {pct(price, mode === "roe" ? 1 : 0)}{unit}</span>
+      <span><b className="gp">{mode === "growth" ? "Price assumes" : "Price assumes ROE"}</b> {pct(price, roe ? 1 : 0, !roe)}{unit}</span>
       <span><b className="gb">{mode === "growth" ? "Business shows" : "Bank earns"}</b> {shows}{unit}</span>
     </p> : null}
   </div>;

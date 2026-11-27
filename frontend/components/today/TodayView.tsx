@@ -14,6 +14,7 @@ import {
 } from "../../lib/today-model";
 import { Criteria } from "./Criteria";
 import { GapBar } from "../ui/GapBar";
+import { factHeadline } from "../../lib/headline";
 import { loadTodayHoldings, resetTodayHoldings } from "../../lib/today-client";
 
 // Today (owner-approved redesign, 2026-11-27): what changed and what deserves a look, in about 30 seconds.
@@ -54,15 +55,6 @@ function Move({ label, stock, spy }: { label: string; stock: number | null; spy:
   return <span className="tdy-move"><small>{label}</small><b className={stock < 0 ? "down" : "up"}>{signed(stock)}</b>{spy != null ? <small>S&amp;P {signed(spy)}</small> : null}</span>;
 }
 
-/** Plain facts as a headline: the card's business phrase, then the 3-month price move. */
-function headline(h: TodayHolding): string {
-  const business = h.short?.business ?? "Business reading unavailable";
-  const p = h.priceChange3m;
-  if (p == null) return `${business}.`;
-  const size = Math.round(Math.abs(p) * 100);
-  return `${business}. ${size === 0 ? "The price is flat" : `The price ${p < 0 ? "fell" : "rose"} ${size}%`} in 3 months.`;
-}
-
 function FocusCard({ item, core, lead }: { item: FocusItem; core: boolean; lead: boolean }) {
   const h = item.holding;
   const meta = AGREEMENT_LABEL[h.agreement ?? ""] ?? AGREEMENT_LABEL.UNCLEAR;
@@ -72,7 +64,7 @@ function FocusCard({ item, core, lead }: { item: FocusItem; core: boolean; lead:
       <Link href={`/company/${h.ticker}`} className="tdy-focus-title"><b>{h.ticker}</b>{core ? <i title="Core holding">★</i> : null}<span>{h.name}</span></Link>
       {item.earningsIn != null && item.reasons.includes("earnings") ? <span className="tdy-chip-earn">Earnings {item.earningsIn === 0 ? "today" : `in ${item.earningsIn}d`}</span> : null}
     </header>
-    <h3 className={lead ? "display-h tdy-focus-head" : "display-h2 tdy-focus-head"}>{headline(h)}</h3>
+    <h3 className={lead ? "display-h tdy-focus-head" : "display-h2 tdy-focus-head"}>{factHeadline(h.short?.business, h.priceChange3m)}</h3>
     <div className="tdy-focus-tags">
       <span className={`tdy-agree is-${meta.tone}`}>{meta.label}</span>
       {item.reasons.includes("changed") ? <span className="tdy-agree">Reading changed</span> : null}
