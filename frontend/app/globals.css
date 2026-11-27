@@ -4683,3 +4683,39 @@ html:has(.rn-doc), body:has(.rn-doc) { background: #fff !important; }
 .mv svg.mv-eps.down circle { stroke: var(--research-negative); }
 .mv svg.mv-eps text { fill: var(--research-faint); font: 9px var(--font-mono); stroke: none; }
 .mv svg.mv-eps text.mv-eps-v { fill: var(--research-text); }
+
+/* ---- Watchlist Compare (replaces the 6-axis matrix) ---- */
+.cmp { display: grid; gap: 10px; }
+.cmp .tone-supportive { --tone: var(--research-positive); }
+.cmp .tone-against { --tone: var(--research-negative); }
+.cmp .tone-mixed { --tone: var(--research-caution); }
+.cmp-empty { color: var(--research-muted); font-size: 13px; }
+.cmp-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 0; color: var(--research-muted); font-size: 12px; }
+.cmp-legend i { display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 50%; background: var(--tone); }
+.cmp-legend-note { color: var(--research-faint); }
+.cmp-scroll { overflow-x: auto; border: 1px solid var(--research-line); border-radius: 12px; background: var(--research-surface); -webkit-overflow-scrolling: touch; }
+.cmp-table { width: 100%; min-width: 940px; border-collapse: separate; border-spacing: 0; font-size: 13px; }
+.cmp-table th, .cmp-table td { padding: 9px 9px; border-bottom: 1px solid var(--research-line); text-align: right; vertical-align: top; }
+.cmp-table tbody tr:last-child th, .cmp-table tbody tr:last-child td { border-bottom: 0; }
+.cmp-table thead th { position: sticky; top: 0; background: var(--research-surface); z-index: 2; padding: 0; border-bottom: 1px solid var(--research-line-strong); }
+.cmp-table thead th button { width: 100%; display: flex; justify-content: flex-end; align-items: center; gap: 5px; padding: 10px 9px; border: 0; background: none; color: var(--research-muted); font: 500 11px/1.25 var(--font-research); cursor: pointer; text-align: right; white-space: nowrap; }
+.cmp-table thead th button:hover { color: var(--research-text); }
+.cmp-table thead th[aria-sort="ascending"] button, .cmp-table thead th[aria-sort="descending"] button { color: var(--research-text); }
+.cmp-table thead th button i { font-style: normal; color: var(--research-faint); font-size: 11px; }
+.cmp-table thead th[aria-sort="ascending"] button i, .cmp-table thead th[aria-sort="descending"] button i { color: var(--research-accent); }
+.cmp-sticky { position: sticky; left: 0; z-index: 1; background: var(--research-surface); text-align: left !important; box-shadow: 1px 0 0 var(--research-line); }
+.cmp-table thead .cmp-sticky { z-index: 3; padding: 11px 12px !important; color: var(--research-muted); font-size: 11.5px; font-weight: 500; }
+.cmp-table tbody .cmp-sticky a { display: grid; grid-template-columns: auto 1fr; column-gap: 6px; color: var(--research-text); text-decoration: none; min-width: 104px; }
+.cmp-table tbody .cmp-sticky em { grid-row: span 2; font-style: normal; color: var(--research-accent); font-size: 11px; line-height: 1.6; }
+.cmp-table tbody .cmp-sticky b { font: 600 13.5px/1.3 var(--font-mono); }
+.cmp-table tbody .cmp-sticky small { grid-column: 1 / -1; color: var(--research-faint); font-size: 11px; font-weight: 400; max-width: 118px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cmp-table tbody .cmp-sticky em + b + small { grid-column: 2; }
+.cmp-table tbody tr:hover th, .cmp-table tbody tr:hover td { background: rgba(255,255,255,.025); }
+.cmp-table tbody tr:hover .cmp-sticky { background: color-mix(in srgb, var(--research-surface) 94%, white); }
+.cmp-val { display: inline-flex; align-items: center; gap: 6px; color: var(--research-text); font: 500 13px/1.3 var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.cmp-val.up { color: var(--research-positive); }
+.cmp-val.down { color: var(--research-negative); }
+.cmp-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--tone); flex: none; }
+.cmp-table td small { display: block; margin-top: 2px; color: var(--research-faint); font-size: 11px; white-space: nowrap; }
+.cmp-foot { margin: 0; color: var(--research-faint); font-size: 11.5px; }
+.cmp-na { color: var(--research-faint); }

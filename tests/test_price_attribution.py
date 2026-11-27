@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
+import price_attribution as pa
 from price_attribution import attribute, build_attribution
 
 WEEKS = 140
@@ -172,3 +173,12 @@ def test_post_friday_daily_bridge_captures_intraweek_move():
     assert bridge["since_window_end"]["trading_days"] == 2
     assert abs(bridge["since_window_end"]["stock_change"] - 0.30) < 1e-6
     assert abs(bridge["since_window_end"]["spy_change"] - 0.02) < 1e-6
+
+
+def test_company_move_short_tag_names_what_estimates_did():
+    attribution = {"status": "AVAILABLE", "fit": {"r2": 0.5}, "factor_labels": {},
+                   "windows": {"3M": {"price_change": -0.41, "company_z": -3.0, "top_macro": None,
+                                       "parts": {"macro": -0.05, "market": -0.1, "sector": -0.01, "company": -0.25}}}}
+    assert pa.price_reading(attribution, "Estimates rising")["short"] == "Company drop, estimates rising"
+    assert pa.price_reading(attribution, "Estimates stable or mixed")["short"] == "Company drop, estimates flat"
+    assert pa.price_reading(attribution, "Estimates falling")["short"] == "Fundamentals changing"

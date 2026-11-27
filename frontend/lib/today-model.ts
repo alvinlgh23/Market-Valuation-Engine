@@ -20,6 +20,17 @@ export type TodayHolding = {
   watch: string[];
   strain: { label: string; reading: string; change: number | null; sales: number | null } | null;
   aiNote: { note: string; quote: string | null; model: string | null; form: string | null } | null;
+  compare?: CompareNumbers;
+};
+/** Numbers for the Watchlist Compare table, copied from the stored card. */
+export type CompareNumbers = {
+  implied: number | null; refLow: number | null; refHigh: number | null; priceToMax: number | null;
+  impliedRoe: number | null; latestRoe: number | null;
+  move3m: number | null; macroPart: number | null;
+  eps90: number | null; revUp: number | null; revDown: number | null;
+  qSales: number | null; sectorEtf: string | null; sectorRel: number | null;
+  dist200: number | null; psPercentile: number | null; psState: string | null;
+  states: Record<string, string | null>;
 };
 export type TodayPayload = { holdings: TodayHolding[]; missing: string[]; trackCheck: string | null };
 export type Change = { axis: string; from: string; to: string; on: string; origin?: string };

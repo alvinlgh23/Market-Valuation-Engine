@@ -22,7 +22,9 @@ const TONES = {
   },
 };
 
-export const TONE_GLYPH = { supportive: "▲", against: "▼", mixed: "◆", unknown: "○" };
+// Dots, not arrows (2026-11-27): an up arrow next to "Low" or a down arrow next to "Priced high" reads as direction.
+// Colour carries the tone; the word next to it carries the reading.
+export const TONE_GLYPH = { supportive: "●", against: "●", mixed: "◆", unknown: "○" };
 export const TONE_LABEL = { supportive: "Supportive", against: "Against", mixed: "Mixed", unknown: "No reading" };
 
 export function axisTone(axis, state) {

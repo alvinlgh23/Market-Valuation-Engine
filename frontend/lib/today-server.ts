@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import type { TodayHolding, TodayPayload } from "./today-model";
+import type { CompareNumbers, TodayHolding, TodayPayload } from "./today-model";
 
 // Today's per-holding read: only the stored judgment cards (.cache/verdicts) and the track record. No network, no
 // Python, nothing recalculated - each field is copied from what the card's fixed rules and checked AI review stored.
@@ -41,7 +41,31 @@ function holding(ticker: string, card: Json): TodayHolding {
     lastEarnings: str(catalysts.last_earnings),
     watch: arr(card.falsification).map(String).filter((line) => /^(Valuation|Fundamentals|Estimates):/.test(line)).slice(0, 2),
     strain: str(constraint.label) ? { label: String(constraint.label), reading: str(constraint.reading) ?? "", change: num(constraint.change), sales: num(constraint.sales_change) } : null,
+    compare: compareNumbers(card),
     aiNote: str(note.note) ? { note: String(note.note), quote: str(note.quote), model: str(review.model), form: str(pick(review, "source", "form")) } : null,
+  };
+}
+
+function compareNumbers(card: Json): CompareNumbers {
+  const axes = obj(card.axes);
+  const detail = (axis: string) => obj(obj(axes[axis]).detail);
+  const v = detail("valuation"), band = obj(v.growth_band), bank = obj(v.bank_implied_roe);
+  const refs = [num(band.consensus_2y_faded), num(band.history_3y_faded)].filter((x): x is number => x != null).sort((a, b) => a - b);
+  const w3 = obj(pick(card, "attribution", "windows", "3M"));
+  const e = detail("expectations"), trend = obj(e.eps_trend_next_year);
+  const now = num(trend.current), then = num(trend["90daysAgo"]);
+  const flow = detail("flow"), crowd = detail("crowding"), own = obj(crowd.valuation_in_own_history);
+  const states: Record<string, string | null> = {};
+  for (const key of ["flow", "crowding", "macro", "expectations", "fundamentals", "valuation"]) states[key] = str(obj(axes[key]).state);
+  return {
+    implied: num(v.implied_5y_revenue_cagr), refLow: refs[0] ?? null, refHigh: refs[refs.length - 1] ?? null, priceToMax: num(v.price_to_max_case),
+    impliedRoe: num(bank.implied_roe), latestRoe: num(bank.latest_roe),
+    move3m: num(w3.price_change), macroPart: num(obj(w3.parts).macro),
+    eps90: now != null && then ? now / then - 1 : null, revUp: num(e.revisions_up_30d), revDown: num(e.revisions_down_30d),
+    qSales: num(pick(axes, "fundamentals", "detail", "quarterly", "revenue_yoy")),
+    sectorEtf: str(flow.sector_etf), sectorRel: num(flow.relative_strength),
+    dist200: num(crowd.dist_200), psPercentile: own.state === "AVAILABLE" ? num(own.percentile) : null, psState: str(own.state),
+    states,
   };
 }
 

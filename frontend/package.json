@@ -27,7 +27,8 @@
     "smoke:phase8": "node scripts/phase8-operational-smoke.mjs",
     "test:what-if": "node scripts/what-if-parity-test.mjs",
     "test:today-focus": "node --no-warnings scripts/today-focus-test.mjs",
-    "test:market-words": "node --no-warnings scripts/market-words-test.mjs"
+    "test:market-words": "node --no-warnings scripts/market-words-test.mjs",
+    "test:compare": "node --no-warnings scripts/compare-test.mjs"
   },
   "dependencies": {
     "next": "^16.2.9",

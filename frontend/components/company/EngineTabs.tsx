@@ -38,7 +38,7 @@ function Pending({ load }: { load: Load }) {
   return <p className="eng-empty">{load.state === "loading" ? "Loading the stored figures…" : "No stored figures for this company yet. Open the Overview to build its card."}</p>;
 }
 
-const GLYPH = { supportive: "▲", against: "▼", mixed: "◆", unknown: "○" } as const;
+const GLYPH = { supportive: "●", against: "●", mixed: "◆", unknown: "○" } as const;
 
 function Step({ step, index, open, onToggle }: { step: ChainStep; index: number; open: boolean; onToggle: () => void }) {
   return <li className={`eng-step tone-${step.tone}${step.missing ? " eng-missing" : ""}`}>

@@ -13,19 +13,11 @@ import {
   type Change, type FocusItem, type TodayHolding, type TodayPayload,
 } from "../../lib/today-model";
 import { Criteria } from "./Criteria";
+import { loadTodayHoldings, resetTodayHoldings } from "../../lib/today-client";
 
 // Today (owner-approved redesign, 2026-11-27): what changed and what deserves a look, in about 30 seconds.
 // 1 status band · 2 exceptions only · 3 next 21 days · 4 holdings at a glance. The full list lives in Watchlist,
 // sectors and themes in Markets, the full market story in Macro.
-
-let todayShared: Promise<TodayPayload | null> | null = null;
-function loadToday(): Promise<TodayPayload | null> {
-  todayShared ??= fetch("/api/research?action=watchlist-today", { cache: "no-store" })
-    .then((r) => (r.ok ? (r.json() as Promise<TodayPayload>) : null))
-    .catch(() => null)
-    .then((d) => { if (!d) todayShared = null; return d; });
-  return todayShared;
-}
 
 function coreHoldings(): Set<string> {
   try {
@@ -183,7 +175,7 @@ export function TodayView({ system, status }: { system: ResearchSystem; status?:
   // P20 item 6: when today's background refresh finishes, read its precomputed results again.
   const router = useRouter();
   // When it finishes, re-read the client data and the server's market snapshot (new market date and band).
-  const refresh = useDailyRefresh(useCallback(() => { resetWatchlistLoaders(); todayShared = null; setReloadKey((key) => key + 1); router.refresh(); }, [router]));
+  const refresh = useDailyRefresh(useCallback(() => { resetWatchlistLoaders(); resetTodayHoldings(); setReloadKey((key) => key + 1); router.refresh(); }, [router]));
   const refreshNote = refreshLine(refresh);
 
   useEffect(() => {
@@ -191,7 +183,7 @@ export function TodayView({ system, status }: { system: ResearchSystem; status?:
     loadWatchlistEvents().then((value) => { if (active) setEvents(value); });
     loadWatchlistDrivers().then((rows) => { if (active) setDrivers(rows); });
     loadWatchlistSummary().then((rows) => { if (active) setSummary(rows); });
-    loadToday().then((value) => { if (active) { setCore(coreHoldings()); setToday(value); } });
+    loadTodayHoldings().then((value) => { if (active) { setCore(coreHoldings()); setToday(value); } });
     return () => { active = false; };
   }, [reloadKey]);
 
