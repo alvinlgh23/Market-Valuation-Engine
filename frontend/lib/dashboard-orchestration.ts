@@ -64,8 +64,8 @@ export function dashboardStateStrip(system: ResearchSystem): DashboardLink[] {
   return [
     { label: "Macro", state: value(macro), detail: detail(macro), href: href(macro, "/macro/world?region=US&detail=policy") },
     { label: "Inflation", state: value(inflation), detail: detail(inflation), href: href(inflation, "/macro/inflation") },
-    { label: "Liquidity", state: value(liquidity), detail: detail(liquidity), href: href(liquidity, "/macro/liquidity") },
-    { label: "Risk", state: value(risk), detail: detail(risk), href: href(risk, "/macro/risk") },
+    { label: "Liquidity", state: value(liquidity), detail: detail(liquidity), href: href(liquidity, "/macro/conditions#liquidity") },
+    { label: "Risk", state: value(risk), detail: detail(risk), href: href(risk, "/macro/conditions#regime") },
     { label: "Leadership", state: leadership?.name || "Unavailable", detail: leadership ? `${percent(leadership.rel6m)} 6M RS · ${leadership.lastUpdated} · ${leadership.sourceState}. Breadth and crowding unavailable.` : "No validated relative-strength observations in this snapshot.", href: leadership ? `/markets?sector=${leadership.slug}` : "/markets" },
     { label: "Valuation", state: valuation ? humanize(valuation.state) : "No aggregate flag", detail: valuation ? String(valuation.reason) : "Only recent company valuation flags are shown.", href: valuation?.ticker ? `/valuation/${valuation.ticker}` : href(valuation, "/valuation") }
   ];
@@ -111,7 +111,7 @@ export function dashboardPriorities(system: ResearchSystem): DashboardPriority[]
       label: "Risk conclusion withheld",
       current: value(findRead(system, "risk")),
       why: "Missing breadth, momentum leadership, defensive, and credit coverage is itself a research priority.",
-      href: "/macro/risk",
+      href: "/macro/conditions#regime",
       state: "INSUFFICIENT"
     }
   ].slice(0, 6);
@@ -157,7 +157,7 @@ export function dashboardTensions(system: ResearchSystem): ResearchTension[] {
       stateB: "Coverage withheld",
       interpretation: "The system should route to missing evidence rather than publish a false neutral risk state.",
       confidence: String(risk?.state || "INSUFFICIENT"),
-      href: "/macro/risk"
+      href: "/macro/conditions#regime"
     }
   ];
 }

@@ -55,7 +55,7 @@ try {
   await shot(page, "07-central-bank-workspace.png", true);
 
   await page.goto(`${baseUrl}/macro/world?mode=transmission`, { waitUntil: "networkidle" });
-  await page.getByRole("heading", { name: "Cross-border transmission" }).waitFor();
+  await page.getByRole("heading", { name: "Channels → your holdings" }).waitFor();
   await shot(page, "08-transmission-map.png", true);
 
   // The company page keeps loading its judgment card (about half a minute when cold), so wait for the page, not for a quiet network.

@@ -1249,6 +1249,17 @@ def compute_macro():
     tnx_history = fetch_history("^TNX", "1y") if tnx_source == "Yahoo Finance (^TNX)" else None
     tnx_date = observed_at(tnx_history)
     front_rate_date = observed_at(front_rate)
+    # 2026-11-27: date the 30-year and FX levels too, so the Treasury curve can pass its same-date check and FX
+    # moves show when they were observed (only when the level came from Yahoo; other sources stay undated).
+    tyx_date = observed_at(fetch_history("^TYX", "1y")) if tyx_source == "Yahoo Finance (^TYX)" else None
+    dxy_date = observed_at(dxy)
+    usdjpy_date = observed_at(fetch_history("JPY=X", "1y")) if usdjpy_source == "Yahoo Finance (JPY=X)" else None
+    # More currencies for the FX view (same Yahoo daily closes; 3-month change over 63 trading days).
+    fx_pairs = {}
+    for key, symbol, label in (("eurusd", "EURUSD=X", "EUR/USD"), ("usdkrw", "KRW=X", "USD/KRW"), ("usdcny", "CNY=X", "USD/CNY")):
+        hist = fetch_history(symbol, "1y")
+        if hist is not None and not hist.empty and "Close" in hist:
+            fx_pairs[key] = {"label": label, "symbol": symbol, "level": float(hist["Close"].iloc[-1]), "change_3m": price_change(hist, 63), "observed_at": observed_at(hist)}
     curve_metadata = treasury_curve(tnx_level, front_rate_level, front_rate_ticker, tnx_date, front_rate_date)
     curve_metadata["source"] = f"{tnx_source or 'Unavailable'} / Yahoo Finance ({front_rate_ticker})"
 
@@ -1310,6 +1321,10 @@ def compute_macro():
         "yield_curve_metadata": curve_metadata,
         "tnx_observed_at": tnx_date,
         "front_rate_observed_at": front_rate_date,
+        "tyx_observed_at": tyx_date,
+        "dxy_observed_at": dxy_date,
+        "usdjpy_observed_at": usdjpy_date,
+        "fx_pairs": fx_pairs,
         "dxy_level": dxy_level,
         "dxy_3m": dxy_3m,
         "usdjpy_level": usdjpy_level,

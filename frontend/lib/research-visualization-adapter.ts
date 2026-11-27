@@ -126,7 +126,7 @@ export function normalizeKospiVolatility(payload: Json): RankedResearchItem[] {
 }
 
 export function normalizeTransmissions(world: MacroWorld): { nodes: TransmissionNode[]; edges: TransmissionEdge[] } {
-  const positions: Record<string, [number, number]> = { US: [16, 55], EURO_AREA: [47, 25], JP: [84, 35], KR: [78, 63], SG: [65, 84] };
+  const positions: Record<string, [number, number]> = { US: [16, 55], EURO_AREA: [47, 25], JP: [84, 35], KR: [78, 63] };
   return {
     nodes: Object.entries(positions).map(([id, [x, y]]) => ({ id, label: id === "EURO_AREA" ? "EURO" : id, x, y })),
     edges: world.transmissions.map((edge) => ({ id: edge.id, source: edge.source, target: edge.target, label: edge.label, state: edge.current_state, evidenceType: edge.evidence_ids.some((id) => world.evidence_index[id]?.evidence_type === "FACT") ? "FACT" : edge.evidence_ids.some((id) => world.evidence_index[id]?.evidence_type === "PROXY") ? "PROXY" : "INFERENCE", confidence: edge.confidence, evidenceIds: edge.evidence_ids })),

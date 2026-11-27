@@ -33,12 +33,17 @@ try {
   if ((await page.locator(".macro-map-marker").count()) !== 5) throw new Error("World coverage map marker count changed (four economies plus one unsupported)");
   await screenshot(page, "02-world-macro.png");
 
+  // 2026-11-27: Inflation opens in plain view; the 27-indicator matrix is under Pro view.
   await page.goto(`${baseUrl}/macro/inflation`, { waitUntil: "networkidle" });
+  await page.getByRole("heading", { name: "Inflation", exact: true }).waitFor();
+  if ((await page.locator(".infl-grid article").count()) !== 5) throw new Error("Inflation plain view should show five categories");
+  await page.getByRole("button", { name: "Pro view" }).click();
   await page.getByRole("heading", { name: "Inflation pressure" }).waitFor();
   if ((await page.locator(".inflation-cell").count()) !== 27) throw new Error("Inflation matrix does not expose all 27 indicators");
   await page.locator(".inflation-cell").nth(5).click();
   await page.locator(".inflation-indicator-inspector").waitFor();
   await screenshot(page, "03-us-inflation-matrix.png");
+  await page.getByRole("button", { name: "Plain" }).click();
 
   // Singapore and the S$NEER view were removed on 2026-11-22 (owner decision: global audience).
 

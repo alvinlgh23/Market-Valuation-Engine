@@ -54,10 +54,14 @@ try {
   await unavailable.click();
   await page.getByRole("status").getByText("NOT AVAILABLE", { exact: true }).waitFor();
 
-  await page.getByRole("tab", { name: "Mechanism Graph" }).click();
-  await page.getByRole("heading", { name: "Cross-border transmission" }).waitFor();
-  await page.screenshot({ path: path.join(artifacts, "transmission-mode.png"), fullPage: true });
-  await page.getByRole("button", { name: /JP → US/ }).click();
+  // The Mechanism Graph was replaced by "Channels -> holdings" (2026-11-27): each channel with the holdings it moved.
+  await page.getByRole("tab", { name: "Channels → holdings" }).click();
+  await page.getByRole("heading", { name: "Channels → your holdings" }).waitFor();
+  if ((await page.locator(".ch-row").count()) !== 4) throw new Error("Expected four cross-border channels");
+  await page.locator(".ch-bars a, .ch-quiet").first().waitFor({ timeout: 60000 });
+  await page.screenshot({ path: path.join(artifacts, "channels-to-holdings.png"), fullPage: true });
+  await page.getByRole("tab", { name: "World & Channels" }).click();
+  await page.locator(".macro-channel-card").filter({ hasText: "Yen carry" }).click();
   await page.getByRole("complementary", { name: /Yen carry → US risk assets transmission detail/ }).waitFor();
   await page.getByText("A transmission channel is not proof").waitFor();
   await page.screenshot({ path: path.join(artifacts, "japan-us-edge-selected.png"), fullPage: true });
@@ -75,7 +79,7 @@ try {
   if (!response?.ok()) throw new Error(`Mobile macro route returned ${response?.status()}`);
   const overflow = await mobile.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
   if (overflow) throw new Error("Mobile macro page has horizontal overflow");
-  await mobile.getByRole("heading", { name: "Modelled economies" }).waitFor();
+  await mobile.getByRole("heading", { name: "Economies we model" }).waitFor();
   await mobile.screenshot({ path: path.join(artifacts, "mobile-macro-map.png"), fullPage: true });
   await mobile.getByRole("button", { name: "Open Japan macro profile" }).click();
   await mobile.getByRole("complementary", { name: "Japan macro profile" }).waitFor();

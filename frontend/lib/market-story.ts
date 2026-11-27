@@ -22,6 +22,13 @@ export type MarketStory = {
   status: string; error?: string; as_of?: string;
   story?: { headline: string; steps: StoryStep[]; scenario: Scenario; tags: Record<StoryTag, string> };
   market?: MarketBreakdown; data_dates?: Record<string, string | null>;
+  fomc?: FomcOutlook;
+};
+/** The Fed decision priced in fed funds futures (CME FedWatch method), as computed by market_story.py. */
+export type FomcOutlook = {
+  status: string; reason?: string; meeting?: string; decision?: "raise" | "cut" | "hold"; direction?: string;
+  probability_move?: number; probability_hold?: number; rate_before?: number; rate_after_if_move?: number; implied_after?: number;
+  expected_change?: number; further_by?: string | null; further_moves?: number | null; contracts?: Record<string, number>; method?: string;
 };
 
 let shared: Promise<MarketStory> | null = null;
