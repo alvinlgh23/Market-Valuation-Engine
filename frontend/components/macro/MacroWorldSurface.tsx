@@ -8,6 +8,7 @@ import { MacroWorldMap } from "./MacroWorldMap";
 import { MacroEngineDetails } from "./MacroEngineDetails";
 import { CoverageBar, CoverageDetail } from "./CoverageBar";
 import { ChannelsView } from "./ChannelsView";
+import { FedPathPanel } from "./FedPathPanel";
 import { CHANNEL_CHAIN, exposureLine } from "../../lib/channel-exposure";
 import { loadWatchlistDrivers, type DriverRow } from "../../lib/watchlist-drivers";
 
@@ -82,7 +83,7 @@ function RegionInspector({ region, selectedDetail, onDetail, onClose }: { region
   return <aside className="macro-region-inspector" aria-label={`${region.name} macro profile`}>
     <header><div><span>REGION / {code(region.id)}</span><h2>{region.name}</h2></div><button type="button" onClick={onClose}>Close · ESC</button></header>
     <div className="macro-region-brief"><CoverageDetail coverage={region.coverage} /><p>{region.brief}</p><dl><div><dt>Framework</dt><dd>{region.framework}</dd></div><div><dt>Confidence</dt><dd>{region.confidence}</dd></div></dl></div>
-    <div className="macro-region-actions"><button type="button" className="primary-action" onClick={() => onDetail("mechanism")}>Explore {region.name}</button>{region.id === "KR" ? <button type="button" onClick={() => onDetail("markets")}>Open KOSPI</button> : null}<button type="button" onClick={() => onDetail("policy")}>Open Policy</button>{region.components.some((item) => item.id === "liquidity") ? <button type="button" onClick={() => onDetail("liquidity")}>Open Liquidity</button> : null}<button type="button" onClick={() => onDetail(region.components.find((item) => item.id === "financial" || item.id === "markets")?.id || region.components[0]?.id)}>Open Assets</button>{region.id === "US" ? <><Link href="/macro/inflation">Open Inflation</Link><Link href="/macro/rates">Open Rates</Link><Link href="/macro/risk">Open Risk</Link><Link href="/macro/fx">Open FX</Link></> : null}<button type="button" onClick={() => onDetail(component?.id || region.components[0]?.id)}>Evidence</button></div>
+    <div className="macro-region-actions"><button type="button" className="primary-action" onClick={() => onDetail("mechanism")}>Explore {region.name}</button>{region.id === "KR" ? <button type="button" onClick={() => onDetail("markets")}>Open KOSPI</button> : null}<button type="button" onClick={() => onDetail("policy")}>Open Policy</button>{region.components.some((item) => item.id === "liquidity") ? <button type="button" onClick={() => onDetail("liquidity")}>Open Liquidity</button> : null}<button type="button" onClick={() => onDetail(region.components.find((item) => item.id === "financial" || item.id === "markets")?.id || region.components[0]?.id)}>Open Assets</button>{region.id === "US" ? <><Link href="/macro/inflation">Open Inflation</Link><Link href="/macro/conditions#rates">Open Rates</Link><Link href="/macro/conditions#regime">Open Risk</Link><Link href="/macro/conditions#fx">Open FX</Link></> : null}<button type="button" onClick={() => onDetail(component?.id || region.components[0]?.id)}>Evidence</button></div>
     <nav className="macro-component-nav" aria-label={`${region.name} macro components`}>
       {region.components.map((item) => <button type="button" key={item.id} className={component?.id === item.id ? "active" : ""} onClick={() => onDetail(item.id)}><span>{item.label}</span><strong>{item.state}</strong></button>)}
     </nav>
@@ -157,9 +158,8 @@ export function MacroWorldSurface({ world, initial = {} }: { world: MacroWorld; 
       <header className="macro-world-header">
         <div>
           <Link className="markets-back-link" href="/macro">← Market story</Link>
-          <span>GLOBAL MACRO &amp; CROSS-BORDER TRANSMISSION</span>
           <h1>World Macro Map</h1>
-          <p>How central-bank stances, currency funding stress, and Korea&apos;s semiconductor cycle across the 4 modelled economies transmit into US equities.</p>
+          <p>What the world&apos;s big central banks are doing, how it travels into US stocks, and which of your holdings it reached.</p>
         </div>
         <div className="macro-mode-switch" role="tablist">
           <button role="tab" aria-selected={mode === "regions"} onClick={() => changeMode("regions")}>World &amp; Channels</button>
@@ -178,8 +178,10 @@ export function MacroWorldSurface({ world, initial = {} }: { world: MacroWorld; 
             .map((t) => t.label)
             .join(" · ") || "No elevated cross-border transmission triggers."}
         </span>
-        <span className="mws-meta">4 modelled economies (US · Japan · South Korea · Euro Area)</span>
+        <span className="mws-meta">US · Japan · South Korea · Euro Area</span>
       </div>
+
+      {mode === "regions" ? <div id="central-banks" className="macro-central-banks"><FedPathPanel /></div> : null}
 
       {mode === "regions" ? (
         <div className={`macro-region-layout ${hasRegionsInspector ? "has-inspector" : ""}`}>

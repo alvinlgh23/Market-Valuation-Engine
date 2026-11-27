@@ -80,11 +80,14 @@ try {
   await page.getByText("Structural chain", { exact: true }).waitFor();
   await page.screenshot({ path: path.join(artifacts, "10-transmission-workspace.png"), fullPage: true });
 
+  // 2026-11-27: Risk regime lives on Market conditions; the old URL redirects to its section.
   await open(page, "/macro/risk");
-  // With current data the regime may be published; the withheld branch only applies at low coverage.
-  const riskHeading = page.locator(".engine-module-header h1").first();
-  await riskHeading.waitFor();
-  if ((await riskHeading.innerText()).trim() === "Conclusion withheld" && await page.locator(".engine-ledger").count()) throw new Error("Zero-coverage risk should not render the full missing ledger by default");
+  await page.waitForURL(/\/macro\/conditions#regime/);
+  await page.locator("#regime .display-h").waitFor();
+  for (const [old, target] of [["/macro/rates", "#rates"], ["/macro/fx", "#fx"], ["/macro/liquidity", "#liquidity"], ["/macro/central-banks", "#central-banks"]]) {
+    await open(page, old);
+    await page.locator(target).waitFor();
+  }
   await page.close();
 
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });

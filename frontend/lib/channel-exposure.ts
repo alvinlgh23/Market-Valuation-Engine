@@ -22,10 +22,11 @@ export const EFFECT_THRESHOLD = 0.01;
 export type DriverLike = { ticker: string; attribution?: { factor_labels?: Record<string, string>; windows?: Record<string, { macro_by_factor?: Record<string, number> }> } };
 export type FactorExposure = { factor: string; label: string; holdings: Array<{ ticker: string; value: number }> };
 
-export function channelExposure(channelId: string, drivers: DriverLike[]): FactorExposure[] {
+/** Holdings whose 3-month price split gives any of these factors a move of a point or more. */
+export function factorExposure(factors: string[], drivers: DriverLike[]): FactorExposure[] {
   const labels: Record<string, string> = {};
   for (const d of drivers) Object.assign(labels, d.attribution?.factor_labels ?? {});
-  return (CHANNEL_FACTORS[channelId] ?? []).map((factor) => ({
+  return factors.map((factor) => ({
     factor,
     label: labels[factor] ?? factor.replace(/_/g, " "),
     holdings: drivers
@@ -34,6 +35,11 @@ export function channelExposure(channelId: string, drivers: DriverLike[]): Facto
       .sort((a, b) => Math.abs(b.value) - Math.abs(a.value)),
   }));
 }
+
+export function channelExposure(channelId: string, drivers: DriverLike[]): FactorExposure[] {
+  return factorExposure(CHANNEL_FACTORS[channelId] ?? [], drivers);
+}
+
 
 /** Short line for the map's channel cards: the biggest measured effects, or that none reached a point. */
 export function exposureLine(channelId: string, drivers: DriverLike[] | null): string {

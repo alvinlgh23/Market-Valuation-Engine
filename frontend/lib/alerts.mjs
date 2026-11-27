@@ -166,7 +166,7 @@ export function buildAlerts({ environment, drivers } = {}) {
       score: 0.004,
       criteria: { rule: FACTOR_RULES.liquidity, now: `Policy: ${policy || "unavailable"}. Market: ${market || "unavailable"}.`, exposure: null,
                   asOf: liquidity.as_of ?? asOf, track: track(liquidity), notes: [] },
-      href: "/macro/liquidity"
+      href: "/macro/conditions#liquidity"
     });
   }
   // Effects that already happened rank above a scenario, which ranks above an unmeasured condition and card changes.

@@ -6,7 +6,7 @@ import { ResearchShell, type ResearchDataState } from "./ResearchShell";
 import type { ResearchSystem } from "../../lib/research-system-types";
 import type { ResearchResponse } from "../../lib/research-response";
 
-const MODULE_ROUTES: Record<string, string> = { macro: "/macro", company: "/companies", inflation: "/macro/inflation", risk: "/macro/risk", rotation: "/markets", historical: "/labs/historical", watchlist: "/" };
+const MODULE_ROUTES: Record<string, string> = { macro: "/macro", company: "/companies", inflation: "/macro/inflation", risk: "/macro/conditions#regime", rotation: "/markets", historical: "/labs/historical", watchlist: "/" };
 
 export function DashboardEntry({ initial, initialMeta, dataState }: { initial: ResearchSystem; initialMeta: ResearchResponse["meta"]; dataState: ResearchDataState }) {
   const router = useRouter();

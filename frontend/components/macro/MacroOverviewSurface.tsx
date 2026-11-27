@@ -13,24 +13,24 @@ import { CoverageBar } from "./CoverageBar";
 import { MarketContextHeadline } from "./MarketContextHeadline";
 
 function Status({ value }: { value: string }) { return <StatusBadge value={value} variant="macro" />; }
-function SectionHeader({ code, title, note, href, action }: { code: string; title: string; note: string; href?: string; action?: string }) {
+export function SectionHeader({ code, title, note, href, action }: { code: string; title: string; note: string; href?: string; action?: string }) {
   return <header className="macro-overview-section-header"><div><span>{code}</span><h2>{title}</h2>{note ? <p>{note}</p> : null}</div>{href ? <Link href={href}>{action || "Investigate →"}</Link> : null}</header>;
 }
 /** Checklist 3.5: the price-based market liquidity score is always shown next to Compass policy liquidity. */
-function MarketLiquidityLine({ system }: { system: ResearchSystem }) {
+export function MarketLiquidityLine({ system }: { system: ResearchSystem }) {
   const readings = system.environment?.factors?.liquidity?.readings as { market_liquidity?: LiquidityScore; relation?: string | null } | undefined;
   const market = readings?.market_liquidity;
   if (!market) return null;
   const disagree = readings?.relation === "DIFFERENT" || readings?.relation === "OPPOSITE";
   return <p className={`liquidity-pair${disagree ? " liquidity-pair-disagree" : ""}`}><strong>{market.name}:</strong> {market.label ?? "Unavailable"}{disagree ? " — disagrees with policy liquidity; the two are not merged." : ""}</p>;
 }
-function CoverageFallback({ title, coverage, reason }: { title: string; coverage: MacroCoverageState; reason: string }) {
+export function CoverageFallback({ title, coverage, reason }: { title: string; coverage: MacroCoverageState; reason: string }) {
   return <div className="macro-coverage-fallback"><header><span>{title}</span><Status value={coverage.coverage_status} /></header><p>{reason}</p>{coverage.missing_fields.length ? <details><summary>View missing coverage · {coverage.missing_fields.length}</summary>{coverage.missing_fields.map((field) => <span key={field}>— {field}</span>)}</details> : null}<footer><span>{coverage.last_valid_as_of || "No last-valid date"}</span></footer></div>;
 }
-function metricDatum(metric: MacroTypedMetric, scaleGroup: string): QuantitativeDatum {
+export function metricDatum(metric: MacroTypedMetric, scaleGroup: string): QuantitativeDatum {
   return { id: metric.key, label: metric.label, value: metric.raw_value, unit: metric.unit, status: metric.confidence, context: `${metric.source} · ${metric.date || "period unavailable"}`, date: metric.date || undefined, scaleGroup };
 }
-function driverDatum(driver: MacroLiquidityDriver): QuantitativeDatum | null {
+export function driverDatum(driver: MacroLiquidityDriver): QuantitativeDatum | null {
   if (!Number.isFinite(driver.contribution)) return null;
   return { id: driver.key, label: driver.label, value: driver.contribution, unit: "score contribution", status: driver.state, context: driver.explanation, date: driver.date || undefined, scaleGroup: "liquidity-contribution" };
 }
@@ -56,10 +56,10 @@ export function MacroOverviewSurface({ system }: { system: ResearchSystem }) {
     <section className="macro-overview-section macro-market-transmission" aria-label="Market Transmission">
       <SectionHeader code="MARKET TRANSMISSION" title="Rates, dollar, liquidity, and risk" note="" />
       <div className="macro-transmission-summary">
-        <article className="macro-viz-card rates-card"><header><div><span>RATES / CURRENT CURVE</span><h3>US Treasury structure</h3></div><Status value={transmission.rates.coverage_status} /></header>{curve.length >= 2 ? <YieldCurveChart points={curve} asOf={transmission.rates.current_curve[0]?.date ?? transmission.rates.last_valid_as_of} source={transmission.rates.current_curve[0]?.source} /> : <CoverageFallback title="Rates" coverage={transmission.rates} reason="No verified multi-tenor curve is available." />}<div className="macro-compact-metrics">{transmission.rates.metrics.filter((metric) => !["us_2y", "us_10y", "us_30y"].includes(metric.key)).map((metric) => <div key={metric.key} title={`${metric.source} · ${metric.date || "date unavailable"}`}><span>{metric.label}</span><strong>{metric.formatted_value}</strong></div>)}</div><Link href="/macro/rates">Open rates coverage →</Link></article>
-        <article className="macro-viz-card fx-card"><header><div><span>FX / COMPARABLE MOVES</span><h3>Regional dollar channels</h3></div><Status value={transmission.fx.coverage_status} /></header>{fxMoves.length ? <DivergingBarChart data={fxMoves} /> : <CoverageFallback title="Dollar / FX" coverage={transmission.fx} reason="No comparable verified FX changes are available." />}<Link href="/macro/fx">Open FX coverage →</Link></article>
-        <article className="macro-viz-card liquidity-card"><header><div><span>LIQUIDITY / DRIVER CONTRIBUTION</span><h3 title="The liquidity score did not predict returns in the scorecard, so only its state is shown.">Policy (Compass): {transmission.liquidity.state}</h3></div><Status value={transmission.liquidity.coverage_status} /></header><MarketLiquidityLine system={system} /><p>{transmission.liquidity.available_drivers}/{transmission.liquidity.expected_drivers} configured drivers available.</p>{liquidityMoves.length ? <DivergingBarChart data={liquidityMoves} /> : <CoverageFallback title="Liquidity" coverage={transmission.liquidity} reason="No verified liquidity-driver contributions are available." />}<Link href="/macro/liquidity">Open driver evidence →</Link></article>
-        <article className="macro-viz-card risk-card"><header><div><span>RISK / PUBLICATION GATE</span><h3>{transmission.risk.state}</h3></div><Status value={transmission.risk.coverage_status} /></header><strong>{(transmission.risk.coverage * 100).toFixed(0)}% cross-asset coverage</strong><p>{transmission.risk.summary}</p><div className="macro-missing-list">{transmission.risk.missing_fields.slice(0, 5).map((field) => <span key={field}>— {field}</span>)}</div><Link href="/macro/risk">Open risk coverage →</Link></article>
+        <article className="macro-viz-card rates-card"><header><div><span>RATES / CURRENT CURVE</span><h3>US Treasury structure</h3></div><Status value={transmission.rates.coverage_status} /></header>{curve.length >= 2 ? <YieldCurveChart points={curve} asOf={transmission.rates.current_curve[0]?.date ?? transmission.rates.last_valid_as_of} source={transmission.rates.current_curve[0]?.source} /> : <CoverageFallback title="Rates" coverage={transmission.rates} reason="No verified multi-tenor curve is available." />}<div className="macro-compact-metrics">{transmission.rates.metrics.filter((metric) => !["us_2y", "us_10y", "us_30y"].includes(metric.key)).map((metric) => <div key={metric.key} title={`${metric.source} · ${metric.date || "date unavailable"}`}><span>{metric.label}</span><strong>{metric.formatted_value}</strong></div>)}</div><Link href="/macro/conditions#rates">Open rates coverage →</Link></article>
+        <article className="macro-viz-card fx-card"><header><div><span>FX / COMPARABLE MOVES</span><h3>Regional dollar channels</h3></div><Status value={transmission.fx.coverage_status} /></header>{fxMoves.length ? <DivergingBarChart data={fxMoves} /> : <CoverageFallback title="Dollar / FX" coverage={transmission.fx} reason="No comparable verified FX changes are available." />}<Link href="/macro/conditions#fx">Open FX coverage →</Link></article>
+        <article className="macro-viz-card liquidity-card"><header><div><span>LIQUIDITY / DRIVER CONTRIBUTION</span><h3 title="The liquidity score did not predict returns in the scorecard, so only its state is shown.">Policy (Compass): {transmission.liquidity.state}</h3></div><Status value={transmission.liquidity.coverage_status} /></header><MarketLiquidityLine system={system} /><p>{transmission.liquidity.available_drivers}/{transmission.liquidity.expected_drivers} configured drivers available.</p>{liquidityMoves.length ? <DivergingBarChart data={liquidityMoves} /> : <CoverageFallback title="Liquidity" coverage={transmission.liquidity} reason="No verified liquidity-driver contributions are available." />}<Link href="/macro/conditions#liquidity">Open driver evidence →</Link></article>
+        <article className="macro-viz-card risk-card"><header><div><span>RISK / PUBLICATION GATE</span><h3>{transmission.risk.state}</h3></div><Status value={transmission.risk.coverage_status} /></header><strong>{(transmission.risk.coverage * 100).toFixed(0)}% cross-asset coverage</strong><p>{transmission.risk.summary}</p><div className="macro-missing-list">{transmission.risk.missing_fields.slice(0, 5).map((field) => <span key={field}>— {field}</span>)}</div><Link href="/macro/conditions#regime">Open risk coverage →</Link></article>
       </div>
     </section>
 

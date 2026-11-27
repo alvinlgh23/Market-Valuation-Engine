@@ -61,6 +61,18 @@
 - 没有改任何公式、规则或缓存；新增 `/api/report-data/[ticker]`，读的就是 PDF 用的同一份已存数据。
 - **测试：** Python 475 项、`tsc`、lint、前端规则测试 7 项通过；公司、今日、估值浏览器脚本通过。宏观、市场、证据等 5 个旧浏览器脚本失败，原因都在这次改动之外（世界地图标记数、市场页默认视图等早先的改动），未修。13 家公司两个标签逐一检查，手机宽度无横向溢出；TSM、JPM 的 PDF 正常生成。
 
+### 2026-11-27：宏观菜单 9 → 5 页，普通用户默认看得懂（第 2 步，owner 批准）
+
+- **菜单：** Sector rotation、Market story、World & central banks、Inflation、Market conditions。旧网址跳到新页对应位置，不留死链：`/macro/rates` → `#rates`、`/macro/fx` → `#fx`、`/macro/liquidity` → `#liquidity`、`/macro/risk` → `#regime`（都在 `/macro/conditions`）、`/macro/central-banks` → `/macro/world#central-banks`。搜索和站内链接一起改。
+- **默认普通话，专业术语收进 Pro view（owner 要求）：** 宏观页右上角"Plain / Pro view"切换，默认 Plain，选择记在本机浏览器。
+- **Market conditions（新页）：**
+  - 主角是市场状态：Plain 用一句话（"The few big winners are falling; the rest of the market is holding up"）加 12 项跨资产 20 天涨跌细激光条（"Big stocks"、"Recent winners"、"Company bonds"、"Fear gauge"……）；Pro 显示原名"Narrow Leadership Unwind"和引擎描述。注明"这种状态在记录里只出现过 2 次，太少，无法检验后面通常怎样"。
+  - 三张卡：利率（10 年 / 2 年，3 个月变化；Pro：收益率曲线、bps、实际利率）、资金状况（央行 vs 市场，分歧时标出；Pro：各项驱动分数）、美元和日元（美元 3 个月 +4.3%，按货币的细条，Plain 统一成"美元对各货币"；日元套息用一句话解释；Pro：水平、利差、BOJ 概率、CFTC）。每张卡都列出它在 3 个月价格拆分里实际推动的持仓，并带上我们自己检验的结果（利率分数、流动性分数都"没有预测下个月标普 500"）。数据覆盖详情只在 Pro 里、收在底部。
+- **World & central banks：** 美联储期货面板放在世界地图页最上方（Plain 措辞："Markets are betting on a 0.25-point rate rise on Dec 9 (near-certain)"）。
+- **Inflation：** Plain 先看锚点：物价同比 4.1%、剔除食品和能源 3.1%（核心 PCE）、债券市场预期未来 10 年平均 2.1%（FRED T10YIE）、Fed 目标 2.0%，一句事实对比；五个分类卡（Pay、Housing、Services、Energy、Goods）用普通说法。Pro 保留 27 项指标。修正：数值加单位（%、每桶 / 每加仑美元），"0/4"改为"4 readings"（原来因为全部标为缓存数据而算成 0），"Common month"改为"最新官方数据"。
+- 没有改任何读数、规则或数字；普通说法只是同一读数的显示标签。
+- **测试：** 可视化、宏观修正浏览器脚本按新页面更新（含 5 个旧网址跳转检查）；Python 481 项、`tsc`、lint、前端规则测试 11 项、9 个浏览器脚本、生产构建通过；新页面 1440 / 390 宽度无横向溢出。
+
 ### 2026-11-27：宏观页数据接口修复（第 1 步，owner 批准）
 
 - **流动性：** M2 和美联储资产负债表的数据其实已缓存，但 Compass 的 `fred_yoy()` 没有 `FRED_API_KEY` 时直接返回空，所以被当成"缺失 = 0 分"。在我们自己的封装（`macro_world.py`）里改用其他输入共用的离线缓存读取，不改嵌套仓库，Compass 的评分规则不变。结果：7 / 7 个输入（M2 年增 +5.7% → +12 分；资产负债表 +2.8% → 0 分），政策流动性从"Liquidity Contracting"（25）变为"Neutral"（37），页面并注明与价格型市场流动性（Tight）不一致。真正缺失的输入仍显示缺失、不当 0（这次没有需要排除的输入，评分公式未改）。
