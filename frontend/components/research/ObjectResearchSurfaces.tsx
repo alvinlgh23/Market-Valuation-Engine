@@ -3,6 +3,7 @@ import { StatusBadge } from "./StatusBadge";
 import { MarketsOverview } from "../markets/MarketsOverview";
 
 import Link from "next/link";
+import { FedPathPanel } from "../macro/FedPathPanel";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { integrateSectorEngineRows, rotationAxis, percent, type SectorEngineRow, type SectorResearchObject, type SectorStructureNode } from "../../lib/market-research";
@@ -51,6 +52,7 @@ export function MacroResearch({ section, system }: { section: string; system: Re
   const selected = Object.fromEntries((keys[section] ?? Object.keys(macro)).map((key) => [key, macro[key]]));
   const evidence = component ? US.evidence.filter((item) => component.evidence_ids.includes(item.id)) : [];
   return <div className="engine-module"><ObjectHeader eyebrow={`MACRO / ${section.toUpperCase()}`} title={section === "central-banks" ? "Central banks" : title(section)} summary={component?.summary ?? ""} state={system.modules.core_market.state} />
+    {section === "central-banks" ? <FedPathPanel /> : null}
     {Object.keys(selected).length ? <RecordGrid record={selected} /> : null}
     <section className="object-section"><header><div><span>MECHANISM</span><h2>{component?.state ?? "Regional policy frameworks"}</h2></div><Link href="/macro/world?region=US">Open regional research →</Link></header><p className="object-narrative">{component?.summary ?? "Open an integrated economy to inspect its policy framework, model state, confidence, watch conditions, and source evidence."}</p></section>
     <section className="engine-ledger"><header><h2>Evidence and provenance</h2><span>{evidence.length || "Regional"} records</span></header>{evidence.map((item) => <article key={item.id}><strong>{item.label}</strong><Badge value={item.evidence_type} /><span>{item.value} · {item.source}</span></article>)}{!evidence.length ? Object.values(system.world.regions).map((region) => <article key={region.id}><strong>{region.name}</strong><Badge value={region.availability} /><span>{region.brief}</span></article>) : null}</section>

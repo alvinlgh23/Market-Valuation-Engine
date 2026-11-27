@@ -348,7 +348,7 @@ def build_market_transmission(
     rate_metrics = [item for item in [
         typed_metric("us_2y", "US 2Y", two_year_value, "%", two_year_date, two_year_source, two_year_state),
         typed_metric("us_10y", "US 10Y", ten_year_value, "%", ten_year_date, ten_year_source, ten_year_state),
-        typed_metric("us_30y", "US 30Y", thirty_year_value, "%", None, "Core Market / Yahoo Finance", states.get("core_market", "UNKNOWN")),
+        typed_metric("us_30y", "US 30Y", thirty_year_value, "%", macro.get("tyx_observed_at"), "Core Market / Yahoo Finance", states.get("core_market", "UNKNOWN")),
         typed_metric("us_10y_real", "US 10Y real yield", real_yield_driver.get("value"), "%", compass_as_of, "Central Bank Compass / Liquidity", source_state),
         curve_metric,
     ] if item]
@@ -382,11 +382,18 @@ def build_market_transmission(
         if fx_metric:
             fx_moves.append(fx_metric)
     fx_metrics = [item for item in [
-        typed_metric("dxy_level", "DXY", macro.get("dxy_level"), "index", None, "Core Market / Yahoo Finance", states.get("core_market", "UNKNOWN")),
-        typed_metric("usd_jpy_level", "USD/JPY", macro.get("usdjpy_level"), "FX rate", None, "Core Market / Yahoo Finance", states.get("core_market", "UNKNOWN")),
-        typed_metric("dxy_3m", "DXY", None if macro.get("dxy_3m") is None else macro["dxy_3m"] * 100, "% 3M", None, "Core Market / Yahoo Finance", states.get("core_market", "UNKNOWN")),
-        typed_metric("usd_jpy_3m", "USD/JPY", None if macro.get("usdjpy_3m") is None else macro["usdjpy_3m"] * 100, "% 3M", None, "Core Market / Yahoo Finance", states.get("core_market", "UNKNOWN")),
+        typed_metric("dxy_level", "DXY", macro.get("dxy_level"), "index", macro.get("dxy_observed_at"), "Core Market / Yahoo Finance", states.get("core_market", "UNKNOWN")),
+        typed_metric("usd_jpy_level", "USD/JPY", macro.get("usdjpy_level"), "FX rate", macro.get("usdjpy_observed_at"), "Core Market / Yahoo Finance", states.get("core_market", "UNKNOWN")),
+        typed_metric("dxy_3m", "DXY", None if macro.get("dxy_3m") is None else macro["dxy_3m"] * 100, "% 3M", macro.get("dxy_observed_at"), "Core Market / Yahoo Finance", states.get("core_market", "UNKNOWN")),
+        typed_metric("usd_jpy_3m", "USD/JPY", None if macro.get("usdjpy_3m") is None else macro["usdjpy_3m"] * 100, "% 3M", macro.get("usdjpy_observed_at"), "Core Market / Yahoo Finance", states.get("core_market", "UNKNOWN")),
     ] if item]
+    for key, pair in (macro.get("fx_pairs") or {}).items():
+        if not isinstance(pair, dict):
+            continue
+        for metric in (typed_metric(f"{key}_level", pair.get("label"), pair.get("level"), "FX rate", pair.get("observed_at"), f"Yahoo Finance ({pair.get('symbol')})", states.get("core_market", "UNKNOWN")),
+                       typed_metric(f"{key}_3m", pair.get("label"), None if pair.get("change_3m") is None else pair["change_3m"] * 100, "% 3M", pair.get("observed_at"), f"Yahoo Finance ({pair.get('symbol')})", states.get("core_market", "UNKNOWN"))):
+            if metric:
+                fx_metrics.append(metric)
     fx_missing = [label for key, label in (
         ("dxy_level", "DXY current level"),
         ("dxy_3m", "DXY 3M move"),

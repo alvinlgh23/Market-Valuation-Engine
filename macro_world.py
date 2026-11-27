@@ -173,6 +173,27 @@ def input_record(key: str, series_id: str | None, series: Any, today: date | Non
             "frequency": frequency, "age_days": age, "stale": age > STALE_AFTER[frequency]}
 
 
+
+def _read_cached_money_trends(liquidity: Any, fred: Any) -> None:
+    """Data-access fix (2026-11-27): Compass's fred_yoy() returns nothing without a FRED_API_KEY, even offline, so the
+    cached M2 and Fed balance-sheet series were scored as "missing" (0 points) although they are stored. Read them
+    through the same offline cache reader every other Compass input uses; Compass's own scoring rule is unchanged."""
+    if getattr(liquidity, "_chainstox_cached_yoy", False):
+        return
+    original = liquidity.fred_yoy
+
+    def fred_yoy(config: dict[str, Any], economy_code: str, key: str, periods: int) -> float | None:
+        series_id = config.get("liquidity", {}).get("fred_series", {}).get(economy_code, {}).get(key)
+        if not series_id or os.getenv("FRED_API_KEY"):
+            return original(config, economy_code, key, periods)
+        series = fred.fetch_series(series_id, config)
+        if series is None or series.empty:
+            return None
+        return liquidity.yoy(series, periods)
+
+    liquidity.fred_yoy = fred_yoy
+    liquidity._chainstox_cached_yoy = True
+
 class CentralBankCompassAdapter:
     """Calls the copied Central Bank Compass modules in offline/cache mode."""
 
@@ -190,6 +211,8 @@ class CentralBankCompassAdapter:
         fred = importlib.import_module("src.data_sources.fred")
         if self.cache_dir.is_dir() and any(self.cache_dir.glob("*.csv")):
             fred.CACHE_DIR = self.cache_dir    # read and write here; the nested repo's cache stays untouched
+        liquidity = importlib.import_module("src.liquidity")
+        _read_cached_money_trends(liquidity, fred)
         return {
             "fred": fred,
             "config": importlib.import_module("app"),
@@ -199,7 +222,7 @@ class CentralBankCompassAdapter:
             "policy": importlib.import_module("src.policy_signal"),
             "probability": importlib.import_module("src.probability_model"),
             "japan": importlib.import_module("src.japan_pressure"),
-            "liquidity": importlib.import_module("src.liquidity"),
+            "liquidity": liquidity,
         }
 
     def load(self, region: str) -> dict[str, Any]:
