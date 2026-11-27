@@ -45,6 +45,7 @@ export function BalanceTable({ m }: { m: FinancialModel }) {
     <tr><td>Free cash flow, last four quarters</td><td>{big(quarter.fcf_ttm, currency)}</td><td>Net debt</td><td>{big(quarter.net_debt, currency)}</td></tr>
     <tr><td>Financial health</td><td>{str(pick(quarter, "health", "label")) ?? "—"}</td><td>Diluted shares, yearly change</td><td>{dilution != null ? `${pct(dilution, 1, true)} (${shares.length - 1}y)` : "—"}</td></tr>
     <tr><td>Analyst revisions, 30 days</td><td>{revisions}</td><td>Consensus sales growth, next year</td><td>{nextYear}</td></tr>
+    {m.scaling.revenue_per_employee != null ? <tr><td>Revenue per employee, latest year</td><td>{big(m.scaling.revenue_per_employee, currency)}</td><td /><td /></tr> : null}
   </tbody></table>;
 }
 

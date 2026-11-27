@@ -147,7 +147,7 @@ export function CompanyResearchPage({
         <nav className="company-deeper company-mode-tabs" aria-label="Deeper research">
           <button type="button" className={!workspace ? "active" : ""} onClick={closeWorkspace}>Overview</button>
           <button type="button" className={workspace === "economics" ? "active" : ""} onClick={() => openWorkspace("economics")}>Economic map</button>
-          <button type="button" className={workspace === "thesis" ? "active" : ""} onClick={() => openWorkspace("thesis")}>Positioning</button>
+          <button type="button" className={workspace === "thesis" ? "active" : ""} onClick={() => openWorkspace("thesis")}>Market view</button>
           <button type="button" className={workspace === "financials" ? "active" : ""} onClick={() => openWorkspace("financials")}>Financials</button>
           <button type="button" className={workspace === "evidence" ? "active" : ""} onClick={() => openWorkspace("evidence")}>Evidence <small>{company.evidenceCounts.all}</small></button>
           <button type="button" className="company-deeper-primary" onClick={() => openValuationObject()}>Valuation &amp; sandbox →</button>
@@ -195,7 +195,7 @@ export function CompanyResearchPage({
                 </section>
 
                 <section className="snapshot-read snapshot-block">
-                  <header><span>03</span><strong>Current Economic Read</strong><button type="button" onClick={() => openWorkspace("thesis")}>Open Positioning →</button></header>
+                  <header><span>03</span><strong>Current Economic Read</strong><button type="button" onClick={() => openWorkspace("thesis")}>Open Market view →</button></header>
                   <p>{company.raw.growth_sustainability.interpretation}</p>
                   <small>{company.raw.scaling_economics.interpretation}</small>
                 </section>

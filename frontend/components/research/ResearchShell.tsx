@@ -54,7 +54,7 @@ function companyContext(ticker: string) {
   return [
     ["Overview", root],
     ["Economics", `${root}?view=economics`],
-    ["Positioning", `${root}?view=positioning`],
+    ["Market view", `${root}?view=positioning`],
     ["Financials", `${root}?view=financials`],
     ["Valuation", `/valuation/${ticker}?view=overview&from=company`],
     ["Evidence", `${root}?view=evidence`],

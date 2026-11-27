@@ -5,10 +5,11 @@ import type { CompanyResearchViewModel, EvidenceViewModel } from "../../lib/comp
 import { formatValue, freshnessLabel, humanize } from "../../lib/companyEconomicsAdapter";
 import { loadCachedCompanyCard, loadCompanyCard } from "../../lib/company-card";
 import { EngineChainView, FinancialStatements } from "./EngineTabs";
+import { MarketView } from "./MarketView";
 import type { Operating } from "./StoredProfileReads";
 import { OperationalResearch } from "./OperationalResearch";
-import { PriceDriversPanel, type Attribution, type PriceReading } from "./PriceDrivers";
-import { ConfidenceLabel, EvidenceTypeBadge, Unavailable } from "./ResearchPrimitives";
+import type { Attribution, PriceReading } from "./PriceDrivers";
+import { EvidenceTypeBadge, Unavailable } from "./ResearchPrimitives";
 import { InspectorRead, ResearchWorkspace, WorkspaceAction } from "../research/ResearchWorkspace";
 
 export type CompanyWorkspaceKind = "economics" | "valuation" | "thesis" | "financials" | "evidence";
@@ -34,17 +35,6 @@ function useLiveCardSnapshot(ticker: string): LiveCardSnapshot | null {
     return () => { active = false; };
   }, [ticker]);
   return card;
-}
-
-function formatScalingMetric(value: number | null | undefined, unit: string) {
-  if (typeof value !== "number" || !Number.isFinite(value)) return "Unavailable";
-  if (unit === "decimal") return `${(value * 100).toFixed(1)}%`;
-  if (unit.includes("currency")) {
-    if (Math.abs(value) >= 1e6) return `$${(value / 1e6).toFixed(2)}M`;
-    if (Math.abs(value) >= 1e3) return `$${Math.round(value / 1e3).toLocaleString("en-US")}K`;
-    return `$${value.toFixed(0)}`;
-  }
-  return value.toLocaleString("en-US", { maximumFractionDigits: 2 });
 }
 
 function useDepthEscape(onClose: () => void) {
@@ -147,78 +137,10 @@ function ValuationDetail({ company, detail, onClose }: { company: CompanyResearc
 }
 
 function PositioningWorkspace({ company, onClose, inline = false }: { company: CompanyResearchViewModel; onClose: () => void; inline?: boolean }) {
-  const sustainability = company.raw.growth_sustainability;
-  const scaling = company.raw.scaling_economics;
   const liveCard = useLiveCardSnapshot(company.ticker);
-  const positioningAxes = [
-    ["flow", "Sector Money Flow"],
-    ["crowding", "Valuation Crowding"],
-    ["macro", "Macro Sensitivity"],
-    ["expectations", "Analyst Consensus"],
-  ] as const;
-
   return (
-    <ResearchWorkspace code="MARKET POSITIONING & THESIS" title="Positioning & Growth Thesis" ticker={company.ticker} inline={inline} onClose={onClose}>
-      <div className="thesis-workspace positioning-upgraded">
-        {liveCard?.attribution ? (
-          <PriceDriversPanel
-            attribution={liveCard.attribution}
-            reading={liveCard.price_reading}
-            lastEarnings={liveCard.next_catalysts?.last_earnings ?? undefined}
-          />
-        ) : null}
-
-        {liveCard?.axes ? (
-          <section className="pos-live-grid" aria-label="Live market positioning">
-            {positioningAxes.map(([key, label]) => {
-              const ax = liveCard.axes?.[key];
-              if (!ax) return null;
-              return (
-                <article key={key} className="pos-live-card">
-                  <span>{label}</span>
-                  <strong>{ax.state ?? "—"}</strong>
-                  {ax.evidence?.[0] ? <p>{ax.evidence[0]}</p> : null}
-                </article>
-              );
-            })}
-          </section>
-        ) : null}
-
-        <header className="pos-thesis-head">
-          <div>
-            <span>SCALING ECONOMICS &amp; GROWTH ENGINE</span>
-            <h3>{scaling.interpretation}</h3>
-          </div>
-          <ConfidenceLabel value={sustainability.confidence} />
-        </header>
-        <p className="pos-equation">{company.growthEquation}</p>
-        <p>{sustainability.interpretation}</p>
-
-        {scaling.metrics?.length ? (
-          <div className="pos-scaling-metrics">
-            {scaling.metrics.map((m) => (
-              <article key={m.name}>
-                <span>{humanize(m.name)}</span>
-                <strong>{formatScalingMetric(m.value, m.unit)}</strong>
-                <small>{m.interpretation}</small>
-              </article>
-            ))}
-          </div>
-        ) : null}
-
-        <section>
-          <span>WHAT WOULD BREAK THIS VIEW?</span>
-          {company.raw.falsification_conditions.map((item, index) => (
-            <article key={item.condition}>
-              <b>{String(index + 1).padStart(2, "0")}</b>
-              <div>
-                <strong>{item.condition}</strong>
-                <p>{item.rationale}</p>
-              </div>
-            </article>
-          ))}
-        </section>
-      </div>
+    <ResearchWorkspace code="HOW THE MARKET TREATS THE STOCK" title="Market view" ticker={company.ticker} inline={inline} onClose={onClose}>
+      <MarketView card={liveCard as unknown as Record<string, unknown> | null} />
     </ResearchWorkspace>
   );
 }
