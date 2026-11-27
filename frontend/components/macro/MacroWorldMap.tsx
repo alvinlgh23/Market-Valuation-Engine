@@ -1,38 +1,40 @@
 import type { MacroRegion, MacroTransmission } from "../../lib/macro-types";
 
-const ANCHORS: Record<string, { cx: number; cy: number; boxX: number; boxY: number; boxW: number; shortCode: string }> = {
-  US: { cx: 212, cy: 174, boxX: 38, boxY: 146, boxW: 156, shortCode: "US" },
-  EURO_AREA: { cx: 492, cy: 138, boxX: 446, boxY: 74, boxW: 168, shortCode: "EURO AREA" },
-  KR: { cx: 760, cy: 184, boxX: 604, boxY: 198, boxW: 154, shortCode: "KR" },
-  JP: { cx: 816, cy: 176, boxX: 790, boxY: 112, boxW: 156, shortCode: "JP" },
+import { LAND_DOTS } from "../../lib/world-dots";
+
+// Real positions (2026-11-27): plate carree matching the dotted land in lib/world-dots.ts.
+const K = 960 / 360;
+function proj(lon: number, lat: number) { return { x: (lon + 180) * K, y: (84 - lat) * K }; }
+
+type Anchor = { lon: number; lat: number; name: string; side: "left" | "right" };
+const ANCHORS: Record<string, Anchor> = {
+  US: { lon: -98, lat: 39, name: "United States", side: "left" },
+  EURO_AREA: { lon: 10, lat: 50, name: "Euro area", side: "right" },
+  KR: { lon: 127.8, lat: 36.5, name: "Korea", side: "left" },
+  JP: { lon: 139.7, lat: 35.7, name: "Japan", side: "right" },
+};
+const BRAZIL = proj(-51, -10);
+
+// Each channel: from, to, the two bezier control points, and its short label (drawn at the curve's midpoint).
+const TRANSMISSION_PATHS: Record<string, { from: string; to: string; c1: [number, number]; c2: [number, number]; shortLabel: string }> = {
+  "jp-us-yen-carry": { from: "JP", to: "US", c1: [700, 20], c2: [380, 20], shortLabel: "Yen carry → US risk" },
+  "us-jp-rate-fx": { from: "US", to: "JP", c1: [380, 330], c2: [700, 330], shortLabel: "US rates → USD/JPY" },
+  "us-eu-rate-fx": { from: "US", to: "EURO_AREA", c1: [300, 50], c2: [430, 40], shortLabel: "Fed / ECB → EUR/USD" },
+  "us-kr-dollar-kospi": { from: "US", to: "KR", c1: [380, 260], c2: [680, 260], shortLabel: "USD → KRW & chips" },
 };
 
-const TRANSMISSION_PATHS: Record<string, { d: string; labelX: number; labelY: number; shortLabel: string }> = {
-  "jp-us-yen-carry": {
-    d: "M 816 170 C 660 8, 350 8, 212 168",
-    labelX: 514,
-    labelY: 30,
-    shortLabel: "Yen carry → US risk",
-  },
-  "us-jp-rate-fx": {
-    d: "M 208 184 C 380 392, 660 392, 816 184",
-    labelX: 540,
-    labelY: 344,
-    shortLabel: "US rates → USD/JPY",
-  },
-  "us-eu-rate-fx": {
-    d: "M 218 168 Q 332 104 486 136",
-    labelX: 326,
-    labelY: 118,
-    shortLabel: "Fed / ECB → EUR/USD",
-  },
-  "us-kr-dollar-kospi": {
-    d: "M 214 182 C 370 306, 598 306, 756 188",
-    labelX: 486,
-    labelY: 278,
-    shortLabel: "USD → KRW & Semis",
-  },
-};
+function arcGeometry(id: string) {
+  const g = TRANSMISSION_PATHS[id];
+  if (!g) return null;
+  const a = proj(ANCHORS[g.from].lon, ANCHORS[g.from].lat), b = proj(ANCHORS[g.to].lon, ANCHORS[g.to].lat);
+  const [c1x, c1y] = g.c1, [c2x, c2y] = g.c2;
+  return {
+    d: `M ${a.x.toFixed(1)} ${a.y.toFixed(1)} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${b.x.toFixed(1)} ${b.y.toFixed(1)}`,
+    labelX: 0.125 * a.x + 0.375 * c1x + 0.375 * c2x + 0.125 * b.x,
+    labelY: 0.125 * a.y + 0.375 * c1y + 0.375 * c2y + 0.125 * b.y,
+    shortLabel: g.shortLabel,
+  };
+}
 
 function regionHeadline(id: string, region: MacroRegion | undefined): { line1: string; line2: string } {
   if (!region) return { line1: id, line2: "Unavailable" };
@@ -89,7 +91,7 @@ export function MacroWorldMap({
 }) {
   return (
     <div className="macro-map-frame macro-map-cockpit">
-      <svg className="macro-world-map" viewBox="0 0 960 450" role="img" aria-label="World macro coverage map">
+      <svg className="macro-world-map" viewBox="0 0 960 395" role="img" aria-label="World macro coverage map">
         <defs>
           <radialGradient id="macro-ocean-glow" cx="50%" cy="44%" r="60%">
             <stop offset="0%" stopColor="#151924" stopOpacity="0.9" />
@@ -103,7 +105,7 @@ export function MacroWorldMap({
           </marker>
         </defs>
 
-        <rect x="0" y="0" width="960" height="450" fill="url(#macro-ocean-glow)" />
+        <rect x="0" y="0" width="960" height="395" fill="url(#macro-ocean-glow)" />
 
         {/* Subtle latitude / longitude graticule */}
         <g className="macro-grid-lines" aria-hidden="true">
@@ -111,40 +113,13 @@ export function MacroWorldMap({
           <path className="macro-equator" d="M0 255h960" />
         </g>
 
-        {/* Detailed recognizable world landmasses */}
-        <g className="macro-land" aria-hidden="true">
-          {/* North America */}
-          <path d="M44 96 L72 76 L118 68 L168 64 L218 74 L256 96 L284 124 L272 146 L254 162 L244 188 L226 204 L212 218 L196 226 L186 242 L168 232 L154 214 L138 192 L130 168 L112 150 L88 134 L58 122 Z" />
-          {/* Greenland */}
-          <path d="M294 42 L346 34 L378 52 L364 82 L326 92 L298 72 Z" />
-          {/* Caribbean / Central America bridge */}
-          <path d="M186 242 L208 250 L226 264 L214 270 L194 256 Z" />
-          {/* South America */}
-          <path d="M234 264 L274 262 L316 282 L348 308 L344 344 L322 382 L296 418 L276 430 L264 404 L256 364 L238 326 L226 292 Z" />
-          {/* UK & Ireland */}
-          <path d="M442 114 L456 110 L462 128 L446 132 Z M432 120 L440 118 L440 128 L432 128 Z" />
-          {/* Continental Europe + Scandinavia */}
-          <path d="M468 74 L498 60 L532 66 L552 86 L538 104 L558 114 L566 138 L544 156 L524 166 L504 164 L492 174 L478 164 L456 168 L446 154 L458 136 L476 124 L474 102 Z" />
-          {/* Africa */}
-          <path d="M450 184 L492 180 L534 190 L568 212 L592 246 L584 282 L566 322 L546 364 L518 380 L498 354 L490 314 L476 278 L448 254 L438 218 Z" />
-          {/* Madagascar */}
-          <path d="M594 332 L606 328 L608 356 L596 362 Z" />
-          {/* Eurasia + Middle East + India + China + SE Asia */}
-          <path d="M554 68 L618 54 L704 52 L792 62 L866 82 L896 106 L868 128 L832 138 L804 156 L790 182 L772 208 L748 228 L724 248 L704 268 L692 246 L668 232 L646 258 L628 232 L604 218 L576 206 L562 184 L574 162 L564 136 Z" />
-          {/* Korean Peninsula */}
-          <path d="M752 172 L764 172 L768 192 L756 194 Z" />
-          {/* Japanese Archipelago */}
-          <path d="M812 150 L824 152 L828 166 L820 184 L804 196 L798 188 L810 172 Z" />
-          {/* Maritime SE Asia / Indonesia / Philippines */}
-          <path d="M726 274 L758 278 L778 292 L752 298 L722 288 Z M782 244 L794 248 L796 268 L784 266 Z" />
-          {/* Australia & New Zealand */}
-          <path d="M768 326 L818 314 L864 328 L878 362 L856 392 L808 396 L770 374 Z M898 392 L914 384 L918 408 L902 414 Z" />
-        </g>
+        {/* Land as dots: Natural Earth 1:110m, public domain */}
+        <path className="macro-dots" d={LAND_DOTS} aria-hidden="true" />
 
         {/* Cross-border transmission arcs */}
         <g className="macro-map-arcs">
           {transmissions.map((edge) => {
-            const geom = TRANSMISSION_PATHS[edge.id];
+            const geom = arcGeometry(edge.id);
             if (!geom) return null;
             const isActive = edge.current_state === "ACTIVE";
             const isSelected = selectedEdge === edge.id;
@@ -175,14 +150,16 @@ export function MacroWorldMap({
           })}
         </g>
 
-        {/* Supported Economy Nodes + Live Stance Callout Cards */}
+        {/* Modelled economies: a dot and a name; the reading is in the tooltip and the side panel */}
         {Object.entries(ANCHORS).map(([id, pos]) => {
           const region = regions[id];
           if (!region) return null;
+          const { x, y } = proj(pos.lon, pos.lat);
           const isSelected = selected === id;
           const headline = regionHeadline(id, region);
-          const cardCenterX = pos.boxX + pos.boxW / 2;
-          const cardCenterY = pos.boxY + 24;
+          const width = pos.name.length * 6.4 + 18;
+          const left = pos.side === "left";
+          const rx = left ? x - 12 - width : x + 12;
           return (
             <g
               key={id}
@@ -197,25 +174,21 @@ export function MacroWorldMap({
               onClick={() => onSelect(id)}
               onKeyDown={(event) => (event.key === "Enter" || event.key === " ") && onSelect(id)}
             >
-              <line x1={pos.cx} y1={pos.cy} x2={cardCenterX} y2={cardCenterY} className="marker-leader" />
-              <circle className="marker-pulse" cx={pos.cx} cy={pos.cy} r={13} />
-              <circle className="marker-dot" cx={pos.cx} cy={pos.cy} r={5.5} />
-              <g className="marker-callout" transform={`translate(${pos.boxX}, ${pos.boxY})`}>
-                <rect width={pos.boxW} height="48" rx="8" className="marker-card-bg" />
-                <text x="10" y="16" className="marker-card-code">{pos.shortCode}</text>
-                <text x="10" y="30" className="marker-card-line1">{headline.line1}</text>
-                <text x="10" y="42" className="marker-card-line2">{headline.line2}</text>
-              </g>
+              <title>{`${region.name}: ${headline.line1} · ${headline.line2}`}</title>
+              <circle className="marker-pulse" cx={x} cy={y} r={12} />
+              <circle className="marker-dot" cx={x} cy={y} r={5} />
+              <rect className="marker-name-bg" x={rx} y={y - 10} width={width} height={20} rx={10} />
+              <text className="marker-name" x={rx + width / 2} y={y + 4} textAnchor="middle">{pos.name}</text>
             </g>
           );
         })}
 
-        {/* Subtle unmodelled marker preserved for honest coverage boundary & regression checks */}
+        {/* Not modelled: a quiet dot, detail on hover (no label on the map) */}
         <g
           className="macro-map-marker unavailable"
           role="button"
           tabIndex={0}
-          aria-label="Brazil not available"
+          aria-label="Brazil: not modelled"
           onMouseEnter={() => onHoverUnavailable?.("Brazil")}
           onMouseLeave={() => onLeave?.()}
           onFocus={() => onHoverUnavailable?.("Brazil")}
@@ -223,8 +196,8 @@ export function MacroWorldMap({
           onClick={() => onUnavailable("Brazil")}
           onKeyDown={(event) => (event.key === "Enter" || event.key === " ") && onUnavailable("Brazil")}
         >
-          <circle cx="306" cy="322" r="4.5" />
-          <text x="316" y="325" className="marker-unavail-label">BR · unmodelled</text>
+          <title>Brazil: not modelled</title>
+          <circle cx={BRAZIL.x} cy={BRAZIL.y} r="4" />
         </g>
       </svg>
 
@@ -232,7 +205,7 @@ export function MacroWorldMap({
         <span><i className="arc-key active" />Active cross-border stress</span>
         <span><i className="arc-key watch" />Monitored channel</span>
         <span><i className="available" />Modelled economy (click to inspect)</span>
-        <span><i />Unmodelled region</span>
+        <span><i />Not modelled (hover for detail)</span>
       </div>
     </div>
   );

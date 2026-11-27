@@ -3,6 +3,8 @@
 import Link from "next/link";
 import type { MacroTransmission, MacroWorld } from "../../lib/macro-types";
 import { CHANNEL_CHAIN, channelExposure, type DriverLike } from "../../lib/channel-exposure";
+import type { DriverRow } from "../../lib/watchlist-drivers";
+import { carryScenario } from "./HoldingsFactorBars";
 
 // "Channels → your holdings" (replaces the Mechanism Graph, 2026-11-27): each cross-border channel as a chain, its
 // current reading, and the holdings whose measured 3-month price split it touched.
@@ -20,6 +22,8 @@ function Channel({ channel, drivers, world }: { channel: MacroTransmission; driv
   const max = Math.max(0.05, ...touched.flatMap((f) => f.holdings.map((h) => Math.abs(h.value))));
   const evidence = channel.evidence_ids.map((id) => world.evidence_index[id]).filter(Boolean);
   const state = channel.current_state;
+  // Scenario, not a measurement: each holding's measured yen-carry sensitivity times an 8% jump in the yen.
+  const scenario = channel.id === "jp-us-yen-carry" && drivers ? carryScenario(drivers as DriverRow[]) : [];
   return <article className={`ch-row state-${state.toLowerCase()}`}>
     <header>
       <span className="ch-route">{code(channel.source)} → {code(channel.target)}</span>
@@ -37,6 +41,7 @@ function Channel({ channel, drivers, world }: { channel: MacroTransmission; driv
             <span>{h.ticker}</span><i style={{ width: `${(Math.abs(h.value) / max) * 100}%` }} /><em>{pct(h.value)}</em>
           </Link>)}</div>
         </div>)}
+      {scenario.length ? <p className="ch-quiet ch-scenario">If the yen jumped 8% (a scenario from each stock&apos;s measured sensitivity, not a forecast): {scenario.map((s) => `${s.ticker} −${Math.abs(s.value * 100).toFixed(1)}%`).join(" · ")}.</p> : null}
     </div>
     <details className="ch-more"><summary>Mechanism and evidence</summary>
       <p>{channel.mechanism}</p>

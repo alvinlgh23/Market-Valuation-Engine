@@ -12,6 +12,7 @@ import io
 import math
 
 import yfinance as yf
+from security_words import looks_like_shell
 
 from company_economics import CompanySnapshot, SourceNature, build_company_economics, print_company_economics
 
@@ -291,7 +292,7 @@ def infer_security_type(info):
         return "ETF / Fund"
     if quote_type in {"CRYPTOCURRENCY", "CURRENCY"}:
         return "Non-operating market proxy"
-    if "spac" in name or "blank check" in name:
+    if looks_like_shell(name):
         return "SPAC / Shell"
     return "Operating Company"
 

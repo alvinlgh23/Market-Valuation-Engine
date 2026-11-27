@@ -21,6 +21,7 @@ export type TodayHolding = {
   strain: { label: string; reading: string; change: number | null; sales: number | null } | null;
   aiNote: { note: string; quote: string | null; model: string | null; form: string | null } | null;
   compare?: CompareNumbers;
+  sectorEtf?: string | null;
 };
 /** Numbers for the Watchlist Compare table, copied from the stored card. */
 export type CompareNumbers = {

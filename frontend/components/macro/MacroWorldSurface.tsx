@@ -3,16 +3,28 @@ import { StatusBadge } from "../research/StatusBadge";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import type { MacroComponent, MacroEvidence, MacroRegion, MacroTransmission, MacroWorld } from "../../lib/macro-types";
+import type { MacroEvidence, MacroRegion, MacroTransmission, MacroWorld } from "../../lib/macro-types";
 import { MacroWorldMap } from "./MacroWorldMap";
 import { MacroEngineDetails } from "./MacroEngineDetails";
 import { CoverageBar, CoverageDetail } from "./CoverageBar";
 import { ChannelsView } from "./ChannelsView";
 import { FedPathPanel } from "./FedPathPanel";
-import { CHANNEL_CHAIN, exposureLine } from "../../lib/channel-exposure";
+import { CHANNEL_CHAIN, exposureLine, factorsLine, REGION_FACTORS } from "../../lib/channel-exposure";
 import { loadWatchlistDrivers, type DriverRow } from "../../lib/watchlist-drivers";
 
 const REGION_ORDER = ["US", "JP", "KR", "EURO_AREA"];
+const SERIES_PLAIN: Record<string, string> = { cpi_ex_fresh_food: "CPI", unemployment: "unemployment rate", pmi: "business survey (PMI)" };
+const REGION_ADJ: Record<string, string> = { US: "US", JP: "Japan", KR: "Korea", EURO_AREA: "Euro area" };
+export type FxPair = { label?: string; level?: number | null; change_3m?: number | null; observed_at?: string | null };
+
+/** "Japan CPI (FRED series stopped in 2021)" instead of "cpi_ex_fresh_food (JPNCPIALLMINMEI, last 2021-06-01)". */
+function coverageGaps(region: MacroRegion): string[] {
+  const c = region.coverage;
+  if (!c) return [];
+  const stopped = (c.stale_inputs ?? []).map((item) => `${REGION_ADJ[region.id] ?? region.name} ${SERIES_PLAIN[item.key] ?? item.key.replace(/_/g, " ")} (FRED series stopped in ${String(item.last).slice(0, 4)})`);
+  const missing = c.areas.flatMap((area) => area.missing.map((m) => `${area.label}: ${m} (not collected)`));
+  return [...stopped, ...missing];
+}
 const REGION_CODE: Record<string, string> = { EURO_AREA: "EA" };
 const code = (id: string) => REGION_CODE[id] ?? id;
 function sentence(value: string) { const t = String(value ?? "").replace(/_/g, " ").toLowerCase(); return t.charAt(0).toUpperCase() + t.slice(1); }
@@ -36,66 +48,61 @@ function EvidenceRow({ evidence, expanded, onToggle }: { evidence: MacroEvidence
   </article>;
 }
 
-function mechanismOrder(region: MacroRegion) {
-  const preferred: Record<string, string[]> = {
-    JP: ["inflation", "policy", "financial", "currency", "liquidity"],
-    SG: ["inflation", "currency", "policy", "liquidity"],
-    KR: ["markets", "fx", "transmission"],
-    US: ["inflation", "policy", "financial", "currency", "liquidity"],
-    EURO_AREA: ["inflation", "policy", "growth", "financial", "currency", "liquidity"],
-  };
-  const ordered = (preferred[region.id] || region.components.map((item) => item.id))
-    .map((id) => region.components.find((component) => component.id === id))
-    .filter((component): component is MacroComponent => Boolean(component));
-  const remaining = region.components.filter((component) => !ordered.some((item) => item.id === component.id));
-  return [...ordered, ...remaining];
+const EMPTY_STATES = new Set(["NOT AVAILABLE", "INSUFFICIENT"]);
+const POLICY_BANK: Record<string, string> = { US: "Fed", JP: "Bank of Japan", EURO_AREA: "ECB" };
+
+/** Up to three plain facts per economy card, from stored readings only. */
+function economyFacts(id: string, region: MacroRegion, fx: Record<string, FxPair>): string[] {
+  const state = (key: string) => region.components.find((c) => c.id === key)?.state;
+  const usable = (v?: string) => v && !["NOT AVAILABLE", "INSUFFICIENT", "No Signal"].includes(v);
+  const out: string[] = [];
+  const policy = state("policy");
+  if (POLICY_BANK[id] && usable(policy)) out.push(`${POLICY_BANK[id]}: ${sentence(policy!).toLowerCase()}`);
+  if (id === "KR") {
+    const krw = fx.usdkrw;
+    if (typeof krw?.level === "number") {
+      const ch = krw.change_3m;
+      out.push(`₩${Math.round(krw.level).toLocaleString("en-US")} per $${typeof ch === "number" ? ` · won ${ch <= 0 ? "up" : "down"} ${Math.abs(ch * 100).toFixed(1)}% in 3 months` : ""}`);
+    }
+    const exp = (region.engine_specific as { kospi?: { export_snapshot?: { total_exports_usd_b?: number; semiconductors_usd_b?: number; period?: string } } } | undefined)?.kospi?.export_snapshot;
+    if (exp?.total_exports_usd_b && exp.semiconductors_usd_b) out.push(`Chips ${Math.round((exp.semiconductors_usd_b / exp.total_exports_usd_b) * 100)}% of exports (${exp.period ?? "latest year"})`);
+    if (/tech/i.test(state("markets") ?? "")) out.push("KOSPI moves most with chip stocks");
+    return out;
+  }
+  if (id === "EURO_AREA" && typeof fx.eurusd?.change_3m === "number") out.push(`Euro ${fx.eurusd.change_3m >= 0 ? "up" : "down"} ${Math.abs(fx.eurusd.change_3m * 100).toFixed(1)}% vs $ in 3 months`);
+  for (const key of ["inflation", "growth"]) { const v = state(key); if (usable(v) && out.length < 3) out.push(`${key === "inflation" ? "Inflation" : "Growth"}: ${sentence(v!).toLowerCase()}`); }
+  return out.slice(0, 3);
 }
 
-function CountryMechanismCanvas({ region, onDetail }: { region: MacroRegion; onDetail: (id: string) => void }) {
-  const components = mechanismOrder(region);
-  const evidenceCount = components.reduce((count, component) => count + component.evidence_ids.length, 0);
-  return <section className="country-mechanism-canvas" aria-label={`${region.name} macro mechanism map`}>
-    <header>
-      <div><span>MECHANISM MAP / {code(region.id)}</span><h3>{region.name} transmission structure</h3></div>
-      <CoverageBar coverage={region.coverage} />
-    </header>
-    <p>{region.framework}</p>
-    <div className="country-mechanism-path">
-      {components.map((component, index) => <button type="button" key={component.id} onClick={() => onDetail(component.id)} className={`mechanism-node mechanism-node-${component.confidence.toLowerCase().replaceAll(" ", "-")}`}>
-        <span>{String(index + 1).padStart(2, "0")}</span>
-        <strong>{component.label}</strong>
-        <b>{component.state}</b>
-        <small>{component.evidence_ids.length} evidence · {component.confidence}</small>
-      </button>)}
-    </div>
-    <div className="mechanism-map-footer">
-      <article><span>Evidence coverage</span><strong>{evidenceCount} linked records</strong><small>Click any node to inspect source evidence.</small></article>
-      <article><span>Known data gaps</span><strong>{region.gaps.length || components.flatMap((item) => item.gaps).length}</strong><small>Missing data remains part of the result.</small></article>
-    </div>
-  </section>;
-}
-
-function RegionInspector({ region, selectedDetail, onDetail, onClose }: { region: MacroRegion; selectedDetail: string; onDetail: (id: string) => void; onClose: () => void }) {
+function RegionInspector({ region, selectedDetail, onDetail, onClose, drivers }: { region: MacroRegion; selectedDetail: string; onDetail: (id: string) => void; onClose: () => void; drivers: DriverRow[] | null }) {
   const component = region.components.find((item) => item.id === selectedDetail);
   const [openEvidence, setOpenEvidence] = useState<string>("");
   const evidence = component ? region.evidence.filter((item) => component.evidence_ids.includes(item.id)) : [];
-  const exploringMechanism = selectedDetail === "mechanism";
+  const empty = region.components.filter((item) => EMPTY_STATES.has(item.state));
+  const gaps = [...empty.map((item) => `${item.label}: ${item.summary}`), ...coverageGaps(region)];
+  const watches = region.watch_conditions.filter((watch) => !EMPTY_STATES.has(String(watch.state).toUpperCase()));
   return <aside className="macro-region-inspector" aria-label={`${region.name} macro profile`}>
     <header><div><span>REGION / {code(region.id)}</span><h2>{region.name}</h2></div><button type="button" onClick={onClose}>Close · ESC</button></header>
-    <div className="macro-region-brief"><CoverageDetail coverage={region.coverage} /><p>{region.brief}</p><dl><div><dt>Framework</dt><dd>{region.framework}</dd></div><div><dt>Confidence</dt><dd>{region.confidence}</dd></div></dl></div>
-    <div className="macro-region-actions"><button type="button" className="primary-action" onClick={() => onDetail("mechanism")}>Explore {region.name}</button>{region.id === "KR" ? <button type="button" onClick={() => onDetail("markets")}>Open KOSPI</button> : null}<button type="button" onClick={() => onDetail("policy")}>Open Policy</button>{region.components.some((item) => item.id === "liquidity") ? <button type="button" onClick={() => onDetail("liquidity")}>Open Liquidity</button> : null}<button type="button" onClick={() => onDetail(region.components.find((item) => item.id === "financial" || item.id === "markets")?.id || region.components[0]?.id)}>Open Assets</button>{region.id === "US" ? <><Link href="/macro/inflation">Open Inflation</Link><Link href="/macro/conditions#rates">Open Rates</Link><Link href="/macro/conditions#regime">Open Risk</Link><Link href="/macro/conditions#fx">Open FX</Link></> : null}<button type="button" onClick={() => onDetail(component?.id || region.components[0]?.id)}>Evidence</button></div>
+    <p className="mri-lead">{region.brief}</p>
+    <section className="mri-holdings"><span>Your holdings it moved · 3 months</span><p>{factorsLine(REGION_FACTORS[region.id] ?? [], drivers).replace(/^Your holdings, 3 months: /, "")}</p></section>
     <nav className="macro-component-nav" aria-label={`${region.name} macro components`}>
-      {region.components.map((item) => <button type="button" key={item.id} className={component?.id === item.id ? "active" : ""} onClick={() => onDetail(item.id)}><span>{item.label}</span><strong>{item.state}</strong></button>)}
+      {region.components.filter((item) => !EMPTY_STATES.has(item.state)).map((item) => <button type="button" key={item.id} className={component?.id === item.id ? "active" : ""} onClick={() => onDetail(item.id)}><span>{item.label}</span><strong>{sentence(item.state)}</strong></button>)}
     </nav>
-    {exploringMechanism ? <CountryMechanismCanvas region={region} onDetail={onDetail} /> : component ? <section className="macro-component-detail">
-      <header><span>COMPONENT / {component.label.toUpperCase()}</span><Status value={component.confidence} /></header><h3>{component.state}</h3><p>{component.summary}</p>
-      <div className="macro-detail-heading"><span>Evidence trace</span><b>{evidence.length} records</b></div>
-      {evidence.length ? evidence.map((item) => <EvidenceRow key={item.id} evidence={item} expanded={openEvidence === item.id} onToggle={() => setOpenEvidence(openEvidence === item.id ? "" : item.id)} />) : <div className="macro-no-evidence">NO VERIFIED EVIDENCE AVAILABLE FOR THIS COMPONENT</div>}
+    {component ? <section className="macro-component-detail">
+      <header><span>{component.label.toUpperCase()}</span><Status value={component.confidence} /></header><h3>{sentence(component.state)}</h3><p>{component.summary}</p>
+      <div className="macro-detail-heading"><span>Evidence</span><b>{evidence.length} records</b></div>
+      {evidence.length ? evidence.map((item) => <EvidenceRow key={item.id} evidence={item} expanded={openEvidence === item.id} onToggle={() => setOpenEvidence(openEvidence === item.id ? "" : item.id)} />) : <div className="macro-no-evidence">No measured evidence for this reading.</div>}
       {component.gaps.length ? <div className="macro-gap-block"><span>Known gaps</span>{component.gaps.map((gap) => <p key={gap}>— {gap}</p>)}</div> : null}
-    </section> : <div className="macro-inspector-prompt"><span>SELECT A COMPONENT</span><p>Move from the regional brief into one mechanism, then trace its evidence and source.</p></div>}
+    </section> : <p className="mri-prompt">Pick a reading above to see its evidence.</p>}
+    {region.id === "US" ? <div className="macro-region-actions"><Link href="/macro/inflation">Inflation →</Link><Link href="/macro/conditions#rates">Rates →</Link><Link href="/macro/conditions#fx">Dollar →</Link><Link href="/macro/conditions#regime">Risk mood →</Link></div> : null}
+    {watches.length ? <section className="macro-region-watches"><header><span>What we&apos;re watching</span><small>{watches.length}</small></header>{watches.map((watch) => <article key={watch.label}><strong>{watch.label}</strong><Status value={watch.state} /><span>{watch.threshold}</span><b>{watch.current}</b></article>)}</section> : null}
     <MacroEngineDetails engineSpecific={region.engine_specific} />
-    <section className="macro-region-watches"><header><span>Watch conditions</span><small>{region.watch_conditions.length}</small></header>{region.watch_conditions.map((watch) => <article key={watch.label}><strong>{watch.label}</strong><Status value={watch.state} /><span>{watch.threshold}</span><b>{watch.current}</b></article>)}</section>
-    <footer><span>Engines</span>{region.engines.map((engine) => <div key={engine.name}><strong>{engine.name}</strong><small>{engine.role}</small><Status value={engine.status} /></div>)}</footer>
+    <details className="mri-coverage"><summary>Data coverage &amp; gaps{region.coverage ? ` · ${region.coverage.available} of ${region.coverage.expected} inputs` : ""}</summary>
+      <CoverageDetail coverage={region.coverage} />
+      {gaps.length ? <ul className="mri-gaps">{gaps.map((gap) => <li key={gap}>{gap}</li>)}</ul> : null}
+      <dl><div><dt>Framework</dt><dd>{region.framework}</dd></div><div><dt>Confidence</dt><dd>{region.confidence}</dd></div></dl>
+      <footer><span>Engines</span>{region.engines.map((engine) => <div key={engine.name}><strong>{engine.name}</strong><small>{engine.role}</small><Status value={engine.status} /></div>)}</footer>
+    </details>
   </aside>;
 }
 
@@ -107,7 +114,7 @@ function EdgeInspector({ edge, evidence, onClose }: { edge: MacroTransmission; e
 export type WorldQuery = { mode?: string; region?: string; detail?: string; edge?: string };
 
 // The server passes the URL query in, so the first client render matches the server render (no hydration mismatch).
-export function MacroWorldSurface({ world, initial = {} }: { world: MacroWorld; initial?: WorldQuery }) {
+export function MacroWorldSurface({ world, initial = {}, fxPairs = {} }: { world: MacroWorld; initial?: WorldQuery; fxPairs?: Record<string, FxPair> }) {
   const [mode, setMode] = useState(initial.mode || "regions");
   const [regionId, setRegionId] = useState(initial.region || "");
   const [detailId, setDetailId] = useState(initial.detail || "");
@@ -265,8 +272,8 @@ export function MacroWorldSurface({ world, initial = {} }: { world: MacroWorld; 
               </header>
               {REGION_ORDER.map((id) => {
                 const item = world.regions[id];
-                const validComps = item.components.filter((c) => c.state && c.state !== "NOT AVAILABLE" && c.state !== "INSUFFICIENT");
-                const policy = validComps.find((c) => c.id === "policy");
+                if (!item) return null;
+                const facts = economyFacts(id, item, fxPairs);
                 return (
                   <button
                     type="button"
@@ -280,13 +287,10 @@ export function MacroWorldSurface({ world, initial = {} }: { world: MacroWorld; 
                         <strong>{item.name}</strong>
                       </div>
                     </div>
-                    <p className="mec-lead">{policy ? `Policy: ${sentence(policy.state).toLowerCase()}` : "No policy reading"}</p>
-                    <div className="mec-pills">
-                      {validComps.filter((c) => c.id !== "policy").slice(0, 4).map((comp) => (
-                        <span key={comp.id}><em>{comp.label}</em> {sentence(comp.state).toLowerCase()}</span>
-                      ))}
-                    </div>
-                    <small className="mec-cta">{item.coverage ? `${item.coverage.available} of ${item.coverage.expected} inputs · ` : ""}Open {item.name} →</small>
+                    <p className="mec-lead">{factorsLine(REGION_FACTORS[id] ?? [], drivers)}</p>
+                    <div className="mec-pills">{facts.map((fact) => <span key={fact}>{fact}</span>)}</div>
+                    {id === "KR" ? <small className="mec-note">Bank of Korea rate and Korean inflation aren&apos;t stored yet.</small> : null}
+                    <small className="mec-cta">Open {item.name} →</small>
                   </button>
                 );
               })}
@@ -299,6 +303,7 @@ export function MacroWorldSurface({ world, initial = {} }: { world: MacroWorld; 
               selectedDetail={detailId}
               onDetail={selectDetail}
               onClose={() => { setRegionId(""); setDetailId(""); push({ region: "", detail: "" }); }}
+              drivers={drivers}
             />
           ) : edge ? (
             <EdgeInspector

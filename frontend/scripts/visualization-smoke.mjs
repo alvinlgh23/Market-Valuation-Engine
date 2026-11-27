@@ -57,7 +57,7 @@ try {
   await screenshot(page, "05-south-korea-kospi.png");
 
   await page.goto(`${baseUrl}/macro/world?mode=regions&region=US&detail=policy`, { waitUntil: "networkidle" });
-  const compass = page.locator("details").filter({ hasText: "CENTRAL BANK COMPASS" });
+  const compass = page.locator("details.macro-engine-detail").filter({ hasText: "CENTRAL BANK COMPASS" });
   await compass.locator("summary").click();
   if ((await compass.locator(".ranked-chart-list > button").count()) !== 5) throw new Error("Compass policy block chart is incomplete");
   if ((await compass.locator(".diverging-chart button").count()) !== 7) throw new Error("Compass liquidity contribution chart is incomplete");

@@ -6,7 +6,7 @@
 ## 当前状态（2026-11-24）
 
 - **清单：** 原清单 46 / 46 条完成；P9 7 / 7 条完成；P10（宏观还是公司）10 / 10 条完成（日本 CPI 需要 e-Stat appId，10.7 需要 data.go.kr 密钥）；P11（公司页的"不可用"）批准的 5 / 5 条完成（11.3、11.4 未采用，由 P12 取代）；P12（估值改成先回答"股价假设了什么"）3 / 3 条完成；P13（一致预期取对财年）1 / 1 条完成；P14（深色精简界面和主动提醒）6 / 7 条完成（14.5 其他页面重排待做）；P15–P17 全部完成（新增公司类型留待以后）；P18 A 组 13 / 13、B 组 3 / 3、D 组 6 / 6 条完成（P18 全部完成）；P19 A 组 3 / 3 条完成（B、C、D 组待做）。
-- **分支：** 本地 `work/synthesis`，从基线 `9ade096` 起；截至 `7fd6e17` 全部已推送，并通过 PR #1–#8 合并到 main（最近一次 PR #8 界面重做，2026-11-27，合并提交 `10feb2f`）。
+- **分支：** 本地 `work/synthesis`，从基线 `9ade096` 起；截至 `fcd7b21` 全部已推送，并通过 PR #1–#9 合并到 main（最近一次 PR #9 宏观重做，2026-11-27，合并提交 `f851417`）。
   - 快照分支：`snapshot/2026-11-16-pre-synthesis`（改动前的备份）。
 - **测试：** Python 407 项全部通过。前端类型检查、lint、6 组规则测试、生产构建以及真实浏览器端到端走查全部通过；估值旧浏览器脚本早已过期（找不到 9.4 删除的按钮），未修。
 - **缓存：** 11.7 经 owner 批准重新分析了 `.cache/company_economics`（先备份到 `.cache/backups/`）；其余原有缓存没有被覆盖。新增的 SEC 季度数据只写在新目录 `.cache/sec_quarterly/`。
@@ -29,6 +29,27 @@
 | P9 | 模型修正（未申报财年、半导体设备类别、12 个月增长）与界面视觉化 | ✅ | 2026-11-22 |
 
 ## 进度日志
+
+### 2026-11-27：板块单页重做、世界地图、经济体卡片和韩国（owner 批准）
+
+- **板块单页**（`components/markets/SectorPage.tsx`）：顶部是板块名、1/3/6 个月相对 S&P 500 的点数和一句白话；接着「你在这个板块的持仓」（可点进公司）；「钱有没有跟上」（参与度、成交活跃度、上涨/下跌日成交比、拥挤度，白话/Pro 两种说法，定义取自 `sector_flow.py`）；板块内的行业基金；只有写过行业结构的板块才显示「How this industry works」，并标明是文字描述、不是测量。删除 Full Report（原始 JSON）、旧旋转图、34 行表格和用假数字的 Leadership 视图；旧链接（view=report/structure/leadership）都落到新页面。补了 5 个板块的可读网址别名（communication-services → XLC 等，旧别名指向不存在的页面）。
+- **世界地图**：用 Natural Earth 1:110m 陆地（公有领域，一次性下载）生成点阵地图（`lib/world-dots.ts`，2,262 个点，29 KB）；四个经济体放在真实经纬度，通道弧线由位置计算；大卡片改成小名字标签（详情在悬停和侧栏）；去掉「BR · unmodelled」字样，改为悬停提示；手机（640px 以下）隐藏地图；模式切换改成圆角药丸。
+- **通道一对一**：日元套利 → yen_carry；美国利率→USD/JPY → long_rates + fed_path；Fed/ECB → usd；美元→韩元和芯片 → semis_cycle，同一只股票不再在多个通道重复出现。日元套利一行加上「日元升 8%」情景（按每只股票测得的敏感度，标明不是预测）。
+- **侧栏顺序**：结论 → 你被影响的持仓 → 有数据的读数 → 证据；没有数据的读数和「NOT AVAILABLE」观察项收进「Data coverage & gaps」，停更序列用白话（如「Japan CPI (FRED series stopped in 2021)」）。
+- **经济体卡片**：每张先写它影响了你哪些持仓（3 个月）。韩国卡用现有数据：₩1,338/$、韩元 3 个月升 2.5%、芯片占出口 24%（2025）、KOSPI 主要跟芯片股走；注明韩国央行利率和韩国通胀还没存。月度芯片出口需要 data.go.kr 的免费 key（未设置）；韩国央行利率需要新增一个 FRED 序列，要 owner 同意后再抓。
+- 测试：Python 484 通过，tsc、lint 干净，11 个前端规则测试通过，9 个浏览器 smoke 通过（macro-correction 第一次因机器忙超时，重跑通过），生产构建通过。更新了相关 smoke（新板块页、地图手机隐藏、Brazil 标签、通道映射）。
+- 已知：旧板块视图的 CSS 还留在 globals.css 里，没有页面再用，之后可一起清理。
+
+
+### 2026-11-27：自选股之外的公司也能直接打开（owner 批准 3 项）+ 板块总览
+
+- **打开即生成**：不在自选股里的公司，第一次打开时自动生成页面（只用 Yahoo 和 SEC 的结构化数据，不调用 AI，约 20 秒），之后存下来，再打开是秒开。去掉「Analyze Company」按钮（失败时保留「Build this page」重试）。
+- **航空航天被误判为 SPAC 的 bug**：旧规则只要名字或行业里出现 "spac" 这几个字母就判为空壳公司，"aero**spac**e" 正好包含，所以 GE、Boeing、Lockheed、RTX、Howmet、TransDigm 全部被挡住；另外 Valuation_model 里单独的 "shell" 会把 Shell plc 也判进去。四个文件改用同一个整词规则（新文件 `security_words.py`），真正的 blank check / shell company 仍会被识别。新测试 `tests/test_security_words.py`。估值公式没有改。
+- **REIT 页面**：REIT 的价值要看物业现金流（FFO），模型还没有，所以不给公允价值；页面改为显示一句话结论和适用的读数（业务、分析师预期、资金流、拥挤度、宏观），并明说「REIT valuation isn't modelled yet」。标签从 Unsupported 改为 Partial readings。
+- **板块总览**：11 个板块砖块改为 4+4+3 排列，每块显示持仓（超过 4 只显示前 3 只加 +N）；主题条从中间向两边延伸；新增「Map」视图（横轴 6 个月相对 S&P 500，纵轴拥挤度，点上标持仓）。行业基金按 GICS 归到上级板块（`lib/sector-holdings.ts`）。
+- 测试：Python 484 通过，tsc、lint 干净，companies / markets / dashboard 三个浏览器 smoke 通过，today-focus 和 market-words 规则测试通过。
+- 仍待做：板块单页重做并删除 Full Report、世界地图、经济体卡片和韩国。
+
 
 ### 2026-11-26：P20 1–3（每家公司的白话结论、读数稳定、回落后的增长参照）
 

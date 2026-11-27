@@ -20,7 +20,8 @@ try {
   // Data source and date are shown in the header ("Saved data · market data as of …" or live).
   await page.getByText(/(Saved|Live) data · market data as of \d{4}-\d{2}-\d{2}/i).first().waitFor();
   if (smh && Number.isFinite(smh.rel_6m)) {
-    const value = `${smh.rel_6m > 0 ? "+" : ""}${(smh.rel_6m * 100).toFixed(1)}%`;
+    // Sector page hero (2026-11-27): points against the S&P 500, signed with a true minus.
+    const value = `${smh.rel_6m >= 0 ? "+" : "−"}${Math.abs(smh.rel_6m * 100).toFixed(1)}`;
     await page.getByText(value, { exact: true }).first().waitFor();
   } else {
     await page.getByText("Unavailable", { exact: true }).first().waitFor();

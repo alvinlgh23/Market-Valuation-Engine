@@ -42,13 +42,14 @@ try {
       japanDetail = new URL(page.url()).searchParams.get("detail");
     }
     if (name === "South Korea") {
-      await page.getByRole("button", { name: /Policy NOT AVAILABLE/ }).click();
-      await page.getByText("No Bank of Korea policy model is integrated.").waitFor();
+      // 2026-11-27: empty readings moved into the folded "Data coverage & gaps" section.
+      await page.locator(".mri-coverage > summary").click();
+      await page.getByText("Policy: No Bank of Korea policy model is integrated.").waitFor();
     }
     await page.keyboard.press("Escape");
   }
 
-  const unavailable = page.getByRole("button", { name: "Brazil not available" });
+  const unavailable = page.getByRole("button", { name: "Brazil: not modelled" });
   await unavailable.focus();
   await page.screenshot({ path: path.join(artifacts, "unsupported-country-hover.png"), fullPage: true });
   await unavailable.click();
@@ -81,7 +82,9 @@ try {
   if (overflow) throw new Error("Mobile macro page has horizontal overflow");
   await mobile.getByRole("heading", { name: "Economies we model" }).waitFor();
   await mobile.screenshot({ path: path.join(artifacts, "mobile-macro-map.png"), fullPage: true });
-  await mobile.getByRole("button", { name: "Open Japan macro profile" }).click();
+  // 2026-11-27: the map is hidden on phones (under 640px); economies open from their cards.
+  if (await mobile.locator(".macro-map-frame").isVisible()) throw new Error("The world map should be hidden on phones");
+  await mobile.locator(".macro-econ-card").filter({ hasText: "Japan" }).click();
   await mobile.getByRole("complementary", { name: "Japan macro profile" }).waitFor();
   await mobile.keyboard.press("Escape");
   await mobile.getByRole("complementary", { name: "Japan macro profile" }).waitFor({ state: "detached" });

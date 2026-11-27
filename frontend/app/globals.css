@@ -3854,3 +3854,113 @@ html, body, .rail-shell, .rail-shell .research-app-main, .app-rail, .rail-shell 
 .infl-pro { position: relative; }
 .infl-toggle { display: flex; justify-content: flex-end; padding: 18px clamp(16px, 3vw, 44px) 0; }
 @media (max-width: 760px) { .infl-anchor { grid-template-columns: repeat(2, minmax(0, 1fr)); } .infl-anchor b { font-size: var(--t-28); } }
+.mc-xbars .flat i { background: #9a9aa3; box-shadow: none; }
+.mc-xbars .flat em { color: var(--research-muted); }
+.mc-link { color: var(--research-muted); font-size: var(--t-12); text-decoration: none; }
+.mc-link:hover { color: #fff; }
+.ch-scenario { font-size: var(--t-12); line-height: 1.5; }
+.infl-card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.infl-card-head b { color: #fff; font: 600 var(--t-16)/1 var(--font-mono); letter-spacing: -0.02em; }
+.infl-series { color: var(--research-faint); font-size: 11px; }
+
+/* Markets overview v2: 4-column tiles with your holdings, Heatmap | Map, two-way theme bars */
+.mkt-heat { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.mkt-tile { min-height: 128px; position: relative; }
+.mkt-held { display: flex; flex-wrap: wrap; gap: 4px; margin-top: auto; min-height: 20px; font-style: normal; }
+.mkt-held i { padding: 2px 6px; border-radius: 5px; background: rgba(0, 0, 0, .45); border: 1px solid rgba(255, 255, 255, .14); color: #fff; font: 500 10.5px/1.3 var(--font-mono); font-style: normal; }
+.mkt-held i.more { color: var(--research-muted); }
+.mkt-viewswitch { display: inline-flex; justify-self: start; padding: 3px; margin: 2px 0 12px; border: 1px solid var(--research-line); border-radius: 999px; background: var(--research-surface); }
+.mkt-viewswitch button { padding: 6px 14px; border: 0; border-radius: 999px; background: transparent; color: var(--research-faint); font: 500 var(--t-12)/1 var(--font-research); cursor: pointer; }
+.mkt-viewswitch button.on { background: #fff; color: #000; }
+.mkt-themes li .mkt-track { display: block; position: relative; height: 10px; min-width: 0; }
+.mkt-themes li .mkt-track::before { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: rgba(255, 255, 255, .18); }
+.mkt-themes li .mkt-track i { position: absolute; top: 3px; height: 4px; border-radius: 2px; opacity: 1; }
+.mkt-themes li .mkt-track i.up, .mkt-themes li .mkt-track i.up-strong { background: var(--gap-business); box-shadow: 0 0 8px rgba(79, 224, 166, .6); }
+.mkt-themes li .mkt-track i.down, .mkt-themes li .mkt-track i.down-strong { background: var(--gap-price); box-shadow: 0 0 8px rgba(255, 138, 92, .6); }
+.mkt-plane { padding: 18px; border: 1px solid var(--research-line); border-radius: 16px; background: var(--research-surface); }
+.mkt-plane-area { position: relative; height: 420px; border-radius: 12px; background: radial-gradient(circle at 50% 50%, rgba(255,255,255,.03), transparent 70%); }
+.mkt-plane-mid { position: absolute; left: 50%; top: 6%; bottom: 10%; width: 1px; background: rgba(255, 255, 255, .14); }
+.mkt-plane-x { position: absolute; left: 0; right: 0; bottom: 4px; text-align: center; color: var(--research-faint); font-size: 11px; }
+.mkt-plane-y { position: absolute; left: 6px; top: 6px; color: var(--research-faint); font-size: 11px; }
+.mkt-dot { position: absolute; transform: translate(-50%, -50%); display: grid; justify-items: center; gap: 2px; padding: 6px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,.14); background: rgba(10,10,13,.9); color: #fff; text-decoration: none; white-space: nowrap; }
+.mkt-dot b { font: 600 12px/1.1 var(--font-research); }
+.mkt-dot small { color: var(--research-muted); font: 500 10px/1 var(--font-mono); }
+.mkt-dot.up { border-color: rgba(79,224,166,.5); box-shadow: 0 0 12px rgba(79,224,166,.25); }
+.mkt-dot.down { border-color: rgba(255,138,92,.5); box-shadow: 0 0 12px rgba(255,138,92,.25); }
+.mkt-dot.held b::before { content: "● "; color: var(--warm); font-size: 9px; vertical-align: 1px; }
+.mkt-dot:hover { z-index: 2; background: #17171c; }
+.mkt-plane-note { margin: 10px 0 0; color: var(--research-faint); font-size: 12px; }
+@media (max-width: 960px) { .mkt-heat { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .mkt-plane-area { height: 360px; } .mkt-dot b { font-size: 11px; } }
+
+/* REIT readings on the company gateway (2026-11-27) */
+.reit-readings { display:grid;gap:18px;margin-top:20px }
+.reit-lead { color:var(--research-text, #f2f2f2);font-size:var(--t-16, 16px);line-height:1.55;margin:0 }
+.company-resolved-preview .reit-axes { display:grid;grid-template-columns:1fr;gap:1px;margin:0;border:1px solid var(--mi-line-strong) }
+.company-resolved-preview .reit-axes > div { display:grid;grid-template-columns:150px 1fr;border:0;gap:16px;padding:12px 14px;background:var(--research-surface, #0a0a0d) }
+.company-resolved-preview .reit-axes dt { font:inherit;font-size:13px;letter-spacing:0;text-transform:none;color:var(--mi-muted, #9a9aa3);font-size:13px }
+.company-resolved-preview .reit-axes dd { font:inherit;margin:0;display:grid;gap:4px }
+.reit-axes dd small { color:var(--mi-muted, #9a9aa3);font-size:12.5px;line-height:1.45 }
+@media (max-width:640px) { .company-resolved-preview .reit-axes > div { grid-template-columns:1fr;gap:6px } }
+
+/* Sector page v2 (2026-11-27) */
+.sec { display:grid;gap:18px;max-width:1080px }
+.sec .markets-crumb-row { display:flex;justify-content:space-between;gap:12px }
+.sec-hero { padding:28px clamp(18px,3vw,36px);border:1px solid var(--research-line);border-radius:18px;background:var(--research-surface) }
+.sec-hero-top { display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap }
+.sec-kicker { color:var(--research-faint);font:500 12px var(--font-mono);letter-spacing:.06em;text-transform:uppercase }
+.sec-hero h1 { margin:18px 0 8px }
+.sec-sentence { margin:0;color:#d4d4da;font-size:16px;line-height:1.5 }
+.sec-nums { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:22px }
+.sec-nums > div { display:grid;gap:4px;padding:14px 16px;border:1px solid var(--research-line);border-radius:12px;background:var(--research-surface-raised) }
+.sec-nums span { color:var(--research-muted);font-size:13px }
+.sec-nums b { font:500 30px var(--font-mono);letter-spacing:-.03em }
+.sec-nums small { color:var(--research-faint);font-size:11.5px }
+.sec-nums .up b { color:var(--research-positive) } .sec-nums .down b { color:var(--research-negative) }
+.sec-card h2 { margin:0 0 12px;font-size:18px;letter-spacing:-.02em }
+.sec-quiet { margin:0;color:var(--research-muted);font-size:13.5px }
+.sec-holdings { display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px }
+.sec-holdings a { display:grid;gap:3px;padding:12px 14px;border:1px solid var(--research-line);border-radius:12px;color:var(--research-text);text-decoration:none }
+.sec-holdings a:hover { border-color:var(--research-line-strong) }
+.sec-holdings b { font:600 15px var(--font-mono) } .sec-holdings span { color:#d4d4da;font-size:13px } .sec-holdings small { color:var(--research-muted);font-size:12px }
+.sec-crowd { margin:0 0 12px;padding:10px 14px;border-radius:10px;background:var(--research-surface-raised);font-size:14.5px;line-height:1.5 }
+.sec-crowd.crowded,.sec-crowd.extended { box-shadow:inset 3px 0 0 var(--warm) } .sec-crowd.unloved { box-shadow:inset 3px 0 0 var(--research-negative) } .sec-crowd.neutral { box-shadow:inset 3px 0 0 var(--research-faint) }
+.sec-flow { display:grid;gap:1px;margin:0 }
+.sec-flow > div { display:grid;grid-template-columns:160px 1fr;gap:16px;padding:10px 0;border-top:1px solid var(--research-line) }
+.sec-flow dt { color:var(--research-muted);font-size:13px } .sec-flow dd { margin:0;font-size:14px;line-height:1.5 }
+.sec-children { display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px }
+.sec-children a { display:grid;gap:3px;padding:12px 14px;border:1px solid var(--research-line);border-radius:12px;color:var(--research-text);text-decoration:none }
+.sec-children b { font:500 20px var(--font-mono) } .sec-children .up b { color:var(--research-positive) } .sec-children .down b { color:var(--research-negative) }
+.sec-children span { font-size:13px;color:#d4d4da } .sec-children small { color:var(--research-faint);font-size:11.5px }
+.sec-chain { display:grid;gap:10px;margin:12px 0 0;padding:0;list-style:none;counter-reset:chain }
+.sec-chain li { display:grid;gap:4px;padding:12px 14px 12px 44px;border:1px solid var(--research-line);border-radius:12px;position:relative;counter-increment:chain }
+.sec-chain li::before { content:counter(chain);position:absolute;left:14px;top:12px;color:var(--research-faint);font:500 13px var(--font-mono) }
+.sec-chain b { font-size:15px } .sec-chain small { color:var(--research-faint);font:500 11px var(--font-mono);text-transform:uppercase;letter-spacing:.05em }
+.sec-chain span { color:#d4d4da;font-size:13.5px;line-height:1.5 }
+.sec-chain em { display:flex;flex-wrap:wrap;gap:6px;font-style:normal }
+.sec-chain em a { padding:2px 8px;border:1px solid var(--research-line);border-radius:999px;color:var(--research-text);font:500 12px var(--font-mono);text-decoration:none }
+@media (max-width:640px) { .sec-nums { grid-template-columns:1fr } .sec-flow > div { grid-template-columns:1fr;gap:4px } }
+
+/* World map v3: dotted land, real positions, name pills (2026-11-27) */
+.macro-world-map .macro-dots { fill:none;stroke:#4a5061;stroke-width:3.1;stroke-linecap:round }
+.macro-world-map .macro-grid-lines { opacity:.35 }
+.macro-map-marker .marker-name-bg { fill:rgba(10,10,13,.88);stroke:rgba(255,255,255,.14);stroke-width:1 }
+.macro-map-marker .marker-name { fill:#f2f2f4;font:600 11px var(--font-sans, system-ui);letter-spacing:-.01em;pointer-events:none }
+.macro-map-marker.selected .marker-name-bg { stroke:var(--warm, #e2b46d) }
+.macro-map-marker.unavailable circle { fill:#565b68;opacity:.7 }
+@media (max-width:640px) { .macro-map-frame { display:none } }
+
+/* World map: region panel order, economy cards, pill toggle (2026-11-27) */
+.macro-mode-switch { display:inline-flex;gap:2px;padding:3px;border:1px solid var(--research-line);border-radius:999px;background:var(--research-surface) }
+.macro-mode-switch button { border:0;border-radius:999px;padding:7px 14px;background:transparent;color:var(--research-muted);font-size:13px;cursor:pointer }
+.macro-mode-switch button[aria-selected="true"] { background:#f2f2f4;color:#000 }
+.mri-lead { margin:4px 0 14px;color:#d4d4da;font-size:14.5px;line-height:1.55 }
+.mri-holdings { margin:0 0 14px;padding:12px 14px;border:1px solid var(--research-line);border-radius:12px;background:var(--research-surface-raised) }
+.mri-holdings span { display:block;color:var(--research-faint);font-size:11.5px;text-transform:uppercase;letter-spacing:.05em }
+.mri-holdings p { margin:6px 0 0;font-size:14px;line-height:1.5 }
+.mri-prompt { margin:10px 0;color:var(--research-muted);font-size:13px }
+.mri-coverage { margin-top:14px;border-top:1px solid var(--research-line);padding-top:10px }
+.mri-coverage > summary { cursor:pointer;color:var(--research-muted);font-size:13px }
+.mri-gaps { margin:10px 0;padding-left:18px;color:var(--research-muted);font-size:13px;line-height:1.55 }
+.macro-econ-card .mec-note { display:block;margin-top:6px;color:var(--research-faint);font-size:11.5px }
+.macro-econ-card .mec-lead { font-size:13.5px;line-height:1.45 }

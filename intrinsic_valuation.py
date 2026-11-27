@@ -14,6 +14,7 @@ from dataclasses import asdict, dataclass
 from typing import Any
 
 import yfinance as yf
+from security_words import looks_like_shell
 
 
 SUPPORTED_DCF_TYPES = {
@@ -359,7 +360,7 @@ def classify_security(ticker: str, info: dict, has_financials: bool) -> str:
 
     if quote_type in {"ETF", "MUTUALFUND", "FUND"}:
         return "ETF_OR_FUND"
-    if any(term in name or term in industry for term in ("blank check", "shell compan", "spac")):
+    if looks_like_shell(name, industry):
         return "SPAC_OR_SHELL"
     if not info and not has_financials:
         return "INSUFFICIENT_DATA"

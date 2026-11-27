@@ -7,7 +7,9 @@ const drivers = [d("AMD", { semis_cycle: -0.176, usd: -0.079, yen_carry: 0.009 }
 
 assert.deepEqual(Object.keys(CHANNEL_FACTORS).sort(), ["jp-us-yen-carry", "us-eu-rate-fx", "us-jp-rate-fx", "us-kr-dollar-kospi"]);
 const kr = channelExposure("us-kr-dollar-kospi", drivers);
-assert.deepEqual(kr.map((f) => f.factor), ["semis_cycle", "usd"]);
+assert.deepEqual(kr.map((f) => f.factor), ["semis_cycle"]);                              // one family per channel
+assert.deepEqual(channelExposure("us-eu-rate-fx", drivers).map((f) => f.factor), ["usd"]);
+assert.deepEqual(channelExposure("us-jp-rate-fx", drivers).map((f) => f.factor), ["long_rates", "fed_path"]);
 assert.deepEqual(kr[0].holdings.map((h) => h.ticker), ["AMD", "NVDA"]);                 // biggest first
 const carry = channelExposure("jp-us-yen-carry", drivers);
 assert.equal(carry[0].holdings.length, 0);                                               // 0.9 and 0.2 points: under the threshold

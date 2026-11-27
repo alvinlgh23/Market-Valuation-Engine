@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useProView } from "../../lib/view-mode";
 import type { LiquidityScore, ResearchSystem } from "../../lib/research-system-types";
 import type { MacroEvidence, ScoreTest } from "../../lib/macro-evidence-server";
@@ -31,6 +32,14 @@ const ROW_PLAIN: Record<string, string> = {
   "Switzerland defensive proxy": "Swiss stocks", "Credit conditions": "Company bonds", "Volatility": "Fear gauge (VIX)",
   "Treasury hedge behavior": "US government bonds", "Gold behavior": "Gold", "USD stress": "US dollar",
 };
+/** Rows where "up" is bad for stocks (fear, a dollar squeeze) are coloured the other way; hedges stay neutral. */
+const ROW_TONE: Record<string, "inverse" | "neutral"> = { "Volatility": "inverse", "USD stress": "inverse", "Treasury hedge behavior": "neutral", "Gold behavior": "neutral" };
+function rowClass(label: string, value: number) {
+  const tone = ROW_TONE[label];
+  if (tone === "neutral") return "flat";
+  const good = tone === "inverse" ? value < 0 : value >= 0;
+  return good ? "up" : "down";
+}
 const FACTOR_PLAIN: Record<string, string> = { long_rates: "Long-term interest rates", fed_path: "Expected Fed rate moves", usd: "The US dollar", yen_carry: "Yen borrowing trade" };
 
 function Tested({ test, what }: { test: ScoreTest; what: string }) {
@@ -98,7 +107,7 @@ export function MarketConditions({ system, evidence }: { system: ResearchSystem;
       <span className="mc-kicker">{pro ? `Risk regime · ${lower(risk.confidence)} confidence · last 20 trading days` : "The market mood · last 20 trading days"}</span>
       <h2 className="display-h">{pro ? regime : REGIME_PLAIN[regime] ?? regime}</h2>
       {pro && typeof risk.summary === "string" ? <p className="mc-lede">{risk.summary}</p> : null}
-      {bars.length ? <div className="mc-xbars">{bars.map((b) => <div key={b.label} className={b.value! < 0 ? "down" : "up"} title={b.text}>
+      {bars.length ? <div className="mc-xbars">{bars.map((b) => <div key={b.label} className={rowClass(b.label, b.value!)} title={b.text}>
         <span>{pro ? b.label : ROW_PLAIN[b.label] ?? b.label}</span><small>{lower(b.state)}</small>
         <div className="mc-xtrack"><i style={{ width: `${(Math.abs(b.value!) / maxBar) * 50}%`, [b.value! < 0 ? "right" : "left"]: "50%" } as React.CSSProperties} /></div>
         <em>{pct(b.value!)}</em>
@@ -126,6 +135,7 @@ export function MarketConditions({ system, evidence }: { system: ResearchSystem;
         <span className="ch-sub">Your holdings moved by rates · 3 months</span>
         <HoldingsFactorBars factors={["long_rates", "fed_path"]} labels={pro ? undefined : FACTOR_PLAIN} />
         <Tested test={evidence.rates} what={pro ? "the rates score" : "interest rates"} />
+        <Link className="mc-link" href="/macro/world#central-banks">What markets expect from the Fed →</Link>
       </section>
 
       <section id="liquidity" className="mc-card" aria-label="Money conditions">
@@ -170,7 +180,7 @@ export function MarketConditions({ system, evidence }: { system: ResearchSystem;
               {num(carryR.cftc_leveraged_net_jpy_contracts) != null ? <div><dt>CFTC leveraged net JPY</dt><dd>{num(carryR.cftc_leveraged_net_jpy_contracts)!.toLocaleString("en-US")}</dd></div> : null}
             </dl>}
             <span className="ch-sub">Your holdings moved by the dollar and the yen trade · 3 months</span>
-            <HoldingsFactorBars factors={["usd", "yen_carry"]} labels={pro ? undefined : FACTOR_PLAIN} />
+            <HoldingsFactorBars factors={["usd", "yen_carry"]} labels={pro ? undefined : FACTOR_PLAIN} carryScenario={warning.level === "HIGH"} />
           </div>
         </div>
       </section>

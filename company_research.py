@@ -13,6 +13,7 @@ import json
 import math
 import os
 import re
+from security_words import looks_like_shell
 from dataclasses import asdict, dataclass, field, is_dataclass
 from enum import Enum
 from pathlib import Path
@@ -268,7 +269,7 @@ class SecurityResolver:
             security_type = SecurityType.ETF
         elif legacy_type == "REIT" or "real estate investment trust" in lower_name_industry or "reit" in industry.lower():
             security_type = SecurityType.REIT
-        elif legacy_type == "SPAC_OR_SHELL" or any(word in lower_name_industry for word in ("blank check", "shell company", "spac")):
+        elif legacy_type == "SPAC_OR_SHELL" or looks_like_shell(name, industry):
             security_type = SecurityType.SPAC
         elif legacy_type == "FINANCIAL_INSTITUTION":
             security_type = SecurityType.FINANCIAL_INSTITUTION
