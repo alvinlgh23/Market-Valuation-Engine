@@ -97,7 +97,7 @@
             "related_constraint": "FOUNDRY_CAPACITY",
             "why_it_matters": "A direct KPI would distinguish the limiting mechanism from correlated financial outcomes.",
             "confidence_impact": "Constraint confidence cannot be HIGH.",
-            "fallback_proxy_used": null
+            "fallback_proxy_used": "inventory_growth_minus_revenue_growth"
           },
           {
             "missing_field": "customers",
@@ -113,7 +113,7 @@
             "related_constraint": "INVENTORY",
             "why_it_matters": "A direct KPI would distinguish the limiting mechanism from correlated financial outcomes.",
             "confidence_impact": "Constraint confidence cannot be HIGH.",
-            "fallback_proxy_used": null
+            "fallback_proxy_used": "inventory_growth_minus_revenue_growth"
           },
           {
             "missing_field": "direct_supplier_concentration_kpi",
@@ -204,7 +204,7 @@
               "related_constraint": "FOUNDRY_CAPACITY",
               "why_it_matters": "A direct KPI would distinguish the limiting mechanism from correlated financial outcomes.",
               "confidence_impact": "Constraint confidence cannot be HIGH.",
-              "fallback_proxy_used": null
+              "fallback_proxy_used": "inventory_growth_minus_revenue_growth"
             }
           ],
           "inference": "There is insufficient evidence to diagnose foundry capacity.",
@@ -248,7 +248,7 @@
               "related_constraint": "INVENTORY",
               "why_it_matters": "A direct KPI would distinguish the limiting mechanism from correlated financial outcomes.",
               "confidence_impact": "Constraint confidence cannot be HIGH.",
-              "fallback_proxy_used": null
+              "fallback_proxy_used": "inventory_growth_minus_revenue_growth"
             }
           ],
           "inference": "There is insufficient evidence to diagnose inventory.",
@@ -293,12 +293,12 @@
         },
         {
           "name": "inventory_growth_minus_revenue_growth",
-          "value": null,
+          "value": -0.15300000000000002,
           "unit": "decimal",
           "current_period": "FY2025 vs FY2024",
           "comparison_period": "Prior comparable period",
-          "interpretation": "Inventory Growth Minus Revenue Growth",
-          "evidence_id": null
+          "interpretation": "Inventory growth less revenue growth",
+          "evidence_id": "E18"
         },
         {
           "name": "revenue_per_employee",
@@ -307,7 +307,7 @@
           "current_period": "FY2025 vs FY2024",
           "comparison_period": "Prior comparable period",
           "interpretation": "Revenue generated per employee",
-          "evidence_id": "E18"
+          "evidence_id": "E19"
         }
       ],
       "interpretation": "Synthetic fixture scaling metrics are illustrative, not observed company economics.",
@@ -321,7 +321,8 @@
       "scaling_structure": "Synthetic fixture scaling metrics are illustrative, not observed company economics.",
       "supporting_evidence_ids": [
         "E17",
-        "E18"
+        "E18",
+        "E19"
       ],
       "contrary_evidence_ids": [],
       "interpretation": "Growth sustainability remains uncertain because current growth or the primary scaling constraint is not defensibly observed.",
@@ -334,7 +335,8 @@
         "rationale": "This would weaken the Revenue \u2248 Units \u00d7 ASP \u00d7 Product Mix growth mechanism or its cash conversion.",
         "evidence_ids": [
           "E17",
-          "E18"
+          "E18",
+          "E19"
         ]
       },
       {
@@ -343,7 +345,8 @@
         "rationale": "This would weaken the Revenue \u2248 Units \u00d7 ASP \u00d7 Product Mix growth mechanism or its cash conversion.",
         "evidence_ids": [
           "E17",
-          "E18"
+          "E18",
+          "E19"
         ]
       },
       {
@@ -352,7 +355,8 @@
         "rationale": "This would weaken the Revenue \u2248 Units \u00d7 ASP \u00d7 Product Mix growth mechanism or its cash conversion.",
         "evidence_ids": [
           "E17",
-          "E18"
+          "E18",
+          "E19"
         ]
       }
     ],
@@ -405,7 +409,8 @@
       "reason": "A converged reverse DCF and comparable observed growth are required.",
       "evidence_ids": [
         "E17",
-        "E18"
+        "E18",
+        "E19"
       ]
     },
     "data_gaps": [
@@ -434,14 +439,6 @@
         "fallback_proxy_used": "revenue growth"
       },
       {
-        "missing_field": "inventory_growth_minus_revenue_growth",
-        "related_driver": null,
-        "related_constraint": null,
-        "why_it_matters": "Required to evaluate archetype-specific scaling economics.",
-        "confidence_impact": "Scaling confidence is reduced.",
-        "fallback_proxy_used": null
-      },
-      {
         "missing_field": "packaging_capacity",
         "related_driver": null,
         "related_constraint": "ADVANCED_PACKAGING",
@@ -463,7 +460,7 @@
         "related_constraint": "FOUNDRY_CAPACITY",
         "why_it_matters": "A direct KPI would distinguish the limiting mechanism from correlated financial outcomes.",
         "confidence_impact": "Constraint confidence cannot be HIGH.",
-        "fallback_proxy_used": null
+        "fallback_proxy_used": "inventory_growth_minus_revenue_growth"
       },
       {
         "missing_field": "customers",
@@ -479,7 +476,7 @@
         "related_constraint": "INVENTORY",
         "why_it_matters": "A direct KPI would distinguish the limiting mechanism from correlated financial outcomes.",
         "confidence_impact": "Constraint confidence cannot be HIGH.",
-        "fallback_proxy_used": null
+        "fallback_proxy_used": "inventory_growth_minus_revenue_growth"
       },
       {
         "missing_field": "direct_supplier_concentration_kpi",
@@ -1199,6 +1196,47 @@
         "id": "E18",
         "type": "PROXY",
         "tier": "INDIRECT",
+        "metric": "inventory_growth_minus_revenue_growth",
+        "statement": "Inventory Growth Minus Revenue Growth is -0.1530.",
+        "value": -0.15300000000000002,
+        "unit": "decimal",
+        "period": "FY2025 vs FY2024",
+        "source": "calculated from normalized company snapshot",
+        "source_type": "calculation",
+        "source_nature": "DERIVED_PROXY",
+        "direction": "IMPROVING",
+        "confidence": "MODERATE",
+        "related_driver": null,
+        "related_constraint": null,
+        "supporting_evidence_ids": [],
+        "source_id": null,
+        "source_url": null,
+        "provider_status": "OK",
+        "retrieved_at": null,
+        "observation_date": null,
+        "fiscal_period_start": null,
+        "fiscal_period_end": null,
+        "fiscal_year": null,
+        "filing_date": null,
+        "currency": null,
+        "raw_concept": null,
+        "normalized_concept": null,
+        "transformation": null,
+        "coverage_status": "COMPLETE",
+        "validation_status": "VALID",
+        "staleness_status": "UNKNOWN",
+        "limitation": "Calculated from synthetic fixture financials; not an observed company fact.",
+        "entity_identifier": null,
+        "source_status": "FIXTURE",
+        "source_locator": null,
+        "extraction_method": null,
+        "definition_version": null,
+        "revision_status": null
+      },
+      {
+        "id": "E19",
+        "type": "PROXY",
+        "tier": "INDIRECT",
         "metric": "revenue_per_employee",
         "statement": "Revenue Per Employee is 1135714.2857.",
         "value": 1135714.2857142857,
@@ -1345,9 +1383,9 @@
       "overall": "PARTIAL",
       "evidence_coverage": {
         "facts": 5,
-        "proxies": 2,
+        "proxies": 3,
         "inferences": 1,
-        "gaps": 10
+        "gaps": 9
       }
     },
     "qualitative_research_needed": true,
@@ -1885,6 +1923,31 @@
       },
       "E18": {
         "source_id": "E18",
+        "source_name": "calculated from normalized company snapshot",
+        "source_url": null,
+        "source_type": "calculation",
+        "provider_status": "OK",
+        "retrieved_at": null,
+        "observation_date": null,
+        "fiscal_period_start": null,
+        "fiscal_period_end": null,
+        "fiscal_year": null,
+        "filing_date": null,
+        "unit": "decimal",
+        "currency": null,
+        "value": -0.15300000000000002,
+        "raw_concept": null,
+        "normalized_concept": "inventory_growth_minus_revenue_growth",
+        "transformation": null,
+        "coverage_status": "COMPLETE",
+        "validation_status": "VALID",
+        "staleness_status": "UNKNOWN",
+        "limitation": "Calculated from synthetic fixture financials; not an observed company fact.",
+        "entity_identifier": "AMD",
+        "source_status": "FIXTURE"
+      },
+      "E19": {
+        "source_id": "E19",
         "source_name": "calculated from normalized company snapshot",
         "source_url": null,
         "source_type": "calculation",

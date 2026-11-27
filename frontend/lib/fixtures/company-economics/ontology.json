@@ -63,6 +63,22 @@
         "Advanced-Node Mix"
       ]
     },
+    "SEMICONDUCTOR_EQUIPMENT": {
+      "display_name": "Semiconductor Equipment",
+      "revenue_model_description": "Wafer-fab equipment sales plus services on the installed base",
+      "economic_structure_steps": [
+        "Chipmaker Capex",
+        "Equipment Orders",
+        "Market Share \u00d7 Tool Pricing",
+        "Systems Revenue + Installed-Base Services",
+        "Revenue"
+      ],
+      "driver_descriptions": [
+        "Customer Capex (WFE Spend)",
+        "Market Share",
+        "Installed-Base Services"
+      ]
+    },
     "HYPERSCALER_CLOUD_PLATFORM": {
       "display_name": "Hyperscale Cloud Platform",
       "revenue_model_description": "Cloud infrastructure and software consumption",

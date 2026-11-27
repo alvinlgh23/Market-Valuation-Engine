@@ -118,3 +118,11 @@ def test_bank_balances_for_the_company_profile_come_from_sec_and_stay_missing_wi
     assert out["deposits"] == 109.0 and out["loans"] == 55.0
     assert abs(out["deposit_growth"] - 0.09) < 1e-9 and abs(out["loan_growth"] - 0.10) < 1e-9
     assert ce.sec_bank_balances("NONE", facts=facts()) == {}                 # nothing reported: nothing filled in
+
+
+def test_inventory_outgrowing_sales_is_computed_and_read_as_a_warning():
+    """Gap scan 2026-11-27: the metric the retail and chip archetypes ask for was never computed (name mismatch)."""
+    import company_economics as ce
+    assert ce._metric_direction("inventory_growth_minus_revenue_growth", 0.10).name == "DETERIORATING"
+    assert ce._metric_direction("inventory_growth_minus_revenue_growth", -0.10).name == "IMPROVING"
+    assert ce._metric_direction("revenue_growth_minus_capex_growth", 0.10).name == "IMPROVING"

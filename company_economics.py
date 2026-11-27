@@ -771,9 +771,15 @@ class EvidenceLedger:
         return [item.id for item in self.items if item.metric in metric_names and (allowed is None or item.type in allowed)]
 
 
+# Metrics where a higher value is a warning (inventory piling up faster than sales).
+HIGHER_IS_WORSE = {"inventory_growth_minus_revenue_growth"}
+
+
 def _metric_direction(name, value):
     if not _number(value):
         return Direction.UNKNOWN
+    if name in HIGHER_IS_WORSE:
+        return Direction.DETERIORATING if value > 0.01 else Direction.IMPROVING if value < -0.01 else Direction.STABLE
     if "growth" in name or "change" in name:
         return Direction.IMPROVING if value > 0.01 else Direction.DETERIORATING if value < -0.01 else Direction.STABLE
     if "retention" in name:
@@ -899,6 +905,9 @@ class ScalingEconomicsAnalyzer:
         for growth_name, base_name in (("employee_growth", "employees"), ("capex_growth", "capex"), ("inventory_growth", "inventory"), ("asset_growth", "assets")):
             gap_name = f"revenue_growth_minus_{growth_name}"
             calculations[gap_name] = (m.get("revenue_growth") - m.get(growth_name) if _number(m.get("revenue_growth")) and _number(m.get(growth_name)) else None, "decimal", f"Revenue growth less {base_name} growth")
+        # Gap scan 2026-11-27: the registry asks for "inventory_growth_minus_revenue_growth" (the inventory check in the
+        # retail and chip archetypes) but only the reverse name was computed, so it always showed as unavailable.
+        calculations["inventory_growth_minus_revenue_growth"] = (m.get("inventory_growth") - m.get("revenue_growth") if _number(m.get("inventory_growth")) and _number(m.get("revenue_growth")) else None, "decimal", "Inventory growth less revenue growth")
         definition = ARCHETYPE_REGISTRY[classification.primary_archetype]
         relevant = set(definition.scaling_metrics)
         relevant.update({name for name in calculations if name in definition.proxy_kpis})
@@ -922,7 +931,8 @@ class ScalingEconomicsAnalyzer:
         elif not available:
             text, confidence = "Relevant scaling metrics are unavailable; no scaling conclusion is forced.", Confidence.INSUFFICIENT
         else:
-            positive = [item for item in available if ("minus" in item.name or "incremental" in item.name) and item.value > 0]
+            positive = [item for item in available if ("minus" in item.name or "incremental" in item.name)
+                        and (item.value < 0 if item.name in HIGHER_IS_WORSE else item.value > 0)]
             text = "Available archetype-relevant metrics indicate improving scaling." if positive else "Available scaling evidence is mixed or level-only; operating leverage needs confirmation."
             confidence = Confidence.MODERATE if len(available) >= 2 else Confidence.LOW
         return ScalingEconomics(output, text, confidence)
@@ -1076,14 +1086,28 @@ class FinancialTranslationEngine:
         incremental = next((m for m in scaling.metrics if m.name == "incremental_operating_margin" and _number(m.value)), None)
         margin_state = ImplicationState.POSITIVE if incremental and incremental.value > 0 else ImplicationState.MIXED if incremental else ImplicationState.INSUFFICIENT_EVIDENCE
         capex_gap = next((m for m in scaling.metrics if m.name == "revenue_growth_minus_capex_growth" and _number(m.value)), None)
-        capital_state = ImplicationState.POSITIVE if capex_gap and capex_gap.value > 0 else ImplicationState.NEGATIVE if capex_gap and capex_gap.value < 0 else ImplicationState.INSUFFICIENT_EVIDENCE
         fcf_metric = next((m for m in scaling.metrics if m.name == "incremental_fcf_margin" and _number(m.value)), None)
+        # Gap scan 2026-11-27: these two were read only from the archetype's chosen scaling metrics, so for most business
+        # types the section said "unavailable" although the snapshot holds the figures. Same formulas, computed here.
+        metrics_now, history = snapshot.metrics, snapshot.histories
+        if capex_gap is None and _number(metrics_now.get("revenue_growth")) and _number(metrics_now.get("capex_growth")):
+            capex_gap = ScalingMetric("revenue_growth_minus_capex_growth", metrics_now["revenue_growth"] - metrics_now["capex_growth"], "decimal",
+                                      snapshot.periods.get("revenue", "Latest available period"), "Prior comparable period", "Revenue growth less capex growth", None)
+        revenues, fcfs = history.get("revenue", []), history.get("fcf", [])
+        if fcf_metric is None and len(fcfs) > 1 and len(revenues) > 1:
+            value = _safe_delta_ratio(fcfs[0], fcfs[1], revenues[0], revenues[1])
+            if _number(value):
+                fcf_metric = ScalingMetric("incremental_fcf_margin", value, "decimal", snapshot.periods.get("revenue", "Latest available period"),
+                                           "Prior comparable period", "Change in FCF divided by positive change in revenue", None)
+        capital_state = ImplicationState.POSITIVE if capex_gap and capex_gap.value > 0 else ImplicationState.NEGATIVE if capex_gap and capex_gap.value < 0 else ImplicationState.INSUFFICIENT_EVIDENCE
         fcf_state = ImplicationState.POSITIVE if fcf_metric and fcf_metric.value > 0 else ImplicationState.MIXED if fcf_metric else ImplicationState.INSUFFICIENT_EVIDENCE
         return FinancialTranslation(
             FinancialImplication(revenue_state, sustainability.interpretation, ids),
             FinancialImplication(margin_state, incremental.interpretation if incremental else "Incremental operating margin is unavailable.", [incremental.evidence_id] if incremental else []),
-            FinancialImplication(capital_state, capex_gap.interpretation if capex_gap else "Comparable capex growth is unavailable.", [capex_gap.evidence_id] if capex_gap else []),
-            FinancialImplication(fcf_state, fcf_metric.interpretation if fcf_metric else "Incremental FCF margin is unavailable.", [fcf_metric.evidence_id] if fcf_metric else []),
+            FinancialImplication(capital_state, f"{capex_gap.interpretation}: {capex_gap.value * 100:+.1f} points." if capex_gap else "Comparable capex growth is unavailable.",
+                                 [capex_gap.evidence_id] if capex_gap and capex_gap.evidence_id else []),
+            FinancialImplication(fcf_state, f"{fcf_metric.interpretation}: {fcf_metric.value * 100:+.1f}%." if fcf_metric else "Incremental FCF margin is unavailable.",
+                                 [fcf_metric.evidence_id] if fcf_metric and fcf_metric.evidence_id else []),
         )
 
 
