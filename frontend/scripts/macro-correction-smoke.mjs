@@ -72,12 +72,12 @@ try {
     await page.locator(".macro-component-detail").waitFor();
   }
 
-  await open(page, "/macro/world?mode=transmission&edge=jp-us-yen-carry");
-  await page.getByRole("heading", { name: "Cross-border transmission" }).waitFor();
+  // 2026-11-27: the graph became "Channels -> holdings"; a channel's detail opens from the map (filler sections removed).
+  await open(page, "/macro/world?mode=transmission");
+  await page.getByRole("heading", { name: "Channels → your holdings" }).waitFor();
+  await open(page, "/macro/world?mode=regions&edge=jp-us-yen-carry");
   await page.getByRole("complementary", { name: /Yen carry → US risk assets transmission detail/ }).waitFor();
   await page.getByText("Structural chain", { exact: true }).waitFor();
-  await page.getByText("Counter evidence", { exact: true }).waitFor();
-  await page.getByText("Activation / weakening", { exact: true }).waitFor();
   await page.screenshot({ path: path.join(artifacts, "10-transmission-workspace.png"), fullPage: true });
 
   await open(page, "/macro/risk");
