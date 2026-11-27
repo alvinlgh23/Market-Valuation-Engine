@@ -21,10 +21,10 @@ try {
   observe(page);
   let response = await page.goto(baseUrl, { waitUntil: "load" });
   if (!response?.ok()) throw new Error(`Overview returned ${response?.status()}`);
-  // The overview is now the Today page: the holdings verdicts, the market read and the story.
-  await page.locator(".tdy-headline").waitFor({ timeout: 120000 });
-  await page.locator(".tdy-verdicts .tdy-verdict-line").first().waitFor({ timeout: 120000 });
-  await page.locator(".tdy-story li").first().waitFor({ timeout: 120000 });
+  // The overview is now the Today page: status band, exceptions, holdings grid and shared conditions.
+  await page.locator(".tdy-band .tdy-band-line").waitFor({ timeout: 120000 });
+  await page.locator(".tdy-focus, .tdy-calm").first().waitFor({ timeout: 120000 });
+  await page.locator(".tdy-dot").first().waitFor({ timeout: 120000 });
   await screenshot(page, "01-overview-visualizations.png");
 
   response = await page.goto(`${baseUrl}/macro/world`, { waitUntil: "networkidle" });
@@ -63,10 +63,10 @@ try {
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
   observe(mobile);
   await mobile.goto(baseUrl, { waitUntil: "load" });
-  await mobile.locator(".tdy-headline").waitFor({ timeout: 120000 });
+  await mobile.locator(".tdy-band .tdy-band-line").waitFor({ timeout: 120000 });
   const overflow = await mobile.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
   if (overflow) throw new Error("Visualization Overview has page-level mobile overflow");
-  await mobile.locator(".tdy-headline").waitFor({ timeout: 120000 });
+  await mobile.locator(".tdy-band .tdy-band-line").waitFor({ timeout: 120000 });
   await mobile.close();
   await page.close();
 } finally {

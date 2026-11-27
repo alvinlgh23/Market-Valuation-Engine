@@ -4,6 +4,7 @@ import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { analyzeValuation, type ValuationOverrides } from "../../../lib/valuation-service";
 import { loadResearchSystem } from "../../../lib/research-server";
+import { loadToday } from "../../../lib/today-server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -180,6 +181,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ status: "FAILED", runtime_error: runtimeError(error), error: runtimeError(error).message }, { status: 502 });
     }
   }
+  if (action === "watchlist-today") return NextResponse.json({ status: "OK", ...(await loadToday()) });
   if (action === "company-verdict-cached") {
     const ticker = request.nextUrl.searchParams.get("ticker")?.trim() ?? "";
     return NextResponse.json(await readCachedVerdict(ticker));
