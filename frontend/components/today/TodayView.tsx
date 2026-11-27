@@ -13,6 +13,7 @@ import {
   type Change, type FocusItem, type TodayHolding, type TodayPayload,
 } from "../../lib/today-model";
 import { Criteria } from "./Criteria";
+import { GapBar } from "../ui/GapBar";
 import { loadTodayHoldings, resetTodayHoldings } from "../../lib/today-client";
 
 // Today (owner-approved redesign, 2026-11-27): what changed and what deserves a look, in about 30 seconds.
@@ -47,49 +48,65 @@ function StatusBand({ read, counts, pattern, loading }: { read: ReturnType<typeo
 }
 
 // ---- 2. Exceptions only -----------------------------------------------------------------------------------------
-const REASON_TEXT = { changed: "Reading changed", disagree: "Price vs business", earnings: "Earnings soon" } as const;
 
 function Move({ label, stock, spy }: { label: string; stock: number | null; spy: number | null }) {
   if (stock == null) return null;
   return <span className="tdy-move"><small>{label}</small><b className={stock < 0 ? "down" : "up"}>{signed(stock)}</b>{spy != null ? <small>S&amp;P {signed(spy)}</small> : null}</span>;
 }
 
-function FocusCard({ item, core }: { item: FocusItem; core: boolean }) {
+/** Plain facts as a headline: the card's business phrase, then the 3-month price move. */
+function headline(h: TodayHolding): string {
+  const business = h.short?.business ?? "Business reading unavailable";
+  const p = h.priceChange3m;
+  if (p == null) return `${business}.`;
+  const size = Math.round(Math.abs(p) * 100);
+  return `${business}. ${size === 0 ? "The price is flat" : `The price ${p < 0 ? "fell" : "rose"} ${size}%`} in 3 months.`;
+}
+
+function FocusCard({ item, core, lead }: { item: FocusItem; core: boolean; lead: boolean }) {
   const h = item.holding;
   const meta = AGREEMENT_LABEL[h.agreement ?? ""] ?? AGREEMENT_LABEL.UNCLEAR;
-  return <article className={`tdy-focus tone-${meta.tone}`}>
+  const c = h.compare;
+  return <article className={`tdy-focus glow-card tone-${meta.tone}${lead ? " lead" : ""}`}>
     <header>
       <Link href={`/company/${h.ticker}`} className="tdy-focus-title"><b>{h.ticker}</b>{core ? <i title="Core holding">★</i> : null}<span>{h.name}</span></Link>
-      <div className="tdy-reasons">{item.reasons.map((r) => <span key={r}>{REASON_TEXT[r]}{r === "earnings" && item.earningsIn != null ? ` · ${item.earningsIn === 0 ? "today" : `in ${item.earningsIn}d`}` : ""}</span>)}</div>
+      {item.earningsIn != null && item.reasons.includes("earnings") ? <span className="tdy-chip-earn">Earnings {item.earningsIn === 0 ? "today" : `in ${item.earningsIn}d`}</span> : null}
     </header>
-    <div className="tdy-focus-verdict">
+    <h3 className={lead ? "display-h tdy-focus-head" : "display-h2 tdy-focus-head"}>{headline(h)}</h3>
+    <div className="tdy-focus-tags">
       <span className={`tdy-agree is-${meta.tone}`}>{meta.label}</span>
-      <p>{[h.short?.business, h.short?.value].filter(Boolean).join(" · ")}</p>
+      {item.reasons.includes("changed") ? <span className="tdy-agree">Reading changed</span> : null}
+      {h.strain ? <span className="tdy-agree is-strain" title={`${h.strain.label}: ${h.strain.reading.toLowerCase()} (${signed(h.strain.change)} vs sales ${signed(h.strain.sales)})`}>{h.strain.label} &gt; sales</span> : null}
     </div>
-    <div className="tdy-focus-moves">
-      <Move label="3 months" stock={h.priceChange3m} spy={null} />
-      {h.since ? <Move label={`Since ${shortDay(h.since.from)}`} stock={h.since.stock} spy={h.since.spy} /> : null}
-      {h.last5d ? <Move label="Last 5 days" stock={h.last5d.stock} spy={h.last5d.spy} /> : null}
+    <div className="tdy-focus-body">
+      <div className="tdy-focus-moves">
+        <Move label="3 months" stock={h.priceChange3m} spy={null} />
+        {h.since ? <Move label={`Since ${shortDay(h.since.from)}`} stock={h.since.stock} spy={h.since.spy} /> : null}
+        {h.last5d ? <Move label="Last 5 days" stock={h.last5d.stock} spy={h.last5d.spy} /> : null}
+      </div>
+      {c ? <GapBar gap={{ ...c, valuationState: c.states.valuation }} compact={!lead} /> : null}
     </div>
-    {item.changes.map((c) => <p key={c.axis} className="tdy-focus-change">{c.axis}: {c.from} → <b>{c.to}</b> ({shortDay(c.on)})</p>)}
-    {h.strain ? <p className="tdy-strain">⚠ {h.strain.label}: {h.strain.reading.toLowerCase()} ({signed(h.strain.change)} vs sales {signed(h.strain.sales)})</p> : null}
+    {h.aiNote || (item.reasons.includes("earnings") && h.watch.length) || item.changes.length ? <details className="tdy-more-detail"><summary>More</summary>
+    {item.changes.map((ch) => <p key={ch.axis} className="tdy-focus-change">{ch.axis}: {ch.from} → <b>{ch.to}</b> ({shortDay(ch.on)})</p>)}
     {h.aiNote ? <Criteria block criteria={{ rule: `Checked AI filing review${h.aiNote.model ? ` (${h.aiNote.model})` : ""}: the quote is matched word for word against the company's ${h.aiNote.form ?? "filing"}. Not counted in any reading.`, now: h.aiNote.quote ? `“${h.aiNote.quote.slice(0, 320)}${h.aiNote.quote.length > 320 ? "…" : ""}”` : null }}>
       <p className="tdy-ai" title={h.aiNote.note}><em>AI · from the filing</em> <span>{h.aiNote.note}</span></p>
     </Criteria> : null}
     {item.reasons.includes("earnings") && h.watch.length ? <div className="tdy-watchfor"><em>What would change the reading</em>{h.watch.map((w) => <p key={w}>{w}</p>)}</div> : null}
+    </details> : null}
   </article>;
 }
 
 function Focus({ data, changes, today, core }: { data: TodayPayload | null; changes: Record<string, Change[]> | null; today: string; core: Set<string> }) {
   const result = useMemo(() => (data && changes ? focusItems(data.holdings, changes, today, core) : null), [data, changes, today, core]);
-  return <Card className="tdy-focus-wrap" label="What deserves a look today" title="What deserves a look today" aside={<Criteria align="right" criteria={{ rule: FOCUS_RULE }}><small className="tdy-rule">Why these?</small></Criteria>}>
+  return <section className="tdy-focus-wrap" aria-label="What deserves a look today">
+    <header className="tdy-section-head"><h2>What deserves a look today</h2><Criteria align="right" criteria={{ rule: FOCUS_RULE }}><small className="tdy-rule">Why these?</small></Criteria></header>
     {!result ? <p className="tdy-empty">Reading your holdings…</p> : !result.items.length
       ? <p className="tdy-calm">No change that needs you today. No reading changed, no holding&apos;s price and business disagree, and no earnings in the next two weeks.</p>
       : <>
-        <div className="tdy-focus-grid">{result.items.map((item) => <FocusCard key={item.holding.ticker} item={item} core={core.has(item.holding.ticker)} />)}</div>
+        <div className="tdy-focus-grid">{result.items.map((item, i) => <FocusCard key={item.holding.ticker} item={item} core={core.has(item.holding.ticker)} lead={i === 0} />)}</div>
         {result.overflow.length ? <p className="tdy-muted">Also qualifying: {result.overflow.map((t, i) => <span key={t}>{i ? ", " : ""}<Link href={`/company/${t}`}>{t}</Link></span>)}.</p> : null}
       </>}
-  </Card>;
+  </section>;
 }
 
 // ---- 3. Next 21 days ----------------------------------------------------------------------------------------------
@@ -213,13 +230,13 @@ export function TodayView({ system, status }: { system: ResearchSystem; status?:
   return <div className="tdy">
     <header className="tdy-top">
       <div>
-        <h1>Today</h1>
+        <h1 className="display-h">Today</h1>
         <p suppressHydrationWarning>{now.toLocaleDateString("en-US", { weekday: "long", day: "numeric", month: "long" })}</p>
       </div>
       <div className="tdy-top-right">{status}</div>
     </header>
 
-    {refreshNote ? <div className={`data-refresh tone-${refreshNote.tone}`} role="status"><i aria-hidden="true" />{refreshNote.text}</div> : null}
+    {refreshNote && refreshNote.tone !== "done" ? <div className={`data-refresh tone-${refreshNote.tone}`} role="status"><i aria-hidden="true" />{refreshNote.text}</div> : null}
     {age.stale ? <div className="tdy-stale" role="status" suppressHydrationWarning>
       <i aria-hidden="true" />Market data is from {environment?.as_of ?? "an unknown date"}{age.days != null ? `, ${age.days} business days ago` : ""}{holdings[0]?.last5d?.to ? `; company price moves run to ${shortDay(holdings[0].last5d.to)}` : ""}.
     </div> : null}
