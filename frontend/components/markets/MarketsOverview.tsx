@@ -10,14 +10,14 @@ import { sectorSentence, type SectorResearchObject } from "../../lib/market-rese
 // no sector preselected. Theme and asset ETFs (semiconductors, uranium, gold...) sit below as a second tier.
 
 export const GICS_SECTORS = ["XLK", "XLC", "XLY", "XLP", "XLV", "XLF", "XLE", "XLI", "XLB", "XLU", "XLRE"];
-const GICS_NAME: Record<string, string> = {
+export const GICS_NAME: Record<string, string> = {
   XLK: "Technology", XLC: "Communication", XLY: "Consumer discretionary", XLP: "Consumer staples", XLV: "Health care", XLF: "Financials",
   XLE: "Energy", XLI: "Industrials", XLB: "Materials", XLU: "Utilities", XLRE: "Real estate"
 };
 type Horizon = "rel1m" | "rel3m" | "rel6m";
 const HORIZONS: Array<[Horizon, string]> = [["rel1m", "1 month"], ["rel3m", "3 months"], ["rel6m", "6 months"]];
 
-function pts(value: number | null | undefined) {
+export function pts(value: number | null | undefined) {
   return typeof value === "number" && Number.isFinite(value) ? `${value >= 0 ? "+" : "−"}${Math.abs(value * 100).toFixed(1)}` : "—";
 }
 

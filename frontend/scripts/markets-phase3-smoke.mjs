@@ -27,55 +27,43 @@ try {
   if (sectorLinks !== 11) throw new Error(`Expected 11 sector rows on the market overview, found ${sectorLinks}`);
   await page.getByRole("region", { name: "Themes and assets" }).waitFor();
   await page.screenshot({ path: path.join(output, "00-market-overview.png") });
-  await overview.getByRole("link", { name: /Technology/ }).click();
-  await page.getByRole("heading", { name: /Where leadership is moving/i }).waitFor();
+  // Map view (2026-11-27): the 11 sectors on one plane, opened from the overview.
+  await page.getByRole("tab", { name: "Map", exact: true }).click();
+  await page.getByRole("region", { name: "Sectors by six-month performance and crowding" }).waitFor();
+  await page.screenshot({ path: path.join(output, "01-sector-map-view.png") });
+  await page.getByRole("tab", { name: "Heatmap", exact: true }).click();
+
+  // The sector page (rebuilt 2026-11-27): hero, your holdings, money flow, industries inside, written industry map.
+  await page.getByRole("region", { name: "Sectors against the S&P 500" }).getByRole("link", { name: /Technology/ }).click();
+  await page.getByRole("heading", { name: "Technology", exact: true }).waitFor();
   await page.getByRole("link", { name: /All sectors/ }).waitFor();
-  await page.screenshot({ path: path.join(output, "01-sector-rotation.png") });
+  await page.getByRole("heading", { name: /Your holdings in this sector/ }).waitFor();
+  await page.getByRole("heading", { name: /Industries inside it/ }).waitFor();
+  await page.screenshot({ path: path.join(output, "02-technology-sector.png"), fullPage: true });
+  if (await page.getByText("Full Report").count()) throw new Error("The raw-JSON Full Report must not appear on the sector page.");
 
-  await page.screenshot({ path: path.join(output, "02-full-sector-leaderboard.png") });
-  // The rotation map now has points (checklist 5.5) whose labels can overlap; open the sector from the table.
-  await page.getByRole("region", { name: "Sector rotation table" }).getByRole("link", { name: /Semiconductors/i }).first().click();
-  await page.getByRole("heading", { name: "Semiconductors" }).waitFor();
-  await page.screenshot({ path: path.join(output, "03-semiconductors-snapshot.png") });
+  await page.getByRole("link", { name: /Semiconductors/ }).first().click();
+  await page.getByRole("heading", { name: "Semiconductors", exact: true }).waitFor();
+  await page.getByRole("link", { name: /Part of Technology/ }).waitFor();
+  await page.getByRole("heading", { name: /How this industry works/ }).waitFor();
+  if (await page.getByText(/compute-supply-chain|fixture/i).count()) throw new Error("Engine slugs or fixture wording leaked onto the sector page.");
+  await page.screenshot({ path: path.join(output, "03-semiconductors-sector.png"), fullPage: true });
 
-  await page.getByRole("link", { name: /Explore Sector Structure/i }).click();
-  await page.getByRole("heading", { name: /compute-supply-chain/i }).waitFor();
-  await page.locator(".sector-structure-workspace").scrollIntoViewIfNeeded();
-  await page.screenshot({ path: path.join(output, "04-semiconductors-structure-map.png") });
+  // Old deep links (report, structure, leadership) still land on the sector page, never on raw JSON.
+  for (const view of ["report", "structure", "leadership", "breadth", "positioning"]) {
+    await page.goto(`${baseUrl}/markets?sector=semiconductors&view=${view}`, { waitUntil: "networkidle" });
+    await page.getByRole("heading", { name: "Semiconductors", exact: true }).waitFor();
+    if (await page.locator("pre").count()) throw new Error(`view=${view} rendered raw JSON.`);
+  }
 
-  await page.getByRole("link", { name: /Advanced Packaging/i }).click();
-  await page.getByRole("heading", { name: "Advanced Packaging" }).waitFor();
-  await page.locator(".sector-structure-workspace").scrollIntoViewIfNeeded();
-  await page.screenshot({ path: path.join(output, "05-semiconductor-node-selected.png") });
-
-  await page.goto(`${baseUrl}/company/NVDA?fixture=1&from=markets&sector=semiconductors`, { waitUntil: "networkidle" });
-  await page.getByRole("heading", { name: "NVIDIA", exact: true }).waitFor();
-  await page.screenshot({ path: path.join(output, "09-semiconductor-to-nvda.png") });
-  await page.goBack();
-  await page.getByRole("heading", { name: "Advanced Packaging" }).waitFor();
-
-  await page.goto(`${baseUrl}/markets?sector=semiconductors&view=leadership`, { waitUntil: "networkidle" });
-  await page.getByRole("heading", { name: /Companies expressing/i }).waitFor();
-  await page.screenshot({ path: path.join(output, "06-semiconductor-leadership.png") });
-
-  // The sector breadth view was deleted (checklist 10.10); an old link falls back to the sector snapshot.
-  await page.goto(`${baseUrl}/markets?sector=semiconductors&view=breadth`, { waitUntil: "networkidle" });
-  await page.getByRole("region", { name: "Semiconductors current market state" }).waitFor();
-
-  // Crowding is measured (checklist P5); either a measured state or Unavailable is valid.
-
-  await page.goto(`${baseUrl}/markets?sector=semiconductors&view=positioning`, { waitUntil: "networkidle" });
-  await page.getByRole("heading", { name: /^(Unavailable|Crowded|Extended|Neutral|Unloved)$/ }).first().waitFor();
-  await page.screenshot({ path: path.join(output, "08-semiconductor-crowding-positioning.png") });
-
-  for (const [sector, prefix] of [["energy", "10-energy"], ["financials", "12-financials"]]) {
+  // Sectors without a written industry map show none; readable slugs resolve.
+  await page.goto(`${baseUrl}/markets?sector=communication-services`, { waitUntil: "networkidle" });
+  await page.getByRole("heading", { name: "Communication", exact: true }).waitFor();
+  if (await page.getByRole("heading", { name: /How this industry works/ }).count()) throw new Error("Communication has no written industry map; none should show.");
+  for (const [sector, heading] of [["energy", "Energy"], ["financials", "Financials"]]) {
     await page.goto(`${baseUrl}/markets?sector=${sector}`, { waitUntil: "networkidle" });
-    await page.getByRole("heading", { name: new RegExp(sector === "energy" ? "Energy" : "Financials", "i") }).waitFor();
-    await page.screenshot({ path: path.join(output, `${prefix}-snapshot.png`) });
-    await page.goto(`${baseUrl}/markets?sector=${sector}&view=structure`, { waitUntil: "networkidle" });
-    await page.locator(".sector-structure-node").first().waitFor();
-    await page.locator(".sector-structure-workspace").scrollIntoViewIfNeeded();
-    await page.screenshot({ path: path.join(output, `${Number(prefix.slice(0, 2)) + 1}-${sector}-structure-map.png`) });
+    await page.getByRole("heading", { name: heading, exact: true }).waitFor();
+    await page.getByRole("heading", { name: /How this industry works/ }).waitFor();
   }
 
   await page.close();
@@ -86,10 +74,10 @@ try {
   const overflow = await mobile.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
   if (overflow) throw new Error("Markets overview has horizontal page overflow on mobile.");
   await mobile.screenshot({ path: path.join(output, "15-mobile-sector-rotation.png") });
-  await mobile.goto(`${baseUrl}/markets?sector=semiconductors&view=structure&node=advanced-packaging`, { waitUntil: "networkidle" });
-  await mobile.getByRole("heading", { name: "Advanced Packaging" }).waitFor();
-  await mobile.locator(".sector-structure-workspace").scrollIntoViewIfNeeded();
-  await mobile.screenshot({ path: path.join(output, "16-mobile-sector-structure.png") });
+  await mobile.goto(`${baseUrl}/markets?sector=semiconductors`, { waitUntil: "networkidle" });
+  await mobile.getByRole("heading", { name: "Semiconductors", exact: true }).waitFor();
+  if (await mobile.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1)) throw new Error("Sector page has horizontal page overflow on mobile.");
+  await mobile.screenshot({ path: path.join(output, "16-mobile-sector-page.png") });
   await mobile.close();
 } finally {
   await browser.close();

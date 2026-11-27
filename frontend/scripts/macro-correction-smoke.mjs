@@ -40,7 +40,7 @@ try {
   const japanMarker = page.getByRole("button", { name: "Open Japan macro profile" });   // Singapore removed 2026-11-22
   await japanMarker.hover();
   await page.getByText("JAPAN", { exact: true }).waitFor();
-  await page.getByRole("button", { name: "Brazil not available" }).hover();
+  await page.getByRole("button", { name: "Brazil: not modelled" }).hover();
   await page.getByText("No verified CHAINSTOX macro engine currently covers this economy.").waitFor();
 
   await open(page, "/macro/world");
@@ -56,7 +56,9 @@ try {
 
   await open(page, "/macro/world?region=KR");
   await page.getByRole("complementary", { name: "South Korea macro profile" }).waitFor();
-  await page.getByRole("button", { name: "Open KOSPI" }).waitFor();
+  // 2026-11-27: the panel leads with your holdings and the readings that exist (no "Open …" button row).
+  await page.locator(".mri-holdings").waitFor();
+  await page.locator(".macro-component-nav button").filter({ hasText: /^Markets/ }).waitFor();
   await page.screenshot({ path: path.join(artifacts, "08-south-korea-selected.png"), fullPage: true });
   await page.locator("#kospi-workspace > summary").click();
   if ((await page.locator("#kospi-workspace .macro-engine-visual").count()) !== 3) throw new Error("KOSPI workspace must expose factor, volatility and export visuals");
@@ -68,7 +70,7 @@ try {
     await open(page, `/macro/world?region=${region}`);
     const name = region === "US" ? "United States" : "Euro Area";
     await page.getByRole("complementary", { name: `${name} macro profile` }).waitFor();
-    await page.getByRole("button", { name: "Open Policy" }).click();
+    await page.locator(".macro-component-nav button").filter({ hasText: /^Policy/ }).click();
     await page.locator(".macro-component-detail").waitFor();
   }
 

@@ -35,37 +35,31 @@ try {
   assert.equal(clientResponse.meta.core_snapshot_id, response.meta.core_snapshot_id, "Browser and direct API selected different core snapshots");
   assert.equal(clientResponse.data.modules.core_market.payload.sectors.length, rows.length);
   await fs.writeFile(`${directory}/markets-browser-api.json`, JSON.stringify(clientResponse, null, 2));
-  const clientTable = clientPage.getByRole("region", { name: "Sector rotation table" });
+  // Since checklist 19.1 the overview shows the 11 S&P 500 sectors as tiles (the 34-row table is gone).
+  const clientTable = clientPage.getByRole("region", { name: "Sectors against the S&P 500" });
   await clientTable.waitFor({ timeout: 45000 });
-  assert.equal(await clientTable.locator("a").count(), rows.length, "Hydrated Markets page lost cached sector rows");
-  assert.ok((await clientTable.innerText()).includes(`${(healthcare.rel_6m * 100).toFixed(1)}%`));
-  // Since checklist 1.2 the observation date and source live in each row's tooltip and in
-  // the page's single data-status control, not in the visible row text.
-  for (const row of rows) {
-    const link = clientTable.locator("a").filter({ has: clientPage.locator("small", { hasText: new RegExp(`^${row.ticker}$`) }) });
-    assert.equal(await link.count(), 1, `Missing ${row.ticker}`);
-    const title = await link.getAttribute("title");
-    assert.ok(title?.includes(row.as_of), `${row.ticker} observation date missing from row tooltip`);
-    assert.ok(title?.includes(row.source), `${row.ticker} source missing from row tooltip`);
-  }
+  assert.equal(await clientTable.locator("a").count(), 11, "Hydrated Markets page lost sector tiles");
+  await clientPage.getByRole("tab", { name: "6 months" }).click();
+  const healthTile = clientTable.locator("a").filter({ hasText: "Health care" });
+  assert.ok((await healthTile.innerText()).includes(`${Math.abs(healthcare.rel_6m * 100).toFixed(1)}`), "Health care 6-month reading differs from the API");
   const latest = rows.map(row => row.as_of).sort().at(-1);
   assert.ok((await clientPage.locator("[data-research-status] summary").innerText()).includes(latest), "Data status does not show the latest observation date");
   await clientPage.screenshot({ path: `${directory}/markets-client.png`, fullPage: true });
   trace.push({ route: "/markets", stage: "normal browser", sectorRows: await clientTable.locator("a").count() });
   await clientPage.goto(`${base}/markets?sector=semiconductors`, { waitUntil: "domcontentloaded" });
-  const snapshot = clientPage.locator(".sector-snapshot-surface");
+  const snapshot = clientPage.locator(".sec-hero");
   await snapshot.waitFor({ timeout: 45000 });
   const semis = rows.find(row => row.ticker === "SMH");
   assert.ok(semis);
   const snapshotText = await snapshot.innerText();
-  assert.ok(snapshotText.includes(`${(semis.rel_6m * 100).toFixed(1)}%`));
+  assert.ok(snapshotText.includes(`${Math.abs(semis.rel_6m * 100).toFixed(1)}`));
   assert.ok(!snapshotText.includes("No sector row in this snapshot."));
   await clientPage.screenshot({ path: `${directory}/semiconductors-client.png`, fullPage: true });
   trace.push({ route: "/markets?sector=semiconductors", observationDate: semis.as_of, source: semis.source, relativeStrength6m: semis.rel_6m });
   await clientPage.goto(`${base}/markets?sector=semiconductors&view=leadership`, { waitUntil: "domcontentloaded" });
-  const leadership = clientPage.locator(".sector-leadership-bars");
-  await leadership.waitFor({ timeout: 45000 });
-  assert.equal(await leadership.locator("i").count(), 0, "Unmeasured company leadership must not draw quantitative bars");
+  // The leadership view was removed with the sector page rebuild (2026-11-27): its company figures were fixtures.
+  await clientPage.locator(".sec-hero").waitFor({ timeout: 45000 });
+  assert.equal(await clientPage.locator(".sector-leadership-bars").count(), 0, "Unmeasured company leadership must not be drawn");
   await clientPage.screenshot({ path: `${directory}/semiconductors-leadership.png`, fullPage: true });
   await fs.writeFile(`${directory}/markets-network-trace.json`, JSON.stringify(trace, null, 2));
   console.log(JSON.stringify(trace));
