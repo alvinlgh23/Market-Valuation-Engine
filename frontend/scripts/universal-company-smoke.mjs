@@ -27,9 +27,9 @@ await previewPage.route("**/api/research", async (route) => {
   return route.fulfill({ contentType: "application/json", body: JSON.stringify({ status: "FAILED", ticker: "AMD", profile: null, errors: ["Screenshot-only delayed response"] }) });
 });
 await previewPage.goto(`${baseUrl}/company/AMD`, { waitUntil: "load" });
-await previewPage.getByText("COMPANY RESEARCH HAS NOT YET BEEN GENERATED").waitFor();
+// Companies outside the watchlist build on first open (2026-11-27): no click needed.
+await previewPage.getByText("BUILDING THIS COMPANY'S PAGE").waitFor();
 await previewPage.screenshot({ path: path.join(output, "02-resolved-amd-before-analysis.png") });
-await previewPage.getByRole("button", { name: /Analyze Company/ }).click();
 await previewPage.getByText("Collecting financial data").waitFor();
 await previewPage.screenshot({ path: path.join(output, "03-analyzing-amd.png") });
 await preview.close();

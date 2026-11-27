@@ -30,6 +30,16 @@
 
 ## 进度日志
 
+### 2026-11-27：自选股之外的公司也能直接打开（owner 批准 3 项）+ 板块总览
+
+- **打开即生成**：不在自选股里的公司，第一次打开时自动生成页面（只用 Yahoo 和 SEC 的结构化数据，不调用 AI，约 20 秒），之后存下来，再打开是秒开。去掉「Analyze Company」按钮（失败时保留「Build this page」重试）。
+- **航空航天被误判为 SPAC 的 bug**：旧规则只要名字或行业里出现 "spac" 这几个字母就判为空壳公司，"aero**spac**e" 正好包含，所以 GE、Boeing、Lockheed、RTX、Howmet、TransDigm 全部被挡住；另外 Valuation_model 里单独的 "shell" 会把 Shell plc 也判进去。四个文件改用同一个整词规则（新文件 `security_words.py`），真正的 blank check / shell company 仍会被识别。新测试 `tests/test_security_words.py`。估值公式没有改。
+- **REIT 页面**：REIT 的价值要看物业现金流（FFO），模型还没有，所以不给公允价值；页面改为显示一句话结论和适用的读数（业务、分析师预期、资金流、拥挤度、宏观），并明说「REIT valuation isn't modelled yet」。标签从 Unsupported 改为 Partial readings。
+- **板块总览**：11 个板块砖块改为 4+4+3 排列，每块显示持仓（超过 4 只显示前 3 只加 +N）；主题条从中间向两边延伸；新增「Map」视图（横轴 6 个月相对 S&P 500，纵轴拥挤度，点上标持仓）。行业基金按 GICS 归到上级板块（`lib/sector-holdings.ts`）。
+- 测试：Python 484 通过，tsc、lint 干净，companies / markets / dashboard 三个浏览器 smoke 通过，today-focus 和 market-words 规则测试通过。
+- 仍待做：板块单页重做并删除 Full Report、世界地图、经济体卡片和韩国。
+
+
 ### 2026-11-26：P20 1–3（每家公司的白话结论、读数稳定、回落后的增长参照）
 
 - **结论：** 判断卡顶部新增"What the data says"，用四句话说明生意、股价、两者是否一致、股价假设了什么。NVDA 显示"生意变好但股价下跌，方向相反"。

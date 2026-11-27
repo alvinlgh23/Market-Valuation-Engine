@@ -37,6 +37,7 @@ import urllib.request
 from datetime import datetime, timedelta, timezone
 
 import yfinance as yf
+from security_words import looks_like_shell
 
 from data_sources.market_history import fetch_yahoo_history
 
@@ -4406,8 +4407,7 @@ def infer_security_type(info, integrity, quality=None):
         return "INVALID_OR_UNRESOLVED"
     if not integrity["revenue_history_available"] and not integrity["price_history_available"]:
         return "PRIVATE_COMPANY_PROXY" if integrity["ticker_mapping_confidence"] == "Low" else "INSUFFICIENT_DATA"
-    shell_pattern = r"\b(blank check|spac|shell)\b"
-    if re.search(shell_pattern, name) or re.search(shell_pattern, industry):
+    if looks_like_shell(name, industry):
         return "SPAC_OR_SHELL"
     if (sector == "financial services" or "bank" in industry or "insurance" in industry or "capital markets" in industry) and not is_payment_network(info):
         return "FINANCIAL_INSTITUTION"

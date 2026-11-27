@@ -42,6 +42,7 @@ function holding(ticker: string, card: Json): TodayHolding {
     watch: arr(card.falsification).map(String).filter((line) => /^(Valuation|Fundamentals|Estimates):/.test(line)).slice(0, 2),
     strain: str(constraint.label) ? { label: String(constraint.label), reading: str(constraint.reading) ?? "", change: num(constraint.change), sales: num(constraint.sales_change) } : null,
     compare: compareNumbers(card),
+    sectorEtf: str(card.sector_etf),
     aiNote: str(note.note) ? { note: String(note.note), quote: str(note.quote), model: str(review.model), form: str(pick(review, "source", "form")) } : null,
   };
 }
