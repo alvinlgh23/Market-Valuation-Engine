@@ -64,7 +64,7 @@ try {
   await page.getByText("Current economic read").waitFor();
   await shot(page, "09-company-snapshot.png", true);
   await page.getByRole("button", { name: /^Economic map$/ }).click();
-  await page.locator(".economic-map-legend").waitFor();   // the workspace now opens inline, not as a dialog
+  await page.locator(".eng-chain .eng-step").first().waitFor({ timeout: 60000 });   // the chain from sales to price (2026-11-27)
   await shot(page, "10-economic-map.png");
 
   const api = await page.request.get(`${baseUrl}/api/research?scope=dashboard`);

@@ -19,21 +19,18 @@ async function screenshot(page, name, fullPage = true) { await page.screenshot({
 try {
   const page = await browser.newPage({ viewport: { width: 1600, height: 1050 } });
   observe(page);
-  let response = await page.goto(baseUrl, { waitUntil: "networkidle" });
+  let response = await page.goto(baseUrl, { waitUntil: "load" });
   if (!response?.ok()) throw new Error(`Overview returned ${response?.status()}`);
-  await page.getByRole("heading", { name: "Market intelligence" }).waitFor();
-  if ((await page.locator(".system-read-grid > a").count()) !== 6) throw new Error("Executive state cards changed unexpectedly");
-  if ((await page.locator(".ranked-chart").count()) < 1) throw new Error("Ranked watch visualization missing");
-  if ((await page.locator(".diverging-chart section").count()) !== 2) throw new Error("Unlike observed-move units are not separated");
-  if ((await page.locator(".heatmap-cell").count()) !== 30) throw new Error("Macro regime matrix is incomplete");
-  if ((await page.locator(".coverage-chart button").count()) !== 6) throw new Error("Coverage visualization is incomplete");
-  if ((await page.locator(".company-matrix-section").count()) !== 1) throw new Error("Company research matrix surface is missing");
+  // The overview is now the Today page: the holdings verdicts, the market read and the story.
+  await page.locator(".tdy-headline").waitFor({ timeout: 120000 });
+  await page.locator(".tdy-verdicts .tdy-verdict-line").first().waitFor({ timeout: 120000 });
+  await page.locator(".tdy-story li").first().waitFor({ timeout: 120000 });
   await screenshot(page, "01-overview-visualizations.png");
 
   response = await page.goto(`${baseUrl}/macro/world`, { waitUntil: "networkidle" });
   if (!response?.ok()) throw new Error(`World Macro returned ${response?.status()}`);
   await page.getByRole("heading", { name: "World Macro Map" }).waitFor();
-  if ((await page.locator(".macro-map-marker").count()) !== 6) throw new Error("World coverage map marker count changed");
+  if ((await page.locator(".macro-map-marker").count()) !== 5) throw new Error("World coverage map marker count changed (four economies plus one unsupported)");
   await screenshot(page, "02-world-macro.png");
 
   await page.goto(`${baseUrl}/macro/inflation`, { waitUntil: "networkidle" });
@@ -43,14 +40,7 @@ try {
   await page.locator(".inflation-indicator-inspector").waitFor();
   await screenshot(page, "03-us-inflation-matrix.png");
 
-  await page.goto(`${baseUrl}/macro/world?mode=regions&region=SG&detail=currency`, { waitUntil: "networkidle" });
-  await page.getByRole("complementary", { name: "Singapore macro profile" }).waitFor();
-  const neer = page.locator("details").filter({ hasText: "SHADOW S$NEER" });
-  await neer.locator("summary").click();
-  await neer.locator(".time-series-chart").waitFor();
-  if ((await neer.locator(".diverging-chart button").count()) !== 12) throw new Error("NEER contribution chart does not expose all 12 currencies");
-  await neer.locator(".diverging-chart button").first().click();
-  await screenshot(page, "04-singapore-neer.png");
+  // Singapore and the S$NEER view were removed on 2026-11-22 (owner decision: global audience).
 
   await page.goto(`${baseUrl}/macro/world?mode=regions&region=KR&detail=markets`, { waitUntil: "networkidle" });
   await page.getByRole("complementary", { name: "South Korea macro profile" }).waitFor();
@@ -72,10 +62,11 @@ try {
 
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
   observe(mobile);
-  await mobile.goto(baseUrl, { waitUntil: "networkidle" });
+  await mobile.goto(baseUrl, { waitUntil: "load" });
+  await mobile.locator(".tdy-headline").waitFor({ timeout: 120000 });
   const overflow = await mobile.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
   if (overflow) throw new Error("Visualization Overview has page-level mobile overflow");
-  await mobile.locator(".ranked-chart").waitFor();
+  await mobile.locator(".tdy-headline").waitFor({ timeout: 120000 });
   await mobile.close();
   await page.close();
 } finally {
@@ -83,4 +74,4 @@ try {
 }
 
 if (errors.length) throw new Error(errors.join("\n"));
-console.log("Visualization refactor checks passed; six required screenshots captured.");
+console.log("Visualization refactor checks passed; five required screenshots captured.");

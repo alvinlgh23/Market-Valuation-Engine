@@ -17,7 +17,8 @@ try {
 
   const smh = sectors.find((row) => row.ticker === "SMH");
   await page.goto(`${baseUrl}/markets?sector=semiconductors`, { waitUntil: "networkidle" });
-  await page.getByText(/Python research|PYTHON_CACHE|MEMORY_CACHE|BUNDLED_LAST_VALID/i).first().waitFor();
+  // Data source and date are shown in the header ("Saved data · market data as of …" or live).
+  await page.getByText(/(Saved|Live) data · market data as of \d{4}-\d{2}-\d{2}/i).first().waitFor();
   if (smh && Number.isFinite(smh.rel_6m)) {
     const value = `${smh.rel_6m > 0 ? "+" : ""}${(smh.rel_6m * 100).toFixed(1)}%`;
     await page.getByText(value, { exact: true }).first().waitFor();
@@ -27,11 +28,15 @@ try {
   await page.screenshot({ path: path.join(output, "01-live-markets.png"), fullPage: true });
 
   for (const ticker of ["PLTR", "NVDA", "TSM"]) {
-    await page.goto(`${baseUrl}/company/${ticker}?fixture=1`, { waitUntil: "networkidle" });
-    await page.getByText("Binding", { exact: true }).waitFor();
-    await page.getByText("Direction Unknown", { exact: true }).first().waitFor();
+    // Company operating disclosures (with binding status, direction and counterevidence) live in the Evidence tab.
+    await page.goto(`${baseUrl}/company/${ticker}?fixture=1&workspace=evidence`, { waitUntil: "networkidle" });
+    const disclosures = page.locator("details.ev-operational");
+    await disclosures.locator("summary").first().click();
+    const research = disclosures.getByRole("region", { name: "Operational research", exact: true });
+    await research.locator("details > summary").first().click();
+    await research.getByText(/Binding: .* · Direction: Direction Unknown/).first().waitFor();
     assert.equal(await page.getByText("Observed Easing", { exact: true }).count(), 0);
-    await page.getByText("Counterevidence", { exact: true }).first().waitFor();
+    await research.getByText(/^Counterevidence:/).first().waitFor();
   }
 
   await page.goto(`${baseUrl}/company/PLTR?fixture=1&workspace=evidence`, { waitUntil: "networkidle" });
