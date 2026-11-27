@@ -1,4 +1,6 @@
+import { financialModel } from "../../lib/financial-model";
 import { arr, big, money, num, obj, pct, pick, str, type PriceChart, type ReportData } from "../../lib/report-data";
+import { AnnualTable, BalanceTable, SegmentTable, annualSource, balanceSource, segmentSource } from "./FinancialTables";
 
 // The downloadable research note, laid out like a sell-side equity research report: a first page with headline,
 // key takeaways and a data sidebar; numbered exhibits with sources; a financial summary; important disclosures.
@@ -48,16 +50,10 @@ function Chart({ chart, ticker }: { chart: PriceChart; ticker: string }) {
 }
 
 export function ResearchNote({ data }: { data: ReportData }) {
-  const card = obj(data.card);
+  const m = financialModel(data);
+  const { card, axes, vdetail, quarter, metrics, bank, isBank, currency, price, revenue, opIncome, fcf, years, cols, growth, margin, dilution, implied, refs } = m;
   const report = data.valuation;
-  const axes = obj(card.axes);
-  const vdetail = obj(pick(axes, "valuation", "detail"));
-  const quarter = obj(pick(axes, "fundamentals", "detail", "quarterly"));
-  const edetail = obj(pick(axes, "expectations", "detail"));
-  const currency = str(report?.company.currency) ?? "USD";
-  const price = num(vdetail.price) ?? num(report?.company.current_market_price);
   const name = str(card.name) ?? str(report?.company.name) ?? data.ticker;
-  const metrics = obj(data.snapshot?.metrics);
   const conclusion = obj(card.conclusion);
   const short = obj(conclusion.short);
   const reading = obj(card.price_reading);
@@ -65,31 +61,14 @@ export function ResearchNote({ data }: { data: ReportData }) {
   const since = obj(pick(card, "attribution", "recent_move", "since_window_end"));
   const fair = obj(vdetail.fair_value);
   const band = obj(vdetail.growth_band);
-  const bank = obj(vdetail.bank_implied_roe);
-  const isBank = num(bank.implied_roe) != null;
   const ai = obj(card.ai);
   const writeup = obj(ai.writeup);
   const review = obj(ai.review);
-  const operating = obj(card.operating);
-  const histories = obj(data.snapshot?.histories);
-  const revenue = arr(histories.revenue).map(num);
-  const opIncome = arr(histories.operating_income).map(num);
-  const ocf = arr(histories.operating_cash_flow).map(num);
-  const capex = arr(histories.capex).map(num);
-  const fcf = arr(histories.fcf).map(num);
-  const years = Math.min(4, revenue.length);
-  const cols = Array.from({ length: years }, (_, i) => i);
-  const growth = (i: number) => (revenue[i] != null && revenue[i + 1] != null && revenue[i + 1]! > 0 ? revenue[i]! / revenue[i + 1]! - 1 : null);
-  const margin = (series: Array<number | null>, i: number) => (series[i] != null && revenue[i] ? series[i]! / revenue[i]! : null);
-  const shares = arr(report?.historical_base.diluted_share_history).map(num).filter((v): v is number => v != null && v > 0);
-  const dilution = shares.length >= 2 ? Math.pow(shares[0] / shares[shares.length - 1], 1 / (shares.length - 1)) - 1 : null;
+  const operating = m.operating;
   const sens = obj(report?.sensitivity);
   const sensWacc = arr(sens.wacc).map(num);
   const sensTg = arr(sens.terminal_growth).map(num);
   const sensValues = arr(sens.values).map((row) => arr(row).map(num));
-  const reverse = obj(report?.fair_value?.method === "PHASED" && report?.fair_value.reverse_dcf ? report.fair_value.reverse_dcf : report?.reverse_dcf);
-  const implied = num(vdetail.implied_5y_revenue_cagr) ?? num(reverse.required_5y_revenue_cagr);
-  const refs = [num(band.consensus_2y_faded), num(band.history_3y_faded)].filter((v): v is number => v != null).sort((a, b) => a - b);
   const sentences = arr(conclusion.sentences).map(String);
   const agreement = AGREEMENT[String(conclusion.agreement)] ?? null;
   const valueLine = str(short.value);
@@ -213,34 +192,9 @@ export function ResearchNote({ data }: { data: ReportData }) {
     <section className="ib-section">
       <h3 className="ib-h">Financial summary</h3>
       {str(quarter.summary) ? <p><b>Latest quarter.</b> {String(quarter.summary)}</p> : null}
-      {years >= 2 ? <Exhibit n={next()} title={`Annual financial summary (${currency}, fiscal years, newest first)`} source={isBank ? "Company filings via structured data provider. Bank cash flows swing with deposits and lending, so cash-flow lines are not shown." : "Company filings via structured data provider; CHAINSTOX. Free cash flow is after capital spending."}>
-        <table className="ib-table ib-fin"><thead><tr><th>Fiscal year</th>{cols.map((i) => <th key={i}>{i === 0 ? "Latest" : `FY −${i}`}</th>)}</tr></thead><tbody>
-          <tr><td>Revenue</td>{cols.map((i) => <td key={i}>{big(revenue[i], currency)}</td>)}</tr>
-          <tr className="ib-subrow"><td>% growth</td>{cols.map((i) => <td key={i}>{pct(growth(i), 1, true)}</td>)}</tr>
-          {!isBank ? <>
-            <tr><td>Operating income</td>{cols.map((i) => <td key={i}>{big(opIncome[i], currency)}</td>)}</tr>
-            <tr className="ib-subrow"><td>% margin</td>{cols.map((i) => <td key={i}>{pct(margin(opIncome, i))}</td>)}</tr>
-            <tr><td>Operating cash flow</td>{cols.map((i) => <td key={i}>{big(ocf[i], currency)}</td>)}</tr>
-            <tr><td>Capital spending</td>{cols.map((i) => <td key={i}>{big(capex[i], currency)}</td>)}</tr>
-            <tr className="ib-total"><td>Free cash flow</td>{cols.map((i) => <td key={i}>{big(fcf[i], currency)}</td>)}</tr>
-            <tr className="ib-subrow"><td>% margin</td>{cols.map((i) => <td key={i}>{pct(margin(fcf, i))}</td>)}</tr>
-          </> : null}
-        </tbody></table>
-      </Exhibit> : null}
-      {isBank ? <Exhibit n={next()} title="Balance sheet and estimates" source="SEC company facts (10-K/10-Q); Yahoo Finance; CHAINSTOX justified price-to-book.">
-        <table className="ib-table"><tbody>
-          <tr><td>Deposits</td><td>{big(metrics.deposits, currency)}</td><td>Change from a year earlier</td><td>{pct(metrics.deposit_growth, 1, true)}</td></tr>
-          <tr><td>Loans</td><td>{big(metrics.loans, currency)}</td><td>Change from a year earlier</td><td>{pct(metrics.loan_growth, 1, true)}</td></tr>
-          <tr><td>Return on equity, latest year</td><td>{pct(bank.latest_roe)}</td><td>Price-to-book</td><td>{num(bank.price_to_book) != null ? `${num(bank.price_to_book)!.toFixed(2)}x` : "—"}</td></tr>
-          <tr><td>Analyst revisions, 30 days</td><td>{num(edetail.revisions_up_30d) != null ? `${edetail.revisions_up_30d} up / ${edetail.revisions_down_30d} down` : "—"}</td><td>Consensus revenue growth, next year</td><td>{pct(edetail.revenue_growth_next_year ?? vdetail.consensus_next_year_growth, 1, true)}</td></tr>
-        </tbody></table>
-      </Exhibit> : <Exhibit n={next()} title="Balance sheet and estimates" source="Latest 10-Q/10-K; Yahoo Finance analyst revisions.">
-        <table className="ib-table"><tbody>
-          <tr><td>Free cash flow, last four quarters</td><td>{big(quarter.fcf_ttm, currency)}</td><td>Net debt</td><td>{big(quarter.net_debt, currency)}</td></tr>
-          <tr><td>Financial health</td><td>{str(pick(quarter, "health", "label")) ?? "—"}</td><td>Diluted shares, yearly change</td><td>{dilution != null ? `${pct(dilution, 1, true)} (${shares.length - 1}y)` : "—"}</td></tr>
-          <tr><td>Analyst revisions, 30 days</td><td>{num(edetail.revisions_up_30d) != null ? `${edetail.revisions_up_30d} up / ${edetail.revisions_down_30d} down` : "—"}</td><td>Consensus sales growth, next year</td><td>{pct(edetail.revenue_growth_next_year ?? vdetail.consensus_next_year_growth, 1, true)}</td></tr>
-        </tbody></table>
-      </Exhibit>}
+      {years >= 2 ? <Exhibit n={next()} title={`Annual financial summary (${currency}, fiscal years, newest first)`} source={annualSource(m)}><AnnualTable m={m} /></Exhibit> : null}
+      <Exhibit n={next()} title="Balance sheet and estimates" source={balanceSource(m)}><BalanceTable m={m} /></Exhibit>
+      {m.segments.length ? <Exhibit n={next()} title="Company-reported operating measures" source={segmentSource(m.segments)}><SegmentTable segments={m.segments} /></Exhibit> : null}
       {arr(operating.signals).length ? <Exhibit n={next()} title={`Operating signals: ${str(operating.summary) ?? ""}`} source="SEC company facts (10-K/10-Q); each measure against sales growth over the same period.">
         <table className="ib-table"><thead><tr><th>Measure</th><th>Change</th><th>Sales</th><th>Reading</th><th>Period</th></tr></thead>
           <tbody>{arr(operating.signals).map((raw, i) => { const s = obj(raw); return <tr key={i}><td>{str(s.label)}</td><td>{pct(s.change, 0, true)}</td><td>{pct(s.sales_change, 0, true)}</td><td>{str(s.reading)}</td><td>{str(s.basis)}, {dateText(s.as_of)}</td></tr>; })}</tbody></table>

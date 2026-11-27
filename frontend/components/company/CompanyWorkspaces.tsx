@@ -2,17 +2,16 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { CompanyResearchViewModel, EvidenceViewModel } from "../../lib/company-economics-types";
-import { confidenceLabel, formatValue, freshnessLabel, humanize } from "../../lib/companyEconomicsAdapter";
+import { formatValue, freshnessLabel, humanize } from "../../lib/companyEconomicsAdapter";
 import { loadCachedCompanyCard, loadCompanyCard } from "../../lib/company-card";
-import { EconomicMap, evidenceForEconomicNode } from "./EconomicMap";
+import { EngineChainView, FinancialStatements } from "./EngineTabs";
+import type { Operating } from "./StoredProfileReads";
 import { OperationalResearch } from "./OperationalResearch";
 import { PriceDriversPanel, type Attribution, type PriceReading } from "./PriceDrivers";
 import { ConfidenceLabel, EvidenceTypeBadge, Unavailable } from "./ResearchPrimitives";
-import { OperatingSignals, type Operating } from "./StoredProfileReads";
 import { InspectorRead, ResearchWorkspace, WorkspaceAction } from "../research/ResearchWorkspace";
 
 export type CompanyWorkspaceKind = "economics" | "valuation" | "thesis" | "financials" | "evidence";
-type GraphNode = CompanyResearchViewModel["raw"]["economic_graph"]["nodes"][number];
 
 type LiveCardSnapshot = {
   axes?: Record<string, { state?: string; confidence?: string; evidence?: string[]; detail?: Record<string, unknown> }>;
@@ -78,65 +77,6 @@ function EvidenceList({ items, selectedId, onSelect }: { items: EvidenceViewMode
   );
 }
 
-function evidenceByType(items: EvidenceViewModel[]) {
-  return {
-    direct: items.filter((item) => item.typeLabel === "Direct"),
-    proxy: items.filter((item) => item.typeLabel === "Proxy"),
-    inference: items.filter((item) => item.typeLabel === "Inference")
-  };
-}
-
-function evidenceFromIds(company: CompanyResearchViewModel, ids: string[]) {
-  return ids.map((id) => company.evidenceById[id]).filter(Boolean);
-}
-
-function relatedGaps(company: CompanyResearchViewModel, node: GraphNode) {
-  const normalized = node.id.toLowerCase();
-  return company.dataGaps.filter((gap) => [gap.related_driver, gap.related_constraint, gap.missing_field]
-    .filter(Boolean)
-    .some((value) => String(value).toLowerCase() === normalized));
-}
-
-function NodeInspector({ company, node, onEvidence }: { company: CompanyResearchViewModel; node: GraphNode | null; onEvidence: (items: EvidenceViewModel[]) => void }) {
-  if (!node) return <div className="inspector-empty"><span>SELECT NODE</span><h3>Investigate the economic system</h3><p>Select a driver, constraint, or financial outcome without leaving the map.</p></div>;
-  const research = company.raw.operational_research;
-  const operational = research?.series.find((series) => series.definition.id === node.id);
-  if (research && operational) return <><OperationalResearch research={{ ...research, series: [operational] }} expanded /><WorkspaceAction onClick={() => onEvidence(evidenceForEconomicNode(node, company))}>Trace Evidence</WorkspaceAction></>;
-  const evidence = evidenceForEconomicNode(node, company);
-  const isConstraint = node.type === "constraint";
-  const driver = company.growthDrivers.find((item) => item.primitive.toLowerCase() === node.id);
-  const splitEvidence = evidenceByType(evidence);
-  const contraryEvidence = isConstraint ? evidenceFromIds(company, company.primaryConstraint.contrary_evidence_ids) : [];
-  const supportingEvidence = isConstraint ? evidenceFromIds(company, company.primaryConstraint.supporting_evidence_ids) : evidence;
-  const inferenceEvidence = isConstraint ? evidenceFromIds(company, company.primaryConstraint.inference_evidence_ids) : splitEvidence.inference;
-  const gaps = isConstraint ? company.primaryConstraint.data_gaps : relatedGaps(company, node);
-  return <div className="node-inspector-content">
-    <header><span>{humanize(node.type)} / {node.id}</span><h3>{node.label}</h3></header>
-    {isConstraint ? <>
-      <InspectorRead label="Economic mechanism"><p>{company.primaryConstraint.economic_mechanism}</p></InspectorRead>
-      <div className="inspector-read-grid"><InspectorRead label="Binding status">{humanize(company.primaryConstraint.constraint_status || "EVIDENCE_INSUFFICIENT")}</InspectorRead><InspectorRead label="Directional status">{humanize(company.primaryConstraint.direction_status || company.primaryConstraint.direction)}</InspectorRead><InspectorRead label="Evidence basis">{company.primaryConstraint.basis}</InspectorRead></div>
-      <InspectorRead label="Direct evidence">{evidenceByType(supportingEvidence).direct.length ? <EvidenceList items={evidenceByType(supportingEvidence).direct} onSelect={(item) => onEvidence([item])} /> : <p>No direct constraint evidence is exposed.</p>}</InspectorRead>
-      <InspectorRead label="Proxy / inference evidence">{[...evidenceByType(supportingEvidence).proxy, ...inferenceEvidence].length ? <EvidenceList items={[...evidenceByType(supportingEvidence).proxy, ...inferenceEvidence]} onSelect={(item) => onEvidence([item])} /> : <p>No proxy or inference item is attached.</p>}</InspectorRead>
-      <InspectorRead label="Counter evidence">{contraryEvidence.length ? <EvidenceList items={contraryEvidence} onSelect={(item) => onEvidence([item])} /> : <p>No contrary evidence recorded for this constraint.</p>}</InspectorRead>
-      <InspectorRead label="Evidence limitations">{gaps.length ? gaps.map((gap) => <p key={gap.missing_field}>{humanize(gap.missing_field)}: {gap.why_it_matters}</p>) : <p>No constraint-specific limitation is recorded.</p>}</InspectorRead>
-      <InspectorRead label="What would falsify this read">{company.raw.falsification_conditions.map((item) => <p key={item.condition}>{item.condition}</p>)}</InspectorRead>
-      <InspectorRead label="Current inference"><p>{company.primaryConstraint.inference}</p></InspectorRead>
-    </> : driver ? <>
-      <div className="inspector-read-grid"><InspectorRead label="Direction">{evidence[0] ? humanize(evidence[0].direction) : "Unknown"}</InspectorRead><InspectorRead label="Contribution">Not directly isolated by current structured profile</InspectorRead><InspectorRead label="Confidence">{confidenceLabel(driver.confidence)}</InspectorRead></div>
-      <InspectorRead label="Economic role"><p>{driver.importance === "PRIMARY" ? "Primary contributor" : "Secondary contributor"} within {company.growthEquation}.</p></InspectorRead>
-      <InspectorRead label="Direct evidence">{splitEvidence.direct.length ? <EvidenceList items={splitEvidence.direct} onSelect={(item) => onEvidence([item])} /> : <p>No direct driver series is exposed.</p>}</InspectorRead>
-      <InspectorRead label="Proxy / inference evidence">{[...splitEvidence.proxy, ...splitEvidence.inference].length ? <EvidenceList items={[...splitEvidence.proxy, ...splitEvidence.inference]} onSelect={(item) => onEvidence([item])} /> : <p>No proxy or inference item is attached.</p>}</InspectorRead>
-      <InspectorRead label="Evidence limitations">{gaps.length ? gaps.map((gap) => <p key={gap.missing_field}>{humanize(gap.missing_field)}: {gap.why_it_matters}</p>) : <p>No driver-specific limitation is recorded.</p>}</InspectorRead>
-    </> : <>
-      <InspectorRead label="Economic role"><p>This node connects company economics to {humanize(node.type).toLowerCase()}.</p></InspectorRead>
-      <InspectorRead label="Financial translation read">{evidence.length ? <p>{evidence.map((item) => item.statement).join(" ")}</p> : <p>Insufficient connected evidence.</p>}</InspectorRead>
-      <InspectorRead label="Evidence nature">{evidence.length ? <p>{splitEvidence.direct.length} direct / {splitEvidence.proxy.length} proxy / {splitEvidence.inference.length} inference</p> : <p>No connected evidence classification.</p>}</InspectorRead>
-    </>}
-    <div className="inspector-evidence-preview"><span>CONNECTED EVIDENCE / {evidence.length}</span><EvidenceList items={evidence.slice(0, 4)} onSelect={(item) => onEvidence([item])} /></div>
-    <WorkspaceAction onClick={() => onEvidence(evidence)}>Trace All Node Evidence</WorkspaceAction>
-  </div>;
-}
-
 function EvidenceWorkspace({ company, initialItems, onClose, onResetFilter, inline = false }: { company: CompanyResearchViewModel; initialItems?: EvidenceViewModel[]; onClose: () => void; onResetFilter?: () => void; inline?: boolean }) {
   const [filter, setFilter] = useState<"all" | "direct" | "proxy" | "inference" | "gaps">("all");
   const items = initialItems?.length ? initialItems : company.evidence;
@@ -163,6 +103,7 @@ function EvidenceWorkspace({ company, initialItems, onClose, onResetFilter, inli
         </div>
         <nav>{(["all", "direct", "proxy", "inference", "gaps"] as const).map((key) => <button type="button" className={filter === key ? "active" : ""} key={key} onClick={() => setFilter(key)}>{key}</button>)}</nav>
       </div>
+      {company.raw.operational_research?.series.length && !initialItems?.length ? <details className="ev-operational"><summary>Company operating disclosures · source detail</summary><OperationalResearch research={company.raw.operational_research} /></details> : null}
       {filter === "gaps" ? <div className="workspace-gap-list">{company.dataGaps.map((gap) => <article key={`${gap.missing_field}-${gap.related_constraint}`}><span>DATA GAP</span><h3>{gap.label}</h3><p>{gap.why_it_matters}</p><small>{gap.confidence_impact}</small></article>)}</div> : <EvidenceList items={filtered} selectedId={selected?.id} onSelect={(item) => { setSelectedId(item.id); setSourceOpen(false); }} />}
     </ResearchWorkspace>
     {selected && sourceOpen ? <SourceTrace item={selected} asOf={company.asOf} onClose={() => setSourceOpen(false)} /> : null}
@@ -283,51 +224,9 @@ function PositioningWorkspace({ company, onClose, inline = false }: { company: C
 }
 
 function FinancialWorkspace({ company, onClose, inline = false }: { company: CompanyResearchViewModel; onClose: () => void; inline?: boolean }) {
-  const liveCard = useLiveCardSnapshot(company.ticker);
-  const scaling = company.raw.scaling_economics;
   return (
-    <ResearchWorkspace code="FILINGS & FINANCIAL TRANSLATION" title="Financials & Operating Signals" ticker={company.ticker} inline={inline} onClose={onClose}>
-      <div className="financial-workspace financials-upgraded">
-        {liveCard?.operating ? <OperatingSignals operating={liveCard.operating} /> : null}
-
-        {liveCard?.axes?.fundamentals?.evidence?.length ? (
-          <section className="fin-quarter-summary">
-            <span>LATEST QUARTERLY FILING READ</span>
-            <h3>{liveCard.axes.fundamentals.state}</h3>
-            <ul>
-              {liveCard.axes.fundamentals.evidence.map((line) => <li key={line}>{line}</li>)}
-            </ul>
-          </section>
-        ) : null}
-
-        <div className="financial-causal-chain">
-          {["Economic Evidence", "Revenue Durability", "Margin Durability", "FCFF Conversion", "Valuation Assumptions"].map((item, index) => (
-            <div key={item}><span>{item}</span>{index < 4 ? <i>↓</i> : null}</div>
-          ))}
-        </div>
-
-        <section>
-          {Object.entries(company.raw.financial_translation).map(([key, item]) => (
-            <article key={key}>
-              <span>{humanize(key)}</span>
-              <strong>{humanize(item.state)}</strong>
-              <p>{item.reason}</p>
-            </article>
-          ))}
-        </section>
-
-        {scaling.metrics?.length ? (
-          <div className="pos-scaling-metrics">
-            {scaling.metrics.map((m) => (
-              <article key={m.name}>
-                <span>{humanize(m.name)}</span>
-                <strong>{formatScalingMetric(m.value, m.unit)}</strong>
-                <small>{m.interpretation}</small>
-              </article>
-            ))}
-          </div>
-        ) : null}
-      </div>
+    <ResearchWorkspace code="FINANCIAL STATEMENTS" title="Financials & Operating Signals" ticker={company.ticker} inline={inline} onClose={onClose}>
+      <FinancialStatements ticker={company.ticker} />
     </ResearchWorkspace>
   );
 }
@@ -335,8 +234,6 @@ function FinancialWorkspace({ company, onClose, inline = false }: { company: Com
 export function CompanyWorkspaces({
   company,
   workspace,
-  selectedNodeId,
-  onNode,
   onClose,
   onEvidence,
   inline = false
@@ -350,26 +247,12 @@ export function CompanyWorkspaces({
   inline?: boolean;
 }) {
   const [evidenceItems, setEvidenceItems] = useState<EvidenceViewModel[] | undefined>();
-  const nodes = company.raw.economic_graph.nodes;
-  const selectedNode = nodes.find((node) => node.id === selectedNodeId) ?? nodes[0] ?? null;
   const openEvidence = (items?: EvidenceViewModel[]) => { setEvidenceItems(items); onEvidence(items); };
   if (!workspace) return null;
   return <>
     {workspace === "economics" ? (
-      <ResearchWorkspace
-        code="COMPANY ECONOMICS"
-        title="Economic Map"
-        ticker={company.ticker}
-        inline={inline}
-        onClose={onClose}
-        inspector={<NodeInspector company={company} node={selectedNode} onEvidence={openEvidence} />}
-      >
-        <div className="econ-inline-question">
-          <span>CORE ECONOMIC QUESTION</span>
-          <p>{company.coreQuestion}</p>
-        </div>
-        <EconomicMap company={company} selectedNodeId={selectedNode?.id ?? null} onSelectNode={(node) => onNode(node.id)} inlineInspector={false} />
-        <OperationalResearch research={company.raw.operational_research} />
+      <ResearchWorkspace code="COMPANY ECONOMICS" title="Economic Map" ticker={company.ticker} inline={inline} onClose={onClose}>
+        <EngineChainView ticker={company.ticker} />
       </ResearchWorkspace>
     ) : null}
     {workspace === "valuation" ? <ValuationWorkspace company={company} inline={inline} onClose={onClose} onEvidence={openEvidence} /> : null}

@@ -1,24 +1,13 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { analyzeValuation } from "./valuation-service";
-import type { ValuationReport } from "./valuation-research";
 
 // The downloadable research note reads only what the site already computed: the judgment card (rules + checked AI
 // write-up), the valuation report and the stored company profile. Nothing here calculates a new number.
 
-export type Json = Record<string, unknown>;
-export type ReportData = {
-  ticker: string;
-  card: Json | null;
-  valuation: ValuationReport | null;
-  profile: Json | null;
-  snapshot: Json | null;
-  chart: PriceChart | null;
-  generatedAt: string;
-};
-
-/** One year of daily closes for the stock and the S&P 500 (SPY), both rebased to 100 at the start. */
-export type PriceChart = { dates: string[]; stock: number[]; index: number[] };
+export type { Json, ReportData, PriceChart } from "./report-format";
+export { obj, arr, num, str, pick, pct, money, big } from "./report-format";
+import { arr, num, obj, pick, type Json, type PriceChart, type ReportData } from "./report-format";
 
 const ROOT = path.resolve(process.cwd(), "..");
 const TICKER = /^[A-Z0-9.^=-]{1,12}$/;
@@ -32,14 +21,14 @@ async function readJson(file: string): Promise<Json | null> {
   }
 }
 
-export async function loadReportData(tickerInput: string): Promise<ReportData | null> {
+export async function loadReportData(tickerInput: string, options: { chart?: boolean } = {}): Promise<ReportData | null> {
   const ticker = tickerInput.trim().toUpperCase();
   if (!TICKER.test(ticker) || ticker.startsWith("-")) return null;
   const [card, stored, valuation, chart] = await Promise.all([
     readJson(path.join(ROOT, ".cache", "verdicts", `${ticker}.json`)),
     readJson(path.join(ROOT, ".cache", "company_economics", `${ticker}.json`)),
     analyzeValuation(ticker).then((result) => result.report).catch(() => null),
-    priceChart(ticker),
+    options.chart === false ? Promise.resolve(null) : priceChart(ticker),
   ]);
   if (!card && !valuation) return null;
   return {
@@ -79,47 +68,3 @@ async function priceChart(ticker: string): Promise<PriceChart | null> {
   return { dates, stock: dates.map((d) => (stock.get(d)! / s0) * 100), index: dates.map((d) => (index.get(d)! / i0) * 100) };
 }
 
-// ---- small readers for loosely typed JSON ----------------------------------------------------------------------
-export function obj(value: unknown): Json {
-  return value && typeof value === "object" && !Array.isArray(value) ? (value as Json) : {};
-}
-export function arr(value: unknown): unknown[] {
-  return Array.isArray(value) ? value : [];
-}
-export function num(value: unknown): number | null {
-  return typeof value === "number" && Number.isFinite(value) ? value : null;
-}
-export function str(value: unknown): string | null {
-  return typeof value === "string" && value.trim() ? value : null;
-}
-export function pick(source: unknown, ...keys: string[]): unknown {
-  let current: unknown = source;
-  for (const key of keys) current = obj(current)[key];
-  return current;
-}
-
-export function pct(value: unknown, digits = 1, signed = false): string {
-  const n = num(value);
-  if (n == null) return "—";
-  const text = `${Math.abs(n * 100).toFixed(digits)}%`;
-  if (Math.abs(n * 100) < 0.5 * 10 ** -digits) return `${(0).toFixed(digits)}%`;
-  return n < 0 ? `−${text}` : signed ? `+${text}` : text;
-}
-export function money(value: unknown, currency = "USD", digits = 2): string {
-  const n = num(value);
-  if (n == null) return "—";
-  const sign = n < 0 ? "−" : "";
-  const prefix = currency === "USD" ? "$" : `${currency} `;
-  return `${sign}${prefix}${Math.abs(n).toLocaleString("en-US", { minimumFractionDigits: digits, maximumFractionDigits: digits })}`;
-}
-export function big(value: unknown, currency = "USD"): string {
-  const n = num(value);
-  if (n == null) return "—";
-  const abs = Math.abs(n);
-  const sign = n < 0 ? "−" : "";
-  const prefix = currency === "USD" ? "$" : `${currency} `;
-  if (abs >= 1e12) return `${sign}${prefix}${(abs / 1e12).toFixed(2)}T`;
-  if (abs >= 1e9) return `${sign}${prefix}${(abs / 1e9).toFixed(2)}B`;
-  if (abs >= 1e6) return `${sign}${prefix}${(abs / 1e6).toFixed(1)}M`;
-  return `${sign}${prefix}${abs.toLocaleString("en-US")}`;
-}
