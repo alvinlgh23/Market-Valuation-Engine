@@ -61,7 +61,6 @@ export function EngineChainView({ ticker }: { ticker: string }) {
     <header className="eng-head">
       <span>{load.model.isBank ? "HOW THE BANK MAKES MONEY" : "HOW THE BUSINESS MAKES MONEY"}</span>
       <h3>Is it enough for what the price assumes?</h3>
-      <p>Each step is a reported figure, in order from sales to price; the conclusion is the card&apos;s valuation reading. Tap a step for the full sentence and where the figure comes from.</p>
     </header>
     <ol className="eng-chain">
       {chain.steps.map((step, i) => <Step key={step.key} step={step} index={i} open={openKey === step.key} onToggle={() => setOpenKey(openKey === step.key ? null : step.key)} />)}
@@ -70,9 +69,9 @@ export function EngineChainView({ ticker }: { ticker: string }) {
       <b>{active.title}</b>
       <p>{active.sentence}</p>
       <small>How it&apos;s read: {active.how}</small>
-    </div> : <div className="eng-sentences">
+    </div> : <details className="eng-sentences"><summary>Read each step in full</summary>
       {chain.steps.map((s) => <p key={s.key}><b>{s.title}.</b> {s.sentence}</p>)}
-    </div>}
+    </details>}
     {chain.conclusion ? <section className={`eng-conclusion tone-${chain.conclusion.tone}`}>
       <span>CONCLUSION · FIXED RULES</span>
       <h3><i aria-hidden="true">{GLYPH[chain.conclusion.tone]}</i> {chain.conclusion.title}</h3>

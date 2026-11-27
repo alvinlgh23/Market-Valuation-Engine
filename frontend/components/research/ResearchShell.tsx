@@ -189,24 +189,25 @@ export function ResearchShell({
     <div className="research-app-shell object-driven-shell rail-shell">
       {/* Primary navigation rail with visible micro-labels for zero-guesswork clarity */}
       <aside className="app-rail" aria-label="Primary">
-        <ChainstoxBrand compact />
+        <ChainstoxBrand compact large />
         <nav className={`app-rail-nav${mobileNavOpen ? " open" : ""}`} aria-label="Primary research objects">
-          {PRIMARY.map(([key, label, shortLabel, href]) => (
+          {PRIMARY.map(([key, label, , href]) => (
             <Link key={key} className={topActive === key ? "active" : ""} href={href} aria-label={label} title={label} onClick={() => setMobileNavOpen(false)}>
               <RailIcon name={key} />
-              <small className="app-rail-label">{shortLabel}</small>
             </Link>
           ))}
           <button type="button" onClick={() => setSearchOpen(true)} aria-label="Search (⌘K)" title="Search (⌘K)">
             <RailIcon name="search" />
-            <small className="app-rail-label">Search</small>
           </button>
         </nav>
         <div className={`app-rail-state data-state-${shellState.toLowerCase().replaceAll("_", "-")}`} title={`${shellState === "DEMO" || shellState === "FIXTURE" ? displayStatus(shellState) : statusWord(shellState) ?? displayStatus(shellState)}: ${STATE_HELP[shellState] ?? "Current research data state"}`}><i /></div>
       </aside>
       <div className={`research-app-body${contextual.length ? " has-context-nav" : ""}`}>
         {contextual.length ? <aside className="context-research-nav"><div><span>{ticker ? `${ticker} / ${active === "valuation" ? "VALUATION" : "COMPANY"}` : `${active === "macro" ? "MACRO" : active === "labs" ? "INTERNAL" : topActive.toUpperCase()} / RESEARCH`}</span><strong>{ticker ? active === "valuation" ? "Valuation object" : "Company workspace" : "Investigation"}</strong></div><nav aria-label={`${topActive} research views`}>{contextual.map(([label, href]) => { const hrefUrl = href.split("?"); const queryView = new URLSearchParams(hrefUrl[1] ?? "").get("view"); const viewParam = searchParams.get("view"); const selected = queryView ? pathname === hrefUrl[0] && viewParam === queryView : currentUrl === href || (href === pathname && (!viewParam || viewParam === "overview")); return <Link className={selected ? "active" : ""} href={href} key={label}>{label}{label.startsWith("←") ? null : <span>→</span>}</Link>; })}</nav></aside> : null}
-        <main className="research-app-main">{children}</main>
+        <main className="research-app-main">
+          <Link href="/" className="app-brandbar" aria-label="Chainstox, Market Intelligence System — home"><b>Chainstox</b><span>Market Intelligence System</span></Link>
+          {children}
+        </main>
       </div>
       {searchOpen ? <div className="command-surface-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setSearchOpen(false)}><section className="command-surface" role="dialog" aria-modal="true" aria-label="Global research search"><header><span>GLOBAL SEARCH / RESEARCH COMMAND</span><button type="button" onClick={() => setSearchOpen(false)}>ESC</button></header><form onSubmit={submit}><span>›</span><input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); setSearchOpen(false); } }} placeholder="Ticker or company (NVDA, CAT, Visa, Apple), sector, or macro topic" aria-label="Search research" /></form><div className="command-results">{topicsFirst ? topicsBlock : companiesBlock}{topicsFirst ? companiesBlock : topicsBlock}<div className="command-group">{!trimmedQuery ? <><div className="command-result-heading"><span>RESEARCH PRIORITY</span><small>Direct investigation routes</small></div>{[["PRIORITY", "Market story", "/macro"], ["PRIORITY", "Japan growth pressure", "/macro/world?region=JP"], ["PRIORITY", "All sectors", "/markets"], ["PRIORITY", "Risk coverage", "/macro/risk"]].map(([kind, label, href]) => <button key={`${kind}-${label}-${href}`} type="button" onClick={() => { setSearchOpen(false); router.push(href); }}><strong>{kind}</strong><span>{label}</span><small>Open priority route</small></button>)}<div className="command-result-heading"><span>RECENT COMPANY RESEARCH</span><small>Previously analyzed</small></div>{recentCompanies.map((item) => <button key={item.ticker} type="button" onClick={() => { setSearchOpen(false); router.push(`/company/${item.ticker}`); }}><strong>COMPANY · {item.ticker}</strong><span>{item.name}</span><small>{item.research_state.replaceAll("_", " ")}</small></button>)}{!recentCompanies.length ? <p>No on-demand company profiles have been cached yet. Type any ticker, company name, sector or topic.</p> : null}</> : null}{trimmedQuery && !activeTickerMatches.length && !rawTickerFallback && !moduleResults.length ? <div className="command-empty-state"><strong>Research coverage unavailable</strong><p>No listed security, sector, macro region, or topic matched &ldquo;{trimmedQuery}&rdquo;. Try a ticker or company name (e.g. NVDA, CAT, Apple), a region (Japan, Euro Area), or a sector (Technology, Semiconductors, Energy).</p></div> : null}</div></div></section></div> : null}
     </div>
