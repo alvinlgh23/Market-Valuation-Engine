@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { computeInteractiveFairValue } from "../../lib/what-if.mjs";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { loadCompanyCard } from "../../lib/company-card";
 import { useSearchParams } from "next/navigation";
 import type { CompanyEconomicsPayload } from "../../lib/company-economics-types";
 import { adaptCompanyEconomics, humanize } from "../../lib/companyEconomicsAdapter";
@@ -78,6 +79,7 @@ function headlineReverse(report: ValuationReport): Record<string, unknown> {
 // P20 item 12: lead with what the price assumes, the same reading as the company card; the bear/base/bull
 // range is the model's output under fixed assumptions and is shown second, not as a target.
 function pricedGrowth(report: ValuationReport): { headline: string; detail: string } {
+  if (report.fallback?.required_specialized_framework) return { headline: "Read by return on equity, not cash flow", detail: "Banks are valued on what their equity earns; see the return-on-equity reading above." };
   const rev = headlineReverse(report);
   const implied = typeof rev.required_5y_revenue_cagr === "number" ? rev.required_5y_revenue_cagr : null;
   const observed = report.fair_value?.observed_growth ?? report.historical_base.current_provider_revenue_growth ?? null;
@@ -199,7 +201,7 @@ function FairValueRange({ report }: { report: ValuationReport }) {
   const money = moneyFormatter(report.company.currency);
   const params = useSearchParams();
   if (report.validation.status === "FAILED" || (!hasScenarios(report) && !report.fallback?.required_specialized_framework)) return <section className="valuation-framework-state"><ValueBadge value={report.validation.status === "FAILED" ? "FAILED" : "INSUFFICIENT_DATA"} /><h2>Fair value withheld</h2><p>{report.validation.reasons?.join(" ") || report.data_quality.reason}</p><p>Inspect Validation and the historical FCFF reconciliation for diagnostic detail.</p></section>;
-  if (!hasScenarios(report)) return <section className="valuation-framework-state"><ValueBadge value="FRAMEWORK_REQUIRED" /><h2>Valuation framework required</h2><p>{report.fallback?.why_standard_dcf_is_inappropriate || report.data_quality.reason}</p><dl><div><dt>Company type</dt><dd>{report.company.company_type}</dd></div><div><dt>Required framework</dt><dd>{report.fallback?.required_specialized_framework || report.selected_method}</dd></div><div><dt>Missing evidence</dt><dd>{report.fallback?.missing_data?.join(", ") || report.data_quality.missing?.join(", ") || "Unavailable"}</dd></div></dl></section>;
+  if (!hasScenarios(report)) return <section className="valuation-framework-state"><ValueBadge value="FRAMEWORK_REQUIRED" /><h2>No cash-flow model range for this company type</h2><p>{report.fallback?.why_standard_dcf_is_inappropriate || report.data_quality.reason}</p><dl><div><dt>Company type</dt><dd>{report.company.company_type}</dd></div><div><dt>Required framework</dt><dd>{report.fallback?.required_specialized_framework || report.selected_method}</dd></div><div><dt>Needed for a full residual-income model</dt><dd>{report.fallback?.missing_data?.join(", ") || report.data_quality.missing?.join(", ") || "Unavailable"}</dd></div></dl></section>;
   const values = headlineFairValues(report);
   const { bear, base, bull } = values;
   const price = report.company.current_market_price;
@@ -272,11 +274,37 @@ const PLAIN_ASSUMPTION: Record<string, string> = {
   terminal_growth: "Long-run growth", annual_dilution: "New shares a year",
 };
 
+
+// Gap scan 2026-11-27 (owner approval): banks showed "Framework required" here although the judgment card already reads
+// them by return on equity (justified price-to-book). Show that reading instead of a failure.
+type BankRoe = { status?: string; price_to_book?: number; latest_roe?: number; implied_roe?: number; cost_of_equity?: number; long_run_growth?: number; method?: string; basis?: string };
+function BankRoePanel({ ticker }: { ticker: string }) {
+  const [bank, setBank] = useState<BankRoe | null | undefined>(undefined);
+  useEffect(() => {
+    let active = true;
+    loadCompanyCard(ticker).then((result) => {
+      const detail = result.card?.axes?.valuation?.detail as Record<string, unknown> | undefined;
+      if (active) setBank((detail?.bank_implied_roe as BankRoe | undefined) ?? null);
+    });
+    return () => { active = false; };
+  }, [ticker]);
+  if (bank === undefined) return <section className="valuation-read-panel"><span>WHAT THE PRICE ASSUMES</span><p>Reading the bank&apos;s return on equity…</p></section>;
+  if (!bank || typeof bank.implied_roe !== "number" || typeof bank.latest_roe !== "number") return null;
+  const gap = bank.implied_roe - bank.latest_roe;
+  const reading = Math.abs(gap) <= 0.02 ? "roughly matches what the bank earns" : gap > 0 ? "is more than the bank earns" : "is less than the bank earns";
+  return <section className="valuation-read-panel"><span>WHAT THE PRICE ASSUMES</span>
+    <h2>The price assumes a {pct(bank.implied_roe)} return on equity; the bank earns {pct(bank.latest_roe)}</h2>
+    <p>That {reading}. At {typeof bank.price_to_book === "number" ? `${bank.price_to_book.toFixed(2)} times book value` : "today's price"}, a cost of equity of {typeof bank.cost_of_equity === "number" ? pct(bank.cost_of_equity) : "—"} and long-run growth of {typeof bank.long_run_growth === "number" ? pct(bank.long_run_growth) : "—"}, this is the return the price needs to be fair.</p>
+    <dl><div><dt>Method</dt><dd title={bank.method}>Justified price-to-book</dd></div><div><dt>Return on equity</dt><dd title={bank.basis}>Latest year</dd></div></dl>
+  </section>;
+}
+
 function Snapshot({ report, company }: { report: ValuationReport; company: CompanyEconomicsPayload | null }) {
   const money = moneyFormatter(report.company.currency);
   const economics = company ? adaptCompanyEconomics(company) : null;
   const rev = headlineReverse(report);
   return <div className="valuation-overview-grid">
+    {report.fallback?.required_specialized_framework ? <BankRoePanel ticker={report.company.ticker} /> : null}
     <section className="valuation-read-panel"><span>WHAT THE PRICE ASSUMES</span><h2>{pricedGrowth(report).headline}</h2><p>{pricedGrowth(report).detail}</p>{report.fallback?.why_standard_dcf_is_inappropriate ? <p>{report.fallback.why_standard_dcf_is_inappropriate}</p> : null}<dl><div><dt>Market price</dt><dd>{money(report.company.current_market_price)}</dd></div><div><dt>Validation</dt><dd>{humanize(report.validation.status)}</dd></div><div><dt>Solve</dt><dd>{humanize(String(rev.status || "Unavailable"))}</dd></div></dl></section>
     <FairValueRange report={report} />
     <section className="valuation-mini-ledger"><span>WHAT THE BUSINESS SHOWS</span><dl><div><dt>Sales growth, 12 months</dt><dd>{pct(report.fair_value?.observed_growth ?? economics?.raw.growth_sustainability.current_revenue_growth ?? report.historical_base.current_provider_revenue_growth)}</dd></div><div><dt title="Free cash flow to the firm as a share of sales">Cash-flow margin</dt><dd>{pct(report.historical_base.fcff_margin)}</dd></div><div><dt>Constraint</dt><dd>{economics?.primaryConstraint.label || "See operating signals"}</dd></div><div><dt>Scaling</dt><dd>{economics?.raw.scaling_economics.interpretation || "Unavailable"}</dd></div></dl></section>
