@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { CompanyResearchViewModel } from "../../lib/company-economics-types";
@@ -9,7 +9,7 @@ import { ResearchShell, type ResearchDataState } from "../research/ResearchShell
 import { displayStatus } from "../../lib/status-words";
 import { CompanyWorkspaces, type CompanyWorkspaceKind } from "./CompanyWorkspaces";
 import { ResearchLabel } from "./ResearchPrimitives";
-import { ReportMode } from "./ReportMode";
+import { DownloadReportButton } from "../report/DownloadReportButton";
 import { JudgmentCard } from "./JudgmentCard";
 import { OperationalResearch } from "./OperationalResearch";
 import { BottleneckCandidates, candidateBottlenecks, useLiveValuation, useOperating } from "./StoredProfileReads";
@@ -50,7 +50,6 @@ export function CompanyResearchPage({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [reportOpen, setReportOpen] = useState(false);
 
   const viewParam = searchParams.get("view");
   const wsParam = searchParams.get("workspace");
@@ -79,12 +78,11 @@ export function CompanyResearchPage({
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
-      if (reportOpen) setReportOpen(false);
-      else if (workspace) closeWorkspace();
+      if (workspace) closeWorkspace();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [closeWorkspace, reportOpen, workspace]);
+  }, [closeWorkspace, workspace]);
 
   function openWorkspace(next: CompanyWorkspaceKind) {
     if (next === "valuation") {
@@ -153,7 +151,7 @@ export function CompanyResearchPage({
           <button type="button" className={workspace === "financials" ? "active" : ""} onClick={() => openWorkspace("financials")}>Financials</button>
           <button type="button" className={workspace === "evidence" ? "active" : ""} onClick={() => openWorkspace("evidence")}>Evidence <small>{company.evidenceCounts.all}</small></button>
           <button type="button" className="company-deeper-primary" onClick={() => openValuationObject()}>Valuation &amp; sandbox →</button>
-          <button type="button" onClick={() => setReportOpen(true)}>Full report</button>
+          <DownloadReportButton ticker={company.ticker} />
         </nav>
 
         {!workspace ? (
@@ -231,7 +229,6 @@ export function CompanyResearchPage({
         )}
       </div>
 
-      {reportOpen ? <ReportMode company={company} onClose={() => setReportOpen(false)} /> : null}
     </ResearchShell>
   );
 }
