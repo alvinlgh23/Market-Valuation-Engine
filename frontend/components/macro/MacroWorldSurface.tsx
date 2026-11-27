@@ -59,6 +59,8 @@ function economyFacts(id: string, region: MacroRegion, fx: Record<string, FxPair
   const policy = state("policy");
   if (POLICY_BANK[id] && usable(policy)) out.push(`${POLICY_BANK[id]}: ${sentence(policy!).toLowerCase()}`);
   if (id === "KR") {
+    const call = region.evidence.find((e) => e.id === "kr-call-rate");
+    if (call) { const when = /^\d{4}-\d{2}/.test(String(call.period)) ? new Date(`${String(call.period).slice(0, 7)}-15T00:00:00Z`).toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" }) : ""; out.push(`Call rate ${call.value}${when ? ` (${when})` : ""}`); }
     const krw = fx.usdkrw;
     if (typeof krw?.level === "number") {
       const ch = krw.change_3m;
@@ -67,7 +69,7 @@ function economyFacts(id: string, region: MacroRegion, fx: Record<string, FxPair
     const exp = (region.engine_specific as { kospi?: { export_snapshot?: { total_exports_usd_b?: number; semiconductors_usd_b?: number; period?: string } } } | undefined)?.kospi?.export_snapshot;
     if (exp?.total_exports_usd_b && exp.semiconductors_usd_b) out.push(`Chips ${Math.round((exp.semiconductors_usd_b / exp.total_exports_usd_b) * 100)}% of exports (${exp.period ?? "latest year"})`);
     if (/tech/i.test(state("markets") ?? "")) out.push("KOSPI moves most with chip stocks");
-    return out;
+    return out.slice(0, 4);
   }
   if (id === "EURO_AREA" && typeof fx.eurusd?.change_3m === "number") out.push(`Euro ${fx.eurusd.change_3m >= 0 ? "up" : "down"} ${Math.abs(fx.eurusd.change_3m * 100).toFixed(1)}% vs $ in 3 months`);
   for (const key of ["inflation", "growth"]) { const v = state(key); if (usable(v) && out.length < 3) out.push(`${key === "inflation" ? "Inflation" : "Growth"}: ${sentence(v!).toLowerCase()}`); }
@@ -289,7 +291,7 @@ export function MacroWorldSurface({ world, initial = {}, fxPairs = {} }: { world
                     </div>
                     <p className="mec-lead">{factorsLine(REGION_FACTORS[id] ?? [], drivers)}</p>
                     <div className="mec-pills">{facts.map((fact) => <span key={fact}>{fact}</span>)}</div>
-                    {id === "KR" ? <small className="mec-note">Bank of Korea rate and Korean inflation aren&apos;t stored yet.</small> : null}
+                    {id === "KR" ? <small className="mec-note">Call rate: the overnight rate the Bank of Korea steers, not its announced base rate. Korean inflation isn&apos;t stored yet.</small> : null}
                     <small className="mec-cta">Open {item.name} →</small>
                   </button>
                 );

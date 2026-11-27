@@ -53,7 +53,9 @@ def test_cached_compass_adapter_preserves_evidence_and_gaps():
     assert world["regions"]["JP"]["gaps"]
     assert world["regions"]["EURO_AREA"]["availability"] == world["regions"]["EURO_AREA"]["coverage"]["availability"]
     assert "SG" not in world["regions"]   # Singapore removed 2026-11-22 (global audience)
-    assert world["regions"]["KR"]["components"][0]["state"] == "NOT AVAILABLE"
+    # 2026-11-27: Korea's policy slot shows the cached overnight call rate when its FRED file exists.
+    kr_policy = world["regions"]["KR"]["components"][0]
+    assert kr_policy["state"] == "NOT AVAILABLE" or (kr_policy["state"].startswith("CALL RATE ") and "not a Bank of Korea policy model" in kr_policy["summary"])
 
 
 def test_transmission_state_rules_are_deterministic():

@@ -44,7 +44,7 @@ try {
     if (name === "South Korea") {
       // 2026-11-27: empty readings moved into the folded "Data coverage & gaps" section.
       await page.locator(".mri-coverage > summary").click();
-      await page.getByText("Policy: No Bank of Korea policy model is integrated.").waitFor();
+      await page.getByText("Inflation: No Korean inflation engine is integrated.").waitFor();
     }
     await page.keyboard.press("Escape");
   }

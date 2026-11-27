@@ -30,6 +30,15 @@
 
 ## 进度日志
 
+### 2026-11-27：韩国利率、基金误判、旧样式清理（owner 批准）
+
+- **韩国利率**：FRED 上韩国央行基准利率的 OECD 序列（IRSTCB01KRM156N）已不存在；改用韩国隔夜拆借利率月均值（IRSTCI01KRM156N，韩国央行把这个利率引导到基准利率上），2026 年 10 月 3.03%，12 个月 +0.51 点。每日刷新的市场价格一步顺带更新（下载失败保留旧文件）；韩国卡片和侧栏显示「Call rate 3.03% (Oct 2026)」，并注明不是公布的基准利率、不是央行政策模型。新测试 `tests/test_korea_call_rate.py`。
+- **韩国月度芯片出口**：需要 owner 自己在 data.go.kr 申请免费 key，放进 `.env` 的 `DATA_GO_KR_SERVICE_KEY`（不能由 AI 代为注册或填写 key）。
+- **基金误判**：名字里有 " trust"、" fund"、"shares"、"invesco" 就判成基金的规则（Northern Trust、Invesco Ltd 会被误判）改为：先看行情类型，只有类型缺失时才用真正代表基金的词（ETF、iShares、SPDR 等）。`Valuation_model.py` 和 `company_report.py` 共用 `security_words.looks_like_fund`。
+- **旧样式**：删掉旧板块视图和旧地图卡片的 135 条 CSS 规则（约 16 KB），删除前确认没有页面再用。
+- 测试：Python 487 通过，tsc、lint 干净，11 个前端规则测试、9 个浏览器 smoke、生产构建通过。
+
+
 ### 2026-11-27：板块单页重做、世界地图、经济体卡片和韩国（owner 批准）
 
 - **板块单页**（`components/markets/SectorPage.tsx`）：顶部是板块名、1/3/6 个月相对 S&P 500 的点数和一句白话；接着「你在这个板块的持仓」（可点进公司）；「钱有没有跟上」（参与度、成交活跃度、上涨/下跌日成交比、拥挤度，白话/Pro 两种说法，定义取自 `sector_flow.py`）；板块内的行业基金；只有写过行业结构的板块才显示「How this industry works」，并标明是文字描述、不是测量。删除 Full Report（原始 JSON）、旧旋转图、34 行表格和用假数字的 Leadership 视图；旧链接（view=report/structure/leadership）都落到新页面。补了 5 个板块的可读网址别名（communication-services → XLC 等，旧别名指向不存在的页面）。
