@@ -37,7 +37,7 @@ import urllib.request
 from datetime import datetime, timedelta, timezone
 
 import yfinance as yf
-from security_words import looks_like_shell
+from security_words import looks_like_fund, looks_like_shell
 
 from data_sources.market_history import fetch_yahoo_history
 
@@ -4399,7 +4399,7 @@ def infer_security_type(info, integrity, quality=None):
 
     if not info_has_identity(info) and not integrity["price_history_available"]:
         return "INVALID_OR_UNRESOLVED"
-    if quote_type in {"ETF", "MUTUALFUND", "FUND"} or any(token in name for token in [" etf", " fund", " trust", "shares", "ishares", "spdr", "invesco"]):
+    if looks_like_fund(quote_type, name):
         return "ETF_OR_FUND"
     if not integrity["revenue_history_available"] and not integrity["cashflow_history_available"]:
         if integrity["price_history_available"] or info_has_identity(info):

@@ -20,3 +20,12 @@ def test_classifier_keeps_aerospace_as_operating_company():
     assert classify_security("LMT", info, True) != "SPAC_OR_SHELL"
     shell = {"quoteType": "EQUITY", "longName": "Churchill Capital Corp VII", "sector": "Financial Services", "industry": "Shell Companies"}
     assert classify_security("CVII", shell, True) == "SPAC_OR_SHELL"
+
+
+def test_fund_rule_uses_quote_type_and_only_real_fund_words():
+    from security_words import looks_like_fund
+    assert looks_like_fund("ETF", "Invesco QQQ Trust")
+    assert looks_like_fund("", "SPDR S&P 500 ETF Trust")          # quote type missing: name fallback
+    for name in ("Northern Trust Corporation", "Invesco Ltd.", "Sharecare, Inc.", "Wintrust Financial"):
+        assert not looks_like_fund("EQUITY", name), name
+        assert not looks_like_fund("", name), name

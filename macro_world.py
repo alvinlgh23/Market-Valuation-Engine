@@ -526,6 +526,14 @@ class MacroRegionEngine:
             evidence.append(MacroEvidence("kr-export-total", "Total exports", f"${snapshot['total_exports_usd_b']:,.1f}B", f"{period} ANNUAL", "FACT", "Annual exports via KOSPI monitor", str(KOSPI_FILE.relative_to(ROOT)), f"{period}-12-31" if period else None, "STRUCTURAL", "Annual snapshot from the KOSPI engine; not a current market sweep."))
         if snapshot.get("semiconductors_usd_b") is not None:
             evidence.append(MacroEvidence("kr-semi-export", "Semiconductor exports", f"${snapshot['semiconductors_usd_b']:,.1f}B", f"{period} ANNUAL", "FACT", snapshot.get("semiconductor_source") or "KOSPI monitor", str(KOSPI_FILE.relative_to(ROOT)), f"{period}-12-31" if period else None, "STRUCTURAL", "Annual figure; monthly customs data needs a data.go.kr service key that is not configured."))
+        call = read_korea_call_rate()
+        month = move = ""
+        if call:
+            month = date.fromisoformat(call["date"]).strftime("%b %Y")
+            move = "" if call["change_12m"] is None else f", {call['change_12m']:+.2f} points over 12 months"
+            evidence.append(MacroEvidence("kr-call-rate", "Overnight call rate (tracks the Bank of Korea base rate)", f"{call['value']:.2f}%", f"{month} MONTHLY AVERAGE", "FACT",
+                                          f"FRED {KR_CALL_RATE_SERIES} (OECD)", f".cache/compass_fred/{KR_CALL_RATE_SERIES}.csv", call["date"], "CACHED",
+                                          f"Monthly average of the interbank call rate{move}. The Bank of Korea steers this rate onto its base rate; it is not the announced base rate."))
         return MacroRegionProfile(
             id="KR", name="South Korea", available=True, availability="PENDING",
             framework="KOSPI market, export and USD/KRW factor monitor",
@@ -533,7 +541,8 @@ class MacroRegionEngine:
                    else "Export and market transmission structure is mapped, but no current KOSPI sweep is persisted. Active pressure is therefore not classified."),
             as_of=f"{period}-12-31" if period else None, freshness="STRUCTURAL", confidence="LOW",
             components=[
-                MacroComponent("policy", "Policy", "NOT AVAILABLE", "No Bank of Korea policy model is integrated.", "INSUFFICIENT", gaps=["BOK policy model"]),
+                (MacroComponent("policy", "Policy", f"CALL RATE {call['value']:.2f}%", f"Overnight call rate {call['value']:.2f}% ({month} average){move}. A reading, not a Bank of Korea policy model.", "LOW", ["kr-call-rate"], ["BOK policy model"])
+                 if call else MacroComponent("policy", "Policy", "NOT AVAILABLE", "No Bank of Korea policy model is integrated.", "INSUFFICIENT", gaps=["BOK policy model"])),
                 MacroComponent("inflation", "Inflation", "NOT AVAILABLE", "No Korean inflation engine is integrated.", "INSUFFICIENT", gaps=["Korean CPI and inflation framework"]),
                 MacroComponent("fx", "FX", "FRAMEWORK ONLY", "USD/KRW is a configured KOSPI factor; no current sweep is persisted.", "LOW", gaps=["Current USD/KRW factor result"]) if not raw.get("has_fx_factor")
                 else MacroComponent("fx", "FX", "SWEEP CACHED", "USD/KRW factor result is in the cached KOSPI sweep.", "LOW"),
@@ -549,6 +558,46 @@ class MacroRegionEngine:
             ],
             engine_specific={"kospi": raw},
         )
+
+
+# Korea's overnight call rate (owner-approved 2026-11-27). The Bank of Korea steers the call rate onto its base rate,
+# so it is shown as "call rate (tracks the BOK base rate)", never as the base rate itself. FRED's OECD base-rate
+# series (IRSTCB01KRM156N) no longer exists; this monthly average is the closest public series.
+KR_CALL_RATE_SERIES = "IRSTCI01KRM156N"
+
+
+def refresh_korea_call_rate(fetch: Any = None, cache_dir: Path = COMPASS_CACHE_DIR) -> dict[str, Any]:
+    """Download the series into the FRED cache. A failed or empty download keeps the existing file."""
+    if fetch is None:
+        from Valuation_model import fetch_fred_series as fetch
+    rows = [(d, v) for d, v in (fetch(KR_CALL_RATE_SERIES) or []) if d and v is not None]
+    if not rows:
+        return {"state": "KEPT_CACHE", "rows": 0}
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    target = cache_dir / f"{KR_CALL_RATE_SERIES}.csv"
+    temporary = target.with_suffix(".csv.tmp")
+    temporary.write_text("date,value\n" + "".join(f"{d},{v}\n" for d, v in rows))
+    temporary.replace(target)
+    return {"state": "OK", "rows": len(rows), "last": rows[-1][0]}
+
+
+def read_korea_call_rate(cache_dir: Path = COMPASS_CACHE_DIR) -> dict[str, Any] | None:
+    """Latest monthly value and its change over 12 months, from the cached file only (missing stays None)."""
+    path = cache_dir / f"{KR_CALL_RATE_SERIES}.csv"
+    if not path.exists():
+        return None
+    rows = []
+    for line in path.read_text().strip().splitlines()[1:]:
+        date, _, value = line.partition(",")
+        try:
+            rows.append((date, float(value)))
+        except ValueError:
+            continue
+    if not rows:
+        return None
+    date, value = rows[-1]
+    year_ago = next((v for d, v in reversed(rows) if d <= f"{int(date[:4]) - 1}{date[4:]}"), None)
+    return {"date": date, "value": value, "change_12m": None if year_ago is None else round(value - year_ago, 3)}
 
 
 def dedupe(values: list[str]) -> list[str]:

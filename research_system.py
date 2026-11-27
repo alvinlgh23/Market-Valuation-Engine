@@ -107,8 +107,14 @@ def refresh_market(today: date | None = None, backup_dir: Path | None = None) ->
     result = isolated("core-market", build_core_market, refresh=True)
     payload = result.get("payload") or {}
     dates = sorted({str(row.get("as_of")) for row in payload.get("sectors") or [] if row.get("as_of")})
+    # Korea's overnight call rate (monthly, FRED) rides along; a failure keeps the cached file.
+    try:
+        from macro_world import refresh_korea_call_rate
+        korea_rate = refresh_korea_call_rate()
+    except Exception as exc:  # noqa: BLE001 - never blocks the market refresh
+        korea_rate = {"state": "FAILED", "error": f"{type(exc).__name__}: {exc}"}
     return {"state": result["state"], "error": result["error"], "sector_rows": len(payload.get("sectors") or []),
-            "as_of": dates[-1] if dates else None}
+            "as_of": dates[-1] if dates else None, "korea_call_rate": korea_rate}
 
 
 def build_inflation() -> dict[str, Any]:

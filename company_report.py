@@ -12,7 +12,7 @@ import io
 import math
 
 import yfinance as yf
-from security_words import looks_like_shell
+from security_words import looks_like_fund, looks_like_shell
 
 from company_economics import CompanySnapshot, SourceNature, build_company_economics, print_company_economics
 
@@ -288,7 +288,7 @@ def relative_change(ticker, benchmark="SPY", days=126):
 def infer_security_type(info):
     quote_type = str(safe(info, "quoteType", default="")).upper()
     name = str(safe(info, "shortName", "longName", default="")).lower()
-    if quote_type in {"ETF", "MUTUALFUND", "FUND"} or any(token in name for token in [" etf", " fund", " trust", "shares", "ishares", "spdr", "invesco"]):
+    if looks_like_fund(quote_type, name):
         return "ETF / Fund"
     if quote_type in {"CRYPTOCURRENCY", "CURRENCY"}:
         return "Non-operating market proxy"
